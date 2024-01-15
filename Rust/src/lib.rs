@@ -32,51 +32,6 @@ pub struct EggResult {
     expl:    *const c_char,
 }
 
-// TODO:
-//
-// We don't encode the `bvar`, `fvar`, `mvar`, `letE`, `mdata` and `proj` constructors.
-// That is, if we want to convert a `Lean.Expr` to `LeanExpr`, we need to:
-// * prune occurrences of `letE`
-// * prune occurrences of `mdata`
-// * replace occurrences of `proj` with applications of the target type's recursor
-//
-// Also, since `lam` and `forallE` use bvars, can we throw away the variable name?
-//
-// Note, we need to be able to handle metavariables, as e.g. if we `apply Eq.trans`
-// a goal may have the type `t = ?m`.
-// Can we merge FVars and MVars though? They're not distinguishable for the purposes of
-// rewriting are they? And can we perhaps even do the same for bvars?
-// I think eliminating mvars should be easy as we should probably use `mkLambdaFVars` 
-// (cf. Metaprogramming Book) anyway. In fact, then we should also be able to replace
-// all bvars by fvars (using forallTelescope), so all we're left with is fvars.
-// Note: We might not actually want to do that in Lean, as it might be computationally
-// expensive, but what this goes to show is that we can flatten all three types of
-// variables to a single kind of variable. In the context of egg, these variables are 
-// the metavariables in rewrites ("?asdf"), so we dont even need an explicit representation
-// of them in LeanExpr. PROBLEM: You still need a notion of variables for the goal terms
-// don't you? E.g. if you're trying to rewrite `?b = 0` to `0 = ?b`, that `?b` is an mvar
-// in the goal term which you can't just remove.
-//
-// Note: In the `lam` and `forallE` constructors, we remove the variable name as the bodies
-//       use bvars anyway, as well as the binder-info as it is redundant.
-//
-//
-// PROBLEM: with bvars. E.g. `(fun x : Nat => x) = (fun y : Nat => id y)` becomes `(lam Nat (bvar 0)) = (lam Nat (app id (bvar 0)))`
-//          If we represent bvars as egg-metavars, we get: `(lam Nat ?0) = (lam Nat (app id ?0))`.
-//          So now we've accidentally merged the two distinct bvars into one mvar.
-//          SOLUTION?: Don't turn bvars into egg-vars, as they should actually never be substituted, unless we provide an
-//                     explicit rule like beta-reduction which then should then explicitly match on `bvar` though.
-//
-// Remember, we don't need to be able to reconstruct Lean terms from these LeanExpr terms.
-// We only need the sequence of rewrites.
-
-// NOTE:
-// An example that doesn't work without either ignoring or properly encoding universe variables is:
-//
-// -- Solution: rw [List.reverse_append, List.reverse_reverse, List.reverse_reverse]
-// example {l₁ l₂ : List α} : l₁ ++ l₂ = (l₂.reverse ++ l₁.reverse).reverse := by
-//   egg [List.reverse_append, List.reverse_reverse]
-
 // TODO: If type ascriptions become the norm, you can remove the τ constructor and instead add the types as the first arguments of all other constructors.
 //       This would be similar (though not equivalent) to the λ_x approach shown in Kœhler's dissertation.
 define_language! {
@@ -143,7 +98,6 @@ fn rules_for_c_rewrites(rws: &[CRewrite]) -> Vec<Rewrite<LeanExpr, ()>> {
     })
 }
 
-// TODO: Do we need to call egraph.rebuild() anywhere?
 fn check_eq(init: String, goal: String, rws: &[CRewrite]) -> Option<String> {
     let mut egraph: EGraph<LeanExpr, ()> = Default::default();
     egraph = egraph.with_explanations_enabled();
@@ -152,7 +106,16 @@ fn check_eq(init: String, goal: String, rws: &[CRewrite]) -> Option<String> {
     let init_id = egraph.add_expr(&init_expr);
     let goal_id = egraph.add_expr(&goal_expr);
     let rules = rules_for_c_rewrites(rws);
-    let mut runner = Runner::default().with_egraph(egraph).run(&rules);
+    let mut runner = Runner::default()
+        .with_egraph(egraph)
+        .with_hook(move |runner| {
+            if runner.egraph.find(init_id) == runner.egraph.find(goal_id) {
+                Err("search complete".to_string())
+            } else {
+                Ok(())
+            }
+       })
+        .run(&rules);
     if runner.egraph.find(init_id) == runner.egraph.find(goal_id) {
         Some(runner.explain_equivalence(&init_expr, &goal_expr).get_string())
     } else {
@@ -178,14 +141,3 @@ pub extern "C" fn c_egg_check_eq(init_str_ptr: *const c_char, goal_str_ptr: *con
         EggResult { success: false, expl: null() }
     }
 }
-
-/*
-fn simplify_and_explain(s: &str) -> Explanation<FCPLang> {
-    let expr: RecExpr<FCPLang> = s.parse().unwrap();
-    let mut runner = Runner::default().with_explanations_enabled().with_expr(&expr).run(&make_rules());
-    let root = runner.roots[0];
-    let extractor = Extractor::new(&runner.egraph, AstSize);
-    let (_, best) = extractor.find_best(root);
-    runner.explain_equivalence(&expr, &best)
-}
-*/

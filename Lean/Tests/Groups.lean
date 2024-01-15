@@ -1,6 +1,7 @@
 import Egg
 
--- Note: This set of test cases seems to demonstrate that `attachTypes := true` is way too slow.
+-- TODO: This set of test cases seems to demonstrate that `typeTags ≠ .none` is way too slow or
+--       doesn't work.
 
 def G : Type := sorry
 def zero : G := sorry
