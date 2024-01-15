@@ -19,7 +19,7 @@ example (a : Bool) (b : Nat) : (a, b).fst = (b, a).snd := by
   egg (config := { typeTags := .indices, eraseULvls := false }) [h₁, h₂]
 
 example (a : Bool) (b : Nat) : (a, b).fst = (b, a).snd := by
-  egg (config := { typeTags := .exprs, eraseULvls := true }) [h₁, h₂, this]
+  egg (config := { typeTags := .exprs, eraseULvls := true }) [h₁, h₂]
 
 example (a : Bool) (b : Nat) : (a, b).fst = (b, a).snd := by
   egg (config := { typeTags := .exprs, eraseULvls := false }) [h₁, h₂]

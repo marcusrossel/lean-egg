@@ -8,6 +8,9 @@ open Lean Meta Elab Tactic
 
 namespace Egg
 
+-- TODO: egg can generate dot/svg/png-files for its e-graphs.
+--       Use proof widgets to display this in the info-view.
+
 -- TODO: Remove this once proof reconstruction works.
 axiom eggAx {p : Prop} : p
 

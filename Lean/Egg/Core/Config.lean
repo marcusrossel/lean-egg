@@ -10,7 +10,8 @@ inductive Config.TypeTags
 --       extend eachother. For example, the first three properties could be an encoding config.
 --       The `dbgBypass` property isn't relevant for that.
 structure Config where
-  eraseProofs := true
-  eraseULvls  := true
-  typeTags    := Config.TypeTags.none
-  dbgBypass   := false
+  eraseProofs  := true
+  eraseULvls   := true
+  typeTags     := Config.TypeTags.none
+  optimizeExpl := false
+  dbgBypass    := false

@@ -98,9 +98,10 @@ fn rules_for_c_rewrites(rws: &[CRewrite]) -> Vec<Rewrite<LeanExpr, ()>> {
     })
 }
 
-fn check_eq(init: String, goal: String, rws: &[CRewrite]) -> Option<String> {
+fn check_eq(init: String, goal: String, rws: &[CRewrite], optimize_expl: bool) -> Option<String> {
     let mut egraph: EGraph<LeanExpr, ()> = Default::default();
     egraph = egraph.with_explanations_enabled();
+    if !optimize_expl { egraph = egraph.without_explanation_length_optimization() }
     let init_expr = init.parse().unwrap();
     let goal_expr = goal.parse().unwrap();
     let init_id = egraph.add_expr(&init_expr);
@@ -124,7 +125,13 @@ fn check_eq(init: String, goal: String, rws: &[CRewrite]) -> Option<String> {
 }
 
 #[no_mangle]
-pub extern "C" fn c_egg_check_eq(init_str_ptr: *const c_char, goal_str_ptr: *const c_char, rws_ptr: *const CRewrite, rws_count: usize) -> EggResult {
+pub extern "C" fn c_egg_check_eq(
+    init_str_ptr: *const c_char, 
+    goal_str_ptr: *const c_char, 
+    rws_ptr: *const CRewrite, 
+    rws_count: usize,
+    optimize_expl: bool
+) -> EggResult {
     // Cf. https://doc.rust-lang.org/stable/std/ffi/struct.CStr.html#examples
     let init_c_str = unsafe { CStr::from_ptr(init_str_ptr) };
     let goal_c_str = unsafe { CStr::from_ptr(goal_str_ptr) };
@@ -132,7 +139,7 @@ pub extern "C" fn c_egg_check_eq(init_str_ptr: *const c_char, goal_str_ptr: *con
     let goal = String::from_utf8_lossy(goal_c_str.to_bytes()).to_string();
     assert!(rws_ptr != null()); 
     let rws = unsafe { std::slice::from_raw_parts(rws_ptr, rws_count) };
-    if let Some(expl) = check_eq(init, goal, rws) {
+    if let Some(expl) = check_eq(init, goal, rws, optimize_expl) {
         let expl_c_str = CString::new(expl).expect("conversion of explanation to C-string failed");
         // Note: The `into_raw` here is important, as otherwise Rust deallocates the string.
         // TODO: I think this is a memory leak right now.
