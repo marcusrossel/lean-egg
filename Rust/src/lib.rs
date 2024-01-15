@@ -69,7 +69,7 @@ define_language! {
         "proof" = Proof,
 
         // Tag for explicit type annotations:
-        "τ"     = Typed([Id; 2]), // (TypeId | <expr>, <expr>)
+        "τ"     = Typed([Id; 2]),   // (TypeId | <expr>, <expr>)
     }
 }
 
@@ -115,10 +115,12 @@ fn check_eq(init: String, goal: String, rws: &[CRewrite], optimize_expl: bool) -
             } else {
                 Ok(())
             }
-       })
+        })
         .run(&rules);
     if runner.egraph.find(init_id) == runner.egraph.find(goal_id) {
-        Some(runner.explain_equivalence(&init_expr, &goal_expr).get_string())
+        let mut expl = runner.explain_equivalence(&init_expr, &goal_expr);
+        let expl_str = expl.get_flat_string();
+        Some(expl_str)
     } else {
         None
     }

@@ -1,6 +1,6 @@
 import Egg.Core.Config
 import Egg.Core.Encode.Expression
-import Egg.Core.Encode.TypeIndexT
+import Egg.Core.Encode.IndexT
 import Std.Data.List.Basic
 
 open Lean
@@ -12,7 +12,7 @@ structure EncodeM.State where
   config   : Egg.Config
   bvars    : List FVarId := []
 
-abbrev EncodeM := StateT EncodeM.State <| TypeIndexT MetaM
+abbrev EncodeM := StateT EncodeM.State <| IndexT MetaM
 
 namespace EncodeM
 
@@ -41,3 +41,8 @@ def withTypeTags (typeTags : Config.TypeTags) (m : EncodeM α) : EncodeM α := d
   let a ← m
   set { s with config.typeTags := s.config.typeTags }
   return a
+
+def needsProofErasure (e : Expr) : EncodeM Bool := do
+  (return (← config).eraseProofs) <&&>
+  (return !e.hasMVar) <&&>
+  Meta.isProof e

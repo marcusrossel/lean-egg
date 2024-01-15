@@ -14,9 +14,6 @@ namespace Egg
 -- TODO: Remove this once proof reconstruction works.
 axiom eggAx {p : Prop} : p
 
-instance : MonadLiftT (TypeIndexT MetaM) (TypeIndexT TacticM) where
-  monadLift a := (a.run ·)
-
 elab "egg " cfg:egg_cfg rws:egg_rws : tactic => do
   let goal ← getMainGoal
   let cfg ← Config.parse cfg
@@ -25,7 +22,7 @@ elab "egg " cfg:egg_cfg rws:egg_rws : tactic => do
     let some (lhs, rhs) := goalType.eqOrIff? | throwError "expected goal to be an equality or equivalence"
     let rwCs ← Rewrite.Candidates.parse rws
     let rws ← Rewrites.from! rwCs (ignoreULvls := cfg.eraseULvls)
-    TypeIndexT.withFreshIndex do
+    IndexT.withFreshIndex do
       let result ← tryExplainEq lhs rhs rws cfg
       withTraceNode `egg (fun _ => return m!"Goal: {← ppExpr goalType}") (collapsed := false) do
         withTraceNode `egg (fun _ => return "LHS") do trace[egg] ← lhs.toEgg! .goal cfg
@@ -38,7 +35,7 @@ elab "egg " cfg:egg_cfg rws:egg_rws : tactic => do
               trace[egg] "Direction: {rw.dir}"
         if cfg.typeTags == .indices then
           withTraceNode `egg (fun _ => return "Types") do
-            let types ← TypeIndexT.getTypes
+            let types ← IndexT.getTypes
             for idx in [:types.size], ty in types do
               withTraceNode `egg (fun _ => return m!"{idx}") (collapsed := false) do trace[egg] ty
         if !result.isEmpty then

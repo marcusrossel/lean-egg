@@ -15,31 +15,30 @@ def Level.toEgg! : Level → Egg.Expression.Kind → Egg.Expression
   | .mvar id,    .rw   => s!"?{id.uniqueIdx!}"
   | .param name, _     => s!"(param {name})"
 
-open Egg (EncodeM TypeIndexT)
+open Egg (EncodeM IndexT)
 open Egg.EncodeM
-open Egg.TypeIndexT
+open Egg.IndexT
 
 partial def Expr.toEgg! (e : Expr) (kind : Egg.Expression.Kind) (cfg : Egg.Config) :
-    TypeIndexT MetaM Egg.Expression :=
+    IndexT MetaM Egg.Expression :=
   Prod.fst <$> (go e).run { exprKind := kind, config := cfg }
 where
   go (e : Expr) : EncodeM Egg.Expression := do
-    let cfg ← config
-    if ← (return cfg.eraseProofs) <&&> Meta.isProof e then return "proof" else
+    if ← needsProofErasure e then return "proof" else
       let c ← encode e
       -- TODO: What happens here when we have a leading `mdata`?
-      if cfg.typeTags == .none || e.isSort || e.isForall then return c else
-        let some tag ← getTypeTag? e cfg.typeTags | unreachable!
+      if (← config).typeTags == .none || e.isSort || e.isForall then return c else
+        let some tag ← getTypeTag? e | unreachable!
         return s!"(τ {tag} {c})"
 
-  getTypeTag? (e : Expr) (tt : Egg.Config.TypeTags) : EncodeM (Option Egg.Expression) := do
+  getTypeTag? (e : Expr) : EncodeM (Option Egg.Expression) := do
     let ty ← Meta.inferType e
-    match tt with
+    match (← config).typeTags with
     | .indices => return s!"{← typeIdx ty}"
     | .exprs   => withTypeTags .none do encode ty
-    | .none    => unreachable!
+    | .none    => return none
 
-  -- TODO: Reconsider how to handle the binder type or a `forallE` in the typed and untyped settings.
+  -- TODO: Reconsider how to handle the binder type of a `forallE` in the typed and untyped settings.
   encode : Expr → EncodeM Egg.Expression
     | bvar idx         => return s!"(bvar {idx})"
     | fvar id          => encodeFVar id
