@@ -1,0 +1,6 @@
+/build
+/lakefile.olean
+/lake-manifest.json
+/Rust/Cargo.lock
+/Rust/target
+/.lake

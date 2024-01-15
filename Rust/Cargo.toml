@@ -1,0 +1,11 @@
+[package]
+name = "egg-for-lean"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+egg = "0.9.5"
+libc = "0.2"
