@@ -12,6 +12,8 @@ example (a : Bool) (b : Nat) : (a, b).fst = (b, a).snd := by
 example (a : Bool) (b : Nat) : (a, b).fst = (b, a).snd := by
   egg (config := { typeTags := .none, eraseULvls := false }) [h₁, h₂]
 
+-- TODO: These cases fail as proof reconstruction can't handle type tags yet.
+
 example (a : Bool) (b : Nat) : (a, b).fst = (b, a).snd := by
   egg (config := { typeTags := .indices, eraseULvls := true }) [h₁, h₂]
 

@@ -12,13 +12,22 @@ def FVarId.uniqueIdx! : FVarId → Nat
   | { name := .num (.str .anonymous "_uniq") idx } => idx
   | _ => panic! "tried to access unique index of non-unique fvar-id"
 
+def FVarId.fromUniqueIdx (idx : Nat) : FVarId :=
+  { name := .num (.str .anonymous "_uniq") idx }
+
 def MVarId.uniqueIdx! : MVarId → Nat
   | { name := .num (.str .anonymous "_uniq") idx } => idx
   | _ => panic! "tried to access unique index of non-unique mvar-id"
 
+def MVarId.fromUniqueIdx (idx : Nat) : MVarId :=
+  { name := .num (.str .anonymous "_uniq") idx }
+
 def LMVarId.uniqueIdx! : LMVarId → Nat
   | { name := .num (.str .anonymous "_uniq") idx } => idx
   | _ => panic! "tried to access unique index of non-unique level mvar-id"
+
+def LMVarId.fromUniqueIdx (idx : Nat) : LMVarId :=
+  { name := .num (.str .anonymous "_uniq") idx }
 
 def Level.levelMVars : Level → HashSet LMVarId
     | mvar id                => {id}

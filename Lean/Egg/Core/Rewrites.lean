@@ -4,16 +4,17 @@ open Lean
 namespace Egg.Rewrite
 
 inductive Source where
-  | explicit (idx : Nat) (stx : Syntax) (eqn? : Option Nat)
+  | explicit (idx : Nat) (eqn? : Option Nat) (stx? : Option Syntax)
   | star (id : FVarId)
+  deriving Inhabited
 
 def Source.stx? : Source → Option Syntax
-  | explicit _ stx _ => stx
+  | explicit _ _ stx => stx
   | star _           => none
 
 def Source.description : Source → String
-  | explicit idx _ none       => s!"#{idx}"
-  | explicit idx _ (some eqn) => s!"#{idx}.{eqn}"
+  | explicit idx none _       => s!"#{idx}"
+  | explicit idx (some eqn) _ => s!"#{idx}/{eqn}"
   | star id                   => s!"*{id.uniqueIdx!}"
 
 inductive Direction where

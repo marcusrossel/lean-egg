@@ -26,11 +26,12 @@ where
     let mut result : Rewrite.Candidates := #[]
     for idx in [:rws.size], rw in rws do
       let e ← Tactic.elabTerm rw none
-      let src := .explicit idx rw eqnIdx?
+      let src := .explicit idx eqnIdx? rw
       if let some rw ← Rewrite.Candidate.from? (← inferType e) src then
         result := result.push rw
       else
-        let some eqns ← equations? rw | throwErrorAt rw "'egg' tactic requires arguments to be equalities, equivalences or (non-propositional) definitions"
+        let some eqns ← equations? rw
+          | throwErrorAt rw "'egg' tactic requires arguments to be equalities, equivalences or (non-propositional) definitions"
         let rws ← go idx eqns
         result := result ++ rws
     return result

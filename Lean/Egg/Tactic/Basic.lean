@@ -1,6 +1,7 @@
 import Egg.Core.Basic
-import Egg.Tactic.Rewrites
 import Egg.Tactic.Config
+import Egg.Tactic.Explanation.Parse
+import Egg.Tactic.Rewrites
 import Egg.Tactic.Trace
 import Lean
 
@@ -20,8 +21,8 @@ elab "egg " cfg:egg_cfg rws:egg_rws : tactic => do
   goal.withContext do
     let goalType ← goal.getType'
     let some (lhs, rhs) := goalType.eqOrIff? | throwError "expected goal to be an equality or equivalence"
-    let rwCs ← Rewrite.Candidates.parse rws
-    let rws ← Rewrites.from! rwCs (ignoreULvls := cfg.eraseULvls)
+    let cds ← Rewrite.Candidates.parse rws
+    let rws ← Rewrites.from! cds (ignoreULvls := cfg.eraseULvls)
     IndexT.withFreshIndex do
       let result ← tryExplainEq lhs rhs rws cfg
       withTraceNode `egg (fun _ => return m!"Goal: {← ppExpr goalType}") (collapsed := false) do
@@ -40,6 +41,8 @@ elab "egg " cfg:egg_cfg rws:egg_rws : tactic => do
               withTraceNode `egg (fun _ => return m!"{idx}") (collapsed := false) do trace[egg] ty
         if !result.isEmpty then
           withTraceNode `egg (fun _ => return "Explanation") do trace[egg] result
-      if result.isEmpty
-      then throwError "failed to prove goal"
-      else _ ← goal.apply (mkConst ``eggAx)
+      if result.isEmpty then
+        throwError "failed to prove goal"
+      else
+        let _ ← Explanation.parse result
+        _ ← goal.apply (mkConst ``eggAx)
