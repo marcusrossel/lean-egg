@@ -1,3 +1,4 @@
+import Egg.Core.Relation
 import Egg.Lean
 open Lean Meta Elab
 
@@ -40,13 +41,18 @@ instance : ToString Directions where
 -- * `rhs := r`
 -- * `holes := xs`
 -- * `proof := thm xs` - that is, the arguments are instantiated
-structure _root_.Egg.Rewrite where private mk ::
-  src   : Rewrite.Source
+structure _root_.Egg.Rewrite where
+  private mk ::
+  rel   : Relation
+  src   : Source
   lhs   : Expr
   rhs   : Expr
   holes : Array MVarId
   proof : Expr
 
+-- Returns the same rewrite but with all holes replaced by fresh mvars. This is used during proof
+-- reconstruction, as rewrites may be used multiple times but instantiated differently. If we don't
+-- use fresh mvars, the holes will already be assigned and assignment (via `isDefEq`) will fail.
 def fresh (rw : Rewrite) : MetaM Rewrite := do
   let mut freshMVars : HashMap MVarId Expr := ∅
   let mut holes : Array MVarId := .mkEmpty rw.holes.size
@@ -60,10 +66,14 @@ def fresh (rw : Rewrite) : MetaM Rewrite := do
   let proof := rw.proof.replace refreshMVars
   return { rw with lhs, rhs, holes, proof }
 
+-- Returns the same rewrite but with its type and proof potentially flipped to match the given
+-- direction.
 def forDir (rw : Rewrite) : Direction → MetaM Rewrite
   | .forward  => return rw
-  | .backward => return { rw with lhs := rw.rhs, rhs := rw.lhs, proof := ← Meta.mkEqSymm rw.proof }
+  | .backward => return { rw with lhs := rw.rhs, rhs := rw.lhs, proof := ← mkEqSymm rw.proof }
 
+-- The directions in which the given rewrite can be used. This depends on whether the mvars of the
+-- respective sides are subsets of eachother.
 def validDirs (rw : Rewrite) (ignoreULvls : Bool) : MetaM (Option Directions) := do
   let lhsM ← Meta.getMVars rw.lhs
   let rhsM ← Meta.getMVars rw.rhs
@@ -84,9 +94,10 @@ def validDirs (rw : Rewrite) (ignoreULvls : Bool) : MetaM (Option Directions) :=
 --       https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Different.20elab.20results
 def from? (proof : Expr) (type : Expr) (src : Source) : MetaM (Option Rewrite) := do
   let (args, _, type) ← Meta.forallMetaTelescopeReducing (← instantiateMVars type)
-  let some (lhs, rhs) := type.eqOrIff? | return none
   let proof := mkAppN proof args
-  return some { src, lhs, rhs, proof, holes := args.map (·.mvarId!) }
+  let holes := args.map (·.mvarId!)
+  let some (rel, lhs, rhs) := Relation.for? type | return none
+  return some { rel, src, lhs, rhs, proof, holes }
 
 end Rewrite
 

@@ -20,7 +20,7 @@ elab "egg " cfg:egg_cfg rws:egg_rws : tactic => do
   let cfg ← Config.parse cfg
   goal.withContext do
     let goalType ← goal.getType'
-    let some (lhs, rhs) := goalType.eqOrIff? | throwError "expected goal to be an equality or equivalence"
+    let some (rel, lhs, rhs) := Relation.for? goalType | throwError "expected goal to be an equality or equivalence"
     let (rws, dirs) ← (← Rewrites.parse rws).withDirs (ignoreULvls := cfg.eraseULvls)
     IndexT.withFreshIndex do
       let result ← tryExplainEq lhs rhs rws dirs cfg
@@ -45,7 +45,7 @@ elab "egg " cfg:egg_cfg rws:egg_rws : tactic => do
       else
         if cfg.buildProof then
           let expl ← Explanation.parse result
-          let proof ← expl.proof rws
+          let proof ← expl.proof rel rws
           goal.assign proof
         else
           goal.admit

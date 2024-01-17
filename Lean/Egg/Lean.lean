@@ -5,9 +5,6 @@ namespace Lean
 
 -- Note: The `_uniq` prefix comes from the `MonadNameGenerator`.
 
-def Expr.getFVars (e : Expr) : Array FVarId :=
-  Lean.collectFVars {} e |>.fvarIds
-
 def FVarId.uniqueIdx! : FVarId → Nat
   | { name := .num (.str .anonymous "_uniq") idx } => idx
   | _ => panic! "tried to access unique index of non-unique fvar-id"

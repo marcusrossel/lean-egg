@@ -22,7 +22,7 @@ private def errorPrefix :=
 -- TODO: The initial `current` might need to be the original lhs expression of the equality we're
 --       trying to prove, so that we get the types of lambda binder mvars. In that case, we should
 --       still check that its defeq to `expl.start.toExpr` though.
-def proof (expl : Explanation) (rws : Rewrites) : MetaM Expr := do
+def proof (expl : Explanation) (rel : Relation) (rws : Rewrites) : MetaM Expr := do
   let mut current ← expl.start.toExpr
   let mut proof ← mkEqRefl current
   for step in expl.steps do
@@ -30,7 +30,9 @@ def proof (expl : Explanation) (rws : Rewrites) : MetaM Expr := do
     let stepEq ← proofStep current next step.toInfo
     proof ← mkEqTrans proof stepEq
     current := next
-  return proof
+  match rel with
+  | .eq  => return proof
+  | .iff => mkIffOfEq proof
 where
   proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Expr := do
     let eqAtRw ← proofStepAtRwPos current next rwInfo
@@ -42,10 +44,11 @@ where
       viewSubexpr (p := rwInfo.pos) (root := current) fun _ lhs => do
         let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
         let rw ← (← rw.fresh).forDir rwInfo.dir
-        -- TODO: Should we just split this into two `isDefEq`s?
-        unless ← isDefEq (← mkEq lhs rhs) (← mkEq rw.lhs rw.rhs) do
-          throwError s!"{errorPrefix} rewrite's type is not defeq to required equality type"
-        return rw.proof
+        unless ← isDefEq lhs rw.lhs do throwError s!"{errorPrefix} rewrite's lhs is not defeq to required type"
+        unless ← isDefEq rhs rw.rhs do throwError s!"{errorPrefix} rewrite's rhs is not defeq to required type"
+        match rw.rel with
+        | .eq  => return rw.proof
+        | .iff => mkPropExt rw.proof
 
   mkMotive (lhs : Expr) (pos : SubExpr.Pos) : MetaM Expr :=
     viewSubexpr (p := pos) (root := lhs) fun _ target => do
