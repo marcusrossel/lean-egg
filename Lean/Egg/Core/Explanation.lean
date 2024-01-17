@@ -1,21 +1,13 @@
 import Egg.Core.Rewrites
 
 open Lean
+open Egg.Rewrite (Direction)
 
 namespace Egg.Explanation.Rewrite
 
-inductive Dir
-  | forward
-  | backward
-  deriving Inhabited
-
-def Dir.merge : Dir → Dir → Dir
-  | .forward, .forward  | .backward, .backward => .forward
-  | .forward, .backward | .backward, .forward  => .backward
-
 structure Descriptor where
   src : Rewrite.Source
-  dir : Dir
+  dir : Direction
   deriving Inhabited
 
 structure Info extends Descriptor where

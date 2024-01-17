@@ -57,13 +57,13 @@ private def parseLit : (TSyntax `egg_lit) → Literal
   | `(egg_lit|$s:str) => .strVal s.getString
   | _                 => unreachable!
 
-private def parseRwDir : (TSyntax `egg_rw_dir) → Rewrite.Dir
+private def parseRwDir : (TSyntax `egg_rw_dir) → Rewrite.Direction
   | `(egg_rw_dir|=>) => .forward
   | `(egg_rw_dir|<=) => .backward
   | _                => unreachable!
 
 private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Rewrite.Source
-  | `(egg_fwd_rw_src|#$idx$[/$eqn?]?) => .explicit idx.getNat (eqn?.map TSyntax.getNat) none
+  | `(egg_fwd_rw_src|#$idx$[/$eqn?]?) => .explicit idx.getNat (eqn?.map TSyntax.getNat)
   | `(egg_fwd_rw_src|*$idx)           => .star (.fromUniqueIdx idx.getNat)
   | _                                 => unreachable!
 

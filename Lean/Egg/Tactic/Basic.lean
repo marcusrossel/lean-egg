@@ -1,6 +1,7 @@
 import Egg.Core.Basic
 import Egg.Tactic.Config
 import Egg.Tactic.Explanation.Parse
+import Egg.Tactic.Explanation.Proof
 import Egg.Tactic.Rewrites
 import Egg.Tactic.Trace
 import Lean
@@ -9,11 +10,10 @@ open Lean Meta Elab Tactic
 
 namespace Egg
 
--- TODO: egg can generate dot/svg/png-files for its e-graphs.
+-- TODO: Egg can generate dot/svg/png-files for its e-graphs.
 --       Use proof widgets to display this in the info-view.
 
--- TODO: Remove this once proof reconstruction works.
-axiom eggAx {p : Prop} : p
+-- TODO: Add tracing for proof reconstruction.
 
 elab "egg " cfg:egg_cfg rws:egg_rws : tactic => do
   let goal ← getMainGoal
@@ -21,19 +21,18 @@ elab "egg " cfg:egg_cfg rws:egg_rws : tactic => do
   goal.withContext do
     let goalType ← goal.getType'
     let some (lhs, rhs) := goalType.eqOrIff? | throwError "expected goal to be an equality or equivalence"
-    let cds ← Rewrite.Candidates.parse rws
-    let rws ← Rewrites.from! cds (ignoreULvls := cfg.eraseULvls)
+    let (rws, dirs) ← (← Rewrites.parse rws).withDirs (ignoreULvls := cfg.eraseULvls)
     IndexT.withFreshIndex do
-      let result ← tryExplainEq lhs rhs rws cfg
+      let result ← tryExplainEq lhs rhs rws dirs cfg
       withTraceNode `egg (fun _ => return m!"Goal: {← ppExpr goalType}") (collapsed := false) do
         withTraceNode `egg (fun _ => return "LHS") do trace[egg] ← lhs.toEgg! .goal cfg
         withTraceNode `egg (fun _ => return "RHS") do trace[egg] ← rhs.toEgg! .goal cfg
         withTraceNode `egg (fun _ => return (if rws.isEmpty then "No " else "") ++ "Rewrites") (collapsed := false) do
-          for idx in [:rws.size], rw in rws do
+          for idx in [:rws.size], rw in rws, dir in dirs do
             withTraceNode `egg (fun _ => return m!"{idx}") do
               withTraceNode `egg (fun _ => return "LHS") do trace[egg] ← rw.lhs.toEgg! .rw cfg
               withTraceNode `egg (fun _ => return "RHS") do trace[egg] ← rw.rhs.toEgg! .rw cfg
-              trace[egg] "Direction: {rw.dir}"
+              trace[egg] "Directions: {dir}"
         if cfg.typeTags == .indices then
           withTraceNode `egg (fun _ => return "Types") do
             let types ← IndexT.getTypes
@@ -44,5 +43,9 @@ elab "egg " cfg:egg_cfg rws:egg_rws : tactic => do
       if result.isEmpty then
         throwError "failed to prove goal"
       else
-        let _ ← Explanation.parse result
-        _ ← goal.apply (mkConst ``eggAx)
+        if cfg.buildProof then
+          let expl ← Explanation.parse result
+          let proof ← expl.proof rws
+          goal.assign proof
+        else
+          goal.admit

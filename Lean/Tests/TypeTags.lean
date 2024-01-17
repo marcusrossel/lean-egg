@@ -6,6 +6,9 @@ set_option trace.egg true
 private def h₁ : ∀ (a : Bool) (b : Nat), (a, b).fst = a := fun _ _ => rfl
 private def h₂ : ∀ (a : Bool) (b : Nat), (b, a).snd = a := fun _ _ => rfl
 
+-- TODO: Some of these test cases currently fail as proof reconstruction can't handle type tags and
+--       universe level erasure yet.
+
 example (a : Bool) (b : Nat) : (a, b).fst = (b, a).snd := by
   egg (config := { typeTags := .none, eraseULvls := true }) [h₁, h₂]
 
