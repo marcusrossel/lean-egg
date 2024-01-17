@@ -16,34 +16,47 @@ def Expression.toExpr : Expression → MetaM Expr
   | .forall type body => return .forallE .anonymous (← toExpr type) (← toExpr body) .default
   | lit l             => return .lit l
 
-private def errorPrefix :=
-  "'egg' tactic failed to reconstruct proof:"
-
 -- TODO: The initial `current` might need to be the original lhs expression of the equality we're
 --       trying to prove, so that we get the types of lambda binder mvars. In that case, we should
 --       still check that its defeq to `expl.start.toExpr` though.
 def proof (expl : Explanation) (rel : Relation) (rws : Rewrites) : MetaM Expr := do
-  let mut current ← expl.start.toExpr
-  let mut proof ← mkEqRefl current
-  for step in expl.steps do
-    let next ← step.dst.toExpr
-    let stepEq ← proofStep current next step.toInfo
-    proof ← mkEqTrans proof stepEq
-    current := next
-  match rel with
-  | .eq  => return proof
-  | .iff => mkIffOfEq proof
+  withTraceNode `egg.reconstruction (fun _ => return "Reconstruction") do
+    let mut current ← expl.start.toExpr
+    let mut proof ← mkEqRefl current
+    for step in expl.steps, idx in [:expl.steps.size] do
+      let next ← step.dst.toExpr
+      let stepEq ← do
+        withTraceNode `egg.reconstruction (fun _ => return m!"Step {idx}") do
+          withTraceNode `egg.reconstruction (fun _ => return m!"Current") (collapsed := false) do
+            trace[egg.reconstruction] current
+          withTraceNode `egg.reconstruction (fun _ => return m!"Next") (collapsed := false) do
+            trace[egg.reconstruction] next
+          proofStep current next step.toInfo
+      proof ← mkEqTrans proof stepEq
+      current := next
+    match rel with
+    | .eq  => return proof
+    | .iff => mkIffOfEq proof
 where
   proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Expr := do
     let eqAtRw ← proofStepAtRwPos current next rwInfo
     let motive ← mkMotive current rwInfo.pos
     mkEqNDRec motive (← mkEqRefl current) eqAtRw
 
+  errorPrefix := "'egg' tactic failed to reconstruct proof:"
+
   proofStepAtRwPos (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Expr := do
     viewSubexpr (p := rwInfo.pos) (root := next) fun _ rhs => do
       viewSubexpr (p := rwInfo.pos) (root := current) fun _ lhs => do
         let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
         let rw ← (← rw.fresh).forDir rwInfo.dir
+        withTraceNode `egg.reconstruction (fun _ => return "Unification") do
+          withTraceNode `egg.reconstruction (fun _ => return "LHS") (collapsed := false) do
+            trace[egg.reconstruction] lhs
+            trace[egg.reconstruction] rw.lhs
+          withTraceNode `egg.reconstruction (fun _ => return "RHS") (collapsed := false) do
+            trace[egg.reconstruction] rhs
+            trace[egg.reconstruction] rw.rhs
         unless ← isDefEq lhs rw.lhs do throwError s!"{errorPrefix} rewrite's lhs is not defeq to required type"
         unless ← isDefEq rhs rw.rhs do throwError s!"{errorPrefix} rewrite's rhs is not defeq to required type"
         match rw.rel with
