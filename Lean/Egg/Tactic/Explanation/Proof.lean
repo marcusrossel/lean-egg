@@ -27,10 +27,8 @@ def proof (expl : Explanation) (rel : Relation) (rws : Rewrites) : MetaM Expr :=
       let next ← step.dst.toExpr
       let stepEq ← do
         withTraceNode `egg.reconstruction (fun _ => return m!"Step {idx}") do
-          withTraceNode `egg.reconstruction (fun _ => return m!"Current") (collapsed := false) do
-            trace[egg.reconstruction] current
-          withTraceNode `egg.reconstruction (fun _ => return m!"Next") (collapsed := false) do
-            trace[egg.reconstruction] next
+          trace[egg.reconstruction] m!"Current: {current}"
+          trace[egg.reconstruction] m!"Next:    {next}"
           proofStep current next step.toInfo
       proof ← mkEqTrans proof stepEq
       current := next
@@ -49,19 +47,23 @@ where
     viewSubexpr (p := rwInfo.pos) (root := next) fun _ rhs => do
       viewSubexpr (p := rwInfo.pos) (root := current) fun _ lhs => do
         let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
-        let rw ← (← rw.fresh).forDir rwInfo.dir
-        withTraceNode `egg.reconstruction (fun _ => return "Unification") do
+        let freshRw ← (← rw.fresh).forDir rwInfo.dir
+        withTraceNode `egg.reconstruction (fun _ => return m!"Rewrite {rwInfo.src.description}") do
+          trace[egg.reconstruction] m!"Type: {freshRw.lhs} = {freshRw.rhs}"
+          trace[egg.reconstruction] m!"Proof: {freshRw.proof}"
+          trace[egg.reconstruction] m!"Holes: {freshRw.holes.map (Expr.mvar ·)}"
+        withTraceNode `egg.reconstruction (fun _ => return m!"Unification at {rwInfo.pos}") do
           withTraceNode `egg.reconstruction (fun _ => return "LHS") (collapsed := false) do
             trace[egg.reconstruction] lhs
-            trace[egg.reconstruction] rw.lhs
+            trace[egg.reconstruction] freshRw.lhs
           withTraceNode `egg.reconstruction (fun _ => return "RHS") (collapsed := false) do
             trace[egg.reconstruction] rhs
-            trace[egg.reconstruction] rw.rhs
-        unless ← isDefEq lhs rw.lhs do throwError s!"{errorPrefix} rewrite's lhs is not defeq to required type"
-        unless ← isDefEq rhs rw.rhs do throwError s!"{errorPrefix} rewrite's rhs is not defeq to required type"
-        match rw.rel with
-        | .eq  => return rw.proof
-        | .iff => mkPropExt rw.proof
+            trace[egg.reconstruction] freshRw.rhs
+        unless ← isDefEq lhs freshRw.lhs do throwError s!"{errorPrefix} rewrite's lhs is not defeq to required type"
+        unless ← isDefEq rhs freshRw.rhs do throwError s!"{errorPrefix} rewrite's rhs is not defeq to required type"
+        match freshRw.rel with
+        | .eq  => return freshRw.proof
+        | .iff => mkPropExt freshRw.proof
 
   mkMotive (lhs : Expr) (pos : SubExpr.Pos) : MetaM Expr :=
     viewSubexpr (p := pos) (root := lhs) fun _ target => do

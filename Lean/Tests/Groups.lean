@@ -21,13 +21,7 @@ theorem add_zero      : a + 0 = a                 := by sorry
 theorem add_left_inv  : -a + a = 0                := by sorry
 theorem add_right_inv : a + -a = 0                := by sorry
 
-set_option trace.egg.reconstruction true
--- TODO: Do the following reconstructions fail, because the position of the rewrite is wrong?
-
 theorem inv_add_cancel_left : -a + (a + b) = b := by
-  -- rw (config := { occs := .pos [1]}) [← @add_assoc (-a) a b]
-  -- rw (config := { occs := .pos [1]}) [@add_left_inv a]
-  -- rw (config := { occs := .pos [1]}) [← @zero_add 0]
   egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
 
 theorem add_inv_cancel_left : a + (-a + b) = b := by

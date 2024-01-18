@@ -25,7 +25,7 @@ elab "egg " cfg:egg_cfg rws:egg_rws : tactic => do
     IndexT.withFreshIndex do
       let result ← tryExplainEq lhs rhs rws dirs cfg
       let fe := `egg.frontend
-      withTraceNode fe (fun _ => return m!"Goal: {← ppExpr goalType}") (collapsed := false) do
+      withTraceNode fe (fun _ => return m!"Goal: {← ppExpr goalType}") do
         withTraceNode fe (fun _ => return "LHS") do trace[fe] ← lhs.toEgg! .goal cfg
         withTraceNode fe (fun _ => return "RHS") do trace[fe] ← rhs.toEgg! .goal cfg
         withTraceNode fe (fun _ => return (if rws.isEmpty then "No " else "") ++ "Rewrites") (collapsed := false) do

@@ -90,12 +90,17 @@ def validDirs (rw : Rewrite) (ignoreULvls : Bool) : MetaM (Option Directions) :=
   | true, false  => return some .backward
   | true, true   => return some .both
 
+-- Note: It isn't sufficient to take the `args` as `holes`, as implicit arguments will already be
+--       instantiated as mvars during type inference. For example, the type of
+--       `theorem t : ∀ {x}, x + 0 = 0 + x := Nat.add_comm _ _` will be directly inferred as
+--       `?x + 0 = 0 + ?x`.
+--
 -- Note: We must instantiate mvars of the rewrite's type. For an example that breaks otherwise, cf.
 --       https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Different.20elab.20results
 def from? (proof : Expr) (type : Expr) (src : Source) : MetaM (Option Rewrite) := do
-  let (args, _, type) ← Meta.forallMetaTelescopeReducing (← instantiateMVars type)
+  let (args, _, type) ← forallMetaTelescopeReducing (← instantiateMVars type)
   let proof := mkAppN proof args
-  let holes := args.map (·.mvarId!)
+  let holes ← getMVars type
   let some (rel, lhs, rhs) := Relation.for? type | return none
   return some { rel, src, lhs, rhs, proof, holes }
 
