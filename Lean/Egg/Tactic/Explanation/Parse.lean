@@ -30,6 +30,10 @@ syntax "*" noWs num                      : egg_fwd_rw_src
 
 syntax egg_fwd_rw_src (noWs "-rev")? : egg_rw_src
 
+-- Note: This syntax allows quite a few invalid constructions which we only handle in the parsing
+--       functions below. For example, expression type tags should never contain a "Rewrite", but we
+--       just ignore this.
+
 syntax "(" &"bvar" num ")"                                         : egg_expl_step
 syntax "(" &"fvar" num ")"                                         : egg_expl_step
 syntax "(" &"mvar" num ")"                                         : egg_expl_step
@@ -40,6 +44,10 @@ syntax "(" &"λ" egg_expl_step ")"                                  : egg_expl_s
 syntax "(" &"∀" egg_expl_step egg_expl_step ")"                    : egg_expl_step
 syntax "(" &"lit" egg_lit ")"                                      : egg_expl_step
 syntax "(" &"Rewrite" noWs egg_rw_dir egg_rw_src egg_expl_step ")" : egg_expl_step
+-- TODO: A more efficient way of handling type tags would be to declare a separate category for them
+--       where one case is `num` and the other is an expression of the form `(.*)` such that parens
+--       are balanced.
+syntax "(" &"τ" (num <|> egg_expl_step) egg_expl_step ")"          : egg_expl_step
 
 syntax egg_expl_step+ : egg_expl
 
@@ -108,6 +116,7 @@ where
     | `(egg_expl_step|(∀ $type $body))          => return .forall (← go pos.pushBindingDomain type) (← go pos.pushBindingBody body)
     | `(egg_expl_step|(lit $l))                 => return .lit (parseLit l)
     | `(egg_expl_step|(Rewrite$dir $src $body)) => parseRw dir src body pos
+    | `(egg_expl_step|(τ $_ $e))                => go pos e
     | _                                         => unreachable!
 
   parseRw (dir : TSyntax `egg_rw_dir) (src : TSyntax `egg_rw_src) (body : TSyntax `egg_expl_step)

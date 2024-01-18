@@ -12,7 +12,6 @@ instance : Neg G where neg := neg
 instance : Add G where add := add
 instance : OfNat G 0 where ofNat := zero
 
--- TODO: If you change this to be implicit arguments, the examples below fail.
 variable {a b c : G}
 
 theorem add_assoc     : (a + b) + c = a + (b + c) := by sorry
