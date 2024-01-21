@@ -21,7 +21,7 @@ abbrev Parsed := Array (Rewrite × Syntax)
 --
 -- Note: When a given rewrite is not a proof, we assume it's a function and try to get its equations
 --       instead.
-partial def explicit (rws : Array Term) : TacticM Parsed := do
+partial def explicit (rws : Array Term) (reduce : Bool) : TacticM Parsed := do
   go none rws
 where
   go (eqnIdx? : Option Nat) (rws : Array Term) : TacticM Parsed := do
@@ -29,7 +29,7 @@ where
     for idx in [:rws.size], stx in rws do
       let e ← Tactic.elabTerm stx none
       let src := .explicit idx eqnIdx?
-      if let some rw ← Rewrite.from? (proof := e) (type := ← inferType e) src then
+      if let some rw ← Rewrite.from? e (← inferType e) src reduce then
         result := result.push (rw, stx)
       else
         let some eqns ← equations? stx
@@ -48,18 +48,18 @@ where
 -- Note: We need to filter out auxiliary declaration and implementation details, as they are not
 --       visible in the proof context and, for example, contain the declaration being defined itself
 --       (to enable recursive calls). Cf. https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/local.20context.20without.20current.20decl
-def star (stx : Syntax) : MetaM Parsed := do
+def star (stx : Syntax) (reduce : Bool) : MetaM Parsed := do
   let mut result : Parsed := #[]
   for decl in ← getLCtx do
     if decl.isImplementationDetail || decl.isAuxDecl then continue
-    if let some rw ← Rewrite.from? (proof := decl.toExpr) (type := decl.type) (.star decl.fvarId)
+    if let some rw ← Rewrite.from? decl.toExpr decl.type (.star decl.fvarId) reduce
     then result := result.push (rw, stx)
   return result
 
-def parse : (TSyntax `egg_rws) → TacticM Parsed
+def parse (reduce : Bool) : (TSyntax `egg_rws) → TacticM Parsed
   | `(egg_rws|)         => return {}
-  | `(egg_rws|[*%$tk])  => star tk
-  | `(egg_rws|[$rws,*]) => explicit rws
+  | `(egg_rws|[*%$tk])  => star tk reduce
+  | `(egg_rws|[$rws,*]) => explicit rws reduce
   | _                   => throwUnsupportedSyntax
 
 def Parsed.withDirs (parsed : Parsed) (ignoreULvls : Bool) :

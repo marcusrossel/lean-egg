@@ -42,7 +42,16 @@ def withTypeTags (typeTags : Config.TypeTags) (m : EncodeM α) : EncodeM α := d
   set { s with config.typeTags := s.config.typeTags }
   return a
 
+-- TODO: Only erasing proofs if they don't contain mvars, i.e. if `!e.hasMVar` can cause problems.
+--       E.g. if we have a goal equality where the lhs contains a proof term, it will probably
+--       be erased as the goal probably doesn't contain any mvars. If we then have a rewrite
+--       which should match this lhs, and it contains mvars in the proof term, the proof won't
+--       be erased. Thus we won't get a match between the lhs of the goal and the rw as the goal
+--       will contain the symbol `proof` while the rewrite will expect an entire expression.
+--       I think the reason we didn't want to erase proofs containing mvars is that they might
+--       be relevant for proof reconstruction, so let's revisit this when we try to add proof
+--       reconstruction for proof erased explanations.
 def needsProofErasure (e : Expr) : EncodeM Bool := do
   (return (← config).eraseProofs) <&&>
-  (return !e.hasMVar) <&&>
+  -- (return !e.hasMVar) <&&>
   Meta.isProof e

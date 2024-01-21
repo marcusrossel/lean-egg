@@ -1,7 +1,5 @@
 import Egg
 
--- TODO: Could we generalize `egg` to work with any congruence relation which is supported by `rw`?
-
 example : True ↔ True := by
   egg
 

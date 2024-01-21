@@ -1,4 +1,4 @@
-import Egg.Core.Relation
+import Egg.Core.Congr
 import Egg.Lean
 open Lean Meta Elab
 
@@ -36,19 +36,15 @@ instance : ToString Directions where
 
 -- TODO: Is this the right approach, or would it be better the store the type as a `∀` expression?
 --
--- When constructed from a theorem `thm : ∀ xs, l = r`, the resulting rewrite has:
--- * `lhs := l`
--- * `rhs := r`
+-- When constructed from a theorem `thm : ∀ xs, l ~ r`, the resulting rewrite has:
+-- * `type := { lhs := l, rhs := r, rel := ~ }`
 -- * `holes := xs`
 -- * `proof := thm xs` - that is, the arguments are instantiated
-structure _root_.Egg.Rewrite where
+structure _root_.Egg.Rewrite extends Congr where
   private mk ::
-  rel   : Relation
-  src   : Source
-  lhs   : Expr
-  rhs   : Expr
-  holes : Array MVarId
   proof : Expr
+  holes : Array MVarId
+  src   : Source
 
 -- Returns the same rewrite but with all holes replaced by fresh mvars. This is used during proof
 -- reconstruction, as rewrites may be used multiple times but instantiated differently. If we don't
@@ -90,6 +86,10 @@ def validDirs (rw : Rewrite) (ignoreULvls : Bool) : MetaM (Option Directions) :=
   | true, false  => return some .backward
   | true, true   => return some .both
 
+-- TODO: When we reduce the type, do we need to reduce the proof, too? Otherwise, might the proof
+--       contain mvars which were removed when reducing the type, which then aren't assigned during
+--       proof reconstruction?
+--
 -- Note: It isn't sufficient to take the `args` as `holes`, as implicit arguments will already be
 --       instantiated as mvars during type inference. For example, the type of
 --       `theorem t : ∀ {x}, x + 0 = 0 + x := Nat.add_comm _ _` will be directly inferred as
@@ -97,12 +97,13 @@ def validDirs (rw : Rewrite) (ignoreULvls : Bool) : MetaM (Option Directions) :=
 --
 -- Note: We must instantiate mvars of the rewrite's type. For an example that breaks otherwise, cf.
 --       https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Different.20elab.20results
-def from? (proof : Expr) (type : Expr) (src : Source) : MetaM (Option Rewrite) := do
-  let (args, _, type) ← forallMetaTelescopeReducing (← instantiateMVars type)
+def from? (proof : Expr) (type : Expr) (src : Source) (reduce : Bool) : MetaM (Option Rewrite) := do
+  let mut (args, _, type) ← forallMetaTelescopeReducing (← instantiateMVars type)
+  if reduce then type ← reduceAll type
   let proof := mkAppN proof args
   let holes ← getMVars type
-  let some (rel, lhs, rhs) := Relation.for? type | return none
-  return some { rel, src, lhs, rhs, proof, holes }
+  let some cgr := Congr.from? type | return none
+  return some { cgr with proof, holes, src }
 
 end Rewrite
 

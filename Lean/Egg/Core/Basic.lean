@@ -7,18 +7,18 @@ namespace Egg
 open Rewrite (Directions)
 
 @[extern "lean_egg_check_eq"]
-private opaque tryExplainEqC
+private opaque explainCongrC
   (lhs rhs : Expression) (rwNames : Array String) (lhss rhss : Array Egg.Expression)
   (dirs : Array Directions) (optimizeExpl : Bool) : String
 
 -- Note: We wrap this in an `IndexT` so that we can trace the type indices later.
-def tryExplainEq (lhs rhs : Expr) (rws : Rewrites) (dirs : Array Directions) (cfg : Config) :
+def explainCongr (cgr : Congr) (rws : Rewrites) (dirs : Array Directions) (cfg : Config) :
     IndexT MetaM String := do
   let names := rws.map (·.src.description)
-  let lhs    ← lhs.toEgg! .goal cfg
-  let rhs    ← rhs.toEgg! .goal cfg
+  let lhs    ← cgr.lhs.toEgg! .goal cfg
+  let rhs    ← cgr.rhs.toEgg! .goal cfg
   let lhss   ← rws.mapM (·.lhs.toEgg! .rw cfg)
   let rhss   ← rws.mapM (·.rhs.toEgg! .rw cfg)
   if cfg.dbgBypass
   then return ""
-  else return tryExplainEqC lhs rhs names lhss rhss dirs cfg.optimizeExpl
+  else return explainCongrC lhs rhs names lhss rhss dirs cfg.optimizeExpl
