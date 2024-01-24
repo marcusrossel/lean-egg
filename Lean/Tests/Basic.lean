@@ -12,9 +12,8 @@ example : True := by
   fail_if_success have : true = true := by egg [true]
   constructor
 
--- TODO: https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Unify.20level.20mvars
 example : 0 = 0 := by
-  egg (config := { eraseULvls := true })
+  egg
 
 example (a : Nat) : a = a := by
   egg

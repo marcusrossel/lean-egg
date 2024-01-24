@@ -2,6 +2,11 @@ import Egg
 
 set_option trace.egg true
 
+-- TODO: I'm guessing nat literals might be able to cause problems as a they hide a .zero or a .succ
+--       which might be needed for rewrite rules to match. Try to find a test case for this.
+--       Also mention in the thesis that nat lits are very useful for our encoding, as unary could
+--       be unrealistic, but require the special treatment mentioned above.
+
 -- While egg happily rewrites under binders, we can't reconstruct the proof using our current
 -- technique. Below, the problem is that we're trying to rewrite from `λ x, x` to `λ x, x + 0` and
 -- when we view the relevant subexpressions for the rewrite we get:

@@ -26,10 +26,10 @@ where
     then mkConstWithFreshMVarLevels name
     else return .const name lvls
 
+-- BUG: `isDefEq` doesn't unify level mvars.
 def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) (cfg : Config) : MetaM Expr := do
   withTraceNode `egg.reconstruction (fun _ => return "Reconstruction") do
     let mut current ← expl.start.toExpr cfg
-    -- BUG: This doesn't unify level mvars.
     unless ← isDefEq cgr.lhs current do
       throwError s!"{errorPrefix} initial expression is not defeq to lhs of proof goal"
     let mut proof ← mkEqRefl current
