@@ -66,7 +66,7 @@ def fresh (rw : Rewrite) : MetaM Rewrite := do
 -- direction.
 def forDir (rw : Rewrite) : Direction → MetaM Rewrite
   | .forward  => return rw
-  | .backward => return { rw with lhs := rw.rhs, rhs := rw.lhs, proof := ← mkEqSymm rw.proof }
+  | .backward => return { rw with lhs := rw.rhs, rhs := rw.lhs, proof := ← rw.rel.mkSymm rw.proof }
 
 -- The directions in which the given rewrite can be used. This depends on whether the mvars of the
 -- respective sides are subsets of eachother.

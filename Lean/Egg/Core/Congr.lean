@@ -14,6 +14,10 @@ structure Congr where
 
 namespace Congr
 
+def Rel.mkSymm (proof : Expr) : Rel → MetaM Expr
+  | eq  => mkEqSymm proof
+  | iff => mkAppM ``Iff.symm #[proof]
+
 def expr (cgr : Congr) : MetaM Expr := do
   match cgr.rel with
   | .eq  => mkEq cgr.lhs cgr.rhs
