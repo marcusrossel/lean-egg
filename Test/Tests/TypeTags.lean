@@ -28,3 +28,11 @@ example (a : Bool) (b : Nat) : (a, b).fst = (b, a).snd := by
 
 example (a : Bool) (b : Nat) : (a, b).fst = (b, a).snd := by
   egg (config := { typeTags := .exprs, eraseULvls := false }) [h₁, h₂]
+
+
+
+
+
+
+example (h : forall (α : Type) (x : α), x = (fun y => y) x) : True = True := by
+  egg (config := { typeTags := .exprs}) [h]

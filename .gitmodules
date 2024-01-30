@@ -1,0 +1,4 @@
+[submodule "Test/Mathlib"]
+	path = Test/Mathlib
+	url = https://github.com/marcusrossel/mathlib4.git
+	branch = egg-tests

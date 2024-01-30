@@ -1,4 +1,6 @@
 import Egg
+import Lean
+open Lean Meta Elab Parser Tactic Simp Syntax
 
 set_option trace.egg true
 

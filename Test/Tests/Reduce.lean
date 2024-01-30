@@ -1,5 +1,7 @@
 import Egg
 
+-- TODO: Can we run an iteration of the e-graph, then extract all terms and reduce them and then continue?
+
 -- Tests for manually inspecting what terms look like with the `reduce` option.
 set_option trace.egg true
 
@@ -14,3 +16,7 @@ example (x : Nat) (h : ∀ x : Nat, x + 0 = x) : x = x + 0 := by
 -- This example shows that reduction can already reduce the proof goal.
 example (x : Nat) (h : ∀ x : Nat, x.add .zero = x) : x = x.add (Nat.zero.add .zero) := by
   egg [h]
+
+-- TODO: Overview of problems regarding rewriting with/under binders and with/without type tags.
+-- λ x : String, x
+-- λ x : Nat, x
