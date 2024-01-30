@@ -51,7 +51,8 @@ where
     | lit (.strVal l)  => return s!"(lit \"{l}\")"
     | lit (.natVal l)  => return s!"(lit {l})"
     | mdata _ e        => go e
-    | e                => panic! s!"failed to convert\n\n{e}"
+    | e@(letE ..)      => do go (← Meta.zetaReduce e)
+    | proj ..          => panic! "egg: tried to encode projection"
 
   encodeMVar (id : MVarId) : EncodeM Egg.Expression := do
     match ← exprKind with
