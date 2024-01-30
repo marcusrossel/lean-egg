@@ -3,7 +3,7 @@ open Lake DSL
 
 -- Cf. https://github.com/lurk-lab/RustFFI.lean
 
-package «lean-egg» where
+package egg where
   srcDir := "Lean"
 
 @[default_target]
@@ -31,4 +31,4 @@ extern_lib egg_for_lean pkg := do
   IO.FS.writeBinFile tgtPath (← IO.FS.readBinFile srcPath)
   return pure tgtPath
 
-require mathlib from git "https://github.com/leanprover-community/mathlib4" @ "master"
+require std from git "https://github.com/leanprover/std4" @ "main"

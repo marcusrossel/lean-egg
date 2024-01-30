@@ -1,4 +1,4 @@
-import Mathlib.Order.BooleanAlgebra
+/-import Mathlib.Order.BooleanAlgebra
 import Egg
 
 variable {α : Type _} {x y z : α}
@@ -47,3 +47,4 @@ theorem sdiff_sup_egg3 :
         have rw4 : forall a b : α, a ⊔ a ⊓ b = a := fun a b => @sup_inf_self _ _ a b
         have rw5 : forall a : α, a ⊓ a = a := fun a => @inf_idem _ _ a
         egg [rw1, rw2, rw3, rw4, rw5]
+-/
