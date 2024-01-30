@@ -2,6 +2,7 @@ import Egg.Core.Basic
 import Egg.Tactic.Config
 import Egg.Tactic.Explanation.Parse
 import Egg.Tactic.Explanation.Proof
+import Egg.Tactic.Base
 import Egg.Tactic.Rewrites
 import Egg.Tactic.Trace
 import Lean
@@ -12,25 +13,36 @@ namespace Egg
 
 -- TODO: Not super happy with the `M` monad.
 
+-- Note: If `base? ≠ none`, the goal is an auxiliary goal and needs to be handled specially after
+--       proof reconstruction.
 private structure M.State.Goal where
-  ref  : MVarId
-  type : Congr
+  id    : MVarId
+  type  : Congr
+  base? : Option FVarId
 
 private structure M.State where
-  goal  : State.Goal
-  cfg   : Config
-  rws   : Rewrites
-  dirs  : Array Rewrite.Directions
+  goal : State.Goal
+  cfg  : Config
+  rws  : Rewrites
+  dirs : Array Rewrite.Directions
 
 private abbrev M := ReaderT M.State <| IndexT <| TacticM
 
-private def parseGoal (goal : MVarId) (reduce : Bool) : MetaM M.State.Goal := do
-  let type ← goal.getType'
-  let some cgr := Congr.from? type | throwError "expected goal to be an equality or equivalence"
-  return {
-    ref := goal
-    type := if reduce then ← cgr.reduced else cgr
-  }
+private def parseGoal (goal : MVarId) (reduce : Bool) (base? : Option (TSyntax `egg_base)) :
+    MetaM M.State.Goal := do
+  let goalType ← goal.getType'
+  let base? ← base?.mapM parseBase
+  let c ← getCongr goalType base?
+  let cgr := if reduce then ← c.reduced else c
+  return { id := goal, type := cgr, base? }
+where
+  getCongr (goalType : Expr) (base? : Option FVarId) : MetaM Congr := do
+    if let some base := base? then
+      return { lhs := ← base.getType, rhs := goalType, rel := .eq : Congr }
+    else if let some c := Congr.from? goalType then
+      return c
+    else
+      throwError "expected goal to be of type '=' or '↔'"
 
 private def parseRws (rws : TSyntax `egg_rws) (cfg : Config) :
     TacticM (Rewrites × Array Rewrite.Directions) := do
@@ -39,10 +51,10 @@ private def parseRws (rws : TSyntax `egg_rws) (cfg : Config) :
 
 namespace M
 
-private def goal : M State.Goal                 := State.goal <$> read
-private def cfg  : M Config                     := State.cfg  <$> read
-private def rws  : M Rewrites                   := State.rws  <$> read
-private def dirs : M (Array Rewrite.Directions) := State.dirs <$> read
+private def goal  : M State.Goal                 := State.goal  <$> read
+private def cfg   : M Config                     := State.cfg   <$> read
+private def rws   : M Rewrites                   := State.rws   <$> read
+private def dirs  : M (Array Rewrite.Directions) := State.dirs  <$> read
 
 private def traceFrontend : M Unit := do
   let cfg ← cfg
@@ -74,26 +86,33 @@ private def processResult (result : String) : M Unit := do
     trace[egg.reconstruction] result
   let cfg ← cfg
   let goal ← goal
-  if cfg.buildProof then
-    let expl ← Explanation.parse result
-    let proof ← expl.proof goal.type (← rws) cfg
-    goal.ref.assign proof
+  if cfg.exitPoint == .beforeProof then
+    goal.id.admit
   else
-    goal.ref.admit
+    let expl ← Explanation.parse result
+    let mut proof ← expl.proof goal.type (← rws) cfg
+    -- When `goal.base? = some base`, then `proof` is a proof of `base = <goal type>`. We turn this
+    -- into a proof of `<goal type>` here.
+    if let some base := goal.base? then proof ← mkEqMP proof (.fvar base)
+    goal.id.assign proof
 
-def run (s : M.State) (m : M α) : IndexT TacticM α :=
-  m.run s
+def runEgg : M String := do
+  explainCongr (← goal).type (← rws) (← dirs) (← cfg)
+
+def runWithFreshIndex (s : M.State) (m : M α) : TacticM α :=
+  IndexT.withFreshIndex (m.run s)
 
 end M
 
-elab "egg " cfg:egg_cfg rws:egg_rws : tactic => do
+open M
+
+elab "egg " cfg:egg_cfg rws:egg_rws base:(egg_base)? : tactic => do
   let goal ← getMainGoal
   let cfg ← Config.parse cfg
   goal.withContext do
-    let goal ← parseGoal goal cfg.reduce
+    let goal ← parseGoal goal cfg.reduce base
     let (rws, dirs) ← parseRws rws cfg
-    IndexT.withFreshIndex do
-      M.run { goal, cfg, rws, dirs } do
-        let result ← explainCongr goal.type rws dirs cfg
-        M.traceFrontend
-        M.processResult result
+    runWithFreshIndex { goal, cfg, rws, dirs } do
+      let result ← runEgg
+      traceFrontend
+      processResult result
