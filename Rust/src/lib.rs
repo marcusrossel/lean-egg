@@ -5,11 +5,6 @@ use std::ffi::CString;
 use std::ptr::null;
 use std::str::FromStr;
 
-// TODO: Remove
-extern "C" {
-    fn trace(str: *const c_char);
-}
-
 #[repr(C)]
 #[derive(PartialEq)]
 pub enum RewriteDirection {

@@ -34,15 +34,6 @@ extern egg_result c_egg_check_eq(
     rust_bool optimize_expl
 );
 
-// TODO: Remove
-lean_object* thunk(lean_object* t) { return lean_box(0); }
-void trace(char const* str) {
-    lean_object* thunk_obj = lean_alloc_closure(&thunk, 1, 0);
-    lean_object* lstr = lean_mk_string(str);
-    lean_dbg_trace(lstr, thunk_obj);
-    return;
-}
-
 // `init`: string
 // `goal`: string
 // `rw_names`: array of strings containing the names of rewrites
@@ -89,24 +80,4 @@ lean_obj_res lean_egg_check_eq(
         char empty[1] = "";
         return lean_mk_string(empty);
     }
-    /*
-    trace(init_c_str);
-    trace(goal_c_str);
-    for (int idx = 0; idx < rws_count; idx++) {
-        trace(rws[idx].name);
-        trace(rws[idx].lhs);
-        trace(rws[idx].rhs);
-
-        char* d;
-        if (rws[idx].dir == FORWARD) { d = "fw"; }
-        else if (rws[idx].dir == BACKWARD) { d = "ba"; }
-        else if (rws[idx].dir == BOTH) { d = "bo"; }
-        else { d = "NA"; }
-        trace(d);
-    }
-    char* e = are_eq ? "iseq" : "noteq" ;
-    trace(e);
-    char* c = rws_count == 1 ? "1" : "!=1";
-    trace(c);
-    */
 }
