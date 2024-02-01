@@ -42,7 +42,7 @@ where
     else if let some c := Congr.from? goalType then
       return c
     else
-      throwError "expected goal to be of type '=' or '↔'"
+      throwError "expected goal to be of type '=' or '↔', but found:\n{← ppExpr goalType}"
 
 private def parseRws (rws : TSyntax `egg_rws) (cfg : Config) :
     TacticM (Rewrites × Array Rewrite.Directions) := do
@@ -81,7 +81,7 @@ private def traceFrontend : M Unit := do
             trace[egg.frontend] ty
 
 private def processResult (result : String) : M Unit := do
-  unless !result.isEmpty do throwError "failed to prove goal"
+  unless !result.isEmpty do throwError "egg failed to prove goal"
   withTraceNode `egg.reconstruction (fun _ => return "Explanation") do
     trace[egg.reconstruction] result
   let cfg ← cfg

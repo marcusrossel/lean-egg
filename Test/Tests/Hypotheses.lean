@@ -13,7 +13,7 @@ example (a : Nat) : (∀ x, x + 1 = 1 + x) → a + 1 = 1 + a :=
   (by egg [·])
 
 example (a : Nat) : a + 1 = 1 + a := by
-  egg [(sorry : ∀ x, x + 1 = 1 + x)]
+  egg [(fun _ => Nat.add_comm .. : ∀ x, x + 1 = 1 + x)]
 
 example (a : Nat) : (∀ x, x + 1 = 1 + x) → a + 1 = 1 + a :=
   fun _ => by egg [‹∀ _ : Nat, _›]

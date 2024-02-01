@@ -32,3 +32,14 @@ example (a b c : Nat) : (a + b) + c = (c + b) + a := by
 
 example (a : Nat) (h : ∀ x : Nat, x + 1 = 1 + x) : a + 1 = 1 + a := by
   egg [h]
+
+def f : Nat → Nat
+  | .zero => .zero
+  | n + 1 => f n
+
+def g : Nat → Nat
+  | .zero => .zero
+  | n + 1 => g n
+
+example : f (g Nat.zero.succ.succ) = .zero := by
+  egg [f, g]

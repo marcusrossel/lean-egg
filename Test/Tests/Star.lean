@@ -1,6 +1,6 @@
 import Egg
 
--- Tests for the `egg [*]` construct.
+-- Tests for the `*` argument.
 
 example : True := by
   fail_if_success have : true = false := by egg [*]
@@ -8,6 +8,14 @@ example : True := by
 
 example (_ : 0 = 0) : 1 + 1 = 2 := by
   fail_if_success egg [*]
+  rfl
+
+example : 0 = 0 := by
+  fail_if_success egg [*, *]
+  rfl
+
+example (h : 0 = 0) : 0 = 0 := by
+  fail_if_success egg [*, h, *]
   rfl
 
 example : 0 = 0 := by
@@ -30,3 +38,14 @@ example (a b c : Nat) : (a + b) + c = (c + b) + a := by
   have := Nat.add_comm
   have := Nat.add_assoc
   egg [*]
+
+example (a b c : Nat) : (a + b) + c = (c + b) + a := by
+  have := Nat.add_assoc
+  egg [*, Nat.add_comm]
+
+example (a b c : Nat) : (a + b) + c = (c + b) + a := by
+  have := Nat.add_assoc
+  egg [Nat.add_comm, *]
+
+example (a b c : Nat) : (a + b) + c = (c + b) + a := by
+  egg [Nat.add_comm, *, Nat.add_assoc]
