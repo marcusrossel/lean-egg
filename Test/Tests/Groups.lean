@@ -3,7 +3,6 @@ import Egg
 -- TODO: This set of test cases seems to demonstrate that `typeTags ≠ .none` is way too slow or
 --       doesn't work.
 
-
 -- TODO: What happens when G is defined as a class?
 
 def G : Type := sorry

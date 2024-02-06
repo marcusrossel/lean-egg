@@ -20,6 +20,6 @@ example (h : p ∧ q ∧ r) (assoc : ∀ a b c, (a ∧ b) ∧ c ↔ a ∧ (b ∧
     r ∧ r ∧ q ∧ p ∧ q ∧ r ∧ p := by
   egg [And.comm, assoc, idem] from h
 
-inductive P : Nat → Prop
-example (hp : P Nat.zero.succ) (h : ∀ n, P n ↔ P n.succ) : P Nat.zero.succ.succ.succ.succ := by
+example (P : Nat → Prop) (hp : P Nat.zero.succ) (h : ∀ n, P n ↔ P n.succ) :
+    P Nat.zero.succ.succ.succ.succ := by
   egg [h] from hp

@@ -82,8 +82,7 @@ private def traceFrontend : M Unit := do
 
 private def processResult (result : String) : M Unit := do
   unless !result.isEmpty do throwError "egg failed to prove goal"
-  withTraceNode `egg.reconstruction (fun _ => return "Explanation") do
-    trace[egg.reconstruction] result
+  withTraceNode `egg.reconstruction (fun _ => return "Result") do trace[egg.reconstruction] result
   let cfg ← cfg
   let goal ← goal
   if cfg.exitPoint == .beforeProof then

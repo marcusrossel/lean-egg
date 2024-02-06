@@ -88,7 +88,7 @@ inductive ParseError where
   deriving Inhabited
 
 private def ParseError.msgPrefix :=
-  "'egg' tactic failed to parse explanation:"
+  "egg failed to parse explanation:"
 
 open ParseError in
 instance : Coe ParseError MessageData where
