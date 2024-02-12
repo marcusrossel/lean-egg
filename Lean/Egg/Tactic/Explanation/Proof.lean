@@ -1,5 +1,6 @@
 import Egg.Core.Config
 import Egg.Core.Explanation
+import Egg.TermCongr
 open Lean Meta
 
 -- TODO: Simplify tracing by adding `MessageData` instances for relevant types.
@@ -29,7 +30,7 @@ where
     else return .const name lvls
 
 -- BUG: `isDefEq` doesn't unify level mvars.
-partial def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) (cfg : Config) : MetaM Expr := do
+def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) (cfg : Config) : MetaM Expr := do
   withTraceNode `egg.reconstruction (fun _ => return "Reconstruction") do
     let mut current ← expl.start.toExpr cfg
     let steps := expl.steps
@@ -60,7 +61,6 @@ where
   proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Expr := do
     proofStepAux rwInfo.pos.toArray.toList current next (proofAtRw rwInfo.toDescriptor)
 
-  -- TODO: This is easily proven decreasing by `target`.
   proofStepAux (target : List Nat) (current next : Expr) (atTarget : Expr → Expr → MetaM Expr) : MetaM Expr := do
     let p :: tgt := target | atTarget current next
     match current, next, p with
@@ -69,7 +69,11 @@ where
       mkCongrFun prf arg
     | .app fn arg₁, .app _ arg₂, 1 =>
       let prf ← proofStepAux tgt arg₁ arg₂ atTarget
-      mkCongrArg fn prf
+      let counter := (← getMCtx).mvarCounter
+      let lHole ← mkCHole arg₁ prf (forLhs := true)
+      let rHole ← mkCHole arg₂ prf (forLhs := false)
+      let cgr ← mkCongrOf 0 counter (.app fn lHole) (.app fn rHole)
+      cgr.eq
     | .lam _ ty b₁ _, .lam _ _ b₂ _, 1 =>
       withLocalDecl .anonymous .default ty fun fvar => do
         let b₁ := b₁.instantiate1 fvar
