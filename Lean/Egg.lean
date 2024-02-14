@@ -5,9 +5,14 @@ import Egg.Core.Encode.IndexT
 import Egg.Core.Basic
 import Egg.Core.Config
 import Egg.Core.Congr
+import Egg.Core.Explanation
 import Egg.Core.Rewrites
+import Egg.Core.Source
+import Egg.Core.TcProjs
 import Egg.Tactic.Explanation.Parse
 import Egg.Tactic.Explanation.Proof
+import Egg.Tactic.Base
 import Egg.Tactic.Basic
+import Egg.Tactic.Config
 import Egg.Tactic.Rewrites
 import Egg.Tactic.Trace
