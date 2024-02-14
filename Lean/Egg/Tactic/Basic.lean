@@ -62,16 +62,16 @@ private def traceFrontend : M Unit := do
   let goalType ← (← goal).type.expr
   withTraceNode `egg.frontend (fun _ => return m!"Goal: {← ppExpr goalType}") do
     withTraceNode `egg.frontend (fun _ => return "LHS") do
-      trace[egg.frontend] ← (← goal).type.lhs.toEgg! .goal cfg
+      trace[egg.frontend] ← (← goal).type.lhs.toEgg .goal cfg
     withTraceNode `egg.frontend (fun _ => return "RHS") do
-      trace[egg.frontend] ← (← goal).type.rhs.toEgg! .goal cfg
+      trace[egg.frontend] ← (← goal).type.rhs.toEgg .goal cfg
     withTraceNode `egg.frontend (fun _ => return (if rws.isEmpty then "No " else "") ++ "Rewrites") (collapsed := false) do
       for idx in [:rws.size], rw in rws, dir in (← dirs) do
         withTraceNode `egg.frontend (fun _ => return m!"{idx}") do
           withTraceNode `egg.frontend (fun _ => return "LHS") do
-            trace[egg.frontend] ← rw.lhs.toEgg! .rw cfg
+            trace[egg.frontend] ← rw.lhs.toEgg .rw cfg
           withTraceNode `egg.frontend (fun _ => return "RHS") do
-            trace[egg.frontend] ← rw.rhs.toEgg! .rw cfg
+            trace[egg.frontend] ← rw.rhs.toEgg .rw cfg
           trace[egg.frontend] "Directions: {dir}"
     if cfg.typeTags == .indices then
       withTraceNode `egg.frontend (fun _ => return "Types") do
