@@ -33,14 +33,11 @@ private partial def tcProjs (e : Expr) (src : Source) (side : Side) (init : TcPr
     MetaM TcProjIndex :=
   State.projs <$> go e { projs := init }
 where
-  -- Note: We don't change the position when entering an `mdata`.
   go : Expr → State → MetaM State
     | .const c lvls                   => visitConst c lvls
     | .app fn arg                     => (visitFn fn arg) >=> (visitArg arg)
     | .lam _ _ b _ | .forallE _ _ b _ => visitBindingBody b
-    | .mdata _ b                      => go b
-    | .proj ..                        => panic! "egg: encountered `proj` in `Expr` expected not to contain it"
-    | .letE ..                        => panic! "egg: encountered `letE` in `Expr` expected not to contain it"
+    | .mdata .. | .proj .. | .letE .. => panic! "'Egg.tcProjs.go' received non-normalized expression"
     | _                               => pure
 
   visitConst (const : Name) (lvls : List Level) (s : State) : MetaM State := do
@@ -63,6 +60,7 @@ where
     let s' ← go arg { s with args := #[], pos := s.pos.pushAppArg }
     return { s' with args := s.args, pos := s.pos }
 
+-- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
 def Rewrites.tcProjReductions (rws : Rewrites) : MetaM Rewrites := do
   let mut projs : TcProjIndex := ∅
   for rw in rws do

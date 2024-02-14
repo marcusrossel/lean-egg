@@ -1,32 +1,31 @@
 import Egg.Lean
 import Egg.Core.Encode.EncodeM
+import Lean
+open Lean
 
-namespace Lean
+namespace Egg
 
 -- Note: The encoding of expression mvars and universe level mvars in rewrites relies on the fact
 --       that their indices are also unique between eachother.
 
-def Level.toEgg : Level → Egg.Source → Egg.Expression
+def encodeLevel : Level → Egg.Source → Egg.Expression
   | .zero,       _     => "0"
-  | .succ l,     k     => s!"(succ {l.toEgg k})"
-  | .max l₁ l₂,  k     => s!"(max {l₁.toEgg k} {l₂.toEgg k})"
-  | .imax l₁ l₂, k     => s!"(imax {l₁.toEgg k} {l₂.toEgg k})"
+  | .succ l,     k     => s!"(succ {encodeLevel l k})"
+  | .max l₁ l₂,  k     => s!"(max {encodeLevel l₁ k} {encodeLevel l₂ k})"
+  | .imax l₁ l₂, k     => s!"(imax {encodeLevel l₁ k} {encodeLevel l₂ k})"
   | .mvar id,    .goal => s!"(uvar {id.uniqueIdx!})"
   | .mvar id,    _     => s!"?{id.uniqueIdx!}"
   | .param name, _     => s!"(param {name})"
 
-open Egg (EncodeM IndexT)
-open Egg.EncodeM
-open Egg.IndexT
+open EncodeM IndexT
 
-partial def Expr.toEgg (e : Expr) (src : Egg.Source) (cfg : Egg.Config) :
-    IndexT MetaM Egg.Expression :=
+-- Note: This function expects its input expression to be normalized (cf. `Egg.normalize`).
+partial def encode (e : Expr) (src : Egg.Source) (cfg : Egg.Config) : IndexT MetaM Expression :=
   Prod.fst <$> (go e).run { exprSrc := src, config := cfg }
 where
   go (e : Expr) : EncodeM Egg.Expression := do
     if ← needsProofErasure e then return "proof" else
-      let c ← encode e
-      -- TODO: What happens here when we have a leading `mdata`?
+      let c ← core e
       if (← config).typeTags == .none || e.isSort || e.isForall then return c else
         let some tag ← getTypeTag? e | unreachable!
         return s!"(τ {tag} {c})"
@@ -35,24 +34,21 @@ where
     let ty ← Meta.inferType e
     match (← config).typeTags with
     | .indices => return s!"{← typeIdx ty}"
-    | .exprs   => withTypeTags .none do encode ty
+    | .exprs   => withTypeTags .none do core ty
     | .none    => return none
 
-  -- TODO: Reconsider how to handle the binder type of a `forallE` in the typed and untyped settings.
-  encode : Expr → EncodeM Egg.Expression
-    | bvar idx         => return s!"(bvar {idx})"
-    | fvar id          => encodeFVar id
-    | mvar id          => encodeMVar id
-    | sort lvl         => return s!"(sort {lvl.toEgg (← exprSrc)})"
-    | const name lvls  => return s!"(const {name}{← encodeULvls lvls})"
-    | app fn arg       => return s!"(app {← go fn} {← go arg})"
-    | lam _ ty b _     => withInstantiatedBVar ty b (return s!"(λ {← go ·})")
-    | forallE _ ty b _ => withInstantiatedBVar ty b (return s!"(∀ {← go ty} {← go ·})")
-    | lit (.strVal l)  => return s!"(lit \"{l}\")"
-    | lit (.natVal l)  => return s!"(lit {l})"
-    | mdata _ e        => go e
-    | e@(letE ..)      => do go (← Meta.zetaReduce e)
-    | proj ty ctor b   => encodeProj ty ctor b
+  core : Expr → EncodeM Egg.Expression
+    | .bvar idx         => return s!"(bvar {idx})"
+    | .fvar id          => encodeFVar id
+    | .mvar id          => encodeMVar id
+    | .sort lvl         => return s!"(sort {encodeLevel lvl (← exprSrc)})"
+    | .const name lvls  => return s!"(const {name}{← encodeULvls lvls})"
+    | .app fn arg       => return s!"(app {← go fn} {← go arg})"
+    | .lam _ ty b _     => withInstantiatedBVar ty b (return s!"(λ {← go ·})")
+    | .forallE _ ty b _ => withInstantiatedBVar ty b (return s!"(∀ {← go ·})")
+    | .lit (.strVal l)  => return s!"(lit \"{l}\")"
+    | .lit (.natVal l)  => return s!"(lit {l})"
+    | _                 => panic! "'Egg.encode.core' received non-normalized expression"
 
   encodeFVar (id : FVarId) : EncodeM Egg.Expression := do
     if let some bvarIdx ← bvarIdx? id
@@ -64,16 +60,7 @@ where
     | .goal => return s!"(mvar {id.uniqueIdx!})"
     | _     => return s!"?{id.uniqueIdx!}"
 
-  encodeProj (ty : Name) (ctor : Nat) (b : Expr) : EncodeM Egg.Expression := do
-    let env ← getEnv
-    let some field := (getStructureFields env ty)[ctor]? | throwError "egg: failed to encode proj"
-    let some prj   := getProjFnForField? env ty field    | throwError "egg: failed to encode proj"
-    let some info  := env.find? prj                      | throwError "egg: failed to encode proj"
-    let lParams    := info.levelParams.map (Level.param ·)
-    let expr       := Expr.app (.const prj lParams) b
-    go expr
-
   encodeULvls (lvls : List Level) : EncodeM String := do
     if (← config).eraseULvls
     then return ""
-    else return lvls.foldl (init := "") (s!"{·} {·.toEgg (← exprSrc)}")
+    else return lvls.foldl (init := "") (s!"{·} {encodeLevel · (← exprSrc)}")

@@ -30,10 +30,11 @@ private abbrev M := ReaderT M.State <| IndexT <| TacticM
 
 private def parseGoal (goal : MVarId) (reduce : Bool) (base? : Option (TSyntax `egg_base)) :
     MetaM M.State.Goal := do
-  let goalType ← goal.getType'
+  let mut goalType ← goal.getType'
+  if reduce then goalType ← reduceAll goalType
+  goalType ← normalize goalType
   let base? ← base?.mapM parseBase
-  let c ← getCongr goalType base?
-  let cgr := if reduce then ← c.reduced else c
+  let cgr ← getCongr goalType base?
   return { id := goal, type := cgr, base? }
 where
   getCongr (goalType : Expr) (base? : Option FVarId) : MetaM Congr := do
@@ -62,16 +63,16 @@ private def traceFrontend : M Unit := do
   let goalType ← (← goal).type.expr
   withTraceNode `egg.frontend (fun _ => return m!"Goal: {← ppExpr goalType}") do
     withTraceNode `egg.frontend (fun _ => return "LHS") do
-      trace[egg.frontend] ← (← goal).type.lhs.toEgg .goal cfg
+      trace[egg.frontend] ← encode (← goal).type.lhs .goal cfg
     withTraceNode `egg.frontend (fun _ => return "RHS") do
-      trace[egg.frontend] ← (← goal).type.rhs.toEgg .goal cfg
+      trace[egg.frontend] ← encode (← goal).type.rhs .goal cfg
     withTraceNode `egg.frontend (fun _ => return (if rws.isEmpty then "No " else "") ++ "Rewrites") (collapsed := false) do
       for idx in [:rws.size], rw in rws, dir in (← dirs) do
         withTraceNode `egg.frontend (fun _ => return m!"{idx}") do
           withTraceNode `egg.frontend (fun _ => return "LHS") do
-            trace[egg.frontend] ← rw.lhs.toEgg rw.src cfg
+            trace[egg.frontend] ← encode rw.lhs rw.src cfg
           withTraceNode `egg.frontend (fun _ => return "RHS") do
-            trace[egg.frontend] ← rw.rhs.toEgg rw.src cfg
+            trace[egg.frontend] ← encode rw.rhs rw.src cfg
           trace[egg.frontend] "Directions: {dir}"
     if cfg.typeTags == .indices then
       withTraceNode `egg.frontend (fun _ => return "Types") do

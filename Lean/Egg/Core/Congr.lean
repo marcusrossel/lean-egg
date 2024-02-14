@@ -1,3 +1,4 @@
+import Egg.Core.Normalize
 import Lean
 open Lean Meta
 
@@ -30,10 +31,3 @@ def from? (type : Expr) : Option Congr :=
     some { rel := .iff, lhs, rhs }
   else
     none
-
-def reduced (cgr : Congr) : MetaM Congr :=
-  return {
-    rel := cgr.rel
-    lhs := ← reduceAll cgr.lhs
-    rhs := ← reduceAll cgr.rhs
-  }

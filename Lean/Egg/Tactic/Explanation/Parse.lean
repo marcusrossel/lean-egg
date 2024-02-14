@@ -55,7 +55,7 @@ syntax "(" &"sort" egg_lvl ")"                                     : egg_expl_st
 syntax "(" &"const" ident egg_lvl* ")"                             : egg_expl_step
 syntax "(" &"app" egg_expl_step egg_expl_step ")"                  : egg_expl_step
 syntax "(" &"λ" egg_expl_step ")"                                  : egg_expl_step
-syntax "(" &"∀" egg_expl_step egg_expl_step ")"                    : egg_expl_step
+syntax "(" &"∀" egg_expl_step ")"                                  : egg_expl_step
 syntax "(" &"lit" egg_lit ")"                                      : egg_expl_step
 syntax "(" &"Rewrite" noWs egg_rw_dir egg_rw_src egg_expl_step ")" : egg_expl_step
 -- TODO: A more efficient way of handling type tags would be to declare a separate category for them
@@ -143,7 +143,7 @@ where
     | `(egg_expl_step|(const $name $lvls*))     => return .const name.getId (lvls.map parseLevel)
     | `(egg_expl_step|(app $fn $arg))           => return .app (← go pos.pushAppFn fn) (← go pos.pushAppArg arg)
     | `(egg_expl_step|(λ $body))                => return .lam (← go pos.pushBindingBody body)
-    | `(egg_expl_step|(∀ $type $body))          => return .forall (← go pos.pushBindingDomain type) (← go pos.pushBindingBody body)
+    | `(egg_expl_step|(∀ $body))                => return .forall (← go pos.pushBindingBody body)
     | `(egg_expl_step|(lit $l))                 => return .lit (parseLit l)
     | `(egg_expl_step|(Rewrite$dir $src $body)) => parseRw dir src body pos
     | `(egg_expl_step|(τ $_ $e))                => go pos e

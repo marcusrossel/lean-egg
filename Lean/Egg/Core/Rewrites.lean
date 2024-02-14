@@ -1,3 +1,4 @@
+import Egg.Core.Normalize
 import Egg.Core.Congr
 import Egg.Core.Source
 import Egg.Lean
@@ -81,6 +82,8 @@ def validDirs (rw : Rewrite) (ignoreULvls : Bool) : MetaM (Option Directions) :=
 --       contain mvars which were removed when reducing the type, which then aren't assigned during
 --       proof reconstruction?
 --
+-- Note: We normalize the `lhs` and `rhs` of the rewrite.
+--
 -- Note: It isn't sufficient to take the `args` as `holes`, as implicit arguments will already be
 --       instantiated as mvars during type inference. For example, the type of
 --       `theorem t : ∀ {x}, x + 0 = 0 + x := Nat.add_comm _ _` will be directly inferred as
@@ -91,6 +94,7 @@ def validDirs (rw : Rewrite) (ignoreULvls : Bool) : MetaM (Option Directions) :=
 def from? (proof : Expr) (type : Expr) (src : Source) (reduce : Bool) : MetaM (Option Rewrite) := do
   let mut (args, _, type) ← forallMetaTelescopeReducing (← instantiateMVars type)
   if reduce then type ← reduceAll type
+  type ← normalize type
   let proof := mkAppN proof args
   let holes ← getMVars type
   let some cgr := Congr.from? type | return none

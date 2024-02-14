@@ -15,10 +15,10 @@ private opaque explainCongrC
 def explainCongr (cgr : Congr) (rws : Rewrites) (dirs : Array Directions) (cfg : Config) :
     IndexT MetaM String := do
   let names := rws.map (·.src.description)
-  let lhs    ← cgr.lhs.toEgg .goal cfg
-  let rhs    ← cgr.rhs.toEgg .goal cfg
-  let lhss   ← rws.mapM fun rw => rw.lhs.toEgg rw.src cfg
-  let rhss   ← rws.mapM fun rw => rw.rhs.toEgg rw.src cfg
+  let lhs    ← encode cgr.lhs .goal cfg
+  let rhs    ← encode cgr.rhs .goal cfg
+  let lhss   ← rws.mapM fun rw => encode rw.lhs rw.src cfg
+  let rhss   ← rws.mapM fun rw => encode rw.rhs rw.src cfg
   if cfg.exitPoint == .beforeEqSat
   then return ""
   else return explainCongrC lhs rhs names lhss rhss dirs cfg.optimizeExpl

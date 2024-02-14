@@ -24,7 +24,7 @@ inductive Expression where
   | const (name : Name) (lvls : Array Level)
   | app (fn arg : Expression)
   | lam (body : Expression)
-  | forall (type body : Expression)
+  | forall (body : Expression)
   | lit (l : Literal)
   deriving Inhabited
 

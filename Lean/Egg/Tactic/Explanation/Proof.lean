@@ -6,22 +6,22 @@ open Lean Meta
 
 namespace Egg.Explanation
 
--- Note: Since we don't know lambda expressions' binder types, we pass fresh mvars instead. These
---       are assigned in `Explanation.proof`.
+-- Note: Since we don't know lambda and forall expressions' binder types, we pass fresh mvars
+--       instead. These are assigned in `Explanation.proof`.
 --
 -- Note: If universe level erasure is active, we don't know constant expressions' universe level
 --       parameters. We can figure out how many there need to be though and instantiate them with
 --       fresh universe level mvars.
 def Expression.toExpr (cfg : Config) : Expression → MetaM Expr
-  | bvar idx          => return .bvar idx
-  | fvar id           => return .fvar id
-  | mvar id           => return .mvar id
-  | sort lvl          => return .sort lvl
-  | const name lvls   => mkConst name lvls.toList cfg.eraseULvls
-  | app fn arg        => return .app (← toExpr cfg fn) (← toExpr cfg arg)
-  | lam body          => return .lam .anonymous (← mkFreshExprMVar none) (← toExpr cfg body) .default
-  | .forall type body => return .forallE .anonymous (← toExpr cfg type) (← toExpr cfg body) .default
-  | lit l             => return .lit l
+  | bvar idx        => return .bvar idx
+  | fvar id         => return .fvar id
+  | mvar id         => return .mvar id
+  | sort lvl        => return .sort lvl
+  | const name lvls => mkConst name lvls.toList cfg.eraseULvls
+  | app fn arg      => return .app (← toExpr cfg fn) (← toExpr cfg arg)
+  | lam body        => return .lam .anonymous (← mkFreshExprMVar none) (← toExpr cfg body) .default
+  | .forall body    => return .forallE .anonymous (← mkFreshExprMVar none) (← toExpr cfg body) .default
+  | lit l           => return .lit l
 where
   mkConst (name : Name) (lvls : List Level) (erasedULvls : Bool) : MetaM Expr := do
     if erasedULvls

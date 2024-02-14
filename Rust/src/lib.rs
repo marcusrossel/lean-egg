@@ -57,7 +57,7 @@ define_language! {
         "const" = Const(Box<[Id]>), // (Name, <level>*)
         "app"   = App([Id; 2]),     // (<expr>, <expr>)
         "λ"     = Lam(Id),          // (<expr>)
-        "∀"     = Forall([Id; 2]),  // (<expr>, <expr>)
+        "∀"     = Forall(Id),       // (<expr>)
         "lit"   = Lit(Id),          // (NatLit | StrLit)
 
         // Constant for proof erasure:

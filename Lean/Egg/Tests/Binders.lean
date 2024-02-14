@@ -9,5 +9,6 @@ example : (fun x => x) = (fun x => x + 0) := by
 example (f : (Nat → Nat) → Bool) : f (fun x => x) = f (fun x => x + 0) := by
   egg [Nat.add_zero]
 
+-- TODO: This broke after removing the binder type from ∀.
 example (h : ∀ x y : Nat, x = y ↔ y = x) : (∀ x y : Nat, x = y) ↔ (∀ a b : Nat, b = a + 0) := by
   egg [h, Nat.add_zero]
