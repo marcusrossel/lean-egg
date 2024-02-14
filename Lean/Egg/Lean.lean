@@ -1,6 +1,12 @@
 import Lean
 import Std.Lean.HashSet
 
+def List.replicateM [Monad m] (count : Nat) (f : m α) : m (List α) := do
+  let mut result := []
+  for _ in [0:count] do
+    result := result.concat (← f)
+  return result
+
 namespace Lean
 
 -- Note: The `_uniq` prefix comes from the `MonadNameGenerator`.

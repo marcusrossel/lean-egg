@@ -29,23 +29,46 @@ abbrev Parsed := Array (Rewrite × Syntax)
 --       with index `i`. Thus, the (leading) index of those equations should be `i`, while their
 --       `eqnIdx?` should be the `idx` from the for-loop.
 partial def explicit (arg : Term) (argIdx : Nat) (reduce : Bool) : TacticM Parsed := do
-  go arg none
+  match ← elabArg arg with
+  | .inl (e, ty?) => return #[← mkRw e ty? none]
+  | .inr eqns =>
+    let mut result : Parsed := #[]
+    for eqn in eqns, eqnIdx in [:eqns.size] do
+      let e ← Tactic.elabTerm eqn none
+      result := result.push (← mkRw e none eqnIdx)
+    return result
+  -- We don't just elaborate the `arg` directly as:
+  -- (1) this can cause problems for global constants with typeclass arguments, as Lean sometimes
+  --     tries to synthesize the arguments and fails if it can't (instead of inserting mvars).
+  -- (2) global constants which are definitions with equations (cf. `getEqnsFor?`) are replaced by
+  --     their defining equations.
 where
-  go (arg : Term) (eqnIdx? : Option Nat) : TacticM Parsed := do
-    let e ← Tactic.elabTerm arg none
+  mkRw (e : Expr) (ty? : Option Expr) (eqnIdx? : Option Nat) : TacticM (Rewrite × Syntax) := do
     let src := .explicit argIdx eqnIdx?
-    if let some rw ← Rewrite.from? e (← inferType e) src reduce then
-      return #[(rw, arg)]
+    let ty := ty?.getD (← inferType e)
+    let some rw ← Rewrite.from? e ty src reduce
+      | throwErrorAt arg "egg requires arguments to be equalities, equivalences or (non-propositional) definitions"
+    return (rw, arg)
+  elabArg (arg : Term) : TacticM (Sum (Expr × Option Expr) (Array Ident)) := do
+    if let some hyp ← optional (getFVarId arg) then
+      -- `arg` is a local declaration.
+      return .inl (.fvar hyp, ← hyp.getType)
+    else if let some const ← optional (resolveGlobalConstNoOverload arg) then
+      if let some eqns ← getEqnsFor? const (nonRec := true) then
+        -- `arg` is a global definition.
+        return .inr <| eqns.map (mkIdent ·)
+      else
+        -- `arg` is an global constant which is not a definition with equations.
+        let env ← getEnv
+        let some info := env.find? const | throwErrorAt arg m!"unknown constant '{mkConst const}'"
+        unless info.hasValue do throwErrorAt arg "egg requires arguments to be theorems or definitions"
+        let lvlMVars ← List.replicateM info.numLevelParams mkFreshLevelMVar
+        let val := info.instantiateValueLevelParams! lvlMVars
+        let type := info.instantiateTypeLevelParams lvlMVars
+        return .inl (val, type)
     else
-      let some eqns ← equations? arg | throwErrorAt arg "egg requires arguments to be equalities, equivalences or (non-propositional) definitions"
-      let mut result := #[]
-      for eqn in eqns, eqnIdx in [:eqns.size] do
-        result := result ++ (← go eqn eqnIdx)
-      return result
-  equations? (arg : Term) : MetaM <| Option (Array Term) := do
-    let defName ← resolveGlobalConstNoOverload arg
-    let some eqns ← getEqnsFor? defName (nonRec := true) | return none
-    return eqns.map (mkIdent ·)
+      -- `arg` is an invalid identifier or a term which is not an identifier.
+      return .inl (← Tactic.elabTerm arg none, none)
 
 -- Note: This function is expected to be called with the local context which contains the desired
 --       rewrites.
