@@ -6,6 +6,8 @@ import Egg.Core.Basic
 import Egg.Core.Config
 import Egg.Core.Congr
 import Egg.Core.Rewrites
+import Egg.Core.Source
+import Egg.Core.TcProj
 import Egg.Tactic.Explanation.Parse
 import Egg.Tactic.Explanation.Proof
 import Egg.Tactic.Basic

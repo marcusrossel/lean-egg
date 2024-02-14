@@ -1,6 +1,8 @@
 import Egg.Core.Config
-import Egg.Core.Encode.Expression
+import Egg.Core.Expression
 import Egg.Core.Encode.IndexT
+import Egg.Lean
+import Egg.Core.Rewrites
 import Std.Data.List.Basic
 
 open Lean
@@ -8,16 +10,17 @@ open Lean
 namespace Egg
 
 structure EncodeM.State where
-  exprKind : Egg.Expression.Kind
-  config   : Egg.Config
-  bvars    : List FVarId := []
+  exprSrc : Source
+  config  : Egg.Config
+  bvars   : List FVarId := []
+  appArgs : List Expr := []
 
 abbrev EncodeM := StateT EncodeM.State <| IndexT MetaM
 
 namespace EncodeM
 
-def exprKind : EncodeM Egg.Expression.Kind :=
-  State.exprKind <$> get
+def exprSrc : EncodeM Source :=
+  State.exprSrc <$> get
 
 def config : EncodeM Egg.Config:=
   State.config <$> get
@@ -34,13 +37,37 @@ def withInstantiatedBVar (ty body : Expr) (m : Expr → EncodeM α) : EncodeM α
 def bvarIdx? (id : FVarId) : EncodeM (Option Nat) := do
   return (← get).bvars.indexOf? id
 
--- Note: If `m` changes the value of `typeTags` it will not be preserved.
+-- Note: If `m` changes the value of `typeTags`, this change will not be preserved.
 def withTypeTags (typeTags : Config.TypeTags) (m : EncodeM α) : EncodeM α := do
   let s ← get
   set { s with config.typeTags := typeTags }
   let a ← m
   set { s with config.typeTags := s.config.typeTags }
   return a
+
+-- Note: If `m` changes the value of `appArgs`, this change will not be preserved.
+def withAppArg (arg : Expr) (m : EncodeM α) : EncodeM α := do
+  let s ← get
+  set { s with appArgs := arg :: s.appArgs }
+  let a ← m
+  set { s with appArgs := s.appArgs }
+  return a
+
+-- Note: If `m` changes the value of `appArgs`, this change will not be preserved.
+def withEmptyAppArgs (m : EncodeM α) : EncodeM α := do
+  let s ← get
+  set { s with appArgs := [] }
+  let a ← m
+  set { s with appArgs := s.appArgs }
+  return a
+
+def saveTcProjIfApplicable (const : Name) (lvls : List Level) : EncodeM Unit := do
+  unless (← get).config.genTcProjRws do return
+  let some info ← getProjectionFnInfo? const | return
+  unless info.fromClass do return
+  let args := (← get).appArgs.toArray
+  unless args.size > info.numParams do return
+  IndexT.saveTcProj { const, lvls, args := args[:info.numParams + 1] } (← get).exprSrc
 
 -- TODO: Only erasing proofs if they don't contain mvars, i.e. if `!e.hasMVar` can cause problems.
 --       E.g. if we have a goal equality where the lhs contains a proof term, it will probably

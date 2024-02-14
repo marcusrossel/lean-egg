@@ -1,0 +1,1 @@
+abbrev Egg.Expression := String

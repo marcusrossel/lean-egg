@@ -32,20 +32,39 @@ partial def explicit (arg : Term) (argIdx : Nat) (reduce : Bool) : TacticM Parse
   go arg none
 where
   go (arg : Term) (eqnIdx? : Option Nat) : TacticM Parsed := do
-    let e ← Tactic.elabTerm arg none
-    let src := .explicit argIdx eqnIdx?
-    if let some rw ← Rewrite.from? e (← inferType e) src reduce then
+    match ← elabArg arg with
+    | .inl e =>
+      let src := .explicit argIdx eqnIdx?
+      let some rw ← Rewrite.from? e (← inferType e) src reduce
+        | throwErrorAt arg "egg requires arguments to be equalities, equivalences or (non-propositional) definitions"
       return #[(rw, arg)]
-    else
-      let some eqns ← equations? arg | throwErrorAt arg "egg requires arguments to be equalities, equivalences or (non-propositional) definitions"
+    | .inr eqns =>
       let mut result := #[]
       for eqn in eqns, eqnIdx in [:eqns.size] do
         result := result ++ (← go eqn eqnIdx)
       return result
-  equations? (arg : Term) : MetaM <| Option (Array Term) := do
-    let defName ← resolveGlobalConstNoOverload arg
-    let some eqns ← getEqnsFor? defName (nonRec := true) | return none
-    return eqns.map (mkIdent ·)
+  -- We don't just elaborate the `arg` directly as:
+  -- (1) this can cause problems for global constants with typeclass arguments, as Lean sometimes
+  --     tries to synthesize the arguments and fails if it can't (instead of inserting mvars).
+  -- (2) global constants which are definitions with equations (cf. `getEqnsFor?`) are replaced by
+  --     their defining equations.
+  elabArg (arg : Term) : TacticM (Sum Expr (Array Ident)) := do
+    if let some hyp ← optional (getFVarId arg) then
+      -- `arg` is a local declaration.
+      return .inl (.fvar hyp)
+    else if let some const ← optional (resolveGlobalConstNoOverload arg) then
+      if let some eqns ← getEqnsFor? const (nonRec := true) then
+        -- `arg` is a global definition.
+        return .inr <| eqns.map (mkIdent ·)
+      else
+        -- `arg` is an global constant which is not a definition.
+        let env ← getEnv
+        let some info := env.find? const | throwErrorAt arg m!"unknown constant '{mkConst const}'"
+        let some val := info.value? | throwErrorAt arg "egg requires arguments to be equalities, equivalences or (non-propositional) definitions"
+        return .inl val
+    else
+      -- `arg` is an invalid identifier or a term which is not an identifier.
+      return .inl (← Tactic.elabTerm arg none)
 
 -- Note: This function is expected to be called with the local context which contains the desired
 --       rewrites.

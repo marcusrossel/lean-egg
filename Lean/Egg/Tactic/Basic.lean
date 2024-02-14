@@ -26,7 +26,7 @@ private structure M.State where
   rws  : Rewrites
   dirs : Array Rewrite.Directions
 
-private abbrev M := ReaderT M.State <| IndexT <| TacticM
+private abbrev M := StateT M.State <| IndexT <| TacticM
 
 private def parseGoal (goal : MVarId) (reduce : Bool) (base? : Option (TSyntax `egg_base)) :
     MetaM M.State.Goal := do
@@ -51,10 +51,10 @@ private def parseRws (rws : TSyntax `egg_rws) (cfg : Config) :
 
 namespace M
 
-private def goal  : M State.Goal                 := State.goal  <$> read
-private def cfg   : M Config                     := State.cfg   <$> read
-private def rws   : M Rewrites                   := State.rws   <$> read
-private def dirs  : M (Array Rewrite.Directions) := State.dirs  <$> read
+private def goal  : M State.Goal                 := State.goal  <$> get
+private def cfg   : M Config                     := State.cfg   <$> get
+private def rws   : M Rewrites                   := State.rws   <$> get
+private def dirs  : M (Array Rewrite.Directions) := State.dirs  <$> get
 
 private def traceFrontend : M Unit := do
   let cfg ← cfg
@@ -62,16 +62,16 @@ private def traceFrontend : M Unit := do
   let goalType ← (← goal).type.expr
   withTraceNode `egg.frontend (fun _ => return m!"Goal: {← ppExpr goalType}") do
     withTraceNode `egg.frontend (fun _ => return "LHS") do
-      trace[egg.frontend] ← (← goal).type.lhs.toEgg! .goal cfg
+      trace[egg.frontend] ← (← goal).type.lhs.toEgg .goal cfg
     withTraceNode `egg.frontend (fun _ => return "RHS") do
-      trace[egg.frontend] ← (← goal).type.rhs.toEgg! .goal cfg
+      trace[egg.frontend] ← (← goal).type.rhs.toEgg .goal cfg
     withTraceNode `egg.frontend (fun _ => return (if rws.isEmpty then "No " else "") ++ "Rewrites") (collapsed := false) do
-      for idx in [:rws.size], rw in rws, dir in (← dirs) do
-        withTraceNode `egg.frontend (fun _ => return m!"{idx}") do
+      for rw in rws, dir in (← dirs) do
+        withTraceNode `egg.frontend (fun _ => return m!"{rw.src}") do
           withTraceNode `egg.frontend (fun _ => return "LHS") do
-            trace[egg.frontend] ← rw.lhs.toEgg! .rw cfg
+            trace[egg.frontend] ← rw.lhs.toEgg rw.src cfg
           withTraceNode `egg.frontend (fun _ => return "RHS") do
-            trace[egg.frontend] ← rw.rhs.toEgg! .rw cfg
+            trace[egg.frontend] ← rw.rhs.toEgg rw.src cfg
           trace[egg.frontend] "Directions: {dir}"
     if cfg.typeTags == .indices then
       withTraceNode `egg.frontend (fun _ => return "Types") do
@@ -96,10 +96,12 @@ private def processResult (result : String) : M Unit := do
     goal.id.assign proof
 
 def runEgg : M String := do
-  explainCongr (← goal).type (← rws) (← dirs) (← cfg)
+  let (result, rws, dirs) ← explainCongr (← goal).type (← rws) (← dirs) (← cfg)
+  modify fun s => { s with rws := rws, dirs := dirs }
+  return result
 
 def runWithFreshIndex (s : M.State) (m : M α) : TacticM α :=
-  IndexT.withFreshIndex (m.run s)
+  IndexT.withFreshIndex (Prod.fst <$> m.run s)
 
 end M
 

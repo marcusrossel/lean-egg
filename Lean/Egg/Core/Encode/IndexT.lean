@@ -1,3 +1,4 @@
+import Egg.Core.TcProj
 import Lean
 open Lean
 
@@ -5,8 +6,10 @@ namespace Egg
 
 -- TODO: Can we effectively use a discr tree for `types`?
 structure IndexT.State where
-  types       : ExprMap Nat := {}
-  nextTypeIdx : Nat         := 0
+  types         : ExprMap Nat           := {}
+  nextTypeIdx   : Nat                   := 0
+  tcProjs       : HashMap TcProj Source := ∅
+  nextTcProjIdx : Nat                   := 0
 
 abbrev IndexT := StateT IndexT.State
 
@@ -31,8 +34,21 @@ def typeIdx (ty : Expr) : IndexT MetaM Nat := do
     set { s with nextTypeIdx := idx + 1, types := types' }
     return idx
 
+def saveTcProj (proj : TcProj) (src : Source) : IndexT MetaM Unit := do
+  modify fun s =>
+    if s.tcProjs.contains proj then
+      s
+    else
+      { s with
+        tcProjs := s.tcProjs.insert proj (.tcProj src s.nextTcProjIdx),
+        nextTcProjIdx := s.nextTcProjIdx + 1
+      }
+
 def getTypes : IndexT MetaM (Array Expr) :=
   return (← get).types.toArray.qsort (·.snd < ·.snd) |>.map (·.fst)
+
+def getTcProjReductions : IndexT MetaM (Array Rewrite) := do
+  (← get).tcProjs.toArray.filterMapM fun (proj, src) => proj.reductionRewrite? src
 
 def withFreshIndex [Functor m] (t : IndexT m α) : m α :=
   Prod.fst <$> t.run {}

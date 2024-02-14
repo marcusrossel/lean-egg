@@ -41,5 +41,7 @@ def g : Nat → Nat
   | .zero => .zero
   | n + 1 => g n
 
+-- TODO: Somehow the generate equations are garbage.
+set_option trace.egg true in
 example : f (g Nat.zero.succ.succ) = .zero := by
   egg [f, g]

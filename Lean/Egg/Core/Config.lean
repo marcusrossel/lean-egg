@@ -22,6 +22,7 @@ structure Config where
   eraseProofs  := false
   eraseULvls   := false
   typeTags     := Config.TypeTags.none
+  genTcProjRws := true
   reduce       := false
   optimizeExpl := false
   exitPoint    := Config.ExitPoint.none

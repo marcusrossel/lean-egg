@@ -9,6 +9,7 @@ declare_syntax_cat egg_expl_step
 declare_syntax_cat egg_lvl
 declare_syntax_cat egg_lit
 declare_syntax_cat egg_rw_dir
+declare_syntax_cat egg_basic_fwd_rw_src
 declare_syntax_cat egg_fwd_rw_src
 declare_syntax_cat egg_rw_src
 
@@ -25,8 +26,11 @@ syntax str : egg_lit
 syntax "=>" : egg_rw_dir
 syntax "<=" : egg_rw_dir
 
-syntax "#" noWs num (noWs "/" noWs num)? : egg_fwd_rw_src
-syntax "*" noWs num                      : egg_fwd_rw_src
+syntax "#" noWs num (noWs "/" noWs num)? : egg_basic_fwd_rw_src
+syntax "*" noWs num                      : egg_basic_fwd_rw_src
+
+syntax egg_basic_fwd_rw_src ("[" num "]")? : egg_fwd_rw_src
+syntax "⊢" "[" num "]"                     : egg_fwd_rw_src
 
 syntax egg_fwd_rw_src (noWs "-rev")? : egg_rw_src
 
@@ -70,10 +74,16 @@ private def parseRwDir : (TSyntax `egg_rw_dir) → Rewrite.Direction
   | `(egg_rw_dir|<=) => .backward
   | _                => unreachable!
 
-private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Rewrite.Source
-  | `(egg_fwd_rw_src|#$idx$[/$eqn?]?) => .explicit idx.getNat (eqn?.map TSyntax.getNat)
-  | `(egg_fwd_rw_src|*$idx)           => .star (.fromUniqueIdx idx.getNat)
-  | _                                 => unreachable!
+private def parseBasicFwdRwSrc : (TSyntax `egg_basic_fwd_rw_src) → Source
+  | `(egg_basic_fwd_rw_src|#$idx$[/$eqn?]?) => .explicit idx.getNat (eqn?.map TSyntax.getNat)
+  | `(egg_basic_fwd_rw_src|*$idx)           => .star (.fromUniqueIdx idx.getNat)
+  | _                                       => unreachable!
+
+private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
+  | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src)             => parseBasicFwdRwSrc src
+  | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src[$tcProjIdx]) => .tcProj (parseBasicFwdRwSrc src) tcProjIdx.getNat
+  | `(egg_fwd_rw_src|⊢[$tcProjIdx])                         => .tcProj .goal tcProjIdx.getNat
+  | _                                                       => unreachable!
 
 private def parseRwSrc : (TSyntax `egg_rw_src) → Rewrite.Descriptor
   | `(egg_rw_src|$fwdSrc:egg_fwd_rw_src)     => { src := parseFwdRwSrc fwdSrc, dir := .forward }
