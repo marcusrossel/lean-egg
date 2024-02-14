@@ -56,3 +56,5 @@ syntax "throwErrorAt? " term:max ppSpace (interpolatedStr(term) <|> term) : term
 macro_rules
   | `(throwErrorAt? $ref $msg:interpolatedStr) => `(Lean.throwErrorAt? $ref (m! $msg))
   | `(throwErrorAt? $ref $msg:term)            => `(Lean.throwErrorAt? $ref $msg)
+
+deriving instance BEq, Hashable for SubExpr.Pos

@@ -21,13 +21,6 @@ abbrev Parsed := Array (Rewrite × Syntax)
 
 -- Note: We must use `Tactic.elabTerm`, not `Term.elabTerm`. Otherwise elaborating `‹...›` doesn't
 --       work correctly. Cf. https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Elaborate.20.E2.80.B9.2E.2E.2E.E2.80.BA
---
--- Note: When a given rewrite is not a proof, we assume it's a function and try to get its equations
---       instead.
---
--- Note: If `defIdx? = some i`, that means we're currently generating equations for the definition
---       with index `i`. Thus, the (leading) index of those equations should be `i`, while their
---       `eqnIdx?` should be the `idx` from the for-loop.
 partial def explicit (arg : Term) (argIdx : Nat) (reduce : Bool) : TacticM Parsed := do
   match ← elabArg arg with
   | .inl (e, ty?) => return #[← mkRw e ty? none]
@@ -40,8 +33,8 @@ partial def explicit (arg : Term) (argIdx : Nat) (reduce : Bool) : TacticM Parse
   -- We don't just elaborate the `arg` directly as:
   -- (1) this can cause problems for global constants with typeclass arguments, as Lean sometimes
   --     tries to synthesize the arguments and fails if it can't (instead of inserting mvars).
-  -- (2) global constants which are definitions with equations (cf. `getEqnsFor?`) are replaced by
-  --     their defining equations.
+  -- (2) global constants which are definitions with equations (cf. `getEqnsFor?`) are supposed to
+  --     be replaced by their defining equations.
 where
   mkRw (e : Expr) (ty? : Option Expr) (eqnIdx? : Option Nat) : TacticM (Rewrite × Syntax) := do
     let src := .explicit argIdx eqnIdx?

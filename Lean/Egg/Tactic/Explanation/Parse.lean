@@ -9,7 +9,11 @@ declare_syntax_cat egg_expl_step
 declare_syntax_cat egg_lvl
 declare_syntax_cat egg_lit
 declare_syntax_cat egg_rw_dir
+declare_syntax_cat egg_side
+declare_syntax_cat egg_subexpr_pos
+declare_syntax_cat egg_basic_fwd_rw_src
 declare_syntax_cat egg_fwd_rw_src
+declare_syntax_cat egg_tc_proj
 declare_syntax_cat egg_rw_src
 
 syntax num                             : egg_lvl
@@ -25,8 +29,18 @@ syntax str : egg_lit
 syntax "=>" : egg_rw_dir
 syntax "<=" : egg_rw_dir
 
-syntax "#" noWs num (noWs "/" noWs num)? : egg_fwd_rw_src
-syntax "*" noWs num                      : egg_fwd_rw_src
+syntax ident : egg_side
+
+syntax "/"        : egg_subexpr_pos
+syntax ("/" num)+ : egg_subexpr_pos
+
+syntax "#" noWs num (noWs "/" noWs num)? : egg_basic_fwd_rw_src
+syntax "*" noWs num                      : egg_basic_fwd_rw_src
+
+syntax "[" egg_side egg_subexpr_pos "]" : egg_tc_proj
+
+syntax egg_basic_fwd_rw_src (egg_tc_proj)? : egg_fwd_rw_src
+syntax "⊢" egg_tc_proj                     : egg_fwd_rw_src
 
 syntax egg_fwd_rw_src (noWs "-rev")? : egg_rw_src
 
@@ -70,10 +84,26 @@ private def parseRwDir : (TSyntax `egg_rw_dir) → Rewrite.Direction
   | `(egg_rw_dir|<=) => .backward
   | _                => unreachable!
 
+private def parseSide : (TSyntax `egg_side) → Side
+  | `(egg_side|l) => .left
+  | `(egg_side|r) => .right
+  | _             => unreachable!
+
+private def parseSubexprPos : (TSyntax `egg_subexpr_pos) → SubExpr.Pos
+  | `(egg_subexpr_pos|/)        => .root
+  | `(egg_subexpr_pos|$[/$ps]*) => SubExpr.Pos.ofArray <| ps.map (·.getNat)
+  | _                           => unreachable!
+
+private def parseBasicFwdRwSrc : (TSyntax `egg_basic_fwd_rw_src) → Source
+  | `(egg_basic_fwd_rw_src|#$idx$[/$eqn?]?) => .explicit idx.getNat (eqn?.map TSyntax.getNat)
+  | `(egg_basic_fwd_rw_src|*$idx)           => .star (.fromUniqueIdx idx.getNat)
+  | _                                       => unreachable!
+
 private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
-  | `(egg_fwd_rw_src|#$idx$[/$eqn?]?) => .explicit idx.getNat (eqn?.map TSyntax.getNat)
-  | `(egg_fwd_rw_src|*$idx)           => .star (.fromUniqueIdx idx.getNat)
-  | _                                 => unreachable!
+  | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src)            => parseBasicFwdRwSrc src
+  | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src[$side$pos]) => .tcProj (parseBasicFwdRwSrc src) (parseSide side) (parseSubexprPos pos)
+  | `(egg_fwd_rw_src|⊢[$side$pos])                         => .tcProj .goal (parseSide side) (parseSubexprPos pos)
+  | _                                                      => unreachable!
 
 private def parseRwSrc : (TSyntax `egg_rw_src) → Rewrite.Descriptor
   | `(egg_rw_src|$fwdSrc:egg_fwd_rw_src)     => { src := parseFwdRwSrc fwdSrc, dir := .forward }
