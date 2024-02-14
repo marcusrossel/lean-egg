@@ -17,8 +17,8 @@ def explainCongr (cgr : Congr) (rws : Rewrites) (dirs : Array Directions) (cfg :
   let names := rws.map (·.src.description)
   let lhs    ← cgr.lhs.toEgg .goal cfg
   let rhs    ← cgr.rhs.toEgg .goal cfg
-  let lhss   ← rws.mapM (·.lhs.toEgg .rw cfg)
-  let rhss   ← rws.mapM (·.rhs.toEgg .rw cfg)
+  let lhss   ← rws.mapM fun rw => rw.lhs.toEgg rw.src cfg
+  let rhss   ← rws.mapM fun rw => rw.rhs.toEgg rw.src cfg
   if cfg.exitPoint == .beforeEqSat
   then return ""
   else return explainCongrC lhs rhs names lhss rhss dirs cfg.optimizeExpl

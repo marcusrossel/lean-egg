@@ -1,4 +1,5 @@
 import Egg.Core.Config
+import Egg.Core.Source
 import Egg.Core.Encode.Expression
 import Egg.Core.Encode.IndexT
 import Std.Data.List.Basic
@@ -8,16 +9,16 @@ open Lean
 namespace Egg
 
 structure EncodeM.State where
-  exprKind : Egg.Expression.Kind
-  config   : Egg.Config
-  bvars    : List FVarId := []
+  exprSrc : Source
+  config  : Config
+  bvars   : List FVarId := []
 
 abbrev EncodeM := StateT EncodeM.State <| IndexT MetaM
 
 namespace EncodeM
 
-def exprKind : EncodeM Egg.Expression.Kind :=
-  State.exprKind <$> get
+def exprSrc : EncodeM Source :=
+  State.exprSrc <$> get
 
 def config : EncodeM Egg.Config:=
   State.config <$> get

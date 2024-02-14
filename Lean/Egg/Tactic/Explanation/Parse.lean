@@ -70,7 +70,7 @@ private def parseRwDir : (TSyntax `egg_rw_dir) → Rewrite.Direction
   | `(egg_rw_dir|<=) => .backward
   | _                => unreachable!
 
-private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Rewrite.Source
+private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
   | `(egg_fwd_rw_src|#$idx$[/$eqn?]?) => .explicit idx.getNat (eqn?.map TSyntax.getNat)
   | `(egg_fwd_rw_src|*$idx)           => .star (.fromUniqueIdx idx.getNat)
   | _                                 => unreachable!

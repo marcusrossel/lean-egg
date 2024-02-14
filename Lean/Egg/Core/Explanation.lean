@@ -6,7 +6,7 @@ open Egg.Rewrite (Direction)
 namespace Egg.Explanation.Rewrite
 
 structure Descriptor where
-  src : Rewrite.Source
+  src : Source
   dir : Direction
   deriving Inhabited
 

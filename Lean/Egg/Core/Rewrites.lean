@@ -1,18 +1,9 @@
 import Egg.Core.Congr
+import Egg.Core.Source
 import Egg.Lean
 open Lean Meta Elab
 
 namespace Egg.Rewrite
-
-inductive Source where
-  | explicit (idx : Nat) (eqn? : Option Nat)
-  | star (id : FVarId)
-  deriving Inhabited, BEq
-
-def Source.description : Source → String
-  | explicit idx none       => s!"#{idx}"
-  | explicit idx (some eqn) => s!"#{idx}/{eqn}"
-  | star id                 => s!"*{id.uniqueIdx!}"
 
 inductive Direction where
   | forward
@@ -111,5 +102,5 @@ abbrev Rewrites := Array Rewrite
 
 -- TODO: This is unnecessarilly inefficient during proof reconstruction, so at some point we may
 --       want to redefine `Rewrites` using a better suited data structure.
-def Rewrites.find? (rws : Rewrites) (src : Rewrite.Source) : Option Rewrite :=
+def Rewrites.find? (rws : Rewrites) (src : Source) : Option Rewrite :=
   Array.find? rws (·.src == src)
