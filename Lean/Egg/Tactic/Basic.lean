@@ -1,4 +1,5 @@
 import Egg.Core.Basic
+import Egg.Core.TcProjs
 import Egg.Tactic.Config
 import Egg.Tactic.Explanation.Parse
 import Egg.Tactic.Explanation.Proof
@@ -45,10 +46,10 @@ where
     else
       throwError "expected goal to be of type '=' or '↔', but found:\n{← ppExpr goalType}"
 
-private def parseRws (rws : TSyntax `egg_rws) (cfg : Config) :
-    TacticM (Rewrites × Array Rewrite.Directions) := do
-  let parsed ← Rewrites.parse cfg.reduce rws
-  parsed.withDirs (ignoreULvls := cfg.eraseULvls)
+private def parseRws (rws : TSyntax `egg_rws) (cfg : Config) : TacticM Rewrites := do
+  let mut rws ← Rewrites.parse cfg.reduce rws
+  unless cfg.genTcProjRws do return rws
+  return rws ++ (← rws.tcProjReductions)
 
 namespace M
 
@@ -111,7 +112,8 @@ elab "egg " cfg:egg_cfg rws:egg_rws base:(egg_base)? : tactic => do
   let cfg ← Config.parse cfg
   goal.withContext do
     let goal ← parseGoal goal cfg.reduce base
-    let (rws, dirs) ← parseRws rws cfg
+    let rws ← parseRws rws cfg
+    let dirs ← rws.validDirs! cfg.eraseULvls
     runWithFreshIndex { goal, cfg, rws, dirs } do
       let result ← runEgg
       traceFrontend

@@ -104,7 +104,14 @@ end Rewrite
 
 abbrev Rewrites := Array Rewrite
 
+namespace Rewrites
+
+def validDirs! (rws : Rewrites) (ignoreULvls : Bool) : MetaM (Array Rewrite.Directions) :=
+  rws.mapM fun rw => do
+    let some dir ← rw.validDirs ignoreULvls | throwError m!"invalid rewrite {rw.src}: egg (currently) disallows rewrite rules with loose mvars or level mvars"
+    return dir
+
 -- TODO: This is unnecessarilly inefficient during proof reconstruction, so at some point we may
 --       want to redefine `Rewrites` using a better suited data structure.
-def Rewrites.find? (rws : Rewrites) (src : Source) : Option Rewrite :=
+def find? (rws : Rewrites) (src : Source) : Option Rewrite :=
   Array.find? rws (·.src == src)

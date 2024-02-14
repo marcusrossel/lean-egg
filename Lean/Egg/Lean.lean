@@ -46,17 +46,6 @@ def Expr.levelMVars : Expr → HashSet LMVarId
   | app e₁ e₂ | lam _ e₁ e₂ _ | forallE _ e₁ e₂ _ => e₁.levelMVars.merge e₂.levelMVars
   | letE _ e₁ e₂ e₃ _ => e₁.levelMVars.merge e₂.levelMVars |>.merge e₃.levelMVars
 
-protected def throwErrorAt? [Monad m] [MonadError m] (ref? : Option Syntax) (msg : MessageData) : m α := do
-  if let some ref := ref?
-  then Lean.throwErrorAt ref msg
-  else Lean.throwError msg
-
-syntax "throwErrorAt? " term:max ppSpace (interpolatedStr(term) <|> term) : term
-
-macro_rules
-  | `(throwErrorAt? $ref $msg:interpolatedStr) => `(Lean.throwErrorAt? $ref (m! $msg))
-  | `(throwErrorAt? $ref $msg:term)            => `(Lean.throwErrorAt? $ref $msg)
-
 deriving instance BEq, Hashable for SubExpr.Pos
 
 def HashMap.insertIfNew [BEq α] [BEq β] [Hashable α] [Hashable β]

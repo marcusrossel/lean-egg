@@ -21,6 +21,7 @@ inductive Config.ExitPoint
 structure Config where
   eraseProofs  := false
   eraseULvls   := false
+  genTcProjRws := false
   typeTags     := Config.TypeTags.none
   reduce       := false
   optimizeExpl := false
