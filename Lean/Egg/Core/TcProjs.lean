@@ -61,9 +61,9 @@ where
     return { s' with args := s.args, pos := s.pos }
 
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
-def Rewrites.tcProjReductions (rws : Rewrites) : MetaM Rewrites := do
+def genTcProjReductions (targets : Array (Congr × Source)) : MetaM Rewrites := do
   let mut projs : TcProjIndex := ∅
-  for rw in rws do
-    projs ← tcProjs rw.lhs rw.src .left  projs
-    projs ← tcProjs rw.rhs rw.src .right projs
+  for (cgr, src) in targets do
+    projs ← tcProjs cgr.lhs src .left  projs
+    projs ← tcProjs cgr.rhs src .right projs
   projs.toArray.mapM fun (proj, src) => proj.reductionRewrite src

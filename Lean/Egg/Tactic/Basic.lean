@@ -46,10 +46,12 @@ where
     else
       throwError "expected goal to be of type '=' or '↔', but found:\n{← ppExpr goalType}"
 
-private def parseRws (rws : TSyntax `egg_rws) (cfg : Config) : TacticM Rewrites := do
+private def genRewrites (goal : M.State.Goal) (rws : TSyntax `egg_rws) (cfg : Config) :
+    TacticM Rewrites := do
   let mut rws ← Rewrites.parse cfg.reduce rws
   unless cfg.genTcProjRws do return rws
-  return rws ++ (← rws.tcProjReductions)
+  let targets := #[(goal.type, Source.goal)] ++ (rws.map fun rw => (rw.toCongr, rw.src))
+  return rws ++ (← genTcProjReductions targets)
 
 namespace M
 
@@ -68,8 +70,8 @@ private def traceFrontend : M Unit := do
     withTraceNode `egg.frontend (fun _ => return "RHS") do
       trace[egg.frontend] ← encode (← goal).type.rhs .goal cfg
     withTraceNode `egg.frontend (fun _ => return (if rws.isEmpty then "No " else "") ++ "Rewrites") (collapsed := false) do
-      for idx in [:rws.size], rw in rws, dir in (← dirs) do
-        withTraceNode `egg.frontend (fun _ => return m!"{idx}") do
+      for rw in rws, dir in (← dirs) do
+        withTraceNode `egg.frontend (fun _ => return m!"{rw.src}") do
           withTraceNode `egg.frontend (fun _ => return "LHS") do
             trace[egg.frontend] ← encode rw.lhs rw.src cfg
           withTraceNode `egg.frontend (fun _ => return "RHS") do
@@ -112,7 +114,7 @@ elab "egg " cfg:egg_cfg rws:egg_rws base:(egg_base)? : tactic => do
   let cfg ← Config.parse cfg
   goal.withContext do
     let goal ← parseGoal goal cfg.reduce base
-    let rws ← parseRws rws cfg
+    let rws ← genRewrites goal rws cfg
     let dirs ← rws.validDirs! cfg.eraseULvls
     runWithFreshIndex { goal, cfg, rws, dirs } do
       let result ← runEgg
