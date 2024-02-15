@@ -70,19 +70,16 @@ where
     match current, next, p with
     | .app fn₁ arg, .app fn₂ _, 0 =>
       let prf ← proofStepAux tgt fn₁ fn₂ atTarget
-      let res ← mkCongrFun prf arg
-      return res
+      mkCongrFun prf arg
     | .app fn arg₁, .app _ arg₂, 1 =>
       let prf ← proofStepAux tgt arg₁ arg₂ atTarget
-      let res ← mkCongrArg fn prf
-      return res
+      mkCongrArg fn prf
     | .lam _ ty b₁ _, .lam _ _ b₂ _, 1 =>
       withLocalDecl .anonymous .default ty fun fvar => do
         let b₁ := b₁.instantiate1 fvar
         let b₂ := b₂.instantiate1 fvar
         let prf ← proofStepAux tgt b₁ b₂ atTarget
-        let res ← mkFunExt (← mkLambdaFVars #[fvar] prf)
-        return res
+        mkFunExt (← mkLambdaFVars #[fvar] prf)
     | .forallE _ ty b₁ _, .forallE _ _ b₂ _, 1 =>
       withLocalDecl .anonymous .default ty fun fvar => do
         let b₁ := b₁.instantiate1 fvar
