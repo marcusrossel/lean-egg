@@ -29,7 +29,7 @@ where
     else return .const name lvls
 
 -- BUG: `isDefEq` doesn't unify level mvars.
-partial def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) (cfg : Config) : MetaM Expr := do
+def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) (cfg : Config) : MetaM Expr := do
   withTraceNode `egg.reconstruction (fun _ => return "Reconstruction") do
     let mut current ← expl.start.toExpr cfg
     let steps := expl.steps
@@ -58,24 +58,31 @@ where
   errorPrefix := "egg failed to reconstruct proof:"
 
   proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Expr := do
-    proofStepAux rwInfo.pos.toArray.toList current next (proofAtRw rwInfo.toDescriptor)
+    let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
+    if (isRefl? rw.proof).isSome then
+      unless ← isDefEq current next do throwError s!"{errorPrefix} unification failure for proof by reflexivity"
+      mkEqRefl next
+    else
+      proofStepAux rwInfo.pos.toArray.toList current next (proofAtRw rwInfo.toDescriptor)
 
-  -- TODO: This is easily proven decreasing by `target`.
   proofStepAux (target : List Nat) (current next : Expr) (atTarget : Expr → Expr → MetaM Expr) : MetaM Expr := do
     let p :: tgt := target | atTarget current next
     match current, next, p with
     | .app fn₁ arg, .app fn₂ _, 0 =>
       let prf ← proofStepAux tgt fn₁ fn₂ atTarget
-      mkCongrFun prf arg
+      let res ← mkCongrFun prf arg
+      return res
     | .app fn arg₁, .app _ arg₂, 1 =>
       let prf ← proofStepAux tgt arg₁ arg₂ atTarget
-      mkCongrArg fn prf
+      let res ← mkCongrArg fn prf
+      return res
     | .lam _ ty b₁ _, .lam _ _ b₂ _, 1 =>
       withLocalDecl .anonymous .default ty fun fvar => do
         let b₁ := b₁.instantiate1 fvar
         let b₂ := b₂.instantiate1 fvar
         let prf ← proofStepAux tgt b₁ b₂ atTarget
-        mkFunExt (← mkLambdaFVars #[fvar] prf)
+        let res ← mkFunExt (← mkLambdaFVars #[fvar] prf)
+        return res
     | .forallE _ ty b₁ _, .forallE _ _ b₂ _, 1 =>
       withLocalDecl .anonymous .default ty fun fvar => do
         let b₁ := b₁.instantiate1 fvar

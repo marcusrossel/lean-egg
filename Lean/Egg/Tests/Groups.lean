@@ -1,8 +1,5 @@
 import Egg
 
--- TODO: This set of test cases seems to demonstrate that `typeTags ≠ .none` is way too slow or
---       doesn't work.
-
 class Group (α) where
   zero          : α
   neg           : α → α
@@ -29,11 +26,17 @@ theorem inv_add_cancel_left : -a + (a + b) = b := by
 theorem add_inv_cancel_left : a + (-a + b) = b := by
   egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
 
+-- TODO: The test cases below should be fixed by explosion.
+
 theorem inv_add : -(a + b) = -b + -a := by
   egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
 
--- TODO:
-set_option trace.egg true in
+-- Cf. https://github.com/marcusrossel/lean-egg/issues/15
+--
+-- Proof:
+--   simp [Neg.neg, OfNat.ofNat]
+--   rw [←add_zero (a := neg zero)]
+--   rw [add_left_inv]
 theorem zero_inv : -(0 : G) = 0 := by
   egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
 

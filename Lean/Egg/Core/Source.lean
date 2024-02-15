@@ -23,11 +23,11 @@ inductive Source where
 namespace Source
 
 def description : Source → String
-  | .goal                    => s!"⊢"
-  | .explicit idx none       => s!"#{idx}"
-  | .explicit idx (some eqn) => s!"#{idx}/{eqn}"
-  | .star id                 => s!"*{id.uniqueIdx!}"
-  | .tcProj src side pos     => s!"{src.description}[{side.description}{pos}]"
+  | goal                    => s!"⊢"
+  | explicit idx none       => s!"#{idx}"
+  | explicit idx (some eqn) => s!"#{idx}/{eqn}"
+  | star id                 => s!"*{id.uniqueIdx!}"
+  | tcProj src side pos     => s!"{src.description}[{side.description}{pos}]"
 
 instance : ToString Source where
   toString := description
