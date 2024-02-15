@@ -58,12 +58,18 @@ where
   errorPrefix := "egg failed to reconstruct proof:"
 
   proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Expr := do
-    let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
-    if (isRefl? rw.proof).isSome then
-      unless ← isDefEq current next do throwError s!"{errorPrefix} unification failure for proof by reflexivity"
-      mkEqRefl next
+    if rwInfo.src.isNatLit then
+      mkReflStep current next
     else
-      proofStepAux rwInfo.pos.toArray.toList current next (proofAtRw rwInfo.toDescriptor)
+      let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
+      if (isRefl? rw.proof).isSome then
+        mkReflStep current next
+      else
+        proofStepAux rwInfo.pos.toArray.toList current next (proofAtRw rwInfo.toDescriptor)
+
+  mkReflStep (current next : Expr) : MetaM Expr := do
+    unless ← isDefEq current next do throwError s!"{errorPrefix} unification failure for proof by reflexivity"
+    mkEqRefl next
 
   proofStepAux (target : List Nat) (current next : Expr) (atTarget : Expr → Expr → MetaM Expr) : MetaM Expr := do
     let p :: tgt := target | atTarget current next

@@ -77,6 +77,8 @@ private def traceFrontend : M Unit := do
           withTraceNode `egg.frontend (fun _ => return "RHS") do
             trace[egg.frontend] ← encode rw.rhs rw.src cfg
           trace[egg.frontend] "Directions: {dir}"
+      if cfg.genNatLitRws then
+        trace[egg.frontend] "Nat Literal Conversions"
     if cfg.typeTags == .indices then
       withTraceNode `egg.frontend (fun _ => return "Types") do
         let types ← IndexT.getTypes

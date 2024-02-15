@@ -6,10 +6,10 @@ open Lean
 namespace Egg
 open Rewrite (Directions)
 
-@[extern "lean_egg_check_eq"]
+@[extern "lean_egg_explain_congr"]
 private opaque explainCongrC
   (lhs rhs : Expression) (rwNames : Array String) (lhss rhss : Array Egg.Expression)
-  (dirs : Array Directions) (optimizeExpl : Bool) : String
+  (dirs : Array Directions) (optimizeExpl : Bool) (genNatLitRws : Bool) : String
 
 -- Note: We wrap this in an `IndexT` so that we can trace the type indices later.
 def explainCongr (cgr : Congr) (rws : Rewrites) (dirs : Array Directions) (cfg : Config) :
@@ -21,4 +21,4 @@ def explainCongr (cgr : Congr) (rws : Rewrites) (dirs : Array Directions) (cfg :
   let rhss   ← rws.mapM fun rw => encode rw.rhs rw.src cfg
   if cfg.exitPoint == .beforeEqSat
   then return ""
-  else return explainCongrC lhs rhs names lhss rhss dirs cfg.optimizeExpl
+  else return explainCongrC lhs rhs names lhss rhss dirs cfg.optimizeExpl cfg.genNatLitRws

@@ -26,12 +26,13 @@ typedef struct egg_result {
     char* expl;
 } egg_result;
 
-extern egg_result c_egg_check_eq(
+extern egg_result c_egg_explain_congr(
     const char* init, 
     const char* goal, 
     rewrite* rws, 
     size_t rws_count, 
-    rust_bool optimize_expl
+    rust_bool optimize_expl,
+    rust_bool gen_nat_lit_rws
 );
 
 // `init`: string
@@ -41,15 +42,17 @@ extern egg_result c_egg_check_eq(
 // `rw_rhss`: array of strings containing the right-hands sides of rewrites
 // `rw_dirs`: array of uint8_t containing the directions (cf. `rw_dir`) of rewrites
 // `optimize_expl`: boolean indicating whether egg should try to shorten its explanations
+// `gen_nat_lit_rws`: boolean indicating whether egg should use additional rewrites to convert between nat-lits and `Nat.zero`/`Nat.succ`
 // return value: string explaining the rewrite sequence
-lean_obj_res lean_egg_check_eq(
+lean_obj_res lean_egg_explain_congr(
     lean_obj_arg init, 
     lean_obj_arg goal, 
     lean_obj_arg rw_names, 
     lean_obj_arg rw_lhss, 
     lean_obj_arg rw_rhss, 
     lean_obj_arg rw_dirs,
-    lean_bool optimize_expl
+    lean_bool optimize_expl,
+    lean_bool gen_nat_lit_rws
 ) {
     const char* init_c_str = lean_string_cstr(init);
     const char* goal_c_str = lean_string_cstr(goal);
@@ -70,8 +73,9 @@ lean_obj_res lean_egg_check_eq(
         rws[idx] = (rewrite) { .name = name, .lhs = lhs, .rhs = rhs, .dir = dir };
     }
     rust_bool opt_expl = lean_bool_to_rust(optimize_expl);
+    rust_bool nat_lit_rws = lean_bool_to_rust(gen_nat_lit_rws);
 
-    egg_result result = c_egg_check_eq(init_c_str, goal_c_str, rws, rws_count, opt_expl);
+    egg_result result = c_egg_explain_congr(init_c_str, goal_c_str, rws, rws_count, opt_expl, nat_lit_rws);
     free(rws);
 
     if (result.success) {

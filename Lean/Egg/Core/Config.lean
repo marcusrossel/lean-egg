@@ -22,6 +22,7 @@ structure Config where
   eraseProofs  := false
   eraseULvls   := false
   genTcProjRws := true
+  genNatLitRws := true
   typeTags     := Config.TypeTags.none
   reduce       := false
   optimizeExpl := false

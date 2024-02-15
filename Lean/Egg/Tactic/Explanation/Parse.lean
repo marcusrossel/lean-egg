@@ -41,6 +41,9 @@ syntax "[" egg_side egg_subexpr_pos "]" : egg_tc_proj
 
 syntax egg_basic_fwd_rw_src (egg_tc_proj)? : egg_fwd_rw_src
 syntax "⊢" egg_tc_proj                     : egg_fwd_rw_src
+syntax "!z"                                : egg_fwd_rw_src
+syntax "!t"                                : egg_fwd_rw_src
+syntax "!o"                                : egg_fwd_rw_src
 
 syntax egg_fwd_rw_src (noWs "-rev")? : egg_rw_src
 
@@ -103,6 +106,9 @@ private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
   | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src)            => parseBasicFwdRwSrc src
   | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src[$side$pos]) => .tcProj (parseBasicFwdRwSrc src) (parseSide side) (parseSubexprPos pos)
   | `(egg_fwd_rw_src|⊢[$side$pos])                         => .tcProj .goal (parseSide side) (parseSubexprPos pos)
+  | `(egg_fwd_rw_src|!z)                                   => .natLit .zero
+  | `(egg_fwd_rw_src|!t)                                   => .natLit .toSucc
+  | `(egg_fwd_rw_src|!o)                                   => .natLit .ofSucc
   | _                                                      => unreachable!
 
 private def parseRwSrc : (TSyntax `egg_rw_src) → Rewrite.Descriptor
