@@ -32,33 +32,27 @@ pub struct EggResult {
 define_language! {
     enum LeanExpr {
         // Primitives:
-        BVarId(i32),
-        FVarId(i32),
-        MVarId(i32),
-        UVarId(i32),
-        TypeId(i32),
-        Name(String),
-        NatLit(i64),   
-        StrLit(String),
+        Nat(u64),
+        Str(String),
 
         // Encoding of universe levels:
-        // Note, we don't encode `zero` explicitly, and use `NatLit(0)` for that instead.
-        "uvar"  = UVar(Id),         // (UVarId)
-        "param" = Param(Id),        // (Name)
+        // Note, we don't encode `zero` explicitly, and use `Nat(0)` for that instead.
+        "uvar"  = UVar(Id),         // (Nat)
+        "param" = Param(Id),        // (Str)
         "succ"  = Succ(Id),         // (<level>)
         "max"   = Max([Id; 2]),     // (<level>, <level>)
         "imax"  = IMax([Id; 2]),    // (<level>, <level>)
         
         // Encoding of expressions:
-        "bvar"  = BVar(Id),         // (BVarId)
-        "fvar"  = FVar(Id),         // (FVarId)
-        "mvar"  = MVar(Id),         // (MVarId)
+        "bvar"  = BVar(Id),         // (Nat)
+        "fvar"  = FVar(Id),         // (Nat)
+        "mvar"  = MVar(Id),         // (Nat)
         "sort"  = Sort(Id),         // (<level>)
-        "const" = Const(Box<[Id]>), // (Name, <level>*)
+        "const" = Const(Box<[Id]>), // (Str, <level>*)
         "app"   = App([Id; 2]),     // (<expr>, <expr>)
         "λ"     = Lam(Id),          // (<expr>)
         "∀"     = Forall(Id),       // (<expr>)
-        "lit"   = Lit(Id),          // (NatLit | StrLit)
+        "lit"   = Lit(Id),          // (Nat | Str)
 
         // Constant for proof erasure:
         "proof" = Proof,
@@ -71,7 +65,7 @@ define_language! {
 #[derive(Default)]
 struct NatLitAnalysis;
 impl Analysis<LeanExpr> for NatLitAnalysis {
-    type Data = Option<i64>;
+    type Data = Option<u64>;
 
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
         // This prefers `Some` value over `None`. Note that if `to` and `from` are both present,
@@ -80,9 +74,12 @@ impl Analysis<LeanExpr> for NatLitAnalysis {
         egg::merge_max(to, from)
     }
 
-    fn make(_: &EGraph<LeanExpr, Self>, enode: &LeanExpr) -> Self::Data {
+    // Note: We also assign all `Nat` nodes a value, but that shouldn't be a problem as different `Nat` 
+    //       nodes should never belong to the same e-class.
+    fn make(egraph: &EGraph<LeanExpr, Self>, enode: &LeanExpr) -> Self::Data {
         match enode {
-            LeanExpr::NatLit(n) => Some(*n),
+            LeanExpr::Nat(n) => Some(*n),
+            LeanExpr::Lit(l) => egraph[*l].data,
             _ => None
         }
     }
@@ -108,9 +105,9 @@ impl Applier<LeanExpr, NatLitAnalysis> for ToSucc {
     fn apply_one(&self, egraph: &mut EGraph<LeanExpr, NatLitAnalysis>, matched_id: Id, subst: &Subst, _: Option<&PatternAst<LeanExpr>>, _: Symbol) -> Vec<Id> {
         if let Some(lit_val) = egraph[subst[self.lit_val]].data {
             if lit_val > 0 {
-                let pred = egraph.add(LeanExpr::NatLit(lit_val - 1));
+                let pred = egraph.add(LeanExpr::Nat(lit_val - 1));
                 let pred_lit = egraph.add(LeanExpr::Lit(pred));
-                let succ_name = egraph.add(LeanExpr::Name("Nat.succ".to_string()));
+                let succ_name = egraph.add(LeanExpr::Str("Nat.succ".to_string()));
                 let succ_const = egraph.add(LeanExpr::Const(Box::new([succ_name])));
                 let app_succ_pred = egraph.add(LeanExpr::App([succ_const, pred_lit]));
                 if egraph.union(matched_id, app_succ_pred) {
@@ -130,7 +127,7 @@ impl Applier<LeanExpr, NatLitAnalysis> for OfSucc {
 
     fn apply_one(&self, egraph: &mut EGraph<LeanExpr, NatLitAnalysis>, matched_id: Id, subst: &Subst, _: Option<&PatternAst<LeanExpr>>, _: Symbol) -> Vec<Id> {
         if let Some(lit_val) = egraph[subst[self.lit_val]].data {
-            let succ = egraph.add(LeanExpr::NatLit(lit_val + 1));
+            let succ = egraph.add(LeanExpr::Nat(lit_val + 1));
             let succ_lit = egraph.add(LeanExpr::Lit(succ));
             if egraph.union(matched_id, succ_lit) {
                 return vec![succ_lit]

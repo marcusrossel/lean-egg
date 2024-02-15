@@ -14,4 +14,7 @@ example : Nat.succ 1 = Nat.succ (Nat.succ Nat.zero) := by
 example : Int.ofNat (Nat.succ 1) = Int.ofNat (Nat.succ (Nat.succ Nat.zero)) := by
   egg
 
--- TODO: Add tests involving rewrites with Nat.succ or Nat.zero.
+example (h : ∀ n, Nat.succ n = n + 1) : 1 = Nat.zero + 1 := by
+  egg [h]
+
+-- TODO: Add more tests involving rewrites with Nat.succ or Nat.zero.
