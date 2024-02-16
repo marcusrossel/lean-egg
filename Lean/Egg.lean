@@ -2,12 +2,12 @@ import Egg.Core.Encode.Basic
 import Egg.Core.Encode.EncodeM
 import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Proof
+import Egg.Core.Gen.TcProjs
 import Egg.Core.Config
 import Egg.Core.Congr
 import Egg.Core.Request
 import Egg.Core.Rewrites
 import Egg.Core.Source
-import Egg.Core.TcProjs
 import Egg.Tactic.Base
 import Egg.Tactic.Basic
 import Egg.Tactic.Config

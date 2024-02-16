@@ -1,6 +1,6 @@
 import Egg.Core.Request
 import Egg.Core.Explanation.Proof
-import Egg.Core.TcProjs
+import Egg.Core.Gen.TcProjs
 import Egg.Tactic.Config
 import Egg.Tactic.Explanation
 import Egg.Tactic.Base
