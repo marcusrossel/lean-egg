@@ -1,4 +1,4 @@
-import Egg.Core.Basic
+import Egg.Core.Request
 import Egg.Core.TcProjs
 import Egg.Tactic.Config
 import Egg.Tactic.Explanation.Parse
@@ -86,23 +86,23 @@ private def traceFrontend : M Unit := do
           withTraceNode `egg.frontend (fun _ => return m!"{idx}") (collapsed := false) do
             trace[egg.frontend] ty
 
-private def processResult (result : String) : M Unit := do
-  unless !result.isEmpty do throwError "egg failed to prove goal"
-  withTraceNode `egg.reconstruction (fun _ => return "Result") do trace[egg.reconstruction] result
+private def processRawExpl (rawExpl : Explanation.Raw) : M Unit := do
+  if rawExpl.isEmpty then throwError "egg failed to prove goal"
+  withTraceNode `egg.reconstruction (fun _ => return "Result") do trace[egg.reconstruction] rawExpl
   let cfg ← cfg
   let goal ← goal
   if cfg.exitPoint == .beforeProof then
     goal.id.admit
   else
-    let expl ← Explanation.parse result
+    let expl ← rawExpl.parse
     let mut proof ← expl.proof goal.type (← rws) cfg
     -- When `goal.base? = some base`, then `proof` is a proof of `base = <goal type>`. We turn this
     -- into a proof of `<goal type>` here.
     if let some base := goal.base? then proof ← mkEqMP proof (.fvar base)
     goal.id.assign proof
 
-def runEgg : M String := do
-  explainCongr (← goal).type (← rws) (← dirs) (← cfg)
+def mkRequest : M Request := do
+  Request.from (← goal).type (← rws) (← dirs) (← cfg)
 
 def runWithFreshIndex (s : M.State) (m : M α) : TacticM α :=
   IndexT.withFreshIndex (m.run s)
@@ -119,6 +119,8 @@ elab "egg " cfg:egg_cfg rws:egg_rws base:(egg_base)? : tactic => do
     let rws ← genRewrites goal rws cfg
     let dirs ← rws.validDirs! cfg.eraseULvls
     runWithFreshIndex { goal, cfg, rws, dirs } do
-      let result ← runEgg
+      let request ← mkRequest
       traceFrontend
-      processResult result
+      if cfg.exitPoint == .beforeEqSat then goal.id.admit; return
+      let rawExpl := request.run
+      processRawExpl rawExpl

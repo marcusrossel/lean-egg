@@ -1,6 +1,5 @@
 import Egg.Core.Config
 import Egg.Core.Source
-import Egg.Core.Encode.Expression
 import Egg.Core.Encode.IndexT
 import Std.Data.List.Basic
 

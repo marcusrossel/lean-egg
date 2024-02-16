@@ -16,6 +16,8 @@ structure Info extends Descriptor where
 
 end Rewrite
 
+abbrev Raw := String
+
 inductive Expression where
   | bvar (idx : Nat)
   | fvar (id : FVarId)

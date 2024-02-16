@@ -24,7 +24,6 @@ impl Analysis<LeanExpr> for NatLitAnalysis {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
 struct ToSucc {
     lit_val: Var
 }

@@ -1,11 +1,10 @@
 import Egg.Core.Encode.Basic
 import Egg.Core.Encode.EncodeM
-import Egg.Core.Encode.Expression
 import Egg.Core.Encode.IndexT
-import Egg.Core.Basic
 import Egg.Core.Config
 import Egg.Core.Congr
 import Egg.Core.Explanation
+import Egg.Core.Request
 import Egg.Core.Rewrites
 import Egg.Core.Source
 import Egg.Core.TcProjs

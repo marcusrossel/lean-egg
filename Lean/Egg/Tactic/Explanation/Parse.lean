@@ -177,8 +177,8 @@ private def parseExpl : (TSyntax `egg_expl) → Except ParseError Explanation
   | _ => unreachable!
 
 -- Note: This could be generalized to any monad with an environment and exceptions.
-def parse (str : String) : CoreM Explanation := do
-  match Parser.runParserCategory (← getEnv) `egg_expl str with
+def Raw.parse (raw : Explanation.Raw) : CoreM Explanation := do
+  match Parser.runParserCategory (← getEnv) `egg_expl raw with
   | .ok stx    =>
     match parseExpl ⟨stx⟩ with
     | .ok expl => return expl
