@@ -61,7 +61,7 @@ where
 
   encodeLam (ty b : Expr) : EncodeM Expression :=
     withInstantiatedBVar ty b fun body => do
-      let dom ← if (← config).eraseLamdaDomains then return Expression.erased else go ty
+      let dom ← if (← config).eraseLambdaDomains then return Expression.erased else go ty
       return s!"(λ {dom} {← go body})"
 
   encodeForall (ty b : Expr) : EncodeM Expression :=

@@ -9,7 +9,7 @@ inductive ExitPoint
 structure Encoding where
   eraseProofs        := true
   eraseConstLevels   := false
-  eraseLamdaDomains  := true
+  eraseLambdaDomains := true
   eraseForallDomains := true
   deriving BEq
 
@@ -34,5 +34,5 @@ structure Config extends Encoding, Gen, Backend, Debug
 def Config.noErasure : Config where
   eraseProofs        := false
   eraseConstLevels   := false
-  eraseLamdaDomains  := false
+  eraseLambdaDomains := false
   eraseForallDomains := false
