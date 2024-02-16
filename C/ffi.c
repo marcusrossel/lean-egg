@@ -9,6 +9,7 @@ rust_bool lean_bool_to_rust(lean_bool b) {
 }
 
 typedef enum rw_dir {
+  NONE,
   FORWARD,
   BACKWARD,
   BOTH

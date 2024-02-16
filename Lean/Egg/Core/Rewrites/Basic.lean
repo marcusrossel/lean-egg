@@ -1,42 +1,34 @@
+import Egg.Core.Rewrites.Directions
 import Egg.Core.Normalize
 import Egg.Core.Congr
 import Egg.Core.Source
 import Egg.Lean
-open Lean Meta Elab
+open Lean Meta
 
 namespace Egg.Rewrite
 
-inductive Direction where
-  | forward
-  | backward
-  deriving Inhabited
-
-def Direction.merge : Direction → Direction → Direction
-  | .forward, .forward  | .backward, .backward => .forward
-  | .forward, .backward | .backward, .forward  => .backward
-
-inductive Directions where
-  | forward
-  | backward
-  | both
-
-instance : ToString Directions where
-  toString
-    | .forward  => "forward"
-    | .backward => "backward"
-    | .both     => "both"
-
--- TODO: Is this the right approach, or would it be better the store the type as a `∀` expression?
---
 -- When constructed from a theorem `thm : ∀ xs, l ~ r`, the resulting rewrite has:
 -- * `type := { lhs := l, rhs := r, rel := ~ }`
 -- * `holes := xs`
 -- * `proof := thm xs` - that is, the arguments are instantiated
+--
+-- Note: When constructing the valid directions of a rewrite, we check mvar inclusion for two
+--       different domains: expressions and levels. We separately capture which directions are valid
+--       for which domain. This is relevant when `Config.eraseConstLvls = true`.
 structure _root_.Egg.Rewrite extends Congr where
   private mk ::
   proof : Expr
   holes : Array MVarId
   src   : Source
+  private validExprDirs : Directions
+  private validLvlDirs  : Directions
+
+-- TODO: The distinction between expr mvars and level mvars isn't sufficient. We actually need to
+--       also distinguish between const level mvars and sort level mvars. The former become
+--       irrelevant upon `Config.eraseConstLvls = true` while the latter don't.
+--       To fix this, implement your own level mvar collection that distinguishes the two.
+def validDirs (rw : Rewrite) (ignoreULvls : Bool) : Directions :=
+  if ignoreULvls then rw.validExprDirs else rw.validExprDirs.meet rw.validLvlDirs
 
 -- Returns the same rewrite but with all holes replaced by fresh mvars. This is used during proof
 -- reconstruction, as rewrites may be used multiple times but instantiated differently. If we don't
@@ -60,24 +52,6 @@ def forDir (rw : Rewrite) : Direction → MetaM Rewrite
   | .forward  => return rw
   | .backward => return { rw with lhs := rw.rhs, rhs := rw.lhs, proof := ← rw.rel.mkSymm rw.proof }
 
--- The directions in which the given rewrite can be used. This depends on whether the mvars of the
--- respective sides are subsets of eachother.
-def validDirs (rw : Rewrite) (ignoreULvls : Bool) : MetaM (Option Directions) := do
-  let lhsM ← Meta.getMVars rw.lhs
-  let rhsM ← Meta.getMVars rw.rhs
-  let mut lSubR := lhsM.all rhsM.contains
-  let mut rSubL := rhsM.all lhsM.contains
-  if !ignoreULvls then
-    let lhsL := rw.lhs.levelMVars
-    let rhsL := rw.rhs.levelMVars
-    lSubR := lSubR && lhsL.all rhsL.contains
-    rSubL := rSubL && rhsL.all lhsL.contains
-  match lSubR, rSubL with
-  | false, false => return none
-  | false, true  => return some .forward
-  | true, false  => return some .backward
-  | true, true   => return some .both
-
 -- Note: We normalize the `lhs` and `rhs` of the rewrite.
 --
 -- Note: It isn't sufficient to take the `args` as `holes`, as implicit arguments will already be
@@ -87,26 +61,28 @@ def validDirs (rw : Rewrite) (ignoreULvls : Bool) : MetaM (Option Directions) :=
 --
 -- Note: We must instantiate mvars of the rewrite's type. For an example that breaks otherwise, cf.
 --       https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Different.20elab.20results
+--
+-- TODO: We could make this more efficient by using the mvars collected in `dirs` to populate the
+--      `holes`.
 def from? (proof : Expr) (type : Expr) (src : Source) : MetaM (Option Rewrite) := do
   let mut (args, _, type) ← forallMetaTelescopeReducing (← instantiateMVars type)
   type ← normalize type
   let proof := mkAppN proof args
   let holes ← getMVars type
   let some cgr := Congr.from? type | return none
-  return some { cgr with proof, holes, src }
+  let (validExprDirs, validLvlDirs) ← dirs cgr.lhs cgr.rhs
+  return some { cgr with proof, holes, src, validExprDirs, validLvlDirs }
+where
+  dirs (lhs rhs : Expr) : MetaM (Directions × Directions) := do
+    let exprDirs := Directions.satisfyingSuperset (← Meta.getMVars lhs) (← Meta.getMVars rhs)
+    let lvlDirs  := Directions.satisfyingSuperset lhs.levelMVars.toArray rhs.levelMVars.toArray
+    return (exprDirs, lvlDirs)
 
 end Rewrite
 
 abbrev Rewrites := Array Rewrite
 
-namespace Rewrites
-
-def validDirs! (rws : Rewrites) (ignoreULvls : Bool) : MetaM (Array Rewrite.Directions) :=
-  rws.mapM fun rw => do
-    let some dir ← rw.validDirs ignoreULvls | throwError m!"invalid rewrite {rw.src}: egg (currently) disallows rewrite rules with loose mvars or level mvars"
-    return dir
-
 -- TODO: This is unnecessarilly inefficient during proof reconstruction, so at some point we may
 --       want to redefine `Rewrites` using a better suited data structure.
-def find? (rws : Rewrites) (src : Source) : Option Rewrite :=
+def Rewrites.find? (rws : Rewrites) (src : Source) : Option Rewrite :=
   Array.find? rws (·.src == src)

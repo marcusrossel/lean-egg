@@ -1,4 +1,4 @@
-import Egg.Core.Rewrites
+import Egg.Core.Rewrites.Basic
 import Lean
 open Lean Meta
 

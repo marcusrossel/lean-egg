@@ -1,7 +1,7 @@
 import Egg.Core.Encode.Basic
 import Egg.Core.Config
 import Egg.Core.Explanation.Basic
-import Egg.Tactic.Rewrites
+import Egg.Core.Rewrites.Basic
 open Lean
 
 namespace Egg
@@ -13,10 +13,10 @@ private opaque explainCongr
 
 protected structure Request.Rewrites where
   private mk ::
-  names : Array String
-  lhss  : Array Expression
-  rhss  : Array Expression
-  dirs  : Array Rewrite.Directions
+  names : Array String             := #[]
+  lhss  : Array Expression         := #[]
+  rhss  : Array Expression         := #[]
+  dirs  : Array Rewrite.Directions := #[]
 
 structure Request where
   private mk ::
@@ -28,15 +28,19 @@ structure Request where
 
 namespace Request
 
-def encoding (goal : Congr) (rws : Rewrites) (dirs : Array Rewrite.Directions) (cfg : Config) :
-    MetaM Request :=
+def Rewrites.encoding (rws : Rewrites) (cfg : Config.Encoding) : MetaM Request.Rewrites :=
+  rws.foldlM (init := {}) fun acc rw => return {
+    names := acc.names.push <| rw.src.description
+    lhss  := acc.lhss.push  <| ← encode rw.lhs rw.src cfg
+    rhss  := acc.rhss.push  <| ← encode rw.rhs rw.src cfg
+    dirs  := acc.dirs.push  <| rw.validDirs (ignoreULvls := cfg.eraseConstLevels)
+  }
+
+def encoding (goal : Congr) (rws : Rewrites) (cfg : Config) : MetaM Request :=
   return {
-    lhs          := ← encode goal.lhs .goal cfg
-    rhs          := ← encode goal.rhs .goal cfg
-    rws.names    := rws.map (·.src.description)
-    rws.lhss     := ← rws.mapM fun rw => encode rw.lhs rw.src cfg
-    rws.rhss     := ← rws.mapM fun rw => encode rw.rhs rw.src cfg
-    rws.dirs     := dirs
+    lhs          := ← encode goal.lhs .goal cfg.toEncoding
+    rhs          := ← encode goal.rhs .goal cfg.toEncoding
+    rws          := ← Rewrites.encoding rws cfg.toEncoding
     optimizeExpl := cfg.optimizeExpl
     genNatLitRws := cfg.genNatLitRws
   }

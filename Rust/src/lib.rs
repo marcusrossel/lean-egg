@@ -17,6 +17,7 @@ use basic::*;
 #[repr(C)]
 #[derive(PartialEq)]
 pub enum RewriteDirection {
+    None,
     Forward,
     Backward,
     Both

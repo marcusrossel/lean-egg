@@ -1,4 +1,5 @@
 import Egg.Core.Explanation.Basic
+import Egg.Core.Rewrites.Basic
 open Lean Meta
 
 -- TODO: Simplify tracing by adding `MessageData` instances for relevant types.

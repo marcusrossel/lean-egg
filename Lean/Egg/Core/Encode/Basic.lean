@@ -25,8 +25,8 @@ private def encodeLevel : Level → Source → Expression
 open EncodeM
 
 -- Note: This function expects its input expression to be normalized (cf. `Egg.normalize`).
-partial def encode (e : Expr) (src : Source) (cfg : Config) : MetaM Expression :=
-  Prod.fst <$> (go e).run { exprSrc := src, config := cfg.toEncoding }
+partial def encode (e : Expr) (src : Source) (cfg : Config.Encoding) : MetaM Expression :=
+  Prod.fst <$> (go e).run { exprSrc := src, config := cfg }
 where
   go (e : Expr) : EncodeM Expression := do
     if ← needsProofErasure e then return Expression.erased else core e

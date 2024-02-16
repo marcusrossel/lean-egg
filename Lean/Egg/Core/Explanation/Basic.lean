@@ -1,4 +1,5 @@
-import Egg.Core.Rewrites
+import Egg.Core.Source
+import Egg.Core.Rewrites.Directions
 
 open Lean
 open Egg.Rewrite (Direction)
