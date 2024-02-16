@@ -78,10 +78,6 @@ def validDirs (rw : Rewrite) (ignoreULvls : Bool) : MetaM (Option Directions) :=
   | true, false  => return some .backward
   | true, true   => return some .both
 
--- TODO: When we reduce the type, do we need to reduce the proof, too? Otherwise, might the proof
---       contain mvars which were removed when reducing the type, which then aren't assigned during
---       proof reconstruction?
---
 -- Note: We normalize the `lhs` and `rhs` of the rewrite.
 --
 -- Note: It isn't sufficient to take the `args` as `holes`, as implicit arguments will already be

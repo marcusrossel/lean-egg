@@ -21,10 +21,10 @@ define_language! {
         "fvar"  = FVar(Id),         // (Nat)
         "mvar"  = MVar(Id),         // (Nat)
         "sort"  = Sort(Id),         // (<level>)
-        "const" = Const(Box<[Id]>), // (Str, <level>*)
+        "const" = Const(Box<[Id]>), // (Str, <level>* | Erased)
         "app"   = App([Id; 2]),     // (<expr>, <expr>)
-        "λ"     = Lam([Id; 2]),     // (<expr>, <expr>)
-        "∀"     = Forall([Id; 2]),  // (<expr>, <expr>)
+        "λ"     = Lam([Id; 2]),     // (<expr> | Erased, <expr>)
+        "∀"     = Forall([Id; 2]),  // (<expr> | Erased, <expr>)
         "lit"   = Lit(Id),          // (Nat | Str)
 
         // Constant for erased expressions:

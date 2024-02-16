@@ -1,12 +1,5 @@
 namespace Egg.Config
 
--- TODO: Unused
-inductive TypeTags
-  | none
-  | indices
-  | exprs
-  deriving BEq
-
 inductive ExitPoint
   | none
   | beforeEqSat
@@ -14,7 +7,7 @@ inductive ExitPoint
   deriving BEq
 
 structure Encoding where
-  eraseProofs        := false
+  eraseProofs        := true
   eraseConstLevels   := false
   eraseLamdaDomains  := true
   eraseForallDomains := true
