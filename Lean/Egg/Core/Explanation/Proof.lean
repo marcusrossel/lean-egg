@@ -1,49 +1,39 @@
-import Egg.Core.Config
-import Egg.Core.Explanation
+import Egg.Core.Explanation.Basic
 open Lean Meta
 
 -- TODO: Simplify tracing by adding `MessageData` instances for relevant types.
 
 namespace Egg.Explanation
 
--- Note: Since we don't know lambda and forall expressions' binder types, we pass fresh mvars
---       instead. These are assigned in `Explanation.proof`.
---
--- Note: If universe level erasure is active, we don't know constant expressions' universe level
---       parameters. We can figure out how many there need to be though and instantiate them with
---       fresh universe level mvars.
-def Expression.toExpr (cfg : Config) : Expression → MetaM Expr
-  | bvar idx        => return .bvar idx
-  | fvar id         => return .fvar id
-  | mvar id         => return .mvar id
-  | sort lvl        => return .sort lvl
-  | const name lvls => mkConst name lvls.toList cfg.eraseULvls
-  | app fn arg      => return .app (← toExpr cfg fn) (← toExpr cfg arg)
-  | lam body        => return .lam .anonymous (← mkFreshExprMVar none) (← toExpr cfg body) .default
-  | .forall body    => return .forallE .anonymous (← mkFreshExprMVar none) (← toExpr cfg body) .default
-  | lit l           => return .lit l
-where
-  mkConst (name : Name) (lvls : List Level) (erasedULvls : Bool) : MetaM Expr := do
-    if erasedULvls
-    then mkConstWithFreshMVarLevels name
-    else return .const name lvls
+def Expression.toExpr : Expression → MetaM Expr
+  | bvar idx               => return .bvar idx
+  | fvar id                => return .fvar id
+  | mvar id                => return .mvar id
+  | sort lvl               => return .sort lvl
+  | const name none        => mkConstWithFreshMVarLevels name
+  | const name (some lvls) => return .const name lvls.toList
+  | app fn arg             => return .app (← toExpr fn) (← toExpr arg)
+  | lam ty body            => return .lam .anonymous (← toExpr ty) (← toExpr body) .default
+  | .forall ty body        => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
+  | lit l                  => return .lit l
+  | erased                 => mkFreshExprMVar none
 
 -- BUG: `isDefEq` doesn't unify level mvars.
-def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) (cfg : Config) : MetaM Expr := do
+def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) : MetaM Expr := do
   withTraceNode `egg.reconstruction (fun _ => return "Reconstruction") do
-    let mut current ← expl.start.toExpr cfg
+    let mut current ← expl.start.toExpr
     let steps := expl.steps
     withTraceNode `egg.reconstruction (fun _ => return "Explanation") do
       trace[egg.reconstruction] current
       for step in steps, idx in [:steps.size] do
         withTraceNode `egg.reconstruction (fun _ => return s!"Step {idx}") do
           trace[egg.reconstruction] step.src.description
-          trace[egg.reconstruction] ← step.dst.toExpr cfg
+          trace[egg.reconstruction] ← step.dst.toExpr
     unless ← isDefEq cgr.lhs current do
       throwError s!"{errorPrefix} initial expression is not defeq to lhs of proof goal"
     let mut proof ← mkEqRefl current
     for step in steps, idx in [:steps.size] do
-      let next ← step.dst.toExpr cfg
+      let next ← step.dst.toExpr
       let stepEq ← do
         withTraceNode `egg.reconstruction (fun _ => return m!"Step {idx}") do
           trace[egg.reconstruction] m!"Current: {current}"

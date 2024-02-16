@@ -23,14 +23,11 @@ define_language! {
         "sort"  = Sort(Id),         // (<level>)
         "const" = Const(Box<[Id]>), // (Str, <level>*)
         "app"   = App([Id; 2]),     // (<expr>, <expr>)
-        "λ"     = Lam(Id),          // (<expr>)
-        "∀"     = Forall(Id),       // (<expr>)
+        "λ"     = Lam([Id; 2]),     // (<expr>, <expr>)
+        "∀"     = Forall([Id; 2]),  // (<expr>, <expr>)
         "lit"   = Lit(Id),          // (Nat | Str)
 
-        // Constant for proof erasure:
-        "proof" = Proof,
-
-        // Tag for explicit type annotations:
-        "τ"     = Typed([Id; 2]),   // (TypeId | <expr>, <expr>)
+        // Constant for erased expressions:
+        "_" = Erased,
     }
 }

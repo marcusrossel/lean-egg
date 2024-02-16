@@ -20,7 +20,7 @@ private def TcProj.reductionRewrite (proj : TcProj) (src : Source) : MetaM Rewri
   let reduced := (← reduceAll app).eta
   let eq ← mkEq app reduced
   let proof ← mkEqRefl app
-  let some rw ← Rewrite.from? proof eq src false | throwError "egg: internal error in 'TcProj.reductionRewrite?'"
+  let some rw ← Rewrite.from? proof eq src | throwError "egg: internal error in 'TcProj.reductionRewrite?'"
   return rw
 
 private structure State where

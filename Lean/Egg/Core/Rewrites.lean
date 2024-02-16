@@ -91,9 +91,8 @@ def validDirs (rw : Rewrite) (ignoreULvls : Bool) : MetaM (Option Directions) :=
 --
 -- Note: We must instantiate mvars of the rewrite's type. For an example that breaks otherwise, cf.
 --       https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Different.20elab.20results
-def from? (proof : Expr) (type : Expr) (src : Source) (reduce : Bool) : MetaM (Option Rewrite) := do
+def from? (proof : Expr) (type : Expr) (src : Source) : MetaM (Option Rewrite) := do
   let mut (args, _, type) ← forallMetaTelescopeReducing (← instantiateMVars type)
-  if reduce then type ← reduceAll type
   type ← normalize type
   let proof := mkAppN proof args
   let holes ← getMVars type

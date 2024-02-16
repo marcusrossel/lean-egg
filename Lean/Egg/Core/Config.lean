@@ -1,29 +1,45 @@
-namespace Egg
+namespace Egg.Config
 
-inductive Config.TypeTags
+-- TODO: Unused
+inductive TypeTags
   | none
   | indices
   | exprs
   deriving BEq
 
-inductive Config.ExitPoint
+inductive ExitPoint
   | none
   | beforeEqSat
   | beforeProof
   deriving BEq
 
--- TODO: At some point it might be a good idea to split this into multiple kinds of configs which
---       extend eachother. For example, the first three properties could be an encoding config.
---       The `optimizeExpl` and `exitPoint` properties aren't relevant for that.
---
--- TODO: Make `eraseProofs` and `eraseULvls` true by default once proof reconstruction can support
---       it.
-structure Config where
-  eraseProofs  := false
-  eraseULvls   := false
+structure Encoding where
+  eraseProofs        := false
+  eraseConstLevels   := false
+  eraseLamdaDomains  := true
+  eraseForallDomains := true
+  deriving BEq
+
+structure Gen where
   genTcProjRws := true
   genNatLitRws := true
-  typeTags     := Config.TypeTags.none
-  reduce       := false
+  deriving BEq
+
+structure Backend where
   optimizeExpl := false
-  exitPoint    := Config.ExitPoint.none
+  deriving BEq
+
+structure Debug where
+  exitPoint := Config.ExitPoint.none
+  deriving BEq
+
+end Config
+open Config
+
+structure Config extends Encoding, Gen, Backend, Debug
+
+def Config.noErasure : Config where
+  eraseProofs        := false
+  eraseConstLevels   := false
+  eraseLamdaDomains  := false
+  eraseForallDomains := false

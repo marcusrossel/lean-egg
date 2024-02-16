@@ -3,7 +3,11 @@ import Egg.Core.Rewrites
 open Lean
 open Egg.Rewrite (Direction)
 
-namespace Egg.Explanation.Rewrite
+namespace Egg.Explanation
+
+abbrev Raw := String
+
+namespace Rewrite
 
 structure Descriptor where
   src : Source
@@ -16,18 +20,17 @@ structure Info extends Descriptor where
 
 end Rewrite
 
-abbrev Raw := String
-
 inductive Expression where
   | bvar (idx : Nat)
   | fvar (id : FVarId)
   | mvar (id : MVarId)
   | sort (lvl : Level)
-  | const (name : Name) (lvls : Array Level)
+  | const (name : Name) (lvls? : Option (Array Level))
   | app (fn arg : Expression)
-  | lam (body : Expression)
-  | forall (body : Expression)
+  | lam (ty body : Expression)
+  | forall (ty body : Expression)
   | lit (l : Literal)
+  | erased
   deriving Inhabited
 
 structure Step extends Rewrite.Info where

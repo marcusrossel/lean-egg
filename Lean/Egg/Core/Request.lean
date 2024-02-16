@@ -1,6 +1,6 @@
 import Egg.Core.Encode.Basic
 import Egg.Core.Config
-import Egg.Core.Explanation
+import Egg.Core.Explanation.Basic
 import Egg.Tactic.Rewrites
 open Lean
 
@@ -28,8 +28,8 @@ structure Request where
 
 namespace Request
 
-def «from» (goal : Congr) (rws : Rewrites) (dirs : Array Rewrite.Directions) (cfg : Config) :
-    IndexT MetaM Request :=
+def encoding (goal : Congr) (rws : Rewrites) (dirs : Array Rewrite.Directions) (cfg : Config) :
+    MetaM Request :=
   return {
     lhs          := ← encode goal.lhs .goal cfg
     rhs          := ← encode goal.rhs .goal cfg

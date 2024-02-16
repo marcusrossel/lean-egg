@@ -19,7 +19,7 @@ namespace Rewrites
 
 -- Note: We must use `Tactic.elabTerm`, not `Term.elabTerm`. Otherwise elaborating `‹...›` doesn't
 --       work correctly. Cf. https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Elaborate.20.E2.80.B9.2E.2E.2E.E2.80.BA
-partial def explicit (arg : Term) (argIdx : Nat) (reduce : Bool) : TacticM Rewrites := do
+partial def explicit (arg : Term) (argIdx : Nat) : TacticM Rewrites := do
   match ← elabArg arg with
   | .inl (e, ty?) => return #[← mkRw e ty? none]
   | .inr eqns =>
@@ -37,7 +37,7 @@ where
   mkRw (e : Expr) (ty? : Option Expr) (eqnIdx? : Option Nat) : TacticM Rewrite := do
     let src := .explicit argIdx eqnIdx?
     let ty := ty?.getD (← inferType e)
-    let some rw ← Rewrite.from? e ty src reduce
+    let some rw ← Rewrite.from? e ty src
       | throwErrorAt arg "egg requires arguments to be equalities, equivalences or (non-propositional) definitions"
     return rw
   elabArg (arg : Term) : TacticM (Sum (Expr × Option Expr) (Array Ident)) := do
@@ -67,15 +67,15 @@ where
 -- Note: We need to filter out auxiliary declaration and implementation details, as they are not
 --       visible in the proof context and, for example, contain the declaration being defined itself
 --       (to enable recursive calls). Cf. https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/local.20context.20without.20current.20decl
-def star (reduce : Bool) : MetaM Rewrites := do
+def star : MetaM Rewrites := do
   let mut result : Rewrites := #[]
   for decl in ← getLCtx do
     if decl.isImplementationDetail || decl.isAuxDecl then continue
-    if let some rw ← Rewrite.from? decl.toExpr decl.type (.star decl.fvarId) reduce
+    if let some rw ← Rewrite.from? decl.toExpr decl.type (.star decl.fvarId)
     then result := result.push rw
   return result
 
-def parse (reduce : Bool) : (TSyntax `egg_rws) → TacticM Rewrites
+def parse : (TSyntax `egg_rws) → TacticM Rewrites
   | `(egg_rws|)          => return {}
   | `(egg_rws|[$args,*]) => do
     let mut result : Rewrites := #[]
@@ -83,11 +83,11 @@ def parse (reduce : Bool) : (TSyntax `egg_rws) → TacticM Rewrites
     for arg in args.getElems, idx in [:args.getElems.size] do
       match arg with
       | `(egg_rws_arg|$arg:term) =>
-        result := result ++ (← explicit arg idx reduce)
+        result := result ++ (← explicit arg idx)
       | `(egg_rws_arg|*%$tk) =>
         unless noStar do throwErrorAt tk "duplicate '*' in arguments to egg"
         noStar := false
-        result := result ++ (← star reduce)
+        result := result ++ (← star)
       | _ =>
         throwUnsupportedSyntax
     return result
