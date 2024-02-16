@@ -5,6 +5,7 @@ import Egg
 example : 0 = Nat.zero := by
   egg
 
+set_option trace.egg true in
 example : 1 = Nat.succ 0 := by
   egg
 
