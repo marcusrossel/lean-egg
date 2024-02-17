@@ -24,6 +24,7 @@ inductive Source where
   | explicit (idx : Nat) (eqn? : Option Nat)
   | star (id : FVarId)
   | tcProj (src : Source) (side : Side) (pos : SubExpr.Pos)
+  | explosion (src : Source) (idx : Nat)
   | natLit (src : Source.NatLit)
   deriving Inhabited, BEq, Hashable
 
@@ -40,6 +41,7 @@ def description : Source → String
   | explicit idx (some eqn) => s!"#{idx}/{eqn}"
   | star id                 => s!"*{id.uniqueIdx!}"
   | tcProj src side pos     => s!"{src.description}[{side.description}{pos}]"
+  | explosion src idx       => s!"{src.description}<{idx}>"
   | natLit src              => src.description
 
 instance : ToString Source where

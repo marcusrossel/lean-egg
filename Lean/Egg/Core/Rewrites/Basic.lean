@@ -15,9 +15,9 @@ structure _root_.Egg.Rewrite extends Congr where
   private lhsMVars : MVars
   private rhsMVars : MVars
 
-def validDirs (rw : Rewrite) (ignoreULvls : Bool) : Directions :=
+def validDirs (rw : Rewrite) (ignoreConstLvls : Bool) : Directions :=
   let exprDirs : Directions := .satisfyingSuperset rw.lhsMVars.expr rw.rhsMVars.expr
-  if ignoreULvls then
+  if ignoreConstLvls then
     let sortDirs := .satisfyingSuperset rw.lhsMVars.sortLvl rw.rhsMVars.sortLvl
     exprDirs.meet sortDirs
   else
@@ -30,6 +30,7 @@ def forDir (rw : Rewrite) : Direction → MetaM Rewrite
   | .forward  => return rw
   | .backward => return { rw with lhs := rw.rhs, rhs := rw.lhs, proof := ← rw.rel.mkSymm rw.proof }
 
+-- TODO: Factor out some parts of this as functions on `Rewrite.MVars`.
 -- Returns the same rewrite but with all (expression and level) mvars replaced by fresh mvars. This
 -- is used during proof reconstruction, as rewrites may be used multiple times but instantiated
 -- differently. If we don't use fresh mvars, the mvars will already be assigned and new assignment
