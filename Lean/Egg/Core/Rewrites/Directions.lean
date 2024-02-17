@@ -1,3 +1,6 @@
+import Lean
+open Lean
+
 namespace Egg.Rewrite
 
 inductive Direction where
@@ -9,6 +12,7 @@ def Direction.merge : Direction → Direction → Direction
   | .forward, .forward  | .backward, .backward => .forward
   | .forward, .backward | .backward, .forward  => .backward
 
+-- IMPORTANT: The C interface to egg depends on the order of these constructors.
 inductive Directions where
   | none
   | forward
@@ -25,16 +29,14 @@ instance : ToString Directions where
     | .both     => "both"
 
 -- The directions for which a given set is a superset of the other.
-def satisfyingSuperset [BEq α] (lhs rhs : Array α) : Directions :=
-  let rSupL := lhs.all rhs.contains
-  let lSupR := rhs.all lhs.contains
-  match lSupR, rSupL with
+def satisfyingSuperset (lhs rhs : RBTree α cmp) : Directions :=
+  match rhs.subset lhs, lhs.subset rhs with
   | false, false => .none
   | false, true  => .backward
   | true,  false => .forward
   | true,  true  => .both
 
--- The greatest lower bound of two given directions where according to the lattice:
+-- The greatest lower bound of two given directions according to the lattice:
 --        both
 --       /    \
 -- forward   backward

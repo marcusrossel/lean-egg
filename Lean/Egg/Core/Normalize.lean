@@ -3,6 +3,7 @@ open Lean Meta
 
 namespace Egg
 
+-- TODO: Should this also replace level params with level mvars in rewrites?
 -- Performs ζ-reduction, converts `Expr.proj`s to `Expr.app`s and removes `Expr.mdata`s.
 -- Note that normalization does not affect binders' type expressions.
 partial def normalize : Expr → MetaM Expr
@@ -15,5 +16,5 @@ partial def normalize : Expr → MetaM Expr
   | e                 => return e
 where
   expandProj (ty : Name) (ctor : Nat) (b : Expr) : MetaM Expr := do
-    let some field := (getStructureFields (← getEnv) ty)[ctor]? | throwError "egg: failed to reduce proj"
+    let some field := (getStructureFields (← getEnv) ty)[ctor]? | throwError "'Egg.normalize' failed to reduce proj"
     mkProjection b field

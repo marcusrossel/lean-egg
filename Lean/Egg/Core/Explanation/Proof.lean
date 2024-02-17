@@ -91,7 +91,7 @@ where
     withTraceNode `egg.reconstruction (fun _ => return m!"Rewrite {rwDesc.src.description}") do
       trace[egg.reconstruction] m!"Type: {freshRw.lhs} = {freshRw.rhs}"
       trace[egg.reconstruction] m!"Proof: {freshRw.proof}"
-      trace[egg.reconstruction] m!"Holes: {freshRw.holes.map (Expr.mvar ·)}"
+      -- TODO: trace[egg.reconstruction] m!"Holes: {freshRw.holes.map (Expr.mvar ·)}"
     withTraceNode `egg.reconstruction (fun _ => return m!"Unification") do
       withTraceNode `egg.reconstruction (fun _ => return "LHS") (collapsed := false) do
         trace[egg.reconstruction] current
