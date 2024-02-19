@@ -31,13 +31,13 @@ def forDir (rw : Rewrite) : Direction → MetaM Rewrite
 -- is used during proof reconstruction, as rewrites may be used multiple times but instantiated
 -- differently. If we don't use fresh mvars, the mvars will already be assigned and new assignment
 -- (via `isDefEq`) will fail.
-def fresh (rw : Rewrite) : MetaM Rewrite := do
+def fresh (rw : Rewrite) (src : Source := rw.src) : MetaM Rewrite := do
   let (mvarSubst, lmvarSubst, lhsMVars) ← mkSubsts ∅ ∅ rw.lhsMVars
   let (mvarSubst, lmvarSubst, rhsMVars) ← mkSubsts mvarSubst lmvarSubst rw.rhsMVars
   let lhs   := applySubsts rw.lhs   mvarSubst lmvarSubst
   let rhs   := applySubsts rw.rhs   mvarSubst lmvarSubst
   let proof := applySubsts rw.proof mvarSubst lmvarSubst
-  return { rw with lhs, rhs, proof, lhsMVars, rhsMVars }
+  return { rw with lhs, rhs, proof, src, lhsMVars, rhsMVars }
 where
   applySubsts (e : Expr) (mvarSubst : HashMap MVarId Expr) (lmvarSubst : HashMap LMVarId Level) : Expr :=
     let replaceLvl : Level → Option Level

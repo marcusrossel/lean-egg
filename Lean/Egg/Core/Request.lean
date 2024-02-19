@@ -1,5 +1,6 @@
 import Egg.Core.Encode.Basic
 import Egg.Core.Config
+import Egg.Core.Gen.Explosion
 import Egg.Core.Explanation.Basic
 import Egg.Core.Rewrites.Basic
 open Lean
@@ -28,19 +29,21 @@ structure Request where
 
 namespace Request
 
-def Rewrites.encoding (rws : Rewrites) (cfg : Config.Encoding) : MetaM Request.Rewrites :=
+def Rewrites.encoding (rws : Rewrites) (cfg : Config.Encoding) (explode : ExplosionVars) :
+    MetaM Request.Rewrites :=
   rws.foldlM (init := {}) fun acc rw => return {
     names := acc.names.push <| rw.src.description
-    lhss  := acc.lhss.push  <| ← encode rw.lhs rw.src cfg
-    rhss  := acc.rhss.push  <| ← encode rw.rhs rw.src cfg
+    lhss  := acc.lhss.push  <| ← encode rw.lhs rw.src cfg explode
+    rhss  := acc.rhss.push  <| ← encode rw.rhs rw.src cfg explode
     dirs  := acc.dirs.push  <| rw.validDirs
   }
 
-def encoding (goal : Congr) (rws : Rewrites) (cfg : Config) : MetaM Request :=
+def encoding (goal : Congr) (rws : Rewrites) (cfg : Config) (explode : ExplosionVars) :
+    MetaM Request :=
   return {
-    lhs          := ← encode goal.lhs .goal cfg.toEncoding
-    rhs          := ← encode goal.rhs .goal cfg.toEncoding
-    rws          := ← Rewrites.encoding rws cfg.toEncoding
+    lhs          := ← encode goal.lhs .goal cfg.toEncoding explode
+    rhs          := ← encode goal.rhs .goal cfg.toEncoding explode
+    rws          := ← Rewrites.encoding rws cfg.toEncoding explode
     optimizeExpl := cfg.optimizeExpl
     genNatLitRws := cfg.genNatLitRws
   }

@@ -45,3 +45,12 @@ def HashMap.insertIfNew [BEq α] [BEq β] [Hashable α] [Hashable β]
 
 def RBTree.merge (t₁ t₂ : RBTree α cmp) : RBTree α cmp :=
   t₁.mergeBy (fun _ _ _ => .unit) t₂
+
+def RBTree.filter (t : RBTree α cmp) (keep : α → Bool) : RBTree α cmp :=
+  t.fold (init := t) fun res a => if keep a then res else res.erase a
+
+def RBTree.subtract (t₁ t₂ : RBTree α cmp) : RBTree α cmp :=
+  t₁.filter (!t₂.contains ·)
+
+def RBTree.singleton (a : α) : RBTree α cmp :=
+  insert ∅ a

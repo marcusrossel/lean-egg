@@ -13,7 +13,6 @@ declare_syntax_cat egg_side
 declare_syntax_cat egg_subexpr_pos
 declare_syntax_cat egg_basic_fwd_rw_src
 declare_syntax_cat egg_tc_proj
-declare_syntax_cat egg_explosion
 declare_syntax_cat egg_fwd_rw_src
 declare_syntax_cat egg_rw_src
 
@@ -40,14 +39,13 @@ syntax "*" noWs num                      : egg_basic_fwd_rw_src
 
 syntax "[" egg_side egg_subexpr_pos "]" : egg_tc_proj
 
-syntax "<" num ">" : egg_explosion
-
-syntax egg_basic_fwd_rw_src (egg_tc_proj)? (egg_explosion)? : egg_fwd_rw_src
-syntax "⊢" egg_tc_proj                                      : egg_fwd_rw_src
-syntax "!z"                                                 : egg_fwd_rw_src
-syntax "!t"                                                 : egg_fwd_rw_src
-syntax "!o"                                                 : egg_fwd_rw_src
-syntax "src/nat_lit.rs:" num ":" num                        : egg_fwd_rw_src -- TODO: https://egraphs.zulipchat.com/#narrow/stream/375765-egg.2Fegglog/topic/egg.3A.20dynamic.20rewrite's.20name
+syntax egg_basic_fwd_rw_src (egg_tc_proj)? ("<" egg_side ">")? : egg_fwd_rw_src
+syntax "⊢" egg_tc_proj                                         : egg_fwd_rw_src
+syntax ident "<" num ">"                                       : egg_fwd_rw_src
+syntax "!z"                                                    : egg_fwd_rw_src
+syntax "!t"                                                    : egg_fwd_rw_src
+syntax "!o"                                                    : egg_fwd_rw_src
+syntax "src/nat_lit.rs:" num ":" num                           : egg_fwd_rw_src -- TODO: https://egraphs.zulipchat.com/#narrow/stream/375765-egg.2Fegglog/topic/egg.3A.20dynamic.20rewrite's.20name
 
 syntax egg_fwd_rw_src (noWs "-rev")? : egg_rw_src
 
@@ -108,13 +106,15 @@ private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
   | `(egg_fwd_rw_src|!z)           => .natLit .zero
   | `(egg_fwd_rw_src|!t)           => .natLit .toSucc
   | `(egg_fwd_rw_src|!o)           => .natLit .ofSucc
-  | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src$[[$side?$pos?]]?$[<$exIdx?>]?) => Id.run do
+  | `(egg_fwd_rw_src|μ<$idx>)      => .explosion (.exprSubst idx.getNat)
+  | `(egg_fwd_rw_src|Λ<$idx>)      => .explosion (.lvlSubst idx.getNat)
+  | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src$[[$tcSide?$pos?]]?$[<$exSide?>]?) => Id.run do
     let mut src := parseBasicFwdRwSrc src
-    if let some side := side?   then src := .tcProj src (parseSide side) (parseSubexprPos pos?.get!)
-    if let some exIdx := exIdx? then src := .explosion src exIdx.getNat
+    if let some tcSide := tcSide? then src := .tcProj src (parseSide tcSide) (parseSubexprPos pos?.get!)
+    if let some exSide := exSide? then src := .explosion (.rw src (parseSide exSide))
     return src
   | `(egg_fwd_rw_src|src/nat_lit.rs: $_ : $_) => .natLit .zero -- TODO: https://egraphs.zulipchat.com/#narrow/stream/375765-egg.2Fegglog/topic/egg.3A.20dynamic.20rewrite's.20name
-  | _                                                      => unreachable!
+  | _ => unreachable!
 
 private def parseRwSrc : (TSyntax `egg_rw_src) → Rewrite.Descriptor
   | `(egg_rw_src|$fwdSrc:egg_fwd_rw_src)     => { src := parseFwdRwSrc fwdSrc, dir := .forward }

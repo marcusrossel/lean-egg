@@ -15,6 +15,7 @@ structure Encoding where
 structure Gen where
   genTcProjRws := true
   genNatLitRws := true
+  explode      := true
   deriving BEq
 
 structure Backend where

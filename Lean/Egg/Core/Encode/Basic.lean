@@ -13,20 +13,21 @@ private def Expression.erased : Expression :=
 -- Note: The encoding of expression mvars and universe level mvars in rewrites relies on the fact
 --       that their indices are also unique between eachother.
 
-private def encodeLevel : Level → Source → Expression
-  | .zero,       _     => "0"
-  | .succ l,     k     => s!"(succ {encodeLevel l k})"
-  | .max l₁ l₂,  k     => s!"(max {encodeLevel l₁ k} {encodeLevel l₂ k})"
-  | .imax l₁ l₂, k     => s!"(imax {encodeLevel l₁ k} {encodeLevel l₂ k})"
-  | .mvar id,    .goal => s!"(uvar {id.uniqueIdx!})"
-  | .mvar id,    _     => s!"?{id.uniqueIdx!}"
-  | .param name, _     => s!"(param {name})"
-
 open EncodeM
 
+private def encodeLevel : Level → Source → EncodeM Expression
+  | .zero,       _     => return "0"
+  | .succ l,     k     => return s!"(succ {← encodeLevel l k})"
+  | .max l₁ l₂,  k     => return s!"(max {← encodeLevel l₁ k} {← encodeLevel l₂ k})"
+  | .imax l₁ l₂, k     => return s!"(imax {← encodeLevel l₁ k} {← encodeLevel l₂ k})"
+  | .mvar id,    .goal => return s!"(uvar {id.uniqueIdx!})"
+  | .mvar id,    _     => return if ← isExplosionLMVar id then "Λ" else s!"?{id.uniqueIdx!}"
+  | .param name, _     => return s!"(param {name})"
+
 -- Note: This function expects its input expression to be normalized (cf. `Egg.normalize`).
-partial def encode (e : Expr) (src : Source) (cfg : Config.Encoding) : MetaM Expression :=
-  Prod.fst <$> (go e).run { exprSrc := src, config := cfg }
+partial def encode (e : Expr) (src : Source) (cfg : Config.Encoding) (explode : ExplosionVars) :
+    MetaM Expression :=
+  Prod.fst <$> (go e).run { exprSrc := src, config := cfg, explode }
 where
   go (e : Expr) : EncodeM Expression := do
     if ← needsProofErasure e then return Expression.erased else core e
@@ -35,7 +36,7 @@ where
     | .bvar idx         => return s!"(bvar {idx})"
     | .fvar id          => encodeFVar id
     | .mvar id          => encodeMVar id
-    | .sort lvl         => return s!"(sort {encodeLevel lvl (← exprSrc)})"
+    | .sort lvl         => return s!"(sort {← encodeLevel lvl (← exprSrc)})"
     | .const name lvls  => return s!"(const {name}{← encodeConstLvls lvls})"
     | .app fn arg       => return s!"(app {← go fn} {← go arg})"
     | .lam _ ty b _     => encodeLam ty b
@@ -52,10 +53,10 @@ where
   encodeMVar (id : MVarId) : EncodeM Expression := do
     match ← exprSrc with
     | .goal => return s!"(mvar {id.uniqueIdx!})"
-    | _     => return s!"?{id.uniqueIdx!}"
+    | _     => return if ← isExplosionMVar id then "μ" else s!"?{id.uniqueIdx!}"
 
   encodeConstLvls (lvls : List Level) : EncodeM Expression :=
-    return lvls.foldl (init := "") (s!"{·} {encodeLevel · (← exprSrc)}")
+    lvls.foldlM (init := "") (return s!"{·} {← encodeLevel · (← exprSrc)}")
 
   encodeLam (ty b : Expr) : EncodeM Expression :=
     withInstantiatedBVar ty b fun body => do

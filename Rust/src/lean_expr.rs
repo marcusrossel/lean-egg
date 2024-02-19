@@ -21,13 +21,15 @@ define_language! {
         "fvar"  = FVar(Id),         // (Nat)
         "mvar"  = MVar(Id),         // (Nat)
         "sort"  = Sort(Id),         // (<level>)
-        "const" = Const(Box<[Id]>), // (Str, <level>* | Erased)
+        "const" = Const(Box<[Id]>), // (Str, <level>*)
         "app"   = App([Id; 2]),     // (<expr>, <expr>)
-        "λ"     = Lam([Id; 2]),     // (<expr> | Erased, <expr>)
-        "∀"     = Forall([Id; 2]),  // (<expr> | Erased, <expr>)
+        "λ"     = Lam([Id; 2]),     // (<expr>, <expr>)
+        "∀"     = Forall([Id; 2]),  // (<expr>, <expr>)
         "lit"   = Lit(Id),          // (Nat | Str)
 
-        // Constant for erased expressions:
+        // Constants for erased expressions, explosion expression vars and explosion level vars:
         "_" = Erased,
+        "μ" = ExplosionExpr,
+        "Λ" = ExplosionLvl,
     }
 }
