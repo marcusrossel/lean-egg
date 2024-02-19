@@ -10,19 +10,15 @@ namespace Egg.Rewrite
 
 structure _root_.Egg.Rewrite extends Congr where
   private mk ::
-  proof : Expr
-  src   : Source
-  private lhsMVars : MVars
-  private rhsMVars : MVars
+  proof    : Expr
+  src      : Source
+  lhsMVars : MVars
+  rhsMVars : MVars
 
-def validDirs (rw : Rewrite) (ignoreConstLvls : Bool) : Directions :=
-  let exprDirs : Directions := .satisfyingSuperset rw.lhsMVars.expr rw.rhsMVars.expr
-  if ignoreConstLvls then
-    let sortDirs := .satisfyingSuperset rw.lhsMVars.sortLvl rw.rhsMVars.sortLvl
-    exprDirs.meet sortDirs
-  else
-    let lvlDirs := .satisfyingSuperset rw.lhsMVars.lvl rw.rhsMVars.lvl
-    exprDirs.meet lvlDirs
+def validDirs (rw : Rewrite) : Directions :=
+  let exprDirs := Directions.satisfyingSuperset rw.lhsMVars.expr rw.rhsMVars.expr
+  let lvlDirs  := Directions.satisfyingSuperset rw.lhsMVars.lvl rw.rhsMVars.lvl
+  exprDirs.meet lvlDirs
 
 -- Returns the same rewrite but with its type and proof potentially flipped to match the given
 -- direction.
@@ -60,20 +56,19 @@ where
     let mut lmvarSubst         := lmvarSubst
     let mut freshMVars : MVars := {}
     for var in mvars.expr do
-      let fresh ← mkFreshExprMVar (← var.getType)
-      mvarSubst := mvarSubst.insert var fresh
-      freshMVars := { freshMVars with expr := freshMVars.expr.insert fresh.mvarId! }
-    for var in mvars.constLvl do
-      let fresh ← mkFreshLevelMVar
-      lmvarSubst := lmvarSubst.insert var fresh
-      freshMVars := { freshMVars with constLvl := freshMVars.constLvl.insert fresh.mvarId! }
-    for var in mvars.sortLvl do
+      if let some fresh := mvarSubst.find? var then
+        freshMVars := { freshMVars with expr := freshMVars.expr.insert fresh.mvarId! }
+      else
+        let fresh ← mkFreshExprMVar (← var.getType)
+        mvarSubst := mvarSubst.insert var fresh
+        freshMVars := { freshMVars with expr := freshMVars.expr.insert fresh.mvarId! }
+    for var in mvars.lvl do
       if let some fresh := lmvarSubst.find? var then
-        freshMVars := { freshMVars with sortLvl := freshMVars.sortLvl.insert fresh.mvarId! }
+        freshMVars := { freshMVars with lvl := freshMVars.lvl.insert fresh.mvarId! }
       else
         let fresh ← mkFreshLevelMVar
         lmvarSubst := lmvarSubst.insert var fresh
-        freshMVars := { freshMVars with sortLvl := freshMVars.sortLvl.insert fresh.mvarId! }
+        freshMVars := { freshMVars with lvl := freshMVars.lvl.insert fresh.mvarId! }
     return (mvarSubst, lmvarSubst, freshMVars)
 
 -- Note: We normalize the `lhs` and `rhs` of the rewrite.
@@ -91,7 +86,7 @@ def from? (proof : Expr) (type : Expr) (src : Source) : MetaM (Option Rewrite) :
   let mut (args, _, type) ← forallMetaTelescopeReducing (← instantiateMVars type)
   type ← normalize type
   let proof := mkAppN proof args
-  let some cgr := Congr.from? type | return none
+  let some cgr ← Congr.from? type | return none
   let lhsMVars := MVars.collect cgr.lhs
   let rhsMVars := MVars.collect cgr.rhs
   return some { cgr with proof, src, lhsMVars, rhsMVars }

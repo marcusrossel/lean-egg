@@ -3,7 +3,6 @@ open Lean Meta
 
 namespace Egg
 
--- TODO: Should this also replace level params with level mvars in rewrites?
 -- Performs ζ-reduction, converts `Expr.proj`s to `Expr.app`s and removes `Expr.mdata`s.
 -- Note that normalization does not affect binders' type expressions.
 partial def normalize : Expr → MetaM Expr

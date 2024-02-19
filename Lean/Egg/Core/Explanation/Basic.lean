@@ -26,7 +26,7 @@ inductive Expression where
   | fvar (id : FVarId)
   | mvar (id : MVarId)
   | sort (lvl : Level)
-  | const (name : Name) (lvls? : Option (Array Level))
+  | const (name : Name) (lvls : List Level)
   | app (fn arg : Expression)
   | lam (ty body : Expression)
   | forall (ty body : Expression)

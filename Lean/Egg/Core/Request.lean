@@ -33,7 +33,7 @@ def Rewrites.encoding (rws : Rewrites) (cfg : Config.Encoding) : MetaM Request.R
     names := acc.names.push <| rw.src.description
     lhss  := acc.lhss.push  <| ← encode rw.lhs rw.src cfg
     rhss  := acc.rhss.push  <| ← encode rw.rhs rw.src cfg
-    dirs  := acc.dirs.push  <| rw.validDirs (ignoreConstLvls := cfg.eraseConstLevels)
+    dirs  := acc.dirs.push  <| rw.validDirs
   }
 
 def encoding (goal : Congr) (rws : Rewrites) (cfg : Config) : MetaM Request :=

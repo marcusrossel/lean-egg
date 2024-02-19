@@ -54,10 +54,8 @@ where
     | .goal => return s!"(mvar {id.uniqueIdx!})"
     | _     => return s!"?{id.uniqueIdx!}"
 
-  encodeConstLvls (lvls : List Level) : EncodeM Expression := do
-    if (← config).eraseConstLevels
-    then return s!" {Expression.erased}"
-    else return lvls.foldl (init := "") (s!"{·} {encodeLevel · (← exprSrc)}")
+  encodeConstLvls (lvls : List Level) : EncodeM Expression :=
+    return lvls.foldl (init := "") (s!"{·} {encodeLevel · (← exprSrc)}")
 
   encodeLam (ty b : Expr) : EncodeM Expression :=
     withInstantiatedBVar ty b fun body => do

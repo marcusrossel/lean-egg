@@ -28,7 +28,7 @@ where
   getCongr (goalType : Expr) (base? : Option FVarId) : MetaM Congr := do
     if let some base := base? then
       return { lhs := ← base.getType, rhs := goalType, rel := .eq : Congr }
-    else if let some c := Congr.from? goalType then
+    else if let some c ← Congr.from? goalType then
       return c
     else
       throwError "expected goal to be of type '=' or '↔', but found:\n{← ppExpr goalType}"
@@ -46,14 +46,15 @@ private def traceFrontend (goal : Goal) (rws : Rewrites) (cfg : Config) : Tactic
       trace[egg.frontend] ← encode goal.type.lhs .goal cfg.toEncoding
     withTraceNode `egg.frontend (fun _ => return "RHS") do
       trace[egg.frontend] ← encode goal.type.rhs .goal cfg.toEncoding
-    withTraceNode `egg.frontend (fun _ => return (if rws.isEmpty then "No " else "") ++ "Rewrites") (collapsed := false) do
+    let rwsTitle := (if rws.isEmpty && !cfg.genNatLitRws then "No " else "") ++ "Rewrites"
+    withTraceNode `egg.frontend (fun _ => return rwsTitle) (collapsed := false) do
       for rw in rws do
         withTraceNode `egg.frontend (fun _ => return m!"{rw.src}") do
           withTraceNode `egg.frontend (fun _ => return "LHS") do
             trace[egg.frontend] ← encode rw.lhs rw.src cfg.toEncoding
           withTraceNode `egg.frontend (fun _ => return "RHS") do
             trace[egg.frontend] ← encode rw.rhs rw.src cfg.toEncoding
-          trace[egg.frontend] "Directions: {rw.validDirs cfg.eraseConstLevels}"
+          trace[egg.frontend] "Directions: {rw.validDirs}"
       if cfg.genNatLitRws then
         trace[egg.frontend] "Nat Literal Conversions"
 

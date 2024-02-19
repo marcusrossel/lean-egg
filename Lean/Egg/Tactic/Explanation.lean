@@ -7,7 +7,6 @@ namespace Egg.Explanation
 declare_syntax_cat egg_expl
 declare_syntax_cat egg_expl_step
 declare_syntax_cat egg_lvl
-declare_syntax_cat egg_lvls
 declare_syntax_cat egg_lit
 declare_syntax_cat egg_rw_dir
 declare_syntax_cat egg_side
@@ -24,9 +23,6 @@ syntax "(" &"param" ident ")"          : egg_lvl
 syntax "(" &"succ" egg_lvl ")"         : egg_lvl
 syntax "(" &"max" egg_lvl egg_lvl ")"  : egg_lvl
 syntax "(" &"imax" egg_lvl egg_lvl ")" : egg_lvl
-
-syntax egg_lvl* : egg_lvls
-syntax "_"      : egg_lvls
 
 syntax num : egg_lit
 syntax str : egg_lit
@@ -64,7 +60,7 @@ syntax "(" &"bvar" num ")"                                         : egg_expl_st
 syntax "(" &"fvar" num ")"                                         : egg_expl_step
 syntax "(" &"mvar" num ")"                                         : egg_expl_step
 syntax "(" &"sort" egg_lvl ")"                                     : egg_expl_step
-syntax "(" &"const" ident egg_lvls ")"                             : egg_expl_step
+syntax "(" &"const" ident egg_lvl* ")"                             : egg_expl_step
 syntax "(" &"app" egg_expl_step egg_expl_step ")"                  : egg_expl_step
 syntax "(" &"λ" egg_expl_step egg_expl_step ")"                    : egg_expl_step
 syntax "(" &"∀" egg_expl_step egg_expl_step ")"                    : egg_expl_step
@@ -81,11 +77,6 @@ private partial def parseLevel : (TSyntax `egg_lvl) → Level
   | `(egg_lvl|(max $lvl₁ $lvl₂))  => .max (parseLevel lvl₁) (parseLevel lvl₂)
   | `(egg_lvl|(imax $lvl₁ $lvl₂)) => .imax (parseLevel lvl₁) (parseLevel lvl₂)
   | _                             => unreachable!
-
-private def parseLevels : (TSyntax `egg_lvls) → Option (Array Level)
-  | `(egg_lvls|$[$lvls]*) => lvls.map parseLevel
-  | `(egg_lvls|_)         => none
-  | _                     => unreachable!
 
 private def parseLit : (TSyntax `egg_lit) → Literal
   | `(egg_lit|$n:num) => .natVal n.getNat
@@ -161,7 +152,7 @@ where
     | `(egg_expl_step|(fvar $id))               => return .fvar (.fromUniqueIdx id.getNat)
     | `(egg_expl_step|(mvar $id))               => return .mvar (.fromUniqueIdx id.getNat)
     | `(egg_expl_step|(sort $lvl))              => return .sort (parseLevel lvl)
-    | `(egg_expl_step|(const $name $lvls))      => return .const name.getId (parseLevels lvls)
+    | `(egg_expl_step|(const $name $lvls*))     => return .const name.getId (lvls.map parseLevel).toList
     | `(egg_expl_step|(app $fn $arg))           => return .app (← go pos.pushAppFn fn) (← go pos.pushAppArg arg)
     | `(egg_expl_step|(λ $ty $body))            => return .lam (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(egg_expl_step|(∀ $ty $body))            => return .forall (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)

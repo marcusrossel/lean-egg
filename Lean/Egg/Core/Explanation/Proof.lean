@@ -7,19 +7,17 @@ open Lean Meta
 namespace Egg.Explanation
 
 def Expression.toExpr : Expression → MetaM Expr
-  | bvar idx               => return .bvar idx
-  | fvar id                => return .fvar id
-  | mvar id                => return .mvar id
-  | sort lvl               => return .sort lvl
-  | const name none        => mkConstWithFreshMVarLevels name
-  | const name (some lvls) => return .const name lvls.toList
-  | app fn arg             => return .app (← toExpr fn) (← toExpr arg)
-  | lam ty body            => return .lam .anonymous (← toExpr ty) (← toExpr body) .default
-  | .forall ty body        => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
-  | lit l                  => return .lit l
-  | erased                 => mkFreshExprMVar none
+  | bvar idx        => return .bvar idx
+  | fvar id         => return .fvar id
+  | mvar id         => return .mvar id
+  | sort lvl        => return .sort lvl
+  | const name lvls => return .const name lvls
+  | app fn arg      => return .app (← toExpr fn) (← toExpr arg)
+  | lam ty body     => return .lam .anonymous (← toExpr ty) (← toExpr body) .default
+  | .forall ty body => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
+  | lit l           => return .lit l
+  | erased          => mkFreshExprMVar none
 
--- BUG: `isDefEq` doesn't unify level mvars.
 def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) : MetaM Expr := do
   withTraceNode `egg.reconstruction (fun _ => return "Reconstruction") do
     let mut current ← expl.start.toExpr

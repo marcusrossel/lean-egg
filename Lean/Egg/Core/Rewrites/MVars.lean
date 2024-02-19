@@ -5,12 +5,8 @@ open Lean
 namespace Egg.Rewrite
 
 structure MVars where
-  expr     : MVarIdSet  := ∅
-  constLvl : LMVarIdSet := ∅
-  sortLvl  : LMVarIdSet := ∅
-
-def MVars.lvl (vars : MVars) : LMVarIdSet :=
-  vars.constLvl.merge vars.sortLvl
+  expr : MVarIdSet  := ∅
+  lvl  : LMVarIdSet := ∅
 
 private structure MVarCollectionState where
   visitedExprs : ExprSet  := {}
@@ -43,7 +39,7 @@ where
         continue
       else
         s := { s with
-          mvars.constLvl := lvl.collectMVars s.mvars.constLvl
+          mvars.lvl := lvl.collectMVars s.mvars.lvl
           visitedLvls := s.visitedLvls.insert lvl
         }
     return s
@@ -53,7 +49,7 @@ where
       s
     else
       { s with
-        mvars.sortLvl := lvl.collectMVars s.mvars.sortLvl
+        mvars.lvl := lvl.collectMVars s.mvars.lvl
         visitedLvls := s.visitedLvls.insert lvl
       }
 
