@@ -16,7 +16,8 @@ declare_syntax_cat egg_tc_proj
 declare_syntax_cat egg_fwd_rw_src
 declare_syntax_cat egg_rw_src
 
-syntax num                             : egg_lvl
+syntax num /- 0 -/                     : egg_lvl
+syntax ident /- "υ" -/                 : egg_lvl
 syntax "(" &"uvar" num ")"             : egg_lvl
 syntax "(" &"param" ident ")"          : egg_lvl
 syntax "(" &"succ" egg_lvl ")"         : egg_lvl
@@ -54,6 +55,7 @@ syntax egg_fwd_rw_src (noWs "-rev")? : egg_rw_src
 --       just ignore this.
 
 syntax "_"                                                         : egg_expl_step
+syntax ident /- "ε" -/                                             : egg_expl_step
 syntax "(" &"bvar" num ")"                                         : egg_expl_step
 syntax "(" &"fvar" num ")"                                         : egg_expl_step
 syntax "(" &"mvar" num ")"                                         : egg_expl_step
@@ -67,13 +69,14 @@ syntax "(" &"Rewrite" noWs egg_rw_dir egg_rw_src egg_expl_step ")" : egg_expl_st
 
 syntax egg_expl_step+ : egg_expl
 
-private partial def parseLevel : (TSyntax `egg_lvl) → Level
-  | `(egg_lvl|$n:num)             => n.getNat.toLevel
+private partial def parseLvl : (TSyntax `egg_lvl) → Lvl
+  | `(egg_lvl|0)                  => .zero
+  | `(egg_lvl|υ)                  => .explosion
   | `(egg_lvl|(uvar $id))         => .mvar (.fromUniqueIdx id.getNat)
   | `(egg_lvl|(param $n))         => .param n.getId
-  | `(egg_lvl|(succ $lvl))        => .succ (parseLevel lvl)
-  | `(egg_lvl|(max $lvl₁ $lvl₂))  => .max (parseLevel lvl₁) (parseLevel lvl₂)
-  | `(egg_lvl|(imax $lvl₁ $lvl₂)) => .imax (parseLevel lvl₁) (parseLevel lvl₂)
+  | `(egg_lvl|(succ $lvl))        => .succ (parseLvl lvl)
+  | `(egg_lvl|(max $lvl₁ $lvl₂))  => .max (parseLvl lvl₁) (parseLvl lvl₂)
+  | `(egg_lvl|(imax $lvl₁ $lvl₂)) => .imax (parseLvl lvl₁) (parseLvl lvl₂)
   | _                             => unreachable!
 
 private def parseLit : (TSyntax `egg_lit) → Literal
@@ -106,8 +109,8 @@ private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
   | `(egg_fwd_rw_src|!z)           => .natLit .zero
   | `(egg_fwd_rw_src|!t)           => .natLit .toSucc
   | `(egg_fwd_rw_src|!o)           => .natLit .ofSucc
-  | `(egg_fwd_rw_src|μ<$idx>)      => .explosion (.exprSubst idx.getNat)
-  | `(egg_fwd_rw_src|Λ<$idx>)      => .explosion (.lvlSubst idx.getNat)
+  | `(egg_fwd_rw_src|ε<$idx>)      => .explosion (.exprSubst idx.getNat)
+  | `(egg_fwd_rw_src|υ<$idx>)      => .explosion (.lvlSubst idx.getNat)
   | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src$[[$tcSide?$pos?]]?$[<$exSide?>]?) => Id.run do
     let mut src := parseBasicFwdRwSrc src
     if let some tcSide := tcSide? then src := .tcProj src (parseSide tcSide) (parseSubexprPos pos?.get!)
@@ -148,11 +151,12 @@ private partial def parseExplStep (stx : TSyntax `egg_expl_step) : ParseStepResu
 where
   go (pos : SubExpr.Pos) : (TSyntax `egg_expl_step) → ParseStepM Expression
     | `(egg_expl_step|_)                        => return .erased
+    | `(egg_expl_step|ε)                        => return .explosion
     | `(egg_expl_step|(bvar $idx))              => return .bvar idx.getNat
     | `(egg_expl_step|(fvar $id))               => return .fvar (.fromUniqueIdx id.getNat)
     | `(egg_expl_step|(mvar $id))               => return .mvar (.fromUniqueIdx id.getNat)
-    | `(egg_expl_step|(sort $lvl))              => return .sort (parseLevel lvl)
-    | `(egg_expl_step|(const $name $lvls*))     => return .const name.getId (lvls.map parseLevel).toList
+    | `(egg_expl_step|(sort $lvl))              => return .sort (parseLvl lvl)
+    | `(egg_expl_step|(const $name $lvls*))     => return .const name.getId (lvls.map parseLvl).toList
     | `(egg_expl_step|(app $fn $arg))           => return .app (← go pos.pushAppFn fn) (← go pos.pushAppArg arg)
     | `(egg_expl_step|(λ $ty $body))            => return .lam (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(egg_expl_step|(∀ $ty $body))            => return .forall (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)

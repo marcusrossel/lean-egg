@@ -1,6 +1,6 @@
 import Egg.Core.Config
 import Egg.Core.Source
-import Egg.Core.Gen.Explosion
+import Egg.Core.MVars
 import Std.Data.List.Basic
 
 open Lean
@@ -11,7 +11,7 @@ structure EncodeM.State where
   exprSrc : Source
   config  : Config.Encoding
   bvars   : List FVarId := []
-  explode : ExplosionVars
+  explode : MVars
 
 abbrev EncodeM := StateT EncodeM.State MetaM
 

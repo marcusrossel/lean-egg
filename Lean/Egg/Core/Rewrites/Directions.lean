@@ -28,6 +28,11 @@ instance : ToString Directions where
     | .backward => "backward"
     | .both     => "both"
 
+def reverse : Directions → Directions
+  | .forward  => .backward
+  | .backward => .forward
+  | d         => d
+
 -- The directions for which a given set is a superset of the other.
 def satisfyingSuperset (lhs rhs : RBTree α cmp) : Directions :=
   match rhs.subset lhs, lhs.subset rhs with

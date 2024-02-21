@@ -1,5 +1,5 @@
 import Egg.Core.Rewrites.Directions
-import Egg.Core.Rewrites.MVars
+import Egg.Core.MVars
 import Egg.Core.Normalize
 import Egg.Core.Congr
 import Egg.Core.Source
@@ -14,30 +14,33 @@ structure _root_.Egg.Rewrite extends Congr where
   src      : Source
   lhsMVars : MVars
   rhsMVars : MVars
-
-def validDirs (rw : Rewrite) : Directions :=
-  let exprDirs := Directions.satisfyingSuperset rw.lhsMVars.expr rw.rhsMVars.expr
-  let lvlDirs  := Directions.satisfyingSuperset rw.lhsMVars.lvl rw.rhsMVars.lvl
-  exprDirs.meet lvlDirs
+  dirs     : Directions
 
 -- Returns the same rewrite but with its type and proof potentially flipped to match the given
 -- direction.
 def forDir (rw : Rewrite) : Direction → MetaM Rewrite
   | .forward  => return rw
-  | .backward => return { rw with lhs := rw.rhs, rhs := rw.lhs, proof := ← rw.rel.mkSymm rw.proof }
+  | .backward => return { rw with
+      lhs      := rw.rhs,
+      rhs      := rw.lhs,
+      proof    := ← rw.rel.mkSymm rw.proof
+      lhsMVars := rw.rhsMVars,
+      rhsMVars := rw.lhsMVars,
+      dirs     := rw.dirs.reverse
+    }
 
 -- TODO: Factor out some parts of this as functions on `Rewrite.MVars`.
 -- Returns the same rewrite but with all (expression and level) mvars replaced by fresh mvars. This
 -- is used during proof reconstruction, as rewrites may be used multiple times but instantiated
 -- differently. If we don't use fresh mvars, the mvars will already be assigned and new assignment
 -- (via `isDefEq`) will fail.
-def fresh (rw : Rewrite) (src : Source := rw.src) : MetaM Rewrite := do
+def fresh (rw : Rewrite) (src : Source := rw.src) (dirs : Directions := rw.dirs) : MetaM Rewrite := do
   let (mvarSubst, lmvarSubst, lhsMVars) ← mkSubsts ∅ ∅ rw.lhsMVars
   let (mvarSubst, lmvarSubst, rhsMVars) ← mkSubsts mvarSubst lmvarSubst rw.rhsMVars
   let lhs   := applySubsts rw.lhs   mvarSubst lmvarSubst
   let rhs   := applySubsts rw.rhs   mvarSubst lmvarSubst
   let proof := applySubsts rw.proof mvarSubst lmvarSubst
-  return { rw with lhs, rhs, proof, src, lhsMVars, rhsMVars }
+  return { rw with lhs, rhs, proof, src, lhsMVars, rhsMVars, dirs }
 where
   applySubsts (e : Expr) (mvarSubst : HashMap MVarId Expr) (lmvarSubst : HashMap LMVarId Level) : Expr :=
     let replaceLvl : Level → Option Level
@@ -89,7 +92,13 @@ def from? (proof : Expr) (type : Expr) (src : Source) : MetaM (Option Rewrite) :
   let some cgr ← Congr.from? type | return none
   let lhsMVars := MVars.collect cgr.lhs
   let rhsMVars := MVars.collect cgr.rhs
-  return some { cgr with proof, src, lhsMVars, rhsMVars }
+  let dirs     := validDirs lhsMVars rhsMVars
+  return some { cgr with proof, src, lhsMVars, rhsMVars, dirs }
+where
+  validDirs (lhsMVars rhsMVars : MVars) : Directions :=
+    let exprDirs := Directions.satisfyingSuperset lhsMVars.expr rhsMVars.expr
+    let lvlDirs  := Directions.satisfyingSuperset lhsMVars.lvl rhsMVars.lvl
+    exprDirs.meet lvlDirs
 
 end Rewrite
 

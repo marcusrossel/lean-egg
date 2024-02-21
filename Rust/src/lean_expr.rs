@@ -29,7 +29,7 @@ define_language! {
 
         // Constants for erased expressions, explosion expression vars and explosion level vars:
         "_" = Erased,
-        "μ" = ExplosionExpr,
-        "Λ" = ExplosionLvl,
+        "ε" = ExplosionExpr,
+        "υ" = ExplosionLvl,
     }
 }

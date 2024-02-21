@@ -17,9 +17,15 @@ def append : List α → List α → List α
 instance {α : Type _} : Append (List α) where
   append := append
 
+theorem thm (a : Nat) : a = ULift.down (ULift.up a) := rfl
+
+set_option pp.universes true in
+#check thm -- thm.{u_1} (a : Nat) : Eq.{1} a (ULift.up.{u_1, 0} a).down
+
+set_option trace.egg true in
 theorem append_nil (as : List α) : as ++ [] = as := by
   induction as with
-  | nil         => egg [append]
+  | nil         => egg [List.append_assoc, append]
   | cons _ _ ih => egg [ih, append]
 
 theorem append_assoc (as bs cs : List α) : (as ++ bs) ++ cs = as ++ (bs ++ cs) := by

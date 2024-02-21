@@ -47,8 +47,8 @@ def NatLit.description : Source.NatLit → String
 mutual
 
 def Explosion.description : Explosion → String
-  | .exprSubst idx => s!"e<{idx}>"
-  | .lvlSubst idx  => s!"l<{idx}>"
+  | .exprSubst idx => s!"ε<{idx}>"
+  | .lvlSubst idx  => s!"υ<{idx}>"
   | .rw src side   => s!"{src.description}<{side.description}>"
 
 def description : Source → String
@@ -64,7 +64,3 @@ end
 
 instance : ToString Source where
   toString := description
-
-def isNatLit : Source → Bool
-  | natLit _ => true
-  | _        => false

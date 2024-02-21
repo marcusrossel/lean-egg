@@ -21,16 +21,27 @@ structure Info extends Descriptor where
 
 end Rewrite
 
+inductive Lvl where
+  | zero
+  | succ (lvl : Lvl)
+  | max (lhs rhs : Lvl)
+  | imax (lhs rhs : Lvl)
+  | param (n : Name)
+  | mvar (id : LMVarId)
+  | explosion
+  deriving Inhabited
+
 inductive Expression where
   | bvar (idx : Nat)
   | fvar (id : FVarId)
   | mvar (id : MVarId)
-  | sort (lvl : Level)
-  | const (name : Name) (lvls : List Level)
+  | sort (lvl : Lvl)
+  | const (name : Name) (lvls : List Lvl)
   | app (fn arg : Expression)
   | lam (ty body : Expression)
   | forall (ty body : Expression)
   | lit (l : Literal)
+  | explosion
   | erased
   deriving Inhabited
 

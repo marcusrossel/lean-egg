@@ -1,13 +1,16 @@
 import Egg.Core.Encode.Basic
 import Egg.Core.Encode.EncodeM
+import Egg.Core.Encode.Rewrites
 import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Proof
+import Egg.Core.Gen.Explosion
 import Egg.Core.Gen.TcProjs
 import Egg.Core.Rewrites.Basic
 import Egg.Core.Rewrites.Directions
-import Egg.Core.Rewrites.MVars
 import Egg.Core.Config
 import Egg.Core.Congr
+import Egg.Core.MVars
+import Egg.Core.Normalize
 import Egg.Core.Request
 import Egg.Core.Source
 import Egg.Tactic.Base

@@ -20,6 +20,12 @@ variable [g : Group G] {a b c : G}
 
 -- NOTE: Using `@add_assoc` etc, produces `.proj` expressions.
 
+set_option trace.egg true
+
+-- PROBLEM: https://egraphs.zulipchat.com/#narrow/stream/328972-general/topic/Question.20on.20directedness/near/422456898
+--          The problem with this approach is that it will always be the case that all fvars collapse
+--          into the same equivalence class.
+
 theorem inv_add_cancel_left : -a + (a + b) = b := by
   egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
 

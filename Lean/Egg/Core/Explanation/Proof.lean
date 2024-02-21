@@ -6,17 +6,27 @@ open Lean Meta
 
 namespace Egg.Explanation
 
+def Lvl.toLevel : Lvl → MetaM Level
+  | zero         => return .zero
+  | succ lvl     => return .succ (← lvl.toLevel)
+  | max lhs rhs  => return .max (← lhs.toLevel) (← rhs.toLevel)
+  | imax lhs rhs => return .imax (← lhs.toLevel) (← rhs.toLevel)
+  | param n      => return .param n
+  | mvar id      => return .mvar id
+  | explosion    => throwError "egg tried to convert an explosion level to a 'Lean.Level'"
+
 def Expression.toExpr : Expression → MetaM Expr
   | bvar idx        => return .bvar idx
   | fvar id         => return .fvar id
   | mvar id         => return .mvar id
-  | sort lvl        => return .sort lvl
-  | const name lvls => return .const name lvls
+  | sort lvl        => return .sort (← lvl.toLevel)
+  | const name lvls => return .const name (← lvls.mapM Lvl.toLevel)
   | app fn arg      => return .app (← toExpr fn) (← toExpr arg)
   | lam ty body     => return .lam .anonymous (← toExpr ty) (← toExpr body) .default
   | .forall ty body => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
   | lit l           => return .lit l
   | erased          => mkFreshExprMVar none
+  | explosion       => throwError "egg tried to convert an explosion expression to a 'Lean.Expr'"
 
 def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) : MetaM Expr := do
   withTraceNode `egg.reconstruction (fun _ => return "Reconstruction") do
@@ -47,14 +57,14 @@ where
   errorPrefix := "egg failed to reconstruct proof:"
 
   proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Expr := do
-    if rwInfo.src.isNatLit then
-      mkReflStep current next
-    else
+    match rwInfo.src with
+    | .natLit _ => mkReflStep current next
+    | .explosion _ => panic! "proof reconstruction for explosion steps hasn't been implemented yet"
+    | _ =>
       let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
-      if (isRefl? rw.proof).isSome then
-        mkReflStep current next
-      else
-        proofStepAux rwInfo.pos.toArray.toList current next (proofAtRw rwInfo.toDescriptor)
+      if (isRefl? rw.proof).isSome
+      then mkReflStep current next
+      else proofStepAux rwInfo.pos.toArray.toList current next (proofAtRw rwInfo.toDescriptor)
 
   mkReflStep (current next : Expr) : MetaM Expr := do
     unless ← isDefEq current next do throwError s!"{errorPrefix} unification failure for proof by reflexivity"
