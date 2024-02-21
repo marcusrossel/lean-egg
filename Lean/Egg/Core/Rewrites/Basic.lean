@@ -1,5 +1,5 @@
 import Egg.Core.Rewrites.Directions
-import Egg.Core.Rewrites.MVars
+import Egg.Core.MVars
 import Egg.Core.Normalize
 import Egg.Core.Congr
 import Egg.Core.Source
@@ -15,6 +15,26 @@ structure _root_.Egg.Rewrite extends Congr where
   lhsMVars : MVars
   rhsMVars : MVars
 
+-- Note: We normalize the `lhs` and `rhs` of the rewrite.
+--
+-- Note: It isn't sufficient to take the `args` as a rewrite's holes, as implicit arguments will
+--       already be instantiated as mvars during type inference. For example, the type of
+--       `theorem t : ∀ {x}, x + 0 = 0 + x := Nat.add_comm _ _` will be directly inferred as
+--       `?x + 0 = 0 + ?x`.
+--       On the other hand, we might be collecting too many mvars right now as a rewrite could
+--       possibly contain mvars which weren't quantified (e.g. if it comes from the local context).
+--
+-- Note: We must instantiate mvars of the rewrite's type. For an example that breaks otherwise, cf.
+--       https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Different.20elab.20results
+def from? (proof : Expr) (type : Expr) (src : Source) : MetaM (Option Rewrite) := do
+  let mut (args, _, type) ← forallMetaTelescope (← instantiateMVars type)
+  type ← normalize type
+  let proof := mkAppN proof args
+  let some cgr ← Congr.from? type | return none
+  let lhsMVars := MVars.collect cgr.lhs
+  let rhsMVars := MVars.collect cgr.rhs
+  return some { cgr with proof, src, lhsMVars, rhsMVars }
+
 def validDirs (rw : Rewrite) : Directions :=
   let exprDirs := Directions.satisfyingSuperset rw.lhsMVars.expr rw.rhsMVars.expr
   let lvlDirs  := Directions.satisfyingSuperset rw.lhsMVars.lvl rw.rhsMVars.lvl
@@ -26,7 +46,7 @@ def forDir (rw : Rewrite) : Direction → MetaM Rewrite
   | .forward  => return rw
   | .backward => return { rw with lhs := rw.rhs, rhs := rw.lhs, proof := ← rw.rel.mkSymm rw.proof }
 
--- TODO: Factor out some parts of this as functions on `Rewrite.MVars`.
+-- TODO: Factor out some parts of this as functions on `MVars`.
 -- Returns the same rewrite but with all (expression and level) mvars replaced by fresh mvars. This
 -- is used during proof reconstruction, as rewrites may be used multiple times but instantiated
 -- differently. If we don't use fresh mvars, the mvars will already be assigned and new assignment
@@ -71,25 +91,12 @@ where
         freshMVars := { freshMVars with lvl := freshMVars.lvl.insert fresh.mvarId! }
     return (mvarSubst, lmvarSubst, freshMVars)
 
--- Note: We normalize the `lhs` and `rhs` of the rewrite.
---
--- Note: It isn't sufficient to take the `args` as a rewrite's holes, as implicit arguments will
---       already be instantiated as mvars during type inference. For example, the type of
---       `theorem t : ∀ {x}, x + 0 = 0 + x := Nat.add_comm _ _` will be directly inferred as
---       `?x + 0 = 0 + ?x`.
---       On the other hand, we might be collecting too many mvars right now as a rewrite could
---       possibly contain mvars which weren't quantified (e.g. if it comes from the local context).
---
--- Note: We must instantiate mvars of the rewrite's type. For an example that breaks otherwise, cf.
---       https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Different.20elab.20results
-def from? (proof : Expr) (type : Expr) (src : Source) : MetaM (Option Rewrite) := do
-  let mut (args, _, type) ← forallMetaTelescopeReducing (← instantiateMVars type)
-  type ← normalize type
-  let proof := mkAppN proof args
-  let some cgr ← Congr.from? type | return none
-  let lhsMVars := MVars.collect cgr.lhs
-  let rhsMVars := MVars.collect cgr.rhs
-  return some { cgr with proof, src, lhsMVars, rhsMVars }
+def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
+  return { rw with
+    lhs   := ← Lean.instantiateMVars rw.lhs
+    rhs   := ← Lean.instantiateMVars rw.rhs
+    proof := ← Lean.instantiateMVars rw.proof
+  }
 
 end Rewrite
 

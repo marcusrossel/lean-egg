@@ -21,13 +21,12 @@ private def encodeLevel : Level → Source → EncodeM Expression
   | .max l₁ l₂,  k     => return s!"(max {← encodeLevel l₁ k} {← encodeLevel l₂ k})"
   | .imax l₁ l₂, k     => return s!"(imax {← encodeLevel l₁ k} {← encodeLevel l₂ k})"
   | .mvar id,    .goal => return s!"(uvar {id.uniqueIdx!})"
-  | .mvar id,    _     => return if ← isExplosionLMVar id then "Λ" else s!"?{id.uniqueIdx!}"
+  | .mvar id,    _     => return s!"?{id.uniqueIdx!}"
   | .param name, _     => return s!"(param {name})"
 
 -- Note: This function expects its input expression to be normalized (cf. `Egg.normalize`).
-partial def encode (e : Expr) (src : Source) (cfg : Config.Encoding) (explode : ExplosionVars) :
-    MetaM Expression :=
-  Prod.fst <$> (go e).run { exprSrc := src, config := cfg, explode }
+partial def encode (e : Expr) (src : Source) (cfg : Config.Encoding) : MetaM Expression :=
+  Prod.fst <$> (go e).run { exprSrc := src, config := cfg }
 where
   go (e : Expr) : EncodeM Expression := do
     if ← needsProofErasure e then return Expression.erased else core e
@@ -53,7 +52,7 @@ where
   encodeMVar (id : MVarId) : EncodeM Expression := do
     match ← exprSrc with
     | .goal => return s!"(mvar {id.uniqueIdx!})"
-    | _     => return if ← isExplosionMVar id then "μ" else s!"?{id.uniqueIdx!}"
+    | _     => return s!"?{id.uniqueIdx!}"
 
   encodeConstLvls (lvls : List Level) : EncodeM Expression :=
     lvls.foldlM (init := "") (return s!"{·} {← encodeLevel · (← exprSrc)}")

@@ -33,37 +33,13 @@ where
     else
       throwError "expected goal to be of type '=' or '↔', but found:\n{← ppExpr goalType}"
 
-private def genRewrites (goal : Goal) (rws : TSyntax `egg_rws) (cfg : Config) :
-    TacticM (Rewrites × ExplosionVars) := do
+private def genRewrites (goal : Goal) (rws : TSyntax `egg_rws) (cfg : Config) : TacticM Rewrites := do
   let mut rws ← Rewrites.parse rws
-  let mut explode : ExplosionVars := {}
   if cfg.genTcProjRws then
     let tcProjTargets := #[(goal.type, Source.goal)] ++ (rws.map fun rw => (rw.toCongr, rw.src))
     rws := rws ++ (← genTcProjReductions tcProjTargets)
-  if cfg.explode then
-    let (explosionRws, vars) ← rws.explode
-    rws := rws ++ explosionRws
-    explode := vars
-  return (rws, explode)
-
-private def traceFrontend (goal : Goal) (rws : Rewrites) (cfg : Config) (explode : ExplosionVars) : TacticM Unit := do
-  let goalType ← goal.type.expr
-  withTraceNode `egg.frontend (fun _ => return m!"Goal: {← ppExpr goalType}") do
-    withTraceNode `egg.frontend (fun _ => return "LHS") do
-      trace[egg.frontend] ← encode goal.type.lhs .goal cfg.toEncoding explode
-    withTraceNode `egg.frontend (fun _ => return "RHS") do
-      trace[egg.frontend] ← encode goal.type.rhs .goal cfg.toEncoding explode
-    let rwsTitle := (if rws.isEmpty && !cfg.genNatLitRws then "No " else "") ++ "Rewrites"
-    withTraceNode `egg.frontend (fun _ => return rwsTitle) (collapsed := false) do
-      for rw in rws do
-        withTraceNode `egg.frontend (fun _ => return m!"{rw.src}") do
-          withTraceNode `egg.frontend (fun _ => return "LHS") do
-            trace[egg.frontend] ← encode rw.lhs rw.src cfg.toEncoding explode
-          withTraceNode `egg.frontend (fun _ => return "RHS") do
-            trace[egg.frontend] ← encode rw.rhs rw.src cfg.toEncoding explode
-          trace[egg.frontend] "Directions: {rw.validDirs}"
-      if cfg.genNatLitRws then
-        trace[egg.frontend] "Nat Literal Conversions"
+  if cfg.explode then rws := rws ++ (← rws.explode)
+  return rws
 
 private def processRawExpl (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (cfg : Config.Debug) : TacticM Unit := do
   if rawExpl.isEmpty then throwError "egg failed to prove goal"
@@ -82,10 +58,10 @@ elab "egg " cfg:egg_cfg rws:egg_rws base:(egg_base)? : tactic => do
   let goal ← getMainGoal
   let cfg ← Config.parse cfg
   goal.withContext do
-    let goal           ← parseGoal goal base
-    let (rws, explode) ← genRewrites goal rws cfg
-    let request        ← Request.encoding goal.type rws cfg explode
-    traceFrontend goal rws cfg explode
+    let goal ← parseGoal goal base
+    let rws  ← genRewrites goal rws cfg
+    let req  ← Request.encoding goal.type rws cfg
+    req.trace
     if cfg.exitPoint == .beforeEqSat then goal.id.admit; return
-    let rawExpl := request.run
+    let rawExpl := req.run
     processRawExpl rawExpl goal rws cfg.toDebug

@@ -2,15 +2,11 @@ import Egg.Lean
 import Lean
 open Lean
 
-namespace Egg.Rewrite
+namespace Egg
 
 structure MVars where
   expr : MVarIdSet  := ∅
   lvl  : LMVarIdSet := ∅
-
-def MVars.merge (vars₁ vars₂ : MVars) : MVars where
-  expr := vars₁.expr.merge vars₂.expr
-  lvl := vars₁.lvl.merge vars₂.lvl
 
 private structure MVarCollectionState where
   visitedExprs : ExprSet  := {}
@@ -59,3 +55,7 @@ where
 
 def MVars.collect (e : Expr) : MVars :=
   collectMVars e {} |>.mvars
+
+def MVars.merge (vars₁ vars₂ : MVars) : MVars where
+  expr := vars₁.expr.merge vars₂.expr
+  lvl := vars₁.lvl.merge vars₂.lvl

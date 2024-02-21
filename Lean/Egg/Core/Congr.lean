@@ -25,7 +25,7 @@ def expr (cgr : Congr) : MetaM Expr := do
   | .iff => return mkAppN (.const `Iff []) #[cgr.lhs, cgr.rhs]
 
 -- Note: We need to instantiate mvars to reduce redundant (level) mvars which are created during
---       `forallMetaTelescopeReducing`.
+--       `forallMetaTelescope`.
 --       Cf. https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/MVar.20Inclusion.20Implies.20LMVar.20Inclusion.3F
 def from? (type : Expr) : MetaM (Option Congr) := do
   if let some (_, lhs, rhs) := type.eq? then

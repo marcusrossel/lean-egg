@@ -11,7 +11,6 @@ structure EncodeM.State where
   exprSrc : Source
   config  : Config.Encoding
   bvars   : List FVarId := []
-  explode : ExplosionVars
 
 abbrev EncodeM := StateT EncodeM.State MetaM
 
@@ -48,9 +47,3 @@ def needsProofErasure (e : Expr) : EncodeM Bool := do
   (return (← config).eraseProofs) <&&>
   -- (return !e.hasMVar) <&&>
   Meta.isProof e
-
-def isExplosionMVar (var : MVarId) : EncodeM Bool := do
-  return (← get).explode.expr.contains var
-
-def isExplosionLMVar (var : LMVarId) : EncodeM Bool := do
-  return (← get).explode.lvl.contains var
