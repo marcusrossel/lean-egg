@@ -8,8 +8,12 @@ namespace Egg
 partial def normalize : Expr → MetaM Expr
   | .mdata _ e        => normalize e
   | .app fn arg       => return .app (← normalize fn) (← normalize arg)
-  | .lam n ty b i     => return .lam n ty (← normalize b) i
-  | .forallE n ty b i => return .forallE n ty (← normalize b) i
+  | .lam n ty b i     =>
+    withLocalDecl n i ty fun fvar => do
+      mkLambdaFVars #[fvar] (← normalize <| b.instantiate1 fvar)
+  | .forallE n ty b i =>
+    withLocalDecl n i ty fun fvar => do
+      mkForallFVars #[fvar] (← normalize <| b.instantiate1 fvar)
   | e@(.letE ..)      => do normalize (← zetaReduce e)
   | .proj ty ctor b   => do normalize (← expandProj ty ctor b)
   | e                 => return e

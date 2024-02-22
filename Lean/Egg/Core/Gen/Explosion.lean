@@ -5,17 +5,13 @@ open Lean Meta
 
 namespace Egg
 
--- TODO:
-#check abstractMVars               -- e -> λ xs, e
-#check forallMetaTelescopeReducing -- λ xs, e -> e
-
 private def Rewrite.explode (rw : Rewrite) : MetaM Rewrites := do
   match rw.validDirs with
   | .both     => return #[]
   | .forward  => return #[]
   | .backward => return #[]
   | .none     => return #[]
-where
+/-where
   backwardRws (rw : Rewrite) : MetaM Rewrites := do
     let unboundMVars := rw.lhsMVars.expr.subtract rw.rhsMVars.expr
     let mut current : Rewrites := #[rw]
@@ -38,6 +34,7 @@ where
       | .left  => rw.rhsMVars.lvl.subtract rw.lhsMVars.lvl
       | .right => rw.lhsMVars.lvl.subtract rw.rhsMVars.lvl
     return rw
+-/
 
 def Rewrites.explode (rws : Rewrites) : MetaM Rewrites := do
   rws.foldlM (init := #[]) fun acc rw => return acc ++ (← rw.explode)
