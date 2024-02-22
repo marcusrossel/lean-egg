@@ -8,8 +8,8 @@ inductive ExitPoint
 
 structure Encoding where
   eraseProofs        := false
-  eraseLambdaDomains := true
-  eraseForallDomains := true
+  eraseLambdaDomains := false
+  eraseForallDomains := false
   deriving BEq
 
 structure Gen where
