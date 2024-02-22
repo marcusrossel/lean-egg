@@ -42,8 +42,8 @@ private def genRewrites (goal : Goal) (rws : TSyntax `egg_rws) (cfg : Config) : 
   return rws
 
 private def processRawExpl (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (cfg : Config.Debug) : TacticM Unit := do
-  if rawExpl.isEmpty then throwError "egg failed to prove goal"
   withTraceNode `egg.reconstruction (fun _ => return "Result") do trace[egg.reconstruction] rawExpl
+  if rawExpl.isEmpty then throwError "egg failed to prove goal"
   if cfg.exitPoint == .beforeProof then
     goal.id.admit
   else

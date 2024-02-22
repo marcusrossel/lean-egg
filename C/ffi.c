@@ -79,10 +79,5 @@ lean_obj_res lean_egg_explain_congr(
     egg_result result = c_egg_explain_congr(init_c_str, goal_c_str, rws, rws_count, opt_expl, nat_lit_rws);
     free(rws);
 
-    if (result.success) {
-        return lean_mk_string(result.expl);
-    } else {
-        char empty[1] = "";
-        return lean_mk_string(empty);
-    }
+    return lean_mk_string(result.expl);
 }
