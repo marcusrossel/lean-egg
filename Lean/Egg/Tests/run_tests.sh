@@ -16,7 +16,11 @@ for file in "$tests_dir"/*; do
             lake build $module_name >/dev/null 2>&1
 
             if [[ $? -eq 0 ]]; then
-                echo -e "\r✅ ${file_name}          "
+                if grep -q "sorry" "$file"; then
+                    echo -e "\r🟡 ${file_name}          "
+                else
+                    echo -e "\r✅ ${file_name}          "
+                fi
             else
                 echo -e "\r❌ ${file_name}          "
             fi
