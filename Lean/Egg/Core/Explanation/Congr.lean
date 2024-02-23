@@ -1,4 +1,4 @@
-/- Copied from https://github.com/leanprover-community/mathlib4/blob/d78efd06e1abe6424756d529cc3942efc4d0ae50/Mathlib/Tactic/TermCongr.lean#L109-L109 -/
+/- Copied from https://github.com/leanprover-community/mathlib4/blob/d78efd06e1abe6424756d529cc3942efc4d0ae50/Mathlib/Tactic/TermCongr.lean -/
 
 import Std.Logic
 import Lean.Meta.Tactic.Cleanup

@@ -1,4 +1,4 @@
-import Egg.Core.Explanation.Basic
+ import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Congr
 import Egg.Core.Rewrites.Basic
 open Lean Meta
@@ -56,8 +56,7 @@ where
         mkReflStep current next
       else
         let mvarCounterSaved := (← getMCtx).mvarCounter
-        let lhs ← placeRwCHole current rwInfo .left
-        let rhs ← placeRwCHole next rwInfo .right
+        let (lhs, rhs) ← placeRwCHoles current next rwInfo
         let res ← mkCongrOf 0 mvarCounterSaved lhs rhs
         res.eq
 
@@ -65,8 +64,11 @@ where
     unless ← isDefEq current next do throwError s!"{errorPrefix} unification failure for proof by reflexivity"
     mkEqRefl next
 
-  placeRwCHole (e : Expr) (rwInfo : Rewrite.Info) (side : Side) : MetaM Expr := do
-    replaceSubexpr (root := e) (p := rwInfo.pos) fun sub => do
+  placeRwCHoles (current next : Expr) (rwInfo : Rewrite.Info) : MetaM (Expr × Expr) := do
+    replaceSubexprs (root₁ := current) (root₂ := next) (p := rwInfo.pos) fun lhs rhs => do
       let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
       let proof ← (← (← rw.fresh).forDir rwInfo.dir).eqProof
-      mkCHole side.isLeft sub proof
+      return (
+        ← mkCHole (forLhs := true) lhs proof,
+        ← mkCHole (forLhs := false) rhs proof
+      )
