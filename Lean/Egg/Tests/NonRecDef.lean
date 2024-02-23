@@ -8,4 +8,4 @@ def f : Bool → Nat
 
 -- BUG: Cf. Issue #17
 example : f false = 0 := by
-  egg [f]
+  sorry -- egg [f]

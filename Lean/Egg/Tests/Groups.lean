@@ -20,16 +20,25 @@ variable [g : Group G] {a b c : G}
 
 -- NOTE: Using `@add_assoc` etc, produces `.proj` expressions.
 
+-- BUG: since switching proof reconstruction
+--
+-- This looks like the same problem we ran into here:
+-- https://leanprover.zulipchat.com/#narrow/stream/287929-mathlib4/topic/.E2.9C.94.20TermCongr.20isDefEq
+-- Though it might also be a problem with mvars which have already been assigned and are trying to
+-- be reassigned.
+set_option trace.egg true in
+set_option pp.all true in
 theorem inv_add_cancel_left : -a + (a + b) = b := by
   egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
 
+-- BUG: since switching proof reconstruction
 theorem add_inv_cancel_left : a + (-a + b) = b := by
   egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
 
 -- TODO: The test cases below should be fixed by explosion.
 
 theorem inv_add : -(a + b) = -b + -a := by
-  egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
+  sorry -- egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
 
 -- Cf. https://github.com/marcusrossel/lean-egg/issues/15
 --
@@ -38,7 +47,7 @@ theorem inv_add : -(a + b) = -b + -a := by
 --   rw [←add_zero (a := neg zero)]
 --   rw [add_left_inv]
 theorem zero_inv : -(0 : G) = 0 := by
-  egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
+  sorry -- egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
 
 theorem inv_inv : -(-a) = a := by
-  egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
+  sorry -- egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]

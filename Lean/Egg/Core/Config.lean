@@ -7,7 +7,7 @@ inductive ExitPoint
   deriving BEq
 
 structure Encoding where
-  eraseProofs        := false
+  eraseProofs        := true
   eraseLambdaDomains := false
   eraseForallDomains := false
   deriving BEq
