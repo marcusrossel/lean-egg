@@ -1,4 +1,5 @@
 import Egg.Core.Explanation.Basic
+import Egg.Core.Explanation.Congr
 import Egg.Core.Rewrites.Basic
 open Lean Meta
 
@@ -54,51 +55,18 @@ where
       if (isRefl? rw.proof).isSome then
         mkReflStep current next
       else
-        proofStepAux rwInfo.pos.toArray.toList current next (proofAtRw rwInfo.toDescriptor)
+        let mvarCounterSaved := (← getMCtx).mvarCounter
+        let lhs ← placeRwCHole current rwInfo .left
+        let rhs ← placeRwCHole next rwInfo .right
+        let res ← mkCongrOf 0 mvarCounterSaved lhs rhs
+        res.eq
 
   mkReflStep (current next : Expr) : MetaM Expr := do
     unless ← isDefEq current next do throwError s!"{errorPrefix} unification failure for proof by reflexivity"
     mkEqRefl next
 
-  proofStepAux (target : List Nat) (current next : Expr) (atTarget : Expr → Expr → MetaM Expr) : MetaM Expr := do
-    let p :: tgt := target | atTarget current next
-    match current, next, p with
-    | .app fn₁ arg, .app fn₂ _, 0 =>
-      let prf ← proofStepAux tgt fn₁ fn₂ atTarget
-      mkCongrFun prf arg
-    | .app fn arg₁, .app _ arg₂, 1 =>
-      let prf ← proofStepAux tgt arg₁ arg₂ atTarget
-      mkCongrArg fn prf
-    | .lam _ ty b₁ _, .lam _ _ b₂ _, 1 =>
-      withLocalDecl .anonymous .default ty fun fvar => do
-        let b₁ := b₁.instantiate1 fvar
-        let b₂ := b₂.instantiate1 fvar
-        let prf ← proofStepAux tgt b₁ b₂ atTarget
-        mkFunExt (← mkLambdaFVars #[fvar] prf)
-    | .forallE _ ty b₁ _, .forallE _ _ b₂ _, 1 =>
-      withLocalDecl .anonymous .default ty fun fvar => do
-        let b₁ := b₁.instantiate1 fvar
-        let b₂ := b₂.instantiate1 fvar
-        let prf ← proofStepAux tgt b₁ b₂ atTarget
-        mkForallCongr (← mkLambdaFVars #[fvar] prf)
-    | _, _, _ => throwError s!"{errorPrefix} 'proofStepAux' received invalid arguments"
-
-  proofAtRw (rwDesc : Rewrite.Descriptor) (current next : Expr) : MetaM Expr := do
-    let some rw := rws.find? rwDesc.src | throwError s!"{errorPrefix} unknown rewrite"
-    let freshRw ← (← rw.fresh).forDir rwDesc.dir
-    withTraceNode `egg.reconstruction (fun _ => return m!"Rewrite {rwDesc.src.description}") do
-      trace[egg.reconstruction] m!"Type: {freshRw.lhs} = {freshRw.rhs}"
-      trace[egg.reconstruction] m!"Proof: {freshRw.proof}"
-      -- TODO: trace[egg.reconstruction] m!"Holes: {freshRw.holes.map (Expr.mvar ·)}"
-    withTraceNode `egg.reconstruction (fun _ => return m!"Unification") do
-      withTraceNode `egg.reconstruction (fun _ => return "LHS") (collapsed := false) do
-        trace[egg.reconstruction] current
-        trace[egg.reconstruction] freshRw.lhs
-      withTraceNode `egg.reconstruction (fun _ => return "RHS") (collapsed := false) do
-        trace[egg.reconstruction] next
-        trace[egg.reconstruction] freshRw.rhs
-    unless ← isDefEq current freshRw.lhs <&&> isDefEq next freshRw.rhs do
-      throwError s!"{errorPrefix} unification failure"
-    match freshRw.rel with
-    | .eq  => return freshRw.proof
-    | .iff => mkPropExt freshRw.proof
+  placeRwCHole (e : Expr) (rwInfo : Rewrite.Info) (side : Side) : MetaM Expr := do
+    replaceSubexpr (root := e) (p := rwInfo.pos) fun sub => do
+      let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
+      let proof ← (← (← rw.fresh).forDir rwInfo.dir).eqProof
+      mkCHole side.isLeft sub proof

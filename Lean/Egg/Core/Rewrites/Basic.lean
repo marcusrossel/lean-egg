@@ -46,6 +46,11 @@ def forDir (rw : Rewrite) : Direction → MetaM Rewrite
   | .forward  => return rw
   | .backward => return { rw with lhs := rw.rhs, rhs := rw.lhs, proof := ← rw.rel.mkSymm rw.proof }
 
+def eqProof (rw : Rewrite) : MetaM Expr := do
+  match rw.rel with
+  | .eq  => return rw.proof
+  | .iff => mkPropExt rw.proof
+
 -- TODO: Factor out some parts of this as functions on `MVars`.
 -- Returns the same rewrite but with all (expression and level) mvars replaced by fresh mvars. This
 -- is used during proof reconstruction, as rewrites may be used multiple times but instantiated

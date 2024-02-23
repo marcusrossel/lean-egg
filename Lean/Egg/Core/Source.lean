@@ -13,6 +13,10 @@ def Side.description : Side → String
   | left => "l"
   | right => "r"
 
+def Side.isLeft : Side → Bool
+  | left  => true
+  | right => false
+
 inductive Source.NatLit where
   | zero
   | toSucc
