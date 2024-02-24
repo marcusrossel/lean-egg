@@ -40,8 +40,6 @@ theorem add_inv_cancel_left : a + (-a + b) = b := by
 theorem inv_add : -(a + b) = -b + -a := by
   sorry -- egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
 
--- Cf. https://github.com/marcusrossel/lean-egg/issues/15
---
 -- Proof:
 --   simp [Neg.neg, OfNat.ofNat]
 --   rw [←add_zero (a := neg zero)]

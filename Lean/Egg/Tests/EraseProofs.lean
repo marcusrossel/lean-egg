@@ -13,3 +13,9 @@ example (i : Nat) (h : i < 10) : (Fin.mk i h).val = i := by
 example (i : Nat) (h : ∀ i : Nat, i < 10) : (Fin.mk i (h i)).val = i := by
   have : ∀ n m (g : n < m), (Fin.mk n g).val = n := by simp
   egg (config := { eraseProofs := true }) [this]
+
+-- BUG: the rewrite is actually bidirectional, but the proof is the only reference to the mvar for
+--      `x` on the rhs.
+variable (h : ∀ x : Nat, x = (Exists.intro x x.zero_le).choose)
+example : True = True := by
+  sorry -- egg (config := { eraseProofs := true }) [h]
