@@ -17,10 +17,10 @@ abbrev TcProjIndex := HashMap TcProj Source
 
 private def TcProj.reductionRewrite (proj : TcProj) (src : Source) : MetaM Rewrite := do
   let app := mkAppN (.const proj.const proj.lvls) proj.args
-  let reduced := (← reduceAll app).eta
+  let reduced ← withReducibleAndInstances do Expr.eta <$> reduceAll app
   let eq ← mkEq app reduced
   let proof ← mkEqRefl app
-  let some rw ← Rewrite.from? proof eq src | throwError "egg: internal error in 'TcProj.reductionRewrite?'"
+  let some rw ← Rewrite.from? proof eq src | throwError "egg: internal error in 'TcProj.reductionRewrite'"
   return rw
 
 private structure State where
