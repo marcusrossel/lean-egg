@@ -127,8 +127,11 @@ where
       else
         let mvarCounterSaved := (← getMCtx).mvarCounter
         let (lhs, rhs) ← placeRwCHoles current next rwInfo
-        let res ← mkCongrOf 0 mvarCounterSaved lhs rhs
-        res.eq
+        try
+          let res ← mkCongrOf 0 mvarCounterSaved lhs rhs
+          res.eq
+        catch err =>
+          throwError m!"{errorPrefix} 'mkCongrOf' failed with\n  {err.toMessageData}"
 
   mkReflStep (current next : Expr) : MetaM Expr := do
     unless ← isDefEq current next do throwError s!"{errorPrefix} unification failure for proof by reflexivity"

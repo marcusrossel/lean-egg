@@ -34,6 +34,9 @@ partial def explicit (arg : Term) (argIdx : Nat) : TacticM Rewrites := do
   -- (2) global constants which are definitions with equations (cf. `getEqnsFor?`) are supposed to
   --     be replaced by their defining equations.
 where
+  -- Note: When we infer the type of `e` it might not have the syntactic form we expect. For
+  --       example, if `e` is `congrArg (fun x => x + 1) (_ : a = b)` then its type will be inferred
+  --       as `a + 1 = b + 1` instead of `(fun x => x + 1) a = (fun x => x + 1) b`.
   mkRw (e : Expr) (ty? : Option Expr) (eqnIdx? : Option Nat) : TacticM Rewrite := do
     let src := .explicit argIdx eqnIdx?
     let ty := ty?.getD (← inferType e)
