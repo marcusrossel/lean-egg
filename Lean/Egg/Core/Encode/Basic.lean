@@ -57,12 +57,12 @@ where
   encodeConstLvls (lvls : List Level) : EncodeM Expression :=
     lvls.foldlM (init := "") (return s!"{·} {← encodeLevel · (← exprSrc)}")
 
-  encodeLam (ty b : Expr) : EncodeM Expression :=
+  encodeLam (ty b : Expr) : EncodeM Expression := do
+    let dom ← if (← config).eraseLambdaDomains then pure Expression.erased else go ty
     withInstantiatedBVar ty b fun body => do
-      let dom ← if (← config).eraseLambdaDomains then pure Expression.erased else go ty
       return s!"(λ {dom} {← go body})"
 
-  encodeForall (ty b : Expr) : EncodeM Expression :=
+  encodeForall (ty b : Expr) : EncodeM Expression := do
+    let dom ← if (← config).eraseForallDomains then pure Expression.erased else go ty
     withInstantiatedBVar ty b fun body => do
-      let dom ← if (← config).eraseForallDomains then pure Expression.erased else go ty
       return s!"(∀ {dom} {← go body})"
