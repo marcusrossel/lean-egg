@@ -7,3 +7,5 @@ example :
     (∀ (α : Type) (l : List α), l.length = l.length) ↔
     (∀ (α : Type) (l : List α), l.length = l.length) := by
   egg
+
+-- BUG: Unexpected end of input

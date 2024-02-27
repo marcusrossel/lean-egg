@@ -118,29 +118,30 @@ where
   errorPrefix := "egg failed to reconstruct proof:"
 
   proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Expr := do
-    if rwInfo.src.isNatLit then
-      mkReflStep current next
-    else
-      let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
-      if (isRefl? rw.proof).isSome then
-        mkReflStep current next
-      else
-        let mvarCounterSaved := (← getMCtx).mvarCounter
-        let (lhs, rhs) ← placeRwCHoles current next rwInfo
-        try
-          let res ← mkCongrOf 0 mvarCounterSaved lhs rhs
-          res.eq
-        catch err =>
-          throwError m!"{errorPrefix} 'mkCongrOf' failed with\n  {err.toMessageData}"
+    if rwInfo.src.isNatLit then return ← mkReflStep current next
+    let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
+    if ← isRflProof rw.proof then return ← mkReflStep current next
+    mkCongrStep current next rwInfo.pos (← rw.forDir rwInfo.dir)
 
   mkReflStep (current next : Expr) : MetaM Expr := do
-    unless ← isDefEq current next do throwError s!"{errorPrefix} unification failure for proof by reflexivity"
+    unless ← isDefEq current next do
+      throwError s!"{errorPrefix} unification failure for proof by reflexivity"
     mkEqRefl next
 
-  placeRwCHoles (current next : Expr) (rwInfo : Rewrite.Info) : MetaM (Expr × Expr) := do
-    replaceSubexprs (root₁ := current) (root₂ := next) (p := rwInfo.pos) fun lhs rhs => do
-      let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
-      let proof ← (← (← rw.fresh).forDir rwInfo.dir).eqProof
+  mkCongrStep (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) : MetaM Expr := do
+    let mvc := (← getMCtx).mvarCounter
+    let (lhs, rhs) ← placeCHoles current next pos rw
+    try (← mkCongrOf 0 mvc lhs rhs).eq
+    catch err => throwError m!"{errorPrefix} 'mkCongrOf' failed with\n  {err.toMessageData}"
+
+  placeCHoles (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) : MetaM (Expr × Expr) := do
+    replaceSubexprs (root₁ := current) (root₂ := next) (p := pos) fun lhs rhs => do
+      -- It's necessary that we create the fresh rewrite (that is, create the fresh mvars) in *this*
+      -- local context as otherwise the mvars can't unify with variables under binders.
+      let rw ← rw.fresh
+      unless ← isDefEq lhs rw.lhs do throwError "{errorPrefix} unification failure for LHS of rewrite"
+      unless ← isDefEq rhs rw.rhs do throwError "{errorPrefix} unification failure for RHS of rewrite"
+      let proof ← rw.eqProof
       return (
         ← mkCHole (forLhs := true) lhs proof,
         ← mkCHole (forLhs := false) rhs proof
