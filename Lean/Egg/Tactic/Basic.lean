@@ -65,3 +65,6 @@ elab "egg " cfg:egg_cfg rws:egg_rws base:(egg_base)? : tactic => do
     if cfg.exitPoint == .beforeEqSat then goal.id.admit; return
     let rawExpl := req.run
     processRawExpl rawExpl goal rws cfg.toDebug
+
+-- WORKAROUND: This fixes `Tests/EndOfInput`.
+macro "egg" : tactic => `(tactic| egg)
