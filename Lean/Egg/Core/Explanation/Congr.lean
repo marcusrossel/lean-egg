@@ -94,7 +94,7 @@ def sides? (ty : Expr) : Option (Expr × Expr × Expr × Expr) :=
   else
     ty.heq?
 
-initialize registerTraceClass `Elab.congr
+initialize registerTraceClass `egg.congr
 
 private def congrHoleForLhsKey : Name := decl_name%
 private def congrHoleIndex : Name := decl_name%
@@ -375,7 +375,7 @@ since nothing prevents congruence holes from leaking into the local context. -/
 def mkCongrOfCHole? (mvarCounterSaved : Nat) (lhs rhs : Expr) : MetaM (Option CongrResult) := do
   match cHole? lhs mvarCounterSaved, cHole? rhs mvarCounterSaved with
   | some (isLhs1, val1, pf1), some (isLhs2, val2, pf2) =>
-    trace[Elab.congr] "mkCongrOfCHole, both holes"
+    trace[egg.congr] "mkCongrOfCHole, both holes"
     unless isLhs1 == true do
       throwCongrEx lhs rhs "A RHS congruence hole leaked into the LHS"
     unless isLhs2 == false do
@@ -404,7 +404,7 @@ since it's likely due to unification with the expected type,
 from `_` placeholders or implicit arguments being filled in. -/
 partial def mkCongrOf (depth : Nat) (mvarCounterSaved : Nat) (lhs rhs : Expr) :
     MetaM CongrResult := do
-  trace[Elab.congr] "mkCongrOf: {depth}, {lhs}, {rhs}, {(← mkFreshExprMVar none).mvarId!}"
+  trace[egg.congr] "mkCongrOf: {depth}, {lhs}, {rhs}, {(← mkFreshExprMVar none).mvarId!}"
   if depth > 1000 then
     throwError "congr(...) internal error: out of gas"
   -- Potentially metavariables get assigned as we process congruence holes,
@@ -413,7 +413,7 @@ partial def mkCongrOf (depth : Nat) (mvarCounterSaved : Nat) (lhs rhs : Expr) :
   let lhs ← instantiateMVars lhs
   let rhs ← instantiateMVars rhs
   if let some res ← mkCongrOfCHole? mvarCounterSaved lhs rhs then
-    trace[Elab.congr] "hole processing succeeded"
+    trace[egg.congr] "hole processing succeeded"
     return res
   if (hasCHole mvarCounterSaved lhs).isNone && (hasCHole mvarCounterSaved rhs).isNone then
     -- It's safe to fastforward if the lhs and rhs are defeq and have no congruence holes.
@@ -425,18 +425,18 @@ partial def mkCongrOf (depth : Nat) (mvarCounterSaved : Nat) (lhs rhs : Expr) :
     return ← CongrResult.mkDefault lhs rhs
   match lhs, rhs with
   | .app .., .app .. =>
-    trace[Elab.congr] "app"
+    trace[egg.congr] "app"
     let arity := lhs.getAppNumArgs
     unless arity == rhs.getAppNumArgs do
-      trace[Elab.congr] "app desync (arity)"
+      trace[egg.congr] "app desync (arity)"
       return ← CongrResult.mkDefault' mvarCounterSaved lhs rhs
     let f := lhs.getAppFn
     let f' := rhs.getAppFn
     unless ← isDefEq (← inferType f) (← inferType f') do
-      trace[Elab.congr] "app desync (function types)"
+      trace[egg.congr] "app desync (function types)"
       return ← CongrResult.mkDefault' mvarCounterSaved lhs rhs
     let fnRes ← mkCongrOf (depth + 1) mvarCounterSaved f f'
-    trace[Elab.congr] "mkCongrOf functions {f}, {f'} has isRfl = {fnRes.isRfl}"
+    trace[egg.congr] "mkCongrOf functions {f}, {f'} has isRfl = {fnRes.isRfl}"
     if !fnRes.isRfl then
       -- If there's a nontrivial proof, then since mkHCongrWithArity fixes the function
       -- we need to handle this ourselves.
@@ -488,7 +488,7 @@ partial def mkCongrOf (depth : Nat) (mvarCounterSaved : Nat) (lhs rhs : Expr) :
       -- `lhs` and `rhs` *should* be defeq, but use `mkDefault` just to be safe.
       CongrResult.mkDefault lhs rhs
   | .lam .., .lam .. =>
-    trace[Elab.congr] "lam"
+    trace[egg.congr] "lam"
     let resDom ← mkCongrOf (depth + 1) mvarCounterSaved lhs.bindingDomain! rhs.bindingDomain!
     -- We do not yet support congruences in the binding domain for lambdas.
     discard <| resDom.defeq
@@ -504,7 +504,7 @@ partial def mkCongrOf (depth : Nat) (mvarCounterSaved : Nat) (lhs rhs : Expr) :
         let pf ← mkLambdaFVars #[x] (← resBody.eq)
         return CongrResult.mk' lhs rhs (← mkAppM ``funext #[pf])
   | .forallE .., .forallE .. =>
-    trace[Elab.congr] "forallE"
+    trace[egg.congr] "forallE"
     let resDom ← mkCongrOf (depth + 1) mvarCounterSaved lhs.bindingDomain! rhs.bindingDomain!
     if lhs.isArrow && rhs.isArrow then
       let resBody ← mkCongrOf (depth + 1) mvarCounterSaved lhs.bindingBody! rhs.bindingBody!
@@ -529,17 +529,17 @@ partial def mkCongrOf (depth : Nat) (mvarCounterSaved : Nat) (lhs rhs : Expr) :
           let pf ← mkLambdaFVars #[x] (← resBody.eq)
           return CongrResult.mk' lhs rhs (← mkAppM ``pi_congr #[pf])
   | .letE .., .letE .. =>
-    trace[Elab.congr] "letE"
+    trace[egg.congr] "letE"
     -- Just zeta reduce for now. Could look at `Lean.Meta.Simp.simp.simpLet`
     let lhs := lhs.letBody!.instantiate1 lhs.letValue!
     let rhs := rhs.letBody!.instantiate1 rhs.letValue!
     mkCongrOf (depth + 1) mvarCounterSaved lhs rhs
   | .mdata _ lhs', .mdata _ rhs' =>
-    trace[Elab.congr] "mdata"
+    trace[egg.congr] "mdata"
     let res ← mkCongrOf (depth + 1) mvarCounterSaved lhs' rhs'
     return {res with lhs := lhs.updateMData! res.lhs, rhs := rhs.updateMData! res.rhs}
   | .proj n1 i1 e1, .proj n2 i2 e2 =>
-    trace[Elab.congr] "proj"
+    trace[egg.congr] "proj"
     -- Only handles defeq at the moment.
     unless n1 == n2 && i1 == i2 do
       throwCongrEx lhs rhs "Incompatible primitive projections"
@@ -547,5 +547,5 @@ partial def mkCongrOf (depth : Nat) (mvarCounterSaved : Nat) (lhs rhs : Expr) :
     discard <| res.defeq
     return {lhs := lhs.updateProj! res.lhs, rhs := rhs.updateProj! res.rhs, pf? := none}
   | _, _ =>
-    trace[Elab.congr] "base case"
+    trace[egg.congr] "base case"
     CongrResult.mkDefault' mvarCounterSaved lhs rhs

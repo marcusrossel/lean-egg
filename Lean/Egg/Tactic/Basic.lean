@@ -19,6 +19,9 @@ private structure Goal where
   type  : Congr
   base? : Option FVarId
 
+private def getAmbientMVars : MetaM Explanation.AmbientMVars :=
+  return (← getMCtx).decls
+
 private def parseGoal (goal : MVarId) (base? : Option (TSyntax `egg_base)) : MetaM Goal := do
   let goalType ← normalize (← goal.getType')
   let base? ← base?.mapM parseBase
@@ -41,30 +44,35 @@ private def genRewrites (goal : Goal) (rws : TSyntax `egg_rws) (cfg : Config) : 
   if cfg.explode then rws := rws ++ (← rws.explode)
   return rws
 
-private def processRawExpl (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (cfg : Config.Debug) : TacticM Unit := do
+private def processRawExpl
+    (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (cfg : Config.Debug)
+    (amb : Explanation.AmbientMVars) : TacticM Unit := do
   withTraceNode `egg.reconstruction (fun _ => return "Result") do trace[egg.reconstruction] rawExpl
   if rawExpl.isEmpty then throwError "egg failed to prove goal"
   if cfg.exitPoint == .beforeProof then
     goal.id.admit
   else
     let expl ← rawExpl.parse
-    let mut proof ← expl.proof goal.type rws
+    let mut proof ← expl.proof goal.type rws amb
     -- When `goal.base? = some base`, then `proof` is a proof of `base = <goal type>`. We turn this
     -- into a proof of `<goal type>` here.
     if let some base := goal.base? then proof ← mkEqMP proof (.fvar base)
+    withTraceNode `egg.reconstruction (fun _ => return "Final Proof") do
+      trace[egg.reconstruction] proof
     goal.id.assign proof
 
 elab "egg " cfg:egg_cfg rws:egg_rws base:(egg_base)? : tactic => do
   let goal ← getMainGoal
   let cfg ← Config.parse cfg
   goal.withContext do
+    let amb  ← getAmbientMVars
     let goal ← parseGoal goal base
     let rws  ← genRewrites goal rws cfg
     let req  ← Request.encoding goal.type rws cfg
     req.trace
     if cfg.exitPoint == .beforeEqSat then goal.id.admit; return
     let rawExpl := req.run
-    processRawExpl rawExpl goal rws cfg.toDebug
+    processRawExpl rawExpl goal rws cfg.toDebug amb
 
 -- WORKAROUND: This fixes `Tests/EndOfInput`.
 macro "egg" : tactic => `(tactic| egg)

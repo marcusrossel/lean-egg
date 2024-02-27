@@ -89,7 +89,9 @@ def Expression.toExpr : Expression → MetaM Expr
   | lit l           => return .lit l
   | erased          => mkFreshExprMVar none
 
-def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) : MetaM Expr := do
+abbrev AmbientMVars := PersistentHashMap MVarId MetavarDecl
+
+def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) (amb : AmbientMVars) : MetaM Expr := do
   withTraceNode `egg.reconstruction (fun _ => return "Reconstruction") do
     let mut current ← expl.start.toExpr
     let steps := expl.steps
@@ -111,6 +113,7 @@ def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) : MetaM Expr := do
           proofStep current next step.toInfo
       proof ← mkEqTrans proof stepEq
       current := next
+    checkFinalProof proof current steps
     match cgr.rel with
     | .eq  => return proof
     | .iff => mkIffOfEq proof
@@ -146,3 +149,11 @@ where
         ← mkCHole (forLhs := true) lhs proof,
         ← mkCHole (forLhs := false) rhs proof
       )
+
+  checkFinalProof (proof : Expr) (current : Expr) (steps : Array Step) : MetaM Unit := do
+    let last := steps.back?.map (·.dst) |>.getD expl.start
+    unless ← isDefEq current (← last.toExpr) do
+      throwError s!"{errorPrefix} final expression is not defeq to rhs of proof goal"
+    let proof ← instantiateMVars proof
+    for mvar in (proof.collectMVars {}).result do
+      unless amb.contains mvar do throwError s!"{errorPrefix} final proof contains mvar {mvar.name}"
