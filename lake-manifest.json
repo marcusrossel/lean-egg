@@ -1,0 +1,14 @@
+{"version": 7,
+ "packagesDir": ".lake/packages",
+ "packages":
+ [{"url": "https://github.com/leanprover/std4",
+   "type": "git",
+   "subDir": null,
+   "rev": "e721cfa6c66dc2ccb1c108a2292ecf24c020a9a0",
+   "name": "std",
+   "manifestFile": "lake-manifest.json",
+   "inputRev": "main",
+   "inherited": false,
+   "configFile": "lakefile.lean"}],
+ "name": "egg",
+ "lakeDir": ".lake"}
