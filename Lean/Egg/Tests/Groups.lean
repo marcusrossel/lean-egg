@@ -26,16 +26,14 @@ theorem inv_add_cancel_left : -a + (a + b) = b := by
 theorem add_inv_cancel_left : a + (-a + b) = b := by
   egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
 
+-- TODO: This test case should be fixed by typeclass specialization.
+
+theorem zero_inv : -(0 : G) = 0 := by
+  sorry -- egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
+
 -- TODO: The test cases below should be fixed by explosion.
 
 theorem inv_add : -(a + b) = -b + -a := by
-  sorry -- egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
-
--- Proof:
---   simp [Neg.neg, OfNat.ofNat]
---   rw [←add_zero (a := neg zero)]
---   rw [add_left_inv]
-theorem zero_inv : -(0 : G) = 0 := by
   sorry -- egg [add_assoc, zero_add, add_zero, add_left_inv, add_right_inv]
 
 theorem inv_inv : -(-a) = a := by

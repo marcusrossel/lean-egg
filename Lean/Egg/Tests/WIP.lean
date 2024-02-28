@@ -8,9 +8,11 @@ example : (∀ α (l : List α), l.length = l.length) ↔ (∀ α (l : List α),
 
 -- For rewrites involving dependent arguments, we can easily get an incorrect motive. E.g. when
 -- rewriting the condition in ite without chaning the type class instance:
+set_option trace.egg true in
 example : (if 0 = 0 then 0 else 1) = 0 := by
-  have : (0 = 0) = True := eq_self 0
-  rw [this]
+  have h1 : (0 = 0) = True := eq_self 0
+  have h2 : 0 = 0 := rfl
+  egg (config := { optimizeExpl := true }) [h1, h2, ite_congr, if_true]
 
 -- For typeclass arguments we might be able to work around this by the following:
 -- When a rewrite is applied to a term containing a typeclass argument (which we might be able to

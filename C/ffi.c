@@ -33,7 +33,8 @@ extern egg_result c_egg_explain_congr(
     rewrite* rws, 
     size_t rws_count, 
     rust_bool optimize_expl,
-    rust_bool gen_nat_lit_rws
+    rust_bool gen_nat_lit_rws,
+    const char* viz_path
 );
 
 // `init`: string
@@ -44,6 +45,7 @@ extern egg_result c_egg_explain_congr(
 // `rw_dirs`: array of uint8_t containing the directions (cf. `rw_dir`) of rewrites
 // `optimize_expl`: boolean indicating whether egg should try to shorten its explanations
 // `gen_nat_lit_rws`: boolean indicating whether egg should use additional rewrites to convert between nat-lits and `Nat.zero`/`Nat.succ`
+// `viz_path`: string
 // return value: string explaining the rewrite sequence
 lean_obj_res lean_egg_explain_congr(
     lean_obj_arg init, 
@@ -53,7 +55,8 @@ lean_obj_res lean_egg_explain_congr(
     lean_obj_arg rw_rhss, 
     lean_obj_arg rw_dirs,
     lean_bool optimize_expl,
-    lean_bool gen_nat_lit_rws
+    lean_bool gen_nat_lit_rws,
+    lean_obj_arg viz_path
 ) {
     const char* init_c_str = lean_string_cstr(init);
     const char* goal_c_str = lean_string_cstr(goal);
@@ -75,8 +78,9 @@ lean_obj_res lean_egg_explain_congr(
     }
     rust_bool opt_expl = lean_bool_to_rust(optimize_expl);
     rust_bool nat_lit_rws = lean_bool_to_rust(gen_nat_lit_rws);
+    const char* viz_path_c_str = lean_string_cstr(viz_path);
 
-    egg_result result = c_egg_explain_congr(init_c_str, goal_c_str, rws, rws_count, opt_expl, nat_lit_rws);
+    egg_result result = c_egg_explain_congr(init_c_str, goal_c_str, rws, rws_count, opt_expl, nat_lit_rws, viz_path_c_str);
     free(rws);
 
     return lean_mk_string(result.expl);

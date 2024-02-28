@@ -1,11 +1,5 @@
 namespace Egg.Config
 
-inductive ExitPoint
-  | none
-  | beforeEqSat
-  | beforeProof
-  deriving BEq
-
 structure Encoding where
   eraseProofs        := true
   eraseLambdaDomains := false
@@ -22,8 +16,15 @@ structure Backend where
   optimizeExpl := false
   deriving BEq
 
+inductive Debug.ExitPoint
+  | none
+  | beforeEqSat
+  | beforeProof
+  deriving BEq
+
 structure Debug where
-  exitPoint := Config.ExitPoint.none
+  exitPoint : Debug.ExitPoint := .none
+  vizPath   : Option String   := none
   deriving BEq
 
 end Config

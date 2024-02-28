@@ -79,7 +79,8 @@ pub extern "C" fn c_egg_explain_congr(
     rws_ptr: *const CRewrite, 
     rws_count: usize,
     optimize_expl: bool,
-    gen_nat_lit_rws: bool
+    gen_nat_lit_rws: bool,
+    viz_path_ptr: *const c_char
 ) -> EggResult {
     // Cf. https://doc.rust-lang.org/stable/std/ffi/struct.CStr.html#examples
     let init_c_str = unsafe { CStr::from_ptr(init_str_ptr) };
@@ -88,7 +89,7 @@ pub extern "C" fn c_egg_explain_congr(
     let goal = String::from_utf8_lossy(goal_c_str.to_bytes()).to_string();
     assert!(rws_ptr != null()); 
     let c_rws = unsafe { std::slice::from_raw_parts(rws_ptr, rws_count) };
-    
+
     // Note: The `into_raw`s below are important, as otherwise Rust deallocates the string.
     // TODO: I think this is a memory leak right now.
 
@@ -99,7 +100,11 @@ pub extern "C" fn c_egg_explain_congr(
     }
     let rws = rws.unwrap();
 
-    let expl = explain_congr(init, goal, rws, optimize_expl, gen_nat_lit_rws);
+    let viz_path_c_str = unsafe { CStr::from_ptr(viz_path_ptr) };
+    let raw_viz_path = String::from_utf8_lossy(viz_path_c_str.to_bytes()).to_string();
+    let viz_path = if raw_viz_path.is_empty() { None } else { Some(raw_viz_path) };
+
+    let expl = explain_congr(init, goal, rws, optimize_expl, gen_nat_lit_rws, viz_path);
     if let Err(expl_err) = expl {
         let rws_err_c_str = CString::new(expl_err.to_string()).expect("conversion of error message to C-string failed");
         return EggResult { success: false, expl: rws_err_c_str.into_raw() } 

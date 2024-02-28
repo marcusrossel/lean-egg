@@ -3,7 +3,7 @@ use crate::result::*;
 use crate::lean_expr::*;
 use crate::nat_lit::*;
 
-pub fn explain_congr(init: String, goal: String, rws: Vec<Rewrite<LeanExpr, NatLitAnalysis>>, optimize_expl: bool, gen_nat_lit_rws: bool) -> Res<String> {
+pub fn explain_congr(init: String, goal: String, rws: Vec<Rewrite<LeanExpr, NatLitAnalysis>>, optimize_expl: bool, gen_nat_lit_rws: bool, viz_path: Option<String>) -> Res<String> {
     let mut egraph: EGraph<LeanExpr, NatLitAnalysis> = Default::default();
     egraph = egraph.with_explanations_enabled();
     if !optimize_expl { egraph = egraph.without_explanation_length_optimization() }
@@ -16,6 +16,9 @@ pub fn explain_congr(init: String, goal: String, rws: Vec<Rewrite<LeanExpr, NatL
     let mut runner = Runner::default()
         .with_egraph(egraph)
         .with_hook(move |runner| {
+            if let Some(path) = &viz_path {
+                runner.egraph.dot().to_dot(format!("{}/{}.dot", path, runner.iterations.len())).unwrap();
+            }
             if runner.egraph.find(init_id) == runner.egraph.find(goal_id) {
                 Err("search complete".to_string())
             } else {
