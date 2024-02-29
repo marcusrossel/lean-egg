@@ -4,18 +4,16 @@ use core::ffi::CStr;
 use std::ffi::CString;
 use std::ptr::null;
 use std::str::FromStr;
-
-mod lean_expr;
-use lean_expr::*;
-
-mod nat_lit;
-use nat_lit::*;
-
-mod basic;
+use analysis::*;
 use basic::*;
-
-mod result;
 use result::*;
+
+mod analysis;
+mod basic;
+mod lean_expr;
+mod nat_lit;
+mod result;
+mod util;
 
 #[repr(C)]
 #[derive(PartialEq)]
@@ -40,8 +38,8 @@ pub struct EggResult {
     expl:    *const c_char,
 }
 
-fn rewrites_from_c(rws: &[CRewrite]) -> Res<Vec<Rewrite<LeanExpr, NatLitAnalysis>>> {
-    let mut res: Vec<Rewrite<LeanExpr, NatLitAnalysis>> = vec![];
+fn rewrites_from_c(rws: &[CRewrite]) -> Res<Vec<LeanRewrite>> {
+    let mut res: Vec<LeanRewrite> = vec![];
     for rw in rws {
         let name_c_str = unsafe { CStr::from_ptr(rw.name) };
         let lhs_c_str  = unsafe { CStr::from_ptr(rw.lhs) };
