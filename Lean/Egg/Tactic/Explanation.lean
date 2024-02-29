@@ -47,7 +47,6 @@ syntax "⊢" egg_tc_proj                                      : egg_fwd_rw_src
 syntax "!z"                                                 : egg_fwd_rw_src
 syntax "!t"                                                 : egg_fwd_rw_src
 syntax "!o"                                                 : egg_fwd_rw_src
-syntax "src/nat_lit.rs:" num ":" num                        : egg_fwd_rw_src -- TODO: https://egraphs.zulipchat.com/#narrow/stream/375765-egg.2Fegglog/topic/egg.3A.20dynamic.20rewrite's.20name
 
 syntax egg_fwd_rw_src (noWs "-rev")? : egg_rw_src
 
@@ -113,7 +112,6 @@ private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
     if let some tcSide := tcSide? then src := .tcProj src (parseSide tcSide) (parseSubexprPos pos?.get!)
     if let some exIdx := exIdx? then src := .explosion src exIdx.getNat
     return src
-  | `(egg_fwd_rw_src|src/nat_lit.rs: $_ : $_) => .natLit .zero -- TODO: https://egraphs.zulipchat.com/#narrow/stream/375765-egg.2Fegglog/topic/egg.3A.20dynamic.20rewrite's.20name
   | _ => unreachable!
 
 private def parseRwSrc : (TSyntax `egg_rw_src) → Rewrite.Descriptor
