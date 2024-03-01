@@ -10,6 +10,7 @@ use result::*;
 
 mod analysis;
 mod basic;
+mod eta;
 mod lean_expr;
 mod nat_lit;
 mod result;

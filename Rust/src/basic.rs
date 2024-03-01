@@ -1,6 +1,7 @@
 use egg::*;
 use crate::result::*;
 use crate::analysis::*;
+use crate::eta::*;
 use crate::nat_lit::*;
 
 pub fn explain_congr(init: String, goal: String, rws: Vec<LeanRewrite>, optimize_expl: bool, gen_nat_lit_rws: bool, viz_path: Option<String>) -> Res<String> {
