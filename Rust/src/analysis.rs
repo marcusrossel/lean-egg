@@ -6,7 +6,7 @@ use crate::util::*;
 #[derive(Debug, Default)]
 pub struct LeanAnalysisData {
     pub nat_val: Option<u64>,
-    pub bvars:   HashSet<u64>
+    pub bvars:   HashSet<u64> // A bvar is in this set only if it is referenced by *all* e-nodes in the e-class.
 }
 
 #[derive(Default)]
@@ -23,12 +23,41 @@ impl Analysis<LeanExpr> for LeanAnalysis {
         // 
         // if let (Some(t), Some(f)) = (*to.nat_val, from.nat_val) { assert_eq!(t, f) }
         
-        egg::merge_max(&mut to.nat_val, from.nat_val) | merge_sets(&mut to.bvars, from.bvars)
+        egg::merge_max(&mut to.nat_val, from.nat_val) | intersect_sets(&mut to.bvars, from.bvars)
     }
 
-    fn make(_: &EGraph<LeanExpr, Self>, enode: &LeanExpr) -> Self::Data {
+    fn make(egraph: &EGraph<LeanExpr, Self>, enode: &LeanExpr) -> Self::Data {
         match enode {
-            LeanExpr::Nat(n) => Self::Data { nat_val: Some(*n), ..Default::default() },
+            LeanExpr::Nat(n) => 
+                Self::Data { 
+                    nat_val: Some(*n), 
+                    ..Default::default() 
+                },
+            
+            LeanExpr::BVar(idx) => 
+                Self::Data { 
+                    bvars: match egraph[*idx].data.nat_val { 
+                        Some(n) => vec![n].into_iter().collect(),
+                        None    => HashSet::new()
+                    }, 
+                    ..Default::default() 
+                },
+            
+            LeanExpr::App([fun, arg]) => 
+                Self::Data { 
+                    bvars: union_clone(&egraph[*fun].data.bvars, &egraph[*arg].data.bvars), 
+                    ..Default::default() 
+                },
+            
+            LeanExpr::Lam([ty, body]) | LeanExpr::Forall([ty, body]) =>
+                Self::Data { 
+                    bvars: union_clone(
+                        &egraph[*ty].data.bvars, 
+                        &shift_down(&egraph[*body].data.bvars)
+                    ), 
+                    ..Default::default() 
+                },
+
             _ => Default::default()
         }
     }

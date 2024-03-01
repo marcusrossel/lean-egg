@@ -27,9 +27,7 @@ define_language! {
         "∀"     = Forall([Id; 2]),  // (<expr>, <expr>)
         "lit"   = Lit(Id),          // (Nat | Str)
 
-        // Constants for erased expressions, explosion expression vars and explosion level vars:
+        // Constants for erased expressions:
         "_" = Erased,
-        "μ" = ExplosionExpr,
-        "Λ" = ExplosionLvl,
     }
 }
