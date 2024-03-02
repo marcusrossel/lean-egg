@@ -5,3 +5,6 @@ import Egg
 
 example : 0 = 0 := by
   egg
+
+example : 0 = 0 := by
+  egg (config := { optimizeExpl := true })
