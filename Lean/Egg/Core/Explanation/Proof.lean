@@ -121,7 +121,7 @@ where
   errorPrefix := "egg failed to reconstruct proof:"
 
   proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Expr := do
-    if rwInfo.src.isNatLit then return ← mkReflStep current next
+    if rwInfo.src.isDefEq then return ← mkReflStep current next
     let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
     if ← isRflProof rw.proof then return ← mkReflStep current next
     mkCongrStep current next rwInfo.pos (← rw.forDir rwInfo.dir)

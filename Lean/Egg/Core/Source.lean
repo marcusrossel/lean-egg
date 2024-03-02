@@ -30,6 +30,7 @@ inductive Source where
   | tcProj (src : Source) (side : Side) (pos : SubExpr.Pos)
   | explosion (src : Source) (idx : Nat)
   | natLit (src : Source.NatLit)
+  | eta
   deriving Inhabited, BEq, Hashable
 
 namespace Source
@@ -40,17 +41,18 @@ def NatLit.description : Source.NatLit → String
   | ofSucc => s!"!o"
 
 def description : Source → String
-  | goal                    => s!"⊢"
+  | goal                    => "⊢"
   | explicit idx none       => s!"#{idx}"
   | explicit idx (some eqn) => s!"#{idx}/{eqn}"
   | star id                 => s!"*{id.uniqueIdx!}"
   | tcProj src side pos     => s!"{src.description}[{side.description}{pos}]"
   | explosion src idx       => s!"{src.description}<{idx}>"
   | natLit src              => src.description
+  | eta                     => "!η"
 
 instance : ToString Source where
   toString := description
 
-def isNatLit : Source → Bool
-  | natLit _ => true
-  | _        => false
+def isDefEq : Source → Bool
+  | natLit _ | eta => true
+  | _              => false

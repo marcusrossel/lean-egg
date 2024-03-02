@@ -47,6 +47,7 @@ syntax "⊢" egg_tc_proj                                      : egg_fwd_rw_src
 syntax "!z"                                                 : egg_fwd_rw_src
 syntax "!t"                                                 : egg_fwd_rw_src
 syntax "!o"                                                 : egg_fwd_rw_src
+syntax "!η"                                                 : egg_fwd_rw_src
 
 syntax egg_fwd_rw_src (noWs "-rev")? : egg_rw_src
 
@@ -107,6 +108,7 @@ private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
   | `(egg_fwd_rw_src|!z)           => .natLit .zero
   | `(egg_fwd_rw_src|!t)           => .natLit .toSucc
   | `(egg_fwd_rw_src|!o)           => .natLit .ofSucc
+  | `(egg_fwd_rw_src|!η)           => .eta
   | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src$[[$tcSide?$pos?]]?$[<$exIdx?>]?) => Id.run do
     let mut src := parseBasicFwdRwSrc src
     if let some tcSide := tcSide? then src := .tcProj src (parseSide tcSide) (parseSubexprPos pos?.get!)
