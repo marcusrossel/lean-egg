@@ -77,8 +77,7 @@ pub extern "C" fn c_egg_explain_congr(
     goal_str_ptr: *const c_char, 
     rws_ptr: *const CRewrite, 
     rws_count: usize,
-    optimize_expl: bool,
-    gen_nat_lit_rws: bool,
+    cfg: Config,
     viz_path_ptr: *const c_char
 ) -> EggResult {
     // Cf. https://doc.rust-lang.org/stable/std/ffi/struct.CStr.html#examples
@@ -103,7 +102,7 @@ pub extern "C" fn c_egg_explain_congr(
     let raw_viz_path = String::from_utf8_lossy(viz_path_c_str.to_bytes()).to_string();
     let viz_path = if raw_viz_path.is_empty() { None } else { Some(raw_viz_path) };
 
-    let expl = explain_congr(init, goal, rws, optimize_expl, gen_nat_lit_rws, viz_path);
+    let expl = explain_congr(init, goal, rws, cfg, viz_path);
     if let Err(expl_err) = expl {
         let rws_err_c_str = CString::new(expl_err.to_string()).expect("conversion of error message to C-string failed");
         return EggResult { success: false, expl: rws_err_c_str.into_raw() } 

@@ -9,6 +9,7 @@ structure Encoding where
 structure Gen where
   genTcProjRws := true
   genNatLitRws := true
+  genEtaRw     := false
   explode      := true
   deriving BEq
 
