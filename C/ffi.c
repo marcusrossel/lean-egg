@@ -96,10 +96,12 @@ lean_obj_res lean_egg_explain_congr(
     return lean_mk_string(result.expl);
 }
 
-lean_object* dbg_trace_thunk(lean_object* t) { return lean_box(0); }
-void c_dbg_trace(char const* str) {
-    lean_object* thunk_obj = lean_alloc_closure(&dbg_trace_thunk, 1, 0);
-    lean_object* lstr = lean_mk_string(str);
-    lean_dbg_trace(lstr, thunk_obj);
-    return;
-}
+// TODO: Remove this when eta reduction seems stable:
+//
+// lean_object* dbg_trace_thunk(lean_object* t) { return lean_box(0); }
+// void c_dbg_trace(char const* str) {
+//     lean_object* thunk_obj = lean_alloc_closure(&dbg_trace_thunk, 1, 0);
+//     lean_object* lstr = lean_mk_string(str);
+//     lean_dbg_trace(lstr, thunk_obj);
+//     return;
+// }
