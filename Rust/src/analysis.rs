@@ -5,8 +5,9 @@ use crate::util::*;
 
 #[derive(Debug, Default)]
 pub struct LeanAnalysisData {
-    pub nat_val: Option<u64>,
-    pub bvars:   HashSet<u64> // A bvar is in this set only if it is referenced by *all* e-nodes in the e-class.
+    pub nat_val:  Option<u64>,
+    pub bvars:    HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
+    pub has_bvar: bool          // This is true iff some e-node in the subgraph of the given e-class is a `LeanExpr::BVar`.
 }
 
 #[derive(Default)]
@@ -23,7 +24,9 @@ impl Analysis<LeanExpr> for LeanAnalysis {
         // 
         // if let (Some(t), Some(f)) = (*to.nat_val, from.nat_val) { assert_eq!(t, f) }
         
-        egg::merge_max(&mut to.nat_val, from.nat_val) | intersect_sets(&mut to.bvars, from.bvars)
+        egg::merge_max(&mut to.nat_val, from.nat_val) | 
+        union_sets(&mut to.bvars, from.bvars) |
+        egg::merge_max(&mut to.has_bvar, from.has_bvar)
     }
 
     fn make(egraph: &EGraph<LeanExpr, Self>, enode: &LeanExpr) -> Self::Data {
@@ -40,12 +43,14 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                         Some(n) => vec![n].into_iter().collect(),
                         None    => HashSet::new()
                     }, 
+                    has_bvar: true,
                     ..Default::default() 
                 },
             
             LeanExpr::App([fun, arg]) => 
                 Self::Data { 
                     bvars: union_clone(&egraph[*fun].data.bvars, &egraph[*arg].data.bvars), 
+                    has_bvar: egraph[*fun].data.has_bvar || egraph[*arg].data.has_bvar,
                     ..Default::default() 
                 },
             
@@ -55,6 +60,7 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                         &egraph[*ty].data.bvars, 
                         &shift_down(&egraph[*body].data.bvars)
                     ), 
+                    has_bvar: egraph[*ty].data.has_bvar || egraph[*body].data.has_bvar,
                     ..Default::default() 
                 },
 

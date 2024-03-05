@@ -16,9 +16,16 @@ example : (fun x => Nat.succ x) x = Nat.succ x := by
 example : (fun x => (fun y => Nat.succ y) x) = Nat.succ := by
   egg (config := { genEtaRw := true })
 
+example : (fun x => (fun x => (fun x => Nat.succ x) x) x) = Nat.succ := by
+  egg (config := { genEtaRw := true })
+
 example : (fun x => (fun y => Nat.succ y) x) x = Nat.succ x := by
   egg (config := { genEtaRw := true })
 
--- TODO: Is this an infinite loop in `eta_shift`?
+example : (fun x => (fun x => (fun x => (fun x => Nat.succ x) x) x) x) = Nat.succ := by
+  egg (config := { genEtaRw := true })
+
 example : id (fun x => (fun y => Nat.succ y) x) = id Nat.succ := by
-  sorry -- egg (config := { genEtaRw := true })
+  egg (config := { genEtaRw := true })
+
+-- TODO: Construct a test case where the e-graph contains a cycle.

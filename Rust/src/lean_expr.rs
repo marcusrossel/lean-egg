@@ -42,13 +42,14 @@ pub fn is_nonrec(expr: &LeanExpr) -> bool {
     }
 }
 
-// An expression `lhs` is smaller than another `rhs` wrt. non-recursiveness if `lhs` not recursive 
-// but `rhs` is.
+// An expression `lhs` is smaller than another `rhs` wrt. non-recursiveness if `lhs` is not 
+// recursive but `rhs` is. If both are either recursive or non-recursive, the total order
+// derived by `define_language!` applies.
 pub fn nonrec_cmp(lhs: &LeanExpr, rhs: &LeanExpr) -> Ordering {
     match (is_nonrec(lhs), is_nonrec(rhs)) {
         (true, false) => Ordering::Less,
         (false, true) => Ordering::Greater,
-        _             => Ordering::Equal,
+        _             => lhs.cmp(rhs),
     }
 }
 
