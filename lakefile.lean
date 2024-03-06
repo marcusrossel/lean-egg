@@ -31,4 +31,4 @@ extern_lib egg_for_lean pkg := do
   IO.FS.writeBinFile tgtPath (← IO.FS.readBinFile srcPath)
   return pure tgtPath
 
-require std from git "https://github.com/leanprover/std4" @ "main"
+require std from git "https://github.com/leanprover/std4" @ "v4.7.0-rc1"
