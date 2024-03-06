@@ -17,7 +17,7 @@ impl Applier<LeanExpr, LeanAnalysis> for Beta {
     fn apply_one(&self, egraph: &mut LeanEGraph, beta_class: Id, subst: &Subst, _: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
         let body_class = subst[self.body];
         let arg_class = subst[self.arg];
-        let substituted_body_class = beta_reduce(0, body_class, arg_class, egraph, &mut HashMap::new(), rule);
+        let substituted_body_class = beta_reduce(body_class, arg_class, egraph, rule);
         if egraph.union_trusted(beta_class, substituted_body_class, rule) {
             vec![beta_class]
         } else {
@@ -42,6 +42,10 @@ impl ToString for ClassState {
     }
 }
 
+fn beta_reduce(body_class: Id, arg_class: Id, egraph: &mut LeanEGraph, rule: Symbol) -> Id { 
+    beta_reduce_aux(0, body_class, arg_class, egraph, &mut HashMap::new(), &mut HashMap::new(), rule)
+}
+
 // TODO: Prove termination of this function based on the rooted e-graph spanning tree property.
 //       The proof should probably somehow reason about the size of the retry queue.
 
@@ -51,7 +55,9 @@ impl ToString for ClassState {
 //       Thus, any e-node that is added is either already contained in the subgraph rooted at `target_class` 
 //       anyway, or will end up in an e-class not contained in the subgraph rooted at `target_class`.
 
-fn beta_reduce(subst_idx: u64, body_class: Id, arg_class: Id, egraph: &mut LeanEGraph, state: &mut HashMap<Id, ClassState>, rule: Symbol) -> Id { 
+// TODO: Generalize this function into a bvar traversal function such that you can merge it with `shift_loose_bvars`.
+
+fn beta_reduce_aux(subst_idx: u64, body_class: Id, arg_class: Id, egraph: &mut LeanEGraph, state: &mut HashMap<Id, ClassState>, arg_classes: &mut HashMap<u64, Id>, rule: Symbol) -> Id { 
     dbg_trace("");
     dbg_trace(format!("subst_idx: {}", subst_idx));
     dbg_trace(format!("body_class: {}", body_class));
@@ -126,8 +132,15 @@ fn beta_reduce(subst_idx: u64, body_class: Id, arg_class: Id, egraph: &mut LeanE
                         register_node(&mut new_class, new_node, egraph, state, body_class, rule);
                     }
                     Ordering::Equal => {
-                        // TODO: Cache shifted arg classes.
-                        let shifted_arg_class = shift_loose_bvars(i64::try_from(subst_idx).unwrap(), arg_class, egraph, rule);
+                        let shifted_arg_class = 
+                            if let Some(c) = arg_classes.get(&subst_idx) {
+                                *c
+                            } else {
+                                let c = shift_loose_bvars(i64::try_from(subst_idx).unwrap(), arg_class, egraph, rule);
+                                arg_classes.insert(subst_idx, c);
+                                c
+                            };
+                        
                         // TODO: This is `register_node` but without creating a single node class and instead using
                         //       `shifted_arg_class` in that position.
                         match new_class {
@@ -142,28 +155,28 @@ fn beta_reduce(subst_idx: u64, body_class: Id, arg_class: Id, egraph: &mut LeanE
             },
 
             LeanExpr::Lam([ty, body]) | LeanExpr::Forall([ty, body]) => {
-                let reduced_ty   = beta_reduce(subst_idx, ty, arg_class, egraph, state, rule);
-                let reduced_body = beta_reduce(subst_idx + 1, body, arg_class, egraph, state, rule);
+                let reduced_ty   = beta_reduce_aux(subst_idx, ty, arg_class, egraph, state, arg_classes, rule);
+                let reduced_body = beta_reduce_aux(subst_idx + 1, body, arg_class, egraph, state, arg_classes, rule);
                 let new_node = swap_children(&node, [reduced_ty, reduced_body]);
                 register_node(&mut new_class, new_node, egraph, state, body_class, rule)
             }
 
             LeanExpr::Const(es) => {
-                let reduced_children = es.iter().map(|e| beta_reduce(subst_idx, *e, arg_class, egraph, state, rule));
+                let reduced_children = es.iter().map(|e| beta_reduce_aux(subst_idx, *e, arg_class, egraph, state, arg_classes, rule));
                 let new_node = LeanExpr::Const(reduced_children.collect());
                 register_node(&mut new_class, new_node, egraph, state, body_class, rule);
             }
 
             LeanExpr::App([e1, e2]) | LeanExpr::Max([e1, e2]) | LeanExpr::IMax([e1, e2]) => {
-                let r1 = beta_reduce(subst_idx, e1, arg_class, egraph, state, rule);
-                let r2 = beta_reduce(subst_idx, e2, arg_class, egraph, state, rule);
+                let r1 = beta_reduce_aux(subst_idx, e1, arg_class, egraph, state, arg_classes, rule);
+                let r2 = beta_reduce_aux(subst_idx, e2, arg_class, egraph, state, arg_classes, rule);
                 let new_node = swap_children(&node, [r1, r2]);
                 register_node(&mut new_class, new_node, egraph, state, body_class, rule)
             },
 
             LeanExpr::Lit(e) | LeanExpr::FVar(e) | LeanExpr::MVar(e) | LeanExpr::Sort(e) | 
             LeanExpr::UVar(e) | LeanExpr::Param(e) | LeanExpr::Succ(e) => {
-                let reduced_child = beta_reduce(subst_idx, e, arg_class, egraph, state, rule);
+                let reduced_child = beta_reduce_aux(subst_idx, e, arg_class, egraph, state, arg_classes, rule);
                 let new_node = swap_child(&node, reduced_child);
                 register_node(&mut new_class, new_node, egraph, state, body_class, rule);
             }
