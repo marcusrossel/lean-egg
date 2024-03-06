@@ -1,6 +1,8 @@
 import Egg
 
+-- Note: We disable β-reduction as it can also solve many of these cases without η-reduction.
 set_option egg.genEtaRw true
+set_option egg.genBetaRw false
 
 example : (fun x => Nat.succ x) = Nat.succ := by
   fail_if_success egg (config := { genEtaRw := false })
