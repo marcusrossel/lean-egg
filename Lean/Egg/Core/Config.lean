@@ -21,7 +21,7 @@ inductive Debug.ExitPoint
   | none
   | beforeEqSat
   | beforeProof
-  deriving BEq
+  deriving BEq, Inhabited
 
 structure Debug where
   exitPoint : Debug.ExitPoint := .none

@@ -1,7 +1,8 @@
 import Egg.Core.Request
 import Egg.Core.Explanation.Proof
 import Egg.Core.Gen.TcProjs
-import Egg.Tactic.Config
+import Egg.Tactic.Config.Option
+import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Explanation
 import Egg.Tactic.Base
 import Egg.Tactic.Rewrites
@@ -61,9 +62,12 @@ private def processRawExpl
       trace[egg.reconstruction] proof
     goal.id.assign proof
 
-elab "egg " cfg:egg_cfg rws:egg_rws base:(egg_base)? : tactic => do
+open Config.Modifier (egg_cfg_mod)
+
+elab "egg " mod:egg_cfg_mod rws:egg_rws base:(egg_base)? : tactic => do
   let goal ← getMainGoal
-  let cfg ← Config.parse cfg
+  let mod  ← Config.Modifier.parse mod
+  let cfg := (← Config.fromOptions).modify mod
   goal.withContext do
     let amb  ← getAmbientMVars
     let goal ← parseGoal goal base
@@ -75,4 +79,4 @@ elab "egg " cfg:egg_cfg rws:egg_rws base:(egg_base)? : tactic => do
     processRawExpl rawExpl goal rws cfg.toDebug amb
 
 -- WORKAROUND: This fixes `Tests/EndOfInput`.
-macro "egg" cfg:egg_cfg : tactic => `(tactic| egg $cfg)
+macro "egg" mod:egg_cfg_mod : tactic => `(tactic| egg $mod)

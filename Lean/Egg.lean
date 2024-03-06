@@ -10,9 +10,10 @@ import Egg.Core.Congr
 import Egg.Core.MVars
 import Egg.Core.Request
 import Egg.Core.Source
+import Egg.Tactic.Config.Modifier
+import Egg.Tactic.Config.Option
 import Egg.Tactic.Base
 import Egg.Tactic.Basic
-import Egg.Tactic.Config
 import Egg.Tactic.Explanation
 import Egg.Tactic.Rewrites
 import Egg.Tactic.Trace

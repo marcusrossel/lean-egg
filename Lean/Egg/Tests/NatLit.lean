@@ -14,6 +14,9 @@ example : Nat.succ 1 = Nat.succ (Nat.succ Nat.zero) := by
 example : 1 + 2 = 3 := by
   egg [Nat.add]
 
+example : 4 * 5 = 20 := by
+  egg [Nat.mul, Nat.add]
+
 example : Int.ofNat (Nat.succ 1) = Int.ofNat (Nat.succ (Nat.succ Nat.zero)) := by
   egg
 
