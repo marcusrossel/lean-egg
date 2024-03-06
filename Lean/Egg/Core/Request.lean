@@ -12,7 +12,7 @@ namespace Egg
 private opaque explainCongr
   (lhs rhs : Expression) (rwNames : Array String) (lhss rhss : Array Expression)
   (dirs : Array Rewrite.Directions) (optimizeExpl : Bool) (genNatLitRws : Bool) (genEtaRw : Bool)
-  (vizPath : String) : String
+  (genBetaRw : Bool) (vizPath : String) : String
 
 structure Request where
   private mk ::
@@ -22,6 +22,7 @@ structure Request where
   optimizeExpl : Bool
   genNatLitRws : Bool
   genEtaRw     : Bool
+  genBetaRw    : Bool
   vizPath      : String
 
 namespace Request
@@ -34,10 +35,11 @@ def encoding (goal : Congr) (rws : Rewrites) (cfg : Config) : MetaM Request := d
     optimizeExpl := cfg.optimizeExpl
     genNatLitRws := cfg.genNatLitRws
     genEtaRw     := cfg.genEtaRw
+    genBetaRw    := cfg.genBetaRw
     vizPath      := cfg.vizPath.getD ""
   }
 
 def run (r : Request) : Explanation.Raw :=
   explainCongr
     r.lhs r.rhs r.rws.names r.rws.lhss r.rws.rhss r.rws.dirs
-    r.optimizeExpl r.genNatLitRws r.genEtaRw r.vizPath
+    r.optimizeExpl r.genNatLitRws r.genEtaRw r.genBetaRw r.vizPath
