@@ -2,8 +2,9 @@ use egg::*;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::cmp::Ordering;
-use crate::lean_expr::*;
 use crate::analysis::*;
+use crate::lean_expr::*;
+use crate::shift::*;
 use crate::util::*;
 
 struct Beta {
@@ -125,25 +126,17 @@ fn beta_reduce(subst_idx: u64, body_class: Id, arg_class: Id, egraph: &mut LeanE
                         register_node(&mut new_class, new_node, egraph, state, body_class, rule);
                     }
                     Ordering::Equal => {
-                        continue
-                        // TODO:
-                        // substitute for the arg_class
-                        // when substitution in arg_class:
-                        // * local vars shouldn't be shifted (i.e. those that are < threshold starting at thresh 0)
-                        // * loose bvars should by shifted `-subst_idx - 1`.
-                        //
-                        // we can probably slightly generalize the `eta_shift` function for this so that we can
-                        // use it for this shifting
-                        //let shifted_arg_class: Id = todo!();
+                        // TODO: Cache shifted arg classes.
+                        let shifted_arg_class = shift_loose_bvars(i64::try_from(subst_idx).unwrap(), arg_class, egraph, rule);
                         // TODO: This is `register_node` but without creating a single node class and instead using
                         //       `shifted_arg_class` in that position.
-                        // match new_class {
-                        //     Some(id) => _ = egraph.union_trusted(id, shifted_arg_class, rule),
-                        //     None => {
-                        //         new_class = Some(shifted_arg_class);
-                        //         state.insert(body_class, ClassState::New(shifted_arg_class));
-                        //     }
-                        // } 
+                        match new_class {
+                            Some(id) => _ = egraph.union_trusted(id, shifted_arg_class, rule),
+                            None => {
+                                new_class = Some(shifted_arg_class);
+                                state.insert(body_class, ClassState::New(shifted_arg_class));
+                            }
+                        } 
                     }
                 }
             },

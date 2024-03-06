@@ -15,6 +15,7 @@ mod eta;
 mod lean_expr;
 mod nat_lit;
 mod result;
+mod shift;
 mod util;
 
 #[repr(C)]

@@ -51,7 +51,7 @@ for file in "$tests_dir"/*; do
                         echo "  ${line}"
                     done
                 fi
-		    fi
+            fi
         fi
     fi
 done
