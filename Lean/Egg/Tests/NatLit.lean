@@ -2,6 +2,8 @@ import Egg
 
 -- Tests involving conversions between `Nat.zero` and `Nat.succ _` and `.lit (.natVal _)`.
 
+set_option egg.genNatLitRws true
+
 example : 0 = Nat.zero := by
   egg
 
