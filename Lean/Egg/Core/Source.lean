@@ -31,6 +31,7 @@ inductive Source where
   | explosion (src : Source) (idx : Nat)
   | natLit (src : Source.NatLit)
   | eta
+  | beta
   deriving Inhabited, BEq, Hashable
 
 namespace Source
@@ -49,10 +50,11 @@ def description : Source → String
   | explosion src idx       => s!"{src.description}<{idx}>"
   | natLit src              => src.description
   | eta                     => "!η"
+  | beta                    => "!β"
 
 instance : ToString Source where
   toString := description
 
 def isDefEq : Source → Bool
-  | natLit _ | eta => true
-  | _              => false
+  | natLit _ | eta | beta => true
+  | _                     => false

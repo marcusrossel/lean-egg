@@ -6,18 +6,19 @@ use crate::lean_expr::*;
 use crate::analysis::*;
 use crate::util::*;
 
-struct Eta {
-    fun: Var
+struct Beta {
+    body: Var,
+    arg: Var
 }
 
-impl Applier<LeanExpr, LeanAnalysis> for Eta {
+impl Applier<LeanExpr, LeanAnalysis> for Beta {
 
-    fn apply_one(&self, egraph: &mut LeanEGraph, eta_class: Id, subst: &Subst, _: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
-        let fun_class = subst[self.fun];
-        if egraph[fun_class].data.bvars.contains(&0) { return vec![] }
-        let shifted_fun_class = eta_shift(0, fun_class, egraph, &mut HashMap::new(), rule);
-        if egraph.union_trusted(eta_class, shifted_fun_class, rule) {
-            vec![eta_class]
+    fn apply_one(&self, egraph: &mut LeanEGraph, beta_class: Id, subst: &Subst, _: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
+        let body_class = subst[self.body];
+        let arg_class = subst[self.arg];
+        let substituted_body_class = beta_reduce(0, body_class, arg_class, egraph, &mut HashMap::new(), rule);
+        if egraph.union_trusted(beta_class, substituted_body_class, rule) {
+            vec![beta_class]
         } else {
             vec![]
         }
@@ -41,6 +42,7 @@ impl ToString for ClassState {
 }
 
 // TODO: Prove termination of this function based on the rooted e-graph spanning tree property.
+//       The proof should probably somehow reason about the size of the retry queue.
 
 // TODO: Prove that we can simply mutate the e-graph while traversing it without affecting the eta-reduction.
 //       I think the reason is that we're only every adding e-nodes but never unioning any e-classes.
@@ -48,32 +50,29 @@ impl ToString for ClassState {
 //       Thus, any e-node that is added is either already contained in the subgraph rooted at `target_class` 
 //       anyway, or will end up in an e-class not contained in the subgraph rooted at `target_class`.
 
-// If a bvar's index is below the threshold, we don't shift it.
-// If a bvar's index is above the threshold, then we shift it.
-// If a bvar's index equals the `threshold` value, then we remove it. This may entail that bvar's e-class is empty 
-// and hence the parent e-node doesn't have sufficient children and also needs to be removed.
-fn eta_shift(threshold: u64, target_class: Id, egraph: &mut LeanEGraph, state: &mut HashMap<Id, ClassState>, rule: Symbol) -> Id { 
+fn beta_reduce(subst_idx: u64, body_class: Id, arg_class: Id, egraph: &mut LeanEGraph, state: &mut HashMap<Id, ClassState>, rule: Symbol) -> Id { 
     dbg_trace("");
-    dbg_trace(format!("threshold: {}", threshold));
-    dbg_trace(format!("target_class: {}", target_class));
+    dbg_trace(format!("subst_idx: {}", subst_idx));
+    dbg_trace(format!("body_class: {}", body_class));
+    dbg_trace(format!("arg_class: {}", arg_class));
     if state.is_empty() {
         dbg_trace("∅".to_string());
     } else {
         for (key, value) in state.clone() { dbg_trace(format!("{} ↦ {}", key, value.to_string())); }
     }
 
-    // If we already have a new class for the given target, return that.
-    if let Some(ClassState::New(new_class)) = state.get(&target_class) {
+    // If we already have a new class for the given body, return that.
+    if let Some(ClassState::New(new_class)) = state.get(&body_class) {
         dbg_trace("Early exit: cached new class"); 
         return new_class.clone()
     }
 
-    // Optimization: If the subgraph rooted at `target_class` doesn't contain any bvars, we can
-    //               just return the e-class as is.
-    if !egraph[target_class].data.has_bvar {
-        dbg_trace("Early exit: no bvars"); 
-        state.insert(target_class, ClassState::New(target_class));
-        return target_class
+    // Optimization: If the subgraph rooted at `body_class` doesn't contain any reference to a bvar
+    //               whose index is the `subst_idx`, we can return it as is.
+    if !egraph[body_class].data.bvars.contains(&subst_idx) {
+        dbg_trace("Early exit: no bvars with substitution index"); 
+        state.insert(body_class, ClassState::New(body_class));
+        return body_class
     }
     
     // TODO: I think it might be really inefficient to fix the set of nodes we're going to visit 
@@ -84,13 +83,13 @@ fn eta_shift(threshold: u64, target_class: Id, egraph: &mut LeanEGraph, state: &
     // Gets all the nodes we are going to visit. In e-class cycles, this is reduced by all nodes
     // which have already been visited in a previous cycle. Though, if there are no more available
     // nodes we simply allow all nodes to be visited again.
-    let mut nodes: Vec<LeanExpr> = egraph[target_class].nodes.clone().into_iter().filter(|n| 
-        match state.get(&target_class) {
+    let mut nodes: Vec<LeanExpr> = egraph[body_class].nodes.clone().into_iter().filter(|n| 
+        match state.get(&body_class) {
             Some(ClassState::Visited(visited)) => !visited.contains(n),
             _                                  => true
         }
     ).collect();
-    if nodes.is_empty() { nodes = egraph[target_class].nodes.clone() }
+    if nodes.is_empty() { nodes = egraph[body_class].nodes.clone() }
 
     // Sorts the nodes we are going to visit by `nonrec_cmp`.
     // It is important for termination that we visit nodes according to a fixed total order. 
@@ -105,59 +104,79 @@ fn eta_shift(threshold: u64, target_class: Id, egraph: &mut LeanEGraph, state: &
 
     for node in nodes {
         dbg_trace(format!("Entering: {}", node));
-        visit_node(&node, state, target_class);
+        visit_node(&node, state, body_class);
         
         match node {
             LeanExpr::BVar(e) => {
                 // We expect `LeanExpr::BVar`s to always have a `LeanExpr::Nat` child which in turn has a `nat_val`.
                 let idx = egraph[e].data.nat_val.unwrap();
-                match idx.cmp(&threshold) {
+                match idx.cmp(&subst_idx) {
                     Ordering::Less => {
                         // TODO: Optimize this branch by using the existing `target_class` as the new class. 
                         let idx_node = LeanExpr::Nat(idx); 
                         let idx_class = egraph.add(idx_node);
                         let new_node = LeanExpr::BVar(idx_class);
-                        register_node(&mut new_class, new_node, egraph, state, target_class, rule)
+                        register_node(&mut new_class, new_node, egraph, state, body_class, rule)
                     }
                     Ordering::Greater => {
                         let idx_node = LeanExpr::Nat(idx - 1); 
                         let idx_class = egraph.add(idx_node);
                         let new_node = LeanExpr::BVar(idx_class);
-                        register_node(&mut new_class, new_node, egraph, state, target_class, rule);
+                        register_node(&mut new_class, new_node, egraph, state, body_class, rule);
                     }
-                    Ordering::Equal => continue
+                    Ordering::Equal => {
+                        continue
+                        // TODO:
+                        // substitute for the arg_class
+                        // when substitution in arg_class:
+                        // * local vars shouldn't be shifted (i.e. those that are < threshold starting at thresh 0)
+                        // * loose bvars should by shifted `-subst_idx - 1`.
+                        //
+                        // we can probably slightly generalize the `eta_shift` function for this so that we can
+                        // use it for this shifting
+                        //let shifted_arg_class: Id = todo!();
+                        // TODO: This is `register_node` but without creating a single node class and instead using
+                        //       `shifted_arg_class` in that position.
+                        // match new_class {
+                        //     Some(id) => _ = egraph.union_trusted(id, shifted_arg_class, rule),
+                        //     None => {
+                        //         new_class = Some(shifted_arg_class);
+                        //         state.insert(body_class, ClassState::New(shifted_arg_class));
+                        //     }
+                        // } 
+                    }
                 }
             },
 
             LeanExpr::Lam([ty, body]) | LeanExpr::Forall([ty, body]) => {
-                let shifted_ty = eta_shift(threshold, ty, egraph, state, rule);
-                let shifted_body = eta_shift(threshold + 1, body, egraph, state, rule);
-                let new_node = swap_children(&node, [shifted_ty, shifted_body]);
-                register_node(&mut new_class, new_node, egraph, state, target_class, rule)
+                let reduced_ty   = beta_reduce(subst_idx, ty, arg_class, egraph, state, rule);
+                let reduced_body = beta_reduce(subst_idx + 1, body, arg_class, egraph, state, rule);
+                let new_node = swap_children(&node, [reduced_ty, reduced_body]);
+                register_node(&mut new_class, new_node, egraph, state, body_class, rule)
             }
 
             LeanExpr::Const(es) => {
-                let shifted_children = es.iter().map(|e| eta_shift(threshold, *e, egraph, state, rule));
-                let new_node = LeanExpr::Const(shifted_children.collect());
-                register_node(&mut new_class, new_node, egraph, state, target_class, rule);
+                let reduced_children = es.iter().map(|e| beta_reduce(subst_idx, *e, arg_class, egraph, state, rule));
+                let new_node = LeanExpr::Const(reduced_children.collect());
+                register_node(&mut new_class, new_node, egraph, state, body_class, rule);
             }
 
             LeanExpr::App([e1, e2]) | LeanExpr::Max([e1, e2]) | LeanExpr::IMax([e1, e2]) => {
-                let s1 = eta_shift(threshold, e1, egraph, state, rule);
-                let s2 = eta_shift(threshold, e2, egraph, state, rule);
-                let new_node = swap_children(&node, [s1, s2]);
-                register_node(&mut new_class, new_node, egraph, state, target_class, rule)
+                let r1 = beta_reduce(subst_idx, e1, arg_class, egraph, state, rule);
+                let r2 = beta_reduce(subst_idx, e2, arg_class, egraph, state, rule);
+                let new_node = swap_children(&node, [r1, r2]);
+                register_node(&mut new_class, new_node, egraph, state, body_class, rule)
             },
 
             LeanExpr::Lit(e) | LeanExpr::FVar(e) | LeanExpr::MVar(e) | LeanExpr::Sort(e) | 
             LeanExpr::UVar(e) | LeanExpr::Param(e) | LeanExpr::Succ(e) => {
-                let shifted_child = eta_shift(threshold, e, egraph, state, rule);
-                let new_node = swap_child(&node, shifted_child);
-                register_node(&mut new_class, new_node, egraph, state, target_class, rule);
+                let reduced_child = beta_reduce(subst_idx, e, arg_class, egraph, state, rule);
+                let new_node = swap_child(&node, reduced_child);
+                register_node(&mut new_class, new_node, egraph, state, body_class, rule);
             }
 
             LeanExpr::Nat(_) | LeanExpr::Str(_) | LeanExpr::Erased =>
-                register_node(&mut new_class, node, egraph, state, target_class, rule)
+                register_node(&mut new_class, node, egraph, state, body_class, rule)
         }
     }
 
@@ -183,6 +202,6 @@ fn register_node(new_class: &mut Option<Id>, new_node: LeanExpr, egraph: &mut Le
     } 
 }
 
-pub fn eta_reduction_rw() -> LeanRewrite {
-    rewrite!("!η"; "(λ ?t (app ?f (bvar 0)))" => { Eta { fun : "?f".parse().unwrap() }})
+pub fn beta_reduction_rw() -> LeanRewrite {
+    rewrite!("!β"; "(app (λ ?t ?b) ?a)" => { Beta { body : "?b".parse().unwrap(), arg : "?a".parse().unwrap() }})
 }

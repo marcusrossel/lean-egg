@@ -1,6 +1,7 @@
 use egg::*;
 use crate::result::*;
 use crate::analysis::*;
+use crate::beta::*;
 use crate::eta::*;
 use crate::nat_lit::*;
 
@@ -8,7 +9,8 @@ use crate::nat_lit::*;
 pub struct Config {
     optimize_expl:   bool, 
     gen_nat_lit_rws: bool, 
-    gen_eta_rw:      bool
+    gen_eta_rw:      bool,
+    gen_beta_rw:     bool
 }
 
 pub fn explain_congr(init: String, goal: String, rws: Vec<LeanRewrite>, cfg: Config, viz_path: Option<String>) -> Res<String> {
@@ -23,7 +25,8 @@ pub fn explain_congr(init: String, goal: String, rws: Vec<LeanRewrite>, cfg: Con
     
     let mut rws = rws;
     if cfg.gen_nat_lit_rws { rws.append(&mut nat_lit_rws()) }
-    if cfg.gen_eta_rw { rws.push(eta_reduction_rw()) }
+    if cfg.gen_eta_rw      { rws.push(eta_reduction_rw()) }
+    if cfg.gen_beta_rw     { rws.push(beta_reduction_rw()) }
     
     let mut runner = Runner::default()
         .with_egraph(egraph)

@@ -12,6 +12,7 @@ structure Modifier where
   genTcProjRws       : Option Bool            := none
   genNatLitRws       : Option Bool            := none
   genEtaRw           : Option Bool            := none
+  genBetaRw          : Option Bool            := none
   explode            : Option Bool            := none
   optimizeExpl       : Option Bool            := none
   exitPoint          : Option Debug.ExitPoint := none
@@ -24,6 +25,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   genTcProjRws       := mod.genTcProjRws.getD cfg.genTcProjRws
   genNatLitRws       := mod.genNatLitRws.getD cfg.genNatLitRws
   genEtaRw           := mod.genEtaRw.getD cfg.genEtaRw
+  genBetaRw          := mod.genBetaRw.getD cfg.genBetaRw
   explode            := mod.explode.getD cfg.explode
   optimizeExpl       := mod.optimizeExpl.getD cfg.optimizeExpl
   exitPoint          := mod.exitPoint.getD cfg.exitPoint

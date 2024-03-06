@@ -28,6 +28,10 @@ register_option egg.genEtaRw : Bool := {
   defValue := ({} : Config).genEtaRw
 }
 
+register_option egg.genBetaRw : Bool := {
+  defValue := ({} : Config).genBetaRw
+}
+
 register_option egg.explode : Bool := {
   defValue := ({} : Config).explode
 }
@@ -43,6 +47,7 @@ def Config.fromOptions : MetaM Config := return {
     genTcProjRws       := egg.genTcProjRws.get (← getOptions)
     genNatLitRws       := egg.genNatLitRws.get (← getOptions)
     genEtaRw           := egg.genEtaRw.get (← getOptions)
+    genBetaRw          := egg.genBetaRw.get (← getOptions)
     explode            := egg.explode.get (← getOptions)
     optimizeExpl       := egg.optimizeExpl.get (← getOptions)
     toDebug            := {}

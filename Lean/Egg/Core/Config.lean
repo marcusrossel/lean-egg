@@ -10,6 +10,7 @@ structure Gen where
   genTcProjRws := true
   genNatLitRws := true
   genEtaRw     := true
+  genBetaRw    := false
   explode      := true
   deriving BEq
 

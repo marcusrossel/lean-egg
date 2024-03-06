@@ -26,6 +26,7 @@ typedef struct config {
     rust_bool optimize_expl;
     rust_bool gen_nat_lit_rws;
     rust_bool gen_eta_rw;
+    rust_bool gen_beta_rw;
 } config;
 
 typedef struct egg_result {
@@ -51,6 +52,7 @@ extern egg_result c_egg_explain_congr(
 // `optimize_expl`: boolean indicating whether egg should try to shorten its explanations
 // `gen_nat_lit_rws`: boolean indicating whether egg should use additional rewrites to convert between nat-lits and `Nat.zero`/`Nat.succ`
 // `gen_eta_rw`: boolean indicating whether egg should use an additional rewrite to perform eta-reduction
+// `gen_beta_rw`: boolean indicating whether egg should use an additional rewrite to perform beta-reduction
 // `viz_path`: string
 // return value: string explaining the rewrite sequence
 lean_obj_res lean_egg_explain_congr(
@@ -63,6 +65,7 @@ lean_obj_res lean_egg_explain_congr(
     lean_bool optimize_expl,
     lean_bool gen_nat_lit_rws,
     lean_bool gen_eta_rw,
+    lean_bool gen_beta_rw,
     lean_obj_arg viz_path
 ) {
     const char* init_c_str = lean_string_cstr(init);
@@ -86,7 +89,8 @@ lean_obj_res lean_egg_explain_congr(
     config cfg = (config) { 
         .optimize_expl   = lean_bool_to_rust(optimize_expl),  
         .gen_nat_lit_rws = lean_bool_to_rust(gen_nat_lit_rws),  
-        .gen_eta_rw      = lean_bool_to_rust(gen_eta_rw)  
+        .gen_eta_rw      = lean_bool_to_rust(gen_eta_rw),
+        .gen_beta_rw     = lean_bool_to_rust(gen_beta_rw)  
     };
     const char* viz_path_c_str = lean_string_cstr(viz_path);
 
@@ -96,7 +100,7 @@ lean_obj_res lean_egg_explain_congr(
     return lean_mk_string(result.expl);
 }
 
-// TODO: Remove this when eta reduction seems stable:
+// TODO: Remove this when eta/beta reduction seems stable:
 //
 // lean_object* dbg_trace_thunk(lean_object* t) { return lean_box(0); }
 // void c_dbg_trace(char const* str) {
