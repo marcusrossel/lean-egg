@@ -37,9 +37,9 @@ inductive Source where
 namespace Source
 
 def NatLit.description : Source.NatLit → String
-  | zero   => s!"!z"
-  | toSucc => s!"!t"
-  | ofSucc => s!"!o"
+  | zero   => s!"≡0"
+  | toSucc => s!"≡→S"
+  | ofSucc => s!"≡S→"
 
 def description : Source → String
   | goal                    => "⊢"
@@ -49,8 +49,8 @@ def description : Source → String
   | tcProj src side pos     => s!"{src.description}[{side.description}{pos}]"
   | explosion src idx       => s!"{src.description}<{idx}>"
   | natLit src              => src.description
-  | eta                     => "!η"
-  | beta                    => "!β"
+  | eta                     => "≡β"
+  | beta                    => "≡η"
 
 instance : ToString Source where
   toString := description

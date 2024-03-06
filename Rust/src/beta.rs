@@ -203,5 +203,5 @@ fn register_node(new_class: &mut Option<Id>, new_node: LeanExpr, egraph: &mut Le
 }
 
 pub fn beta_reduction_rw() -> LeanRewrite {
-    rewrite!("!β"; "(app (λ ?t ?b) ?a)" => { Beta { body : "?b".parse().unwrap(), arg : "?a".parse().unwrap() }})
+    rewrite!("≡β"; "(app (λ ?t ?b) ?a)" => { Beta { body : "?b".parse().unwrap(), arg : "?a".parse().unwrap() }})
 }

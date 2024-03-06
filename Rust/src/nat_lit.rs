@@ -41,8 +41,8 @@ impl Applier<LeanExpr, LeanAnalysis> for OfSucc {
 
 pub fn nat_lit_rws() -> Vec<LeanRewrite> {
     let mut rws = vec![];
-    rws.append(&mut rewrite!("!z"; "(lit 0)"                         <=> "(const Nat.zero)"));
-    rws.push(       rewrite!("!t"; "(lit ?n)"                        => { ToSucc { nat_val : "?n".parse().unwrap() }}));
-    rws.push(       rewrite!("!o"; "(app (const Nat.succ) (lit ?n))" => { OfSucc { nat_val : "?n".parse().unwrap() }}));
+    rws.append(&mut rewrite!("≡0";  "(lit 0)"                        <=> "(const Nat.zero)"));
+    rws.push(       rewrite!("≡→S"; "(lit ?n)"                        => { ToSucc { nat_val : "?n".parse().unwrap() }}));
+    rws.push(       rewrite!("≡S→"; "(app (const Nat.succ) (lit ?n))" => { OfSucc { nat_val : "?n".parse().unwrap() }}));
     rws
 }

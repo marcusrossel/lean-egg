@@ -184,5 +184,5 @@ fn register_node(new_class: &mut Option<Id>, new_node: LeanExpr, egraph: &mut Le
 }
 
 pub fn eta_reduction_rw() -> LeanRewrite {
-    rewrite!("!η"; "(λ ?t (app ?f (bvar 0)))" => { Eta { fun : "?f".parse().unwrap() }})
+    rewrite!("≡η"; "(λ ?t (app ?f (bvar 0)))" => { Eta { fun : "?f".parse().unwrap() }})
 }
