@@ -17,7 +17,7 @@ abbrev TcProjIndex := HashMap TcProj Source
 
 private def TcProj.reductionRewrite? (proj : TcProj) (src : Source) : MetaM (Option Rewrite) := do
   let app := mkAppN (.const proj.const proj.lvls) proj.args
-  let reduced ← withReducibleAndInstances do Expr.eta <$> reduceAll app
+  let reduced ← withReducibleAndInstances do reduceAll app
   if app == reduced then return none
   let eq ← mkEq app reduced
   let proof ← mkEqRefl app

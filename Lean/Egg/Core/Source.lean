@@ -49,8 +49,8 @@ def description : Source → String
   | tcProj src side pos     => s!"{src.description}[{side.description}{pos}]"
   | explosion src idx       => s!"{src.description}<{idx}>"
   | natLit src              => src.description
-  | eta                     => "≡β"
-  | beta                    => "≡η"
+  | eta                     => "≡η"
+  | beta                    => "≡β"
 
 instance : ToString Source where
   toString := description

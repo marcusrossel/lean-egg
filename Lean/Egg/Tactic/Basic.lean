@@ -24,7 +24,7 @@ private def getAmbientMVars : MetaM Explanation.AmbientMVars :=
   return (← getMCtx).decls
 
 private def parseGoal (goal : MVarId) (base? : Option (TSyntax `egg_base)) : MetaM Goal := do
-  let goalType ← normalize (← goal.getType')
+  let goalType ← normalize (← goal.getType') (beta := false) (eta := false)
   let base? ← base?.mapM parseBase
   let cgr ← getCongr goalType base?
   return { id := goal, type := cgr, base? }
