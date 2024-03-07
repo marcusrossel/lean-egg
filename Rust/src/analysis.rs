@@ -5,9 +5,8 @@ use crate::util::*;
 
 #[derive(Debug, Default)]
 pub struct LeanAnalysisData {
-    pub nat_val:  Option<u64>,
-    pub bvars:    HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
-    pub has_bvar: bool          // This is true iff some e-node in the subgraph of the given e-class is a `LeanExpr::BVar`.
+    pub nat_val:     Option<u64>,
+    pub loose_bvars: HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
 }
 
 #[derive(Default)]
@@ -25,8 +24,7 @@ impl Analysis<LeanExpr> for LeanAnalysis {
         // if let (Some(t), Some(f)) = (*to.nat_val, from.nat_val) { assert_eq!(t, f) }
         
         egg::merge_max(&mut to.nat_val, from.nat_val) | 
-        union_sets(&mut to.bvars, from.bvars) |
-        egg::merge_max(&mut to.has_bvar, from.has_bvar)
+        union_sets(&mut to.loose_bvars, from.loose_bvars)
     }
 
     fn make(egraph: &EGraph<LeanExpr, Self>, enode: &LeanExpr) -> Self::Data {
@@ -39,28 +37,25 @@ impl Analysis<LeanExpr> for LeanAnalysis {
             
             LeanExpr::BVar(idx) => 
                 Self::Data { 
-                    bvars: match egraph[*idx].data.nat_val { 
+                    loose_bvars: match egraph[*idx].data.nat_val { 
                         Some(n) => vec![n].into_iter().collect(),
                         None    => HashSet::new()
                     }, 
-                    has_bvar: true,
                     ..Default::default() 
                 },
             
             LeanExpr::App([fun, arg]) => 
                 Self::Data { 
-                    bvars: union_clone(&egraph[*fun].data.bvars, &egraph[*arg].data.bvars), 
-                    has_bvar: egraph[*fun].data.has_bvar || egraph[*arg].data.has_bvar,
+                    loose_bvars: union_clone(&egraph[*fun].data.loose_bvars, &egraph[*arg].data.loose_bvars),
                     ..Default::default() 
                 },
             
             LeanExpr::Lam([ty, body]) | LeanExpr::Forall([ty, body]) =>
                 Self::Data { 
-                    bvars: union_clone(
-                        &egraph[*ty].data.bvars, 
-                        &shift_down(&egraph[*body].data.bvars)
+                    loose_bvars: union_clone(
+                        &egraph[*ty].data.loose_bvars, 
+                        &shift_down(&egraph[*body].data.loose_bvars)
                     ), 
-                    has_bvar: egraph[*ty].data.has_bvar || egraph[*body].data.has_bvar,
                     ..Default::default() 
                 },
 

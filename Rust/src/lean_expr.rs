@@ -53,19 +53,6 @@ pub fn nonrec_cmp(lhs: &LeanExpr, rhs: &LeanExpr) -> Ordering {
     }
 }
 
-pub fn swap_child(single_child_node: &LeanExpr, new_child: Id) -> LeanExpr {
-    match single_child_node {
-        LeanExpr::Lit(_)   => LeanExpr::Lit(new_child),
-        LeanExpr::FVar(_)  => LeanExpr::FVar(new_child),
-        LeanExpr::MVar(_)  => LeanExpr::MVar(new_child),
-        LeanExpr::Sort(_)  => LeanExpr::Sort(new_child),
-        LeanExpr::UVar(_)  => LeanExpr::UVar(new_child),
-        LeanExpr::Param(_) => LeanExpr::Param(new_child),
-        LeanExpr::Succ(_)  => LeanExpr::Succ(new_child),
-        _                  => panic!("Called 'swap_child' on 'LeanExpr' containing not exactly one child.")
-    }
-}
-
 pub fn swap_children(two_child_node: &LeanExpr, new_children: [Id; 2]) -> LeanExpr {
     match two_child_node {
         LeanExpr::Max(_)    => LeanExpr::Max(new_children),

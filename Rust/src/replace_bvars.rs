@@ -21,8 +21,13 @@ impl ToString for ClassState {
     }
 }
 
-pub fn shift_loose_bvars(offset: i64, target_class: Id, egraph: &mut LeanEGraph, rule: Symbol) -> Id {
-    shift_bvars_aux(0, offset, target_class, egraph, &mut HashMap::new(), rule)
+pub enum Replacement {
+    Node(LeanExpr),
+    Class(Id)
+}
+
+pub fn replace_loose_bvars<C, F: Fn(u64, u64, &mut LeanEGraph, &mut C) -> Replacement>(replace: &F, target_class: Id, egraph: &mut LeanEGraph, rule: Symbol, ctx: &mut C) -> Id {
+    replace_loose_bvars_aux(replace, target_class, 0, egraph, &mut HashMap::new(), rule, ctx)
 }
 
 // TODO: Prove termination of this function based on the rooted e-graph spanning tree property.
@@ -33,11 +38,9 @@ pub fn shift_loose_bvars(offset: i64, target_class: Id, egraph: &mut LeanEGraph,
 //       Thus, any e-node that is added is either already contained in the subgraph rooted at `target_class` 
 //       anyway, or will end up in an e-class not contained in the subgraph rooted at `target_class`.
 
-// If a bvar's index is below the `threshold`, we don't shift it.
-// If a bvar's index is equal to or above the `threshold`, then we shift it by the given `offset``.
-fn shift_bvars_aux(threshold: u64, offset: i64, target_class: Id, egraph: &mut LeanEGraph, state: &mut HashMap<Id, ClassState>, rule: Symbol) -> Id { 
+fn replace_loose_bvars_aux<C, F: Fn(u64, u64, &mut LeanEGraph, &mut C) -> Replacement>(replace: &F, target_class: Id, binder_depth: u64, egraph: &mut LeanEGraph, state: &mut HashMap<Id, ClassState>, rule: Symbol, ctx: &mut C) -> Id { 
     dbg_trace("");
-    dbg_trace(format!("threshold: {}", threshold));
+    dbg_trace(format!("binder_depth: {}", binder_depth));
     dbg_trace(format!("target_class: {}", target_class));
     if state.is_empty() {
         dbg_trace("∅".to_string());
@@ -51,9 +54,9 @@ fn shift_bvars_aux(threshold: u64, offset: i64, target_class: Id, egraph: &mut L
         return new_class.clone()
     }
 
-    // Optimization: If the subgraph rooted at `target_class` doesn't contain any bvars, we can
-    //               just return the e-class as is.
-    if !egraph[target_class].data.has_bvar {
+    // Optimization: If the subgraph rooted at `target_class` doesn't contain any loose bvars, 
+    //               we can just return the e-class as is.
+    if egraph[target_class].data.loose_bvars.is_empty() {
         dbg_trace("Early exit: no bvars"); 
         state.insert(target_class, ClassState::New(target_class));
         return target_class
@@ -94,50 +97,25 @@ fn shift_bvars_aux(threshold: u64, offset: i64, target_class: Id, egraph: &mut L
             LeanExpr::BVar(e) => {
                 // We expect `LeanExpr::BVar`s to always have a `LeanExpr::Nat` child which in turn has a `nat_val`.
                 let idx = egraph[e].data.nat_val.unwrap();
-                if idx < threshold {
-                    // TODO: Optimize this branch by using the existing `target_class` as the new class. 
-                    let idx_node = LeanExpr::Nat(idx); 
-                    let idx_class = egraph.add(idx_node);
-                    let new_node = LeanExpr::BVar(idx_class);
-                    register_node(&mut new_class, new_node, egraph, state, target_class, rule)
-                } else {
-                    let new_idx = u64::try_from(i64::try_from(idx).unwrap() + offset).unwrap();
-                    let idx_node = LeanExpr::Nat(new_idx); 
-                    let idx_class = egraph.add(idx_node);
-                    let new_node = LeanExpr::BVar(idx_class);
-                    register_node(&mut new_class, new_node, egraph, state, target_class, rule);
-                }
+                let replacement = if idx < binder_depth { Replacement::Node(node) } else { replace(idx, binder_depth, egraph, ctx) };
+                register_replacement(&mut new_class, replacement, egraph, state, target_class, rule);
             },
 
             LeanExpr::Lam([ty, body]) | LeanExpr::Forall([ty, body]) => {
-                let shifted_ty = shift_bvars_aux(threshold, offset, ty, egraph, state, rule);
-                let shifted_body = shift_bvars_aux(threshold + 1, offset, body, egraph, state, rule);
-                let new_node = swap_children(&node, [shifted_ty, shifted_body]);
-                register_node(&mut new_class, new_node, egraph, state, target_class, rule)
+                let new_ty = replace_loose_bvars_aux(replace, ty, binder_depth, egraph, state, rule, ctx);
+                let new_body = replace_loose_bvars_aux(replace, body, binder_depth + 1, egraph, state, rule, ctx);
+                let new_node = swap_children(&node, [new_ty, new_body]);
+                register_replacement(&mut new_class, Replacement::Node(new_node), egraph, state, target_class, rule)
             }
 
-            LeanExpr::Const(es) => {
-                let shifted_children = es.iter().map(|e| shift_bvars_aux(threshold, offset, *e, egraph, state, rule));
-                let new_node = LeanExpr::Const(shifted_children.collect());
-                register_node(&mut new_class, new_node, egraph, state, target_class, rule);
-            }
-
-            LeanExpr::App([e1, e2]) | LeanExpr::Max([e1, e2]) | LeanExpr::IMax([e1, e2]) => {
-                let s1 = shift_bvars_aux(threshold, offset, e1, egraph, state, rule);
-                let s2 = shift_bvars_aux(threshold, offset, e2, egraph, state, rule);
-                let new_node = swap_children(&node, [s1, s2]);
-                register_node(&mut new_class, new_node, egraph, state, target_class, rule)
+            LeanExpr::App([fun, arg]) => {
+                let new_fun = replace_loose_bvars_aux(replace, fun, binder_depth, egraph, state, rule, ctx);
+                let new_arg = replace_loose_bvars_aux(replace, arg, binder_depth, egraph, state, rule, ctx);
+                let new_node = LeanExpr::App([new_fun, new_arg]);
+                register_replacement(&mut new_class, Replacement::Node(new_node), egraph, state, target_class, rule)
             },
 
-            LeanExpr::Lit(e) | LeanExpr::FVar(e) | LeanExpr::MVar(e) | LeanExpr::Sort(e) | 
-            LeanExpr::UVar(e) | LeanExpr::Param(e) | LeanExpr::Succ(e) => {
-                let shifted_child = shift_bvars_aux(threshold, offset, e, egraph, state, rule);
-                let new_node = swap_child(&node, shifted_child);
-                register_node(&mut new_class, new_node, egraph, state, target_class, rule);
-            }
-
-            LeanExpr::Nat(_) | LeanExpr::Str(_) | LeanExpr::Erased =>
-                register_node(&mut new_class, node, egraph, state, target_class, rule)
+            _ => register_replacement(&mut new_class, Replacement::Node(node), egraph, state, target_class, rule)
         }
     }
 
@@ -152,13 +130,16 @@ fn visit_node(node: &LeanExpr, state: &mut HashMap<Id, ClassState>, target_class
     }
 }
 
-fn register_node(new_class: &mut Option<Id>, new_node: LeanExpr, egraph: &mut LeanEGraph, state: &mut HashMap<Id, ClassState>, target_class: Id, rule: Symbol) {
-    let node_class = egraph.add(new_node);
+fn register_replacement(new_class: &mut Option<Id>, replacement: Replacement, egraph: &mut LeanEGraph, state: &mut HashMap<Id, ClassState>, target_class: Id, rule: Symbol) {
+    let replacement_class = match replacement {
+        Replacement::Class(id) => id,
+        Replacement::Node(node) => egraph.add(node)
+    };
     match new_class {
-        Some(id) => _ = egraph.union_trusted(*id, node_class, rule),
+        Some(id) => _ = egraph.union_trusted(*id, replacement_class, rule),
         None => {
-            *new_class = Some(node_class);
-            state.insert(target_class, ClassState::New(node_class));
+            *new_class = Some(replacement_class);
+            state.insert(target_class, ClassState::New(replacement_class));
         }
     } 
 }
