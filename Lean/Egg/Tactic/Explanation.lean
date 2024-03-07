@@ -47,6 +47,16 @@ syntax "⊢" egg_tc_proj                                      : egg_fwd_rw_src
 syntax "≡0"                                                 : egg_fwd_rw_src
 syntax "≡→S"                                                : egg_fwd_rw_src
 syntax "≡S→"                                                : egg_fwd_rw_src
+syntax "≡+"                                                 : egg_fwd_rw_src
+syntax "≡-"                                                 : egg_fwd_rw_src
+syntax "≡*"                                                 : egg_fwd_rw_src
+syntax "≡^"                                                 : egg_fwd_rw_src
+syntax "≡/"                                                 : egg_fwd_rw_src
+
+-- WORKAROUND: https://egraphs.zulipchat.com/#narrow/stream/375765-egg.2Fegglog/topic/.25.20in.20rule.20name
+syntax str                                                  : egg_fwd_rw_src
+-- syntax "≡%"                                              : egg_fwd_rw_src
+
 syntax "≡η"                                                 : egg_fwd_rw_src
 syntax "≡β"                                                 : egg_fwd_rw_src
 
@@ -109,6 +119,12 @@ private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
   | `(egg_fwd_rw_src|≡0)           => .natLit .zero
   | `(egg_fwd_rw_src|≡→S)          => .natLit .toSucc
   | `(egg_fwd_rw_src|≡S→)          => .natLit .ofSucc
+  | `(egg_fwd_rw_src|≡+)           => .natLit .add
+  | `(egg_fwd_rw_src|≡-)           => .natLit .sub
+  | `(egg_fwd_rw_src|≡*)           => .natLit .mul
+  | `(egg_fwd_rw_src|≡^)           => .natLit .pow
+  | `(egg_fwd_rw_src|≡/)           => .natLit .div
+  | `(egg_fwd_rw_src|"≡%")         => .natLit .mod
   | `(egg_fwd_rw_src|≡η)           => .eta
   | `(egg_fwd_rw_src|≡β)           => .beta
   | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src$[[$tcSide?$pos?]]?$[<$exIdx?>]?) => Id.run do

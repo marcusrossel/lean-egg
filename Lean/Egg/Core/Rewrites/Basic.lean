@@ -26,6 +26,9 @@ structure _root_.Egg.Rewrite extends Congr where
 --
 -- Note: We must instantiate mvars of the rewrite's type. For an example that breaks otherwise, cf.
 --       https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Different.20elab.20results
+--
+-- TODO: We should probably only β- and η-reduce during normalization if the corresponding
+--       configuration options are enabled.
 def from? (proof : Expr) (type : Expr) (src : Source) : MetaM (Option Rewrite) := do
   let mut (args, _, type) ← forallMetaTelescope (← instantiateMVars type)
   type ← normalize type

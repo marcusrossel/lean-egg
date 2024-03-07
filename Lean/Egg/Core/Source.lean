@@ -21,6 +21,13 @@ inductive Source.NatLit where
   | zero
   | toSucc
   | ofSucc
+  | add
+  | sub
+  | mul
+  | pow
+  | div
+  | mod
+
   deriving Inhabited, BEq, Hashable
 
 inductive Source where
@@ -37,9 +44,15 @@ inductive Source where
 namespace Source
 
 def NatLit.description : Source.NatLit → String
-  | zero   => s!"≡0"
-  | toSucc => s!"≡→S"
-  | ofSucc => s!"≡S→"
+  | zero   => "≡0"
+  | toSucc => "≡→S"
+  | ofSucc => "≡S→"
+  | add    => "≡+"
+  | sub    => "≡-"
+  | mul    => "≡*"
+  | pow    => "≡^"
+  | div    => "≡/"
+  | mod    => "≡%"
 
 def description : Source → String
   | goal                    => "⊢"
