@@ -42,3 +42,7 @@ example (a : Nat) (h : ∀ b : Nat, b.succ.add a = 0) : (10 |> fun x => Nat.succ
 
 example (a : Nat) (h : ∀ b : Nat, b.succ.add a = 0) : (10 |> fun x => Nat.succ x).add a = 0 := by
   egg [h]
+
+-- BUG: I think this is a result of not handling explanations property `replace_loose_bvars`.
+example : (fun x => x) = Add.add 0 := by
+  sorry -- egg [Nat.zero_add]
