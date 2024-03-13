@@ -5,12 +5,11 @@ use crate::beta::*;
 use crate::eta::*;
 use crate::nat_lit::*;
 
-#[repr(C)]
 pub struct Config {
-    optimize_expl:   bool, 
-    gen_nat_lit_rws: bool, 
-    gen_eta_rw:      bool,
-    gen_beta_rw:     bool
+    pub optimize_expl:   bool, 
+    pub gen_nat_lit_rws: bool, 
+    pub gen_eta_rw:      bool,
+    pub gen_beta_rw:     bool
 }
 
 pub fn explain_congr(init: String, goal: String, rws: Vec<LeanRewrite>, cfg: Config, viz_path: Option<String>) -> Res<String> {

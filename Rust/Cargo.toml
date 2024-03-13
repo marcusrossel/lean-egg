@@ -8,4 +8,5 @@ crate-type = ["staticlib"]
 
 [dependencies]
 egg = "0.9.5"
+lean-sys = "0.0.6"
 libc = "0.2"
