@@ -6,7 +6,7 @@ example : True := by
   fail_if_success have : true = false := by egg [*]
   constructor
 
-example (_ : 0 = 0) : 1 + 1 = 2 := by
+example (_ : true = true) : [true] ++ [] = [true] := by
   fail_if_success egg [*]
   rfl
 
