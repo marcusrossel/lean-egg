@@ -15,13 +15,13 @@ private structure TcProj where
 
 abbrev TcProjIndex := HashMap TcProj Source
 
-private def TcProj.reductionRewrite? (proj : TcProj) (src : Source) : MetaM (Option Rewrite) := do
+private def TcProj.reductionRewrite? (proj : TcProj) (src : Source) (beta eta : Bool) : MetaM (Option Rewrite) := do
   let app := mkAppN (.const proj.const proj.lvls) proj.args
   let reduced ← withReducibleAndInstances do reduceAll app
   if app == reduced then return none
   let eq ← mkEq app reduced
   let proof ← mkEqRefl app
-  let some rw ← Rewrite.from? proof eq src | throwError "egg: internal error in 'TcProj.reductionRewrite'"
+  let some rw ← Rewrite.from? proof eq src beta eta | throwError "egg: internal error in 'TcProj.reductionRewrite'"
   return rw
 
 private structure State where
@@ -62,9 +62,9 @@ where
     return { s' with args := s.args, pos := s.pos }
 
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
-def genTcProjReductions (targets : Array (Congr × Source)) : MetaM Rewrites := do
+def genTcProjReductions (targets : Array (Congr × Source)) (beta eta : Bool) : MetaM Rewrites := do
   let mut projs : TcProjIndex := ∅
   for (cgr, src) in targets do
     projs ← tcProjs cgr.lhs src .left  projs
     projs ← tcProjs cgr.rhs src .right projs
-  projs.toArray.filterMapM fun (proj, src) => proj.reductionRewrite? src
+  projs.toArray.filterMapM fun (proj, src) => proj.reductionRewrite? src beta eta

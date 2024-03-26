@@ -4,6 +4,8 @@ structure Encoding where
   eraseProofs        := true
   eraseLambdaDomains := false
   eraseForallDomains := false
+  betaReduceRws      := true
+  etaReduceRws       := true
   deriving BEq
 
 structure Gen where
@@ -15,8 +17,10 @@ structure Gen where
   deriving BEq
 
 structure Backend where
+-- Note: enabling this might be a problem when bvars can be contained in the same e-class as other
+  --      e-nodes.
+  blockInvalidMatches := true
   shiftCapturedBVars  := false
-  blockInvalidMatches := false
   optimizeExpl        := false
   deriving BEq
 

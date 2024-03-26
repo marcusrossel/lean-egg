@@ -4,7 +4,7 @@ open Lean Meta Core
 namespace Egg
 
 -- Performs ζ-, β- and η-reduction, converts `Expr.proj`s to `Expr.app`s and removes `Expr.mdata`s.
-partial def normalize (e : Expr) (beta := true) (eta := true) : MetaM Expr :=
+partial def normalize (e : Expr) (beta eta : Bool) : MetaM Expr :=
   go e
 where
   go : Expr → MetaM Expr

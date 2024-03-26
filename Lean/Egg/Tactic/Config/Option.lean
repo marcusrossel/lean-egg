@@ -16,6 +16,14 @@ register_option egg.eraseForallDomains : Bool := {
   defValue := ({} : Config).eraseForallDomains
 }
 
+register_option egg.betaReduceRws : Bool := {
+  defValue := ({} : Config).betaReduceRws
+}
+
+register_option egg.etaReduceRws : Bool := {
+  defValue := ({} : Config).etaReduceRws
+}
+
 register_option egg.genTcProjRws : Bool := {
   defValue := ({} : Config).genTcProjRws
 }
@@ -52,6 +60,8 @@ def Config.fromOptions : MetaM Config := return {
     eraseLambdaDomains  := egg.eraseLambdaDomains.get (← getOptions)
     eraseProofs         := egg.eraseProofs.get (← getOptions)
     eraseForallDomains  := egg.eraseForallDomains.get (← getOptions)
+    betaReduceRws       := egg.betaReduceRws.get (← getOptions)
+    etaReduceRws        := egg.etaReduceRws.get (← getOptions)
     genTcProjRws        := egg.genTcProjRws.get (← getOptions)
     genNatLitRws        := egg.genNatLitRws.get (← getOptions)
     genEtaRw            := egg.genEtaRw.get (← getOptions)

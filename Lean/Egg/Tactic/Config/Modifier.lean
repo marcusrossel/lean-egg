@@ -9,6 +9,8 @@ structure Modifier where
   eraseProofs         : Option Bool            := none
   eraseLambdaDomains  : Option Bool            := none
   eraseForallDomains  : Option Bool            := none
+  betaReduceRws       : Option Bool            := none
+  etaReduceRws        : Option Bool            := none
   genTcProjRws        : Option Bool            := none
   genNatLitRws        : Option Bool            := none
   genEtaRw            : Option Bool            := none
@@ -24,6 +26,8 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   eraseProofs         := mod.eraseProofs.getD cfg.eraseProofs
   eraseLambdaDomains  := mod.eraseLambdaDomains.getD cfg.eraseLambdaDomains
   eraseForallDomains  := mod.eraseForallDomains.getD cfg.eraseForallDomains
+  betaReduceRws       := mod.betaReduceRws.getD cfg.betaReduceRws
+  etaReduceRws        := mod.etaReduceRws.getD cfg.etaReduceRws
   genTcProjRws        := mod.genTcProjRws.getD cfg.genTcProjRws
   genNatLitRws        := mod.genNatLitRws.getD cfg.genNatLitRws
   genEtaRw            := mod.genEtaRw.getD cfg.genEtaRw

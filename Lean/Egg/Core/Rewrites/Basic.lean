@@ -29,9 +29,9 @@ structure _root_.Egg.Rewrite extends Congr where
 --
 -- TODO: We should probably only β- and η-reduce during normalization if the corresponding
 --       configuration options are enabled.
-def from? (proof : Expr) (type : Expr) (src : Source) : MetaM (Option Rewrite) := do
+def from? (proof : Expr) (type : Expr) (src : Source) (beta eta : Bool) : MetaM (Option Rewrite) := do
   let mut (args, _, type) ← forallMetaTelescope (← instantiateMVars type)
-  type ← normalize type
+  type ← normalize type beta eta
   let proof := mkAppN proof args
   let some cgr ← Congr.from? type | return none
   let lhsMVars := MVars.collect cgr.lhs
