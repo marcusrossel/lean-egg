@@ -36,6 +36,10 @@ register_option egg.explode : Bool := {
   defValue := ({} : Config).explode
 }
 
+register_option egg.shiftCapturedBVars : Bool := {
+  defValue := ({} : Config).shiftCapturedBVars
+}
+
 register_option egg.optimizeExpl : Bool := {
   defValue := ({} : Config).optimizeExpl
 }
@@ -48,6 +52,7 @@ def Config.fromOptions : MetaM Config := return {
     genNatLitRws       := egg.genNatLitRws.get (← getOptions)
     genEtaRw           := egg.genEtaRw.get (← getOptions)
     genBetaRw          := egg.genBetaRw.get (← getOptions)
+    shiftCapturedBVars := egg.shiftCapturedBVars.get (← getOptions)
     explode            := egg.explode.get (← getOptions)
     optimizeExpl       := egg.optimizeExpl.get (← getOptions)
     toDebug            := {}

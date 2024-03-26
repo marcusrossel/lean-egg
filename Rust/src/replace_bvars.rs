@@ -143,3 +143,10 @@ fn register_replacement(new_class: &mut Option<Id>, replacement: Replacement, eg
         }
     } 
 }
+
+pub fn shift_up(offset: u64) -> impl Fn(u64, u64, &mut LeanEGraph, &mut ()) -> Replacement {
+    move |idx, binder_depth, egraph, _| {
+        if idx < binder_depth { unreachable!() } // `replace_loose_bvars` provides the invariant that `idx >= binder_depth`. 
+        Replacement::Node(LeanExpr::BVar(egraph.add(LeanExpr::Nat(idx + offset))))
+    }
+}

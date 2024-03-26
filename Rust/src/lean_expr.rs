@@ -7,7 +7,7 @@ define_language! {
     pub enum LeanExpr {
         // Primitives:
         Nat(u64),
-        Str(String),
+        Str(String), // TODO: Use `Symbol` instead of `String`.
 
         // Encoding of universe levels:
         // Note, we don't encode `zero` explicitly, and use `Nat(0)` for that instead.
@@ -30,6 +30,13 @@ define_language! {
 
         // Constants for erased expressions:
         "_" = Erased,
+    }
+}
+
+pub fn is_binder(expr: &LeanExpr) -> bool {
+    match expr {
+        LeanExpr::Lam(_) | LeanExpr::Forall(_) => true,
+        _ => false
     }
 }
 

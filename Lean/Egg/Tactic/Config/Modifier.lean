@@ -14,6 +14,7 @@ structure Modifier where
   genEtaRw           : Option Bool            := none
   genBetaRw          : Option Bool            := none
   explode            : Option Bool            := none
+  shiftCapturedBVars : Option Bool            := none
   optimizeExpl       : Option Bool            := none
   exitPoint          : Option Debug.ExitPoint := none
   vizPath            : Option String          := none
@@ -26,6 +27,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   genNatLitRws       := mod.genNatLitRws.getD cfg.genNatLitRws
   genEtaRw           := mod.genEtaRw.getD cfg.genEtaRw
   genBetaRw          := mod.genBetaRw.getD cfg.genBetaRw
+  shiftCapturedBVars := mod.shiftCapturedBVars.getD cfg.shiftCapturedBVars
   explode            := mod.explode.getD cfg.explode
   optimizeExpl       := mod.optimizeExpl.getD cfg.optimizeExpl
   exitPoint          := mod.exitPoint.getD cfg.exitPoint

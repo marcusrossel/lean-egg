@@ -15,7 +15,8 @@ structure Gen where
   deriving BEq
 
 structure Backend where
-  optimizeExpl := false
+  shiftCapturedBVars := false
+  optimizeExpl       := false
   deriving BEq
 
 inductive Debug.ExitPoint

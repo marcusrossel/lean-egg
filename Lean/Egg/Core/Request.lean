@@ -12,34 +12,36 @@ namespace Egg
 private opaque explainCongr
   (lhs rhs : Expression) (rwNames : Array String) (lhss rhss : Array Expression)
   (dirs : Array Rewrite.Directions) (optimizeExpl : Bool) (genNatLitRws : Bool) (genEtaRw : Bool)
-  (genBetaRw : Bool) (vizPath : String) : String
+  (genBetaRw : Bool) (shiftCapturedBVars : Bool) (vizPath : String) : String
 
 structure Request where
   private mk ::
-  lhs          : Expression
-  rhs          : Expression
-  rws          : Rewrites.Encoded
-  optimizeExpl : Bool
-  genNatLitRws : Bool
-  genEtaRw     : Bool
-  genBetaRw    : Bool
-  vizPath      : String
+  lhs                : Expression
+  rhs                : Expression
+  rws                : Rewrites.Encoded
+  optimizeExpl       : Bool
+  genNatLitRws       : Bool
+  genEtaRw           : Bool
+  genBetaRw          : Bool
+  shiftCapturedBVars : Bool
+  vizPath            : String
 
 namespace Request
 
 def encoding (goal : Congr) (rws : Rewrites) (cfg : Config) : MetaM Request := do
   return {
-    lhs          := ← encode goal.lhs .goal cfg.toEncoding
-    rhs          := ← encode goal.rhs .goal cfg.toEncoding
-    rws          := ← rws.encode cfg.toEncoding
-    optimizeExpl := cfg.optimizeExpl
-    genNatLitRws := cfg.genNatLitRws
-    genEtaRw     := cfg.genEtaRw
-    genBetaRw    := cfg.genBetaRw
-    vizPath      := cfg.vizPath.getD ""
+    lhs                := ← encode goal.lhs .goal cfg.toEncoding
+    rhs                := ← encode goal.rhs .goal cfg.toEncoding
+    rws                := ← rws.encode cfg.toEncoding
+    optimizeExpl       := cfg.optimizeExpl
+    genNatLitRws       := cfg.genNatLitRws
+    genEtaRw           := cfg.genEtaRw
+    genBetaRw          := cfg.genBetaRw
+    shiftCapturedBVars := cfg.shiftCapturedBVars
+    vizPath            := cfg.vizPath.getD ""
   }
 
 def run (r : Request) : Explanation.Raw :=
   explainCongr
-    r.lhs r.rhs r.rws.names r.rws.lhss r.rws.rhss r.rws.dirs
-    r.optimizeExpl r.genNatLitRws r.genEtaRw r.genBetaRw r.vizPath
+    r.lhs r.rhs r.rws.names r.rws.lhss r.rws.rhss r.rws.dirs r.optimizeExpl
+    r.genNatLitRws r.genEtaRw r.genBetaRw r.shiftCapturedBVars r.vizPath

@@ -27,6 +27,7 @@ typedef struct config {
     rust_bool gen_nat_lit_rws;
     rust_bool gen_eta_rw;
     rust_bool gen_beta_rw;
+    rust_bool shift_captured_bvars;
 } config;
 
 typedef struct egg_result {
@@ -66,6 +67,7 @@ lean_obj_res lean_egg_explain_congr(
     lean_bool gen_nat_lit_rws,
     lean_bool gen_eta_rw,
     lean_bool gen_beta_rw,
+    lean_bool shift_captured_bvars,
     lean_obj_arg viz_path
 ) {
     const char* init_c_str = lean_string_cstr(init);
@@ -87,10 +89,11 @@ lean_obj_res lean_egg_explain_congr(
         rws[idx] = (rewrite) { .name = name, .lhs = lhs, .rhs = rhs, .dir = dir };
     }
     config cfg = (config) { 
-        .optimize_expl   = lean_bool_to_rust(optimize_expl),  
-        .gen_nat_lit_rws = lean_bool_to_rust(gen_nat_lit_rws),  
-        .gen_eta_rw      = lean_bool_to_rust(gen_eta_rw),
-        .gen_beta_rw     = lean_bool_to_rust(gen_beta_rw)  
+        .optimize_expl        = lean_bool_to_rust(optimize_expl),  
+        .gen_nat_lit_rws      = lean_bool_to_rust(gen_nat_lit_rws),  
+        .gen_eta_rw           = lean_bool_to_rust(gen_eta_rw),
+        .gen_beta_rw          = lean_bool_to_rust(gen_beta_rw),
+        .shift_captured_bvars = lean_bool_to_rust(shift_captured_bvars),
     };
     const char* viz_path_c_str = lean_string_cstr(viz_path);
 

@@ -4,16 +4,18 @@ use crate::analysis::*;
 use crate::beta::*;
 use crate::eta::*;
 use crate::nat_lit::*;
+use crate::rewrite::*;
 
 #[repr(C)]
 pub struct Config {
-    optimize_expl:   bool, 
-    gen_nat_lit_rws: bool, 
-    gen_eta_rw:      bool,
-    gen_beta_rw:     bool
+    optimize_expl:        bool, 
+    gen_nat_lit_rws:      bool, 
+    gen_eta_rw:           bool,
+    gen_beta_rw:          bool,
+    shift_captured_bvars: bool
 }
 
-pub fn explain_congr(init: String, goal: String, rws: Vec<LeanRewrite>, cfg: Config, viz_path: Option<String>) -> Res<String> {
+pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, cfg: Config, viz_path: Option<String>) -> Res<String> {
     let mut egraph: LeanEGraph = Default::default();
     egraph = egraph.with_explanations_enabled();
     if !cfg.optimize_expl { egraph = egraph.without_explanation_length_optimization() }
@@ -23,7 +25,11 @@ pub fn explain_congr(init: String, goal: String, rws: Vec<LeanRewrite>, cfg: Con
     let init_id = egraph.add_expr(&init_expr);
     let goal_id = egraph.add_expr(&goal_expr);
     
-    let mut rws = rws;
+    let mut rws;
+    match templates_to_rewrites(rw_templates, cfg.shift_captured_bvars) {
+        Ok(r)    => rws = r,
+        Err(err) => return Err(Error::Rewrite(err.to_string()))
+    }
     if cfg.gen_nat_lit_rws { rws.append(&mut nat_lit_rws()) }
     if cfg.gen_eta_rw      { rws.push(eta_reduction_rw()) }
     if cfg.gen_beta_rw     { rws.push(beta_reduction_rw()) }

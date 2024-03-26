@@ -39,13 +39,6 @@ fn subst_bvar_0(arg_class: Id, rule: Symbol) -> impl Fn(u64, u64, &mut LeanEGrap
     }
 }
 
-fn shift_up(offset: u64) -> impl Fn(u64, u64, &mut LeanEGraph, &mut ()) -> Replacement {
-    move |idx, binder_depth, egraph, _| {
-        if idx < binder_depth { unreachable!() } // `replace_loose_bvars` provides the invariant that `idx >= binder_depth`. 
-        Replacement::Node(LeanExpr::BVar(egraph.add(LeanExpr::Nat(idx + offset))))
-    }
-}
-
 pub fn beta_reduction_rw() -> LeanRewrite {
     rewrite!("≡β"; "(app (λ ?t ?b) ?a)" => { Beta { body : "?b".parse().unwrap(), arg : "?a".parse().unwrap() }})
 }
