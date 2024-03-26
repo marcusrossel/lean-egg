@@ -8,11 +8,12 @@ use crate::rewrite::*;
 
 #[repr(C)]
 pub struct Config {
-    optimize_expl:        bool, 
-    gen_nat_lit_rws:      bool, 
-    gen_eta_rw:           bool,
-    gen_beta_rw:          bool,
-    shift_captured_bvars: bool
+    optimize_expl:         bool, 
+    gen_nat_lit_rws:       bool, 
+    gen_eta_rw:            bool,
+    gen_beta_rw:           bool,
+    block_invalid_matches: bool,
+    shift_captured_bvars:  bool
 }
 
 pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, cfg: Config, viz_path: Option<String>) -> Res<String> {
@@ -26,7 +27,7 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
     let goal_id = egraph.add_expr(&goal_expr);
     
     let mut rws;
-    match templates_to_rewrites(rw_templates, cfg.shift_captured_bvars) {
+    match templates_to_rewrites(rw_templates, cfg.block_invalid_matches, cfg.shift_captured_bvars) {
         Ok(r)    => rws = r,
         Err(err) => return Err(Error::Rewrite(err.to_string()))
     }

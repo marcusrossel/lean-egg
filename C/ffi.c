@@ -27,6 +27,7 @@ typedef struct config {
     rust_bool gen_nat_lit_rws;
     rust_bool gen_eta_rw;
     rust_bool gen_beta_rw;
+    rust_bool block_invalid_matches;
     rust_bool shift_captured_bvars;
 } config;
 
@@ -54,6 +55,8 @@ extern egg_result c_egg_explain_congr(
 // `gen_nat_lit_rws`: boolean indicating whether egg should use additional rewrites to convert between nat-lits and `Nat.zero`/`Nat.succ`
 // `gen_eta_rw`: boolean indicating whether egg should use an additional rewrite to perform eta-reduction
 // `gen_beta_rw`: boolean indicating whether egg should use an additional rewrite to perform beta-reduction
+// `block_invalid_matches`: boolean indicating whether rewrites should be skipped if variables matched bvars in an invalid way
+// `shift_captured_bvars`: boolean indicating whether rewrites should shift captured bvars to avoid invalid capturing
 // `viz_path`: string
 // return value: string explaining the rewrite sequence
 lean_obj_res lean_egg_explain_congr(
@@ -67,6 +70,7 @@ lean_obj_res lean_egg_explain_congr(
     lean_bool gen_nat_lit_rws,
     lean_bool gen_eta_rw,
     lean_bool gen_beta_rw,
+    lean_bool block_invalid_matches,
     lean_bool shift_captured_bvars,
     lean_obj_arg viz_path
 ) {
@@ -89,11 +93,12 @@ lean_obj_res lean_egg_explain_congr(
         rws[idx] = (rewrite) { .name = name, .lhs = lhs, .rhs = rhs, .dir = dir };
     }
     config cfg = (config) { 
-        .optimize_expl        = lean_bool_to_rust(optimize_expl),  
-        .gen_nat_lit_rws      = lean_bool_to_rust(gen_nat_lit_rws),  
-        .gen_eta_rw           = lean_bool_to_rust(gen_eta_rw),
-        .gen_beta_rw          = lean_bool_to_rust(gen_beta_rw),
-        .shift_captured_bvars = lean_bool_to_rust(shift_captured_bvars),
+        .optimize_expl         = lean_bool_to_rust(optimize_expl),  
+        .gen_nat_lit_rws       = lean_bool_to_rust(gen_nat_lit_rws),  
+        .gen_eta_rw            = lean_bool_to_rust(gen_eta_rw),
+        .gen_beta_rw           = lean_bool_to_rust(gen_beta_rw),
+        .block_invalid_matches = lean_bool_to_rust(block_invalid_matches),
+        .shift_captured_bvars  = lean_bool_to_rust(shift_captured_bvars),
     };
     const char* viz_path_c_str = lean_string_cstr(viz_path);
 

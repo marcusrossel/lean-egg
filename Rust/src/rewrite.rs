@@ -10,11 +10,12 @@ pub struct RewriteTemplate {
     pub rhs: Pattern<LeanExpr>
 }
 
-pub fn templates_to_rewrites(templates: Vec<RewriteTemplate>, shift_captured_bvars: bool) -> Res<Vec<LeanRewrite>> {
+pub fn templates_to_rewrites(templates: Vec<RewriteTemplate>, block_invalid_matches: bool, shift_captured_bvars: bool) -> Res<Vec<LeanRewrite>> {
     let mut result: Vec<LeanRewrite> = vec![];
     for template in templates {
-        let rw = if shift_captured_bvars { 
-            Rewrite::new(template.name, template.lhs, AvoidBVarCapture { rhs: template.rhs })
+        let rw = if shift_captured_bvars || block_invalid_matches { 
+            let applier = BVarCapture { rhs: template.rhs, block_invalid_matches: block_invalid_matches, shift_captured_bvars: shift_captured_bvars };
+            Rewrite::new(template.name, template.lhs, applier)
         } else { 
             Rewrite::new(template.name, template.lhs, template.rhs) 
         };

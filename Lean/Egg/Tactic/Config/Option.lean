@@ -36,6 +36,10 @@ register_option egg.explode : Bool := {
   defValue := ({} : Config).explode
 }
 
+register_option egg.blockInvalidMatches : Bool := {
+  defValue := ({} : Config).blockInvalidMatches
+}
+
 register_option egg.shiftCapturedBVars : Bool := {
   defValue := ({} : Config).shiftCapturedBVars
 }
@@ -45,15 +49,16 @@ register_option egg.optimizeExpl : Bool := {
 }
 
 def Config.fromOptions : MetaM Config := return {
-    eraseLambdaDomains := egg.eraseLambdaDomains.get (← getOptions)
-    eraseProofs        := egg.eraseProofs.get (← getOptions)
-    eraseForallDomains := egg.eraseForallDomains.get (← getOptions)
-    genTcProjRws       := egg.genTcProjRws.get (← getOptions)
-    genNatLitRws       := egg.genNatLitRws.get (← getOptions)
-    genEtaRw           := egg.genEtaRw.get (← getOptions)
-    genBetaRw          := egg.genBetaRw.get (← getOptions)
-    shiftCapturedBVars := egg.shiftCapturedBVars.get (← getOptions)
-    explode            := egg.explode.get (← getOptions)
-    optimizeExpl       := egg.optimizeExpl.get (← getOptions)
-    toDebug            := {}
+    eraseLambdaDomains  := egg.eraseLambdaDomains.get (← getOptions)
+    eraseProofs         := egg.eraseProofs.get (← getOptions)
+    eraseForallDomains  := egg.eraseForallDomains.get (← getOptions)
+    genTcProjRws        := egg.genTcProjRws.get (← getOptions)
+    genNatLitRws        := egg.genNatLitRws.get (← getOptions)
+    genEtaRw            := egg.genEtaRw.get (← getOptions)
+    genBetaRw           := egg.genBetaRw.get (← getOptions)
+    explode             := egg.explode.get (← getOptions)
+    blockInvalidMatches := egg.blockInvalidMatches.get (← getOptions)
+    shiftCapturedBVars  := egg.shiftCapturedBVars.get (← getOptions)
+    optimizeExpl        := egg.optimizeExpl.get (← getOptions)
+    toDebug             := {}
   }
