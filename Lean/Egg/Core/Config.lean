@@ -18,7 +18,7 @@ structure Gen where
 
 structure Backend where
 -- Note: enabling this might be a problem when bvars can be contained in the same e-class as other
-  --      e-nodes.
+  --     e-nodes.
   blockInvalidMatches := true
   shiftCapturedBVars  := false
   optimizeExpl        := false

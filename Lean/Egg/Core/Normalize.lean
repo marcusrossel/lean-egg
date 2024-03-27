@@ -11,6 +11,7 @@ where
     | .mdata _ e    => go e
     | .app fn arg   => do
       let app := .app (← go fn) (← go arg)
+      -- TODO: Can this unfold reducible defs? If so, turn that off.
       if beta then betaReduce app else return app
     | .lam n ty b i => do
       withLocalDecl n i (← go ty) fun fvar => do
