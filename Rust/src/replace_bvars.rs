@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use crate::lean_expr::*;
 use crate::analysis::*;
-use crate::util::*;
+use crate::trace::*;
 
 #[derive(Clone)]
 pub enum ClassState {
@@ -27,45 +27,46 @@ pub enum Replacement {
 }
 
 pub fn replace_loose_bvars<C, F: Fn(u64, u64, &mut LeanEGraph, &mut C) -> Replacement>(replace: &F, target_class: Id, egraph: &mut LeanEGraph, rule: Symbol, ctx: &mut C) -> Id {
+    dbg_trace("Start subst", TraceGroup::Subst);
     replace_loose_bvars_aux(replace, target_class, 0, egraph, &mut HashMap::new(), rule, ctx)
+    dbg_trace("End subst", TraceGroup::Subst);
 }
 
-// TODO: Prove termination of this function based on the rooted e-graph spanning tree property.
+// TODO: Prove termination of this function based on the cycle breaking property of e-graphs.
 
-// TODO: Prove that we can simply mutate the e-graph while traversing it without affecting the eta-reduction.
+// TODO: Prove that we can simply mutate the e-graph while traversing it without affecting the correcness of substitution.
 //       I think the reason is that we're only every adding e-nodes but never unioning any e-classes.
 //       (This isn't actually true as we union in `register_node`).
 //       Thus, any e-node that is added is either already contained in the subgraph rooted at `target_class` 
 //       anyway, or will end up in an e-class not contained in the subgraph rooted at `target_class`.
 
 fn replace_loose_bvars_aux<C, F: Fn(u64, u64, &mut LeanEGraph, &mut C) -> Replacement>(replace: &F, target_class: Id, binder_depth: u64, egraph: &mut LeanEGraph, state: &mut HashMap<Id, ClassState>, rule: Symbol, ctx: &mut C) -> Id { 
-    dbg_trace("");
-    dbg_trace(format!("binder_depth: {}", binder_depth));
-    dbg_trace(format!("target_class: {}", target_class));
+    dbg_trace("", TraceGroup::Subst);
+    dbg_trace(format!("binder_depth: {}", binder_depth), TraceGroup::Subst);
+    dbg_trace(format!("target_class: {}", target_class), TraceGroup::Subst);
     if state.is_empty() {
-        dbg_trace("∅".to_string());
+        dbg_trace("∅".to_string(), TraceGroup::Subst);
     } else {
-        for (key, value) in state.clone() { dbg_trace(format!("{} ↦ {}", key, value.to_string())); }
+        for (key, value) in state.clone() { dbg_trace(format!("{} ↦ {}", key, value.to_string()), TraceGroup::Subst); }
     }
 
     // If we already have a new class for the given target, return that.
     if let Some(ClassState::New(new_class)) = state.get(&target_class) {
-        dbg_trace("Early exit: cached new class"); 
+        dbg_trace("Early exit: cached new class", TraceGroup::Subst); 
         return new_class.clone()
     }
 
     // Optimization: If the subgraph rooted at `target_class` doesn't contain any loose bvars, 
     //               we can just return the e-class as is.
     if egraph[target_class].data.loose_bvars.is_empty() {
-        dbg_trace("Early exit: no bvars"); 
+        dbg_trace("Early exit: no bvars", TraceGroup::Subst); 
         state.insert(target_class, ClassState::New(target_class));
         return target_class
     }
     
     // TODO: I think it might be really inefficient to fix the set of nodes we're going to visit 
     //       *before* the for-loop as this means we could be revisiting nodes unnecessarily when
-    //       unrolling the recursion. We might also not want to be sharing which nodes have been
-    //       visited for a given e-class but rather keep that local like the `threshold`.
+    //       unrolling the recursion.
 
     // Gets all the nodes we are going to visit. In e-class cycles, this is reduced by all nodes
     // which have already been visited in a previous cycle. Though, if there are no more available
@@ -76,21 +77,25 @@ fn replace_loose_bvars_aux<C, F: Fn(u64, u64, &mut LeanEGraph, &mut C) -> Replac
             _                                  => true
         }
     ).collect();
-    if nodes.is_empty() { nodes = egraph[target_class].nodes.clone() }
+
+    if nodes.is_empty() { 
+        state.insert(target_class, ClassState::Visited(HashSet::new()));
+        nodes = egraph[target_class].nodes.clone();
+    }
 
     // Sorts the nodes we are going to visit by `nonrec_cmp`.
-    // It is important for termination that we visit nodes according to a fixed total order. 
+    // It is important for termination that we visit nodes according to a fixed total order. TODO: Why again?
     // Moving non-recursive e-nodes to the front is simply an optimization as this means
     // that we tend to visit leaves first which reduces the number of iterations we have to
     // take on an e-class cycle.
     nodes.sort_by(|lhs, rhs| nonrec_cmp(lhs, rhs));
 
-    dbg_trace(format!("nodes: {:?}", nodes)); 
+    dbg_trace(format!("nodes: {:?}", nodes), TraceGroup::Subst);
 
     let mut new_class: Option<Id> = None;
 
     for node in nodes {
-        dbg_trace(format!("Entering: {}", node));
+        dbg_trace(format!("Entering: {}", node), TraceGroup::Subst);
         visit_node(&node, state, target_class);
         
         match node {

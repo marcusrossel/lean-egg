@@ -44,5 +44,12 @@ example (a : Nat) (h : ∀ b : Nat, b.succ.add a = 0) : (10 |> fun x => Nat.succ
   egg [h]
 
 -- BUG: I think this is a result of not handling explanations property `replace_loose_bvars`.
+--      The intended sequence of rewrites in something like:
+--
+--      (fun x : Nat => x)
+--      (fun x : Nat => 0 + x)        by Nat.zero_add
+--      (fun x : Nat => Nat.add 0 x)  by type class projections
+--      (fun x : Nat => Add.add 0 x)  by type class projections
+--      Add.add 0                     by η
 example : (fun x => x) = Add.add 0 := by
   sorry -- egg [Nat.zero_add]

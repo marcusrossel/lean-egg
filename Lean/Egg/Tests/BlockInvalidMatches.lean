@@ -23,8 +23,7 @@ example : True := by
   constructor
 
 -- BUG: The rewrite can applied backwards in an invalid way as `shiftCapturedBVars` isn't enabled.
-set_option egg.blockInvalidMatches true in
 example : True := by
-  have _ : (fun x => (fun a => (fun a => a) a) 0) = (fun x => x) := by
-    egg (config := { exitPoint := some .beforeProof }) [thm 0]
+  have _ : (fun x => (fun a => (fun a => a) a) <| nat_lit 0) = (fun x => x) := by
+    egg (config := { exitPoint := some .beforeProof }) [thm (nat_lit 0)]
   constructor

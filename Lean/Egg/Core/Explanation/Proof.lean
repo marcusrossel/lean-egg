@@ -121,14 +121,14 @@ where
   errorPrefix := "egg failed to reconstruct proof:"
 
   proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Expr := do
-    if rwInfo.src.isDefEq then return ← mkReflStep current next
+    if rwInfo.src.isDefEq then return ← mkReflStep current next rwInfo.src
     let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
-    if ← isRflProof rw.proof then return ← mkReflStep current next
+    if ← isRflProof rw.proof then return ← mkReflStep current next rwInfo.src
     mkCongrStep current next rwInfo.pos (← rw.forDir rwInfo.dir)
 
-  mkReflStep (current next : Expr) : MetaM Expr := do
+  mkReflStep (current next : Expr) (src : Source) : MetaM Expr := do
     unless ← isDefEq current next do
-      throwError s!"{errorPrefix} unification failure for proof by reflexivity"
+      throwError s!"{errorPrefix} unification failure for proof by reflexivity with rw {src.description}"
     mkEqRefl next
 
   mkCongrStep (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) : MetaM Expr := do

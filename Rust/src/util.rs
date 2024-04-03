@@ -1,20 +1,6 @@
 use std::collections::HashSet;
 use std::hash::Hash;
-//use std::ffi::c_char;
-//use std::ffi::CString;
 use egg::*;
-
-// TODO: Remove this when eta-reduction seems stable.
-//
-// extern "C" {
-//     fn c_dbg_trace(str: *const c_char);
-// }
-
-pub fn dbg_trace<T: ToString>(_obj: T) {
-    // let str = obj.to_string();
-    // let c_str = CString::new(str).expect("conversion of explanation to C-string failed");
-    // unsafe { c_dbg_trace(c_str.into_raw()) }
-}
 
 pub fn union_sets<T: Eq + Hash + Clone>(to: &mut HashSet<T>, from: HashSet<T>) -> DidMerge {
     let to_sub_from = to.is_subset(&from);

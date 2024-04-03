@@ -17,8 +17,6 @@ structure Gen where
   deriving BEq
 
 structure Backend where
--- Note: enabling this might be a problem when bvars can be contained in the same e-class as other
-  --     e-nodes.
   blockInvalidMatches := true
   shiftCapturedBVars  := false
   optimizeExpl        := false
@@ -31,8 +29,10 @@ inductive Debug.ExitPoint
   deriving BEq, Inhabited
 
 structure Debug where
-  exitPoint : Debug.ExitPoint := .none
-  vizPath   : Option String   := none
+  exitPoint  : Debug.ExitPoint := .none
+  vizPath    : Option String   := none
+  traceSubstitutions           := false
+  traceCapturedBVarShifting    := false
   deriving BEq
 
 end Config

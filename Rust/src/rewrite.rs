@@ -14,7 +14,7 @@ pub fn templates_to_rewrites(templates: Vec<RewriteTemplate>, block_invalid_matc
     let mut result: Vec<LeanRewrite> = vec![];
     for template in templates {
         let rw = if shift_captured_bvars || block_invalid_matches { 
-            let applier = BVarCapture { rhs: template.rhs, block_invalid_matches: block_invalid_matches, shift_captured_bvars: shift_captured_bvars };
+            let applier = BVarCapture { rhs: template.rhs, block_invalid_matches, shift_captured_bvars };
             Rewrite::new(template.name, template.lhs, applier)
         } else { 
             Rewrite::new(template.name, template.lhs, template.rhs) 

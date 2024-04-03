@@ -6,38 +6,42 @@ open Lean Elab
 namespace Egg.Config
 
 structure Modifier where
-  eraseProofs         : Option Bool            := none
-  eraseLambdaDomains  : Option Bool            := none
-  eraseForallDomains  : Option Bool            := none
-  betaReduceRws       : Option Bool            := none
-  etaReduceRws        : Option Bool            := none
-  genTcProjRws        : Option Bool            := none
-  genNatLitRws        : Option Bool            := none
-  genEtaRw            : Option Bool            := none
-  genBetaRw           : Option Bool            := none
-  explode             : Option Bool            := none
-  shiftCapturedBVars  : Option Bool            := none
-  blockInvalidMatches : Option Bool            := none
-  optimizeExpl        : Option Bool            := none
-  exitPoint           : Option Debug.ExitPoint := none
-  vizPath             : Option String          := none
+  eraseProofs               : Option Bool            := none
+  eraseLambdaDomains        : Option Bool            := none
+  eraseForallDomains        : Option Bool            := none
+  betaReduceRws             : Option Bool            := none
+  etaReduceRws              : Option Bool            := none
+  genTcProjRws              : Option Bool            := none
+  genNatLitRws              : Option Bool            := none
+  genEtaRw                  : Option Bool            := none
+  genBetaRw                 : Option Bool            := none
+  explode                   : Option Bool            := none
+  shiftCapturedBVars        : Option Bool            := none
+  blockInvalidMatches       : Option Bool            := none
+  optimizeExpl              : Option Bool            := none
+  traceSubstitutions        : Option Bool            := none
+  traceCapturedBVarShifting : Option Bool            := none
+  exitPoint                 : Option Debug.ExitPoint := none
+  vizPath                   : Option String          := none
 
 def modify (cfg : Config) (mod : Modifier) : Config where
-  eraseProofs         := mod.eraseProofs.getD cfg.eraseProofs
-  eraseLambdaDomains  := mod.eraseLambdaDomains.getD cfg.eraseLambdaDomains
-  eraseForallDomains  := mod.eraseForallDomains.getD cfg.eraseForallDomains
-  betaReduceRws       := mod.betaReduceRws.getD cfg.betaReduceRws
-  etaReduceRws        := mod.etaReduceRws.getD cfg.etaReduceRws
-  genTcProjRws        := mod.genTcProjRws.getD cfg.genTcProjRws
-  genNatLitRws        := mod.genNatLitRws.getD cfg.genNatLitRws
-  genEtaRw            := mod.genEtaRw.getD cfg.genEtaRw
-  genBetaRw           := mod.genBetaRw.getD cfg.genBetaRw
-  explode             := mod.explode.getD cfg.explode
-  shiftCapturedBVars  := mod.shiftCapturedBVars.getD cfg.shiftCapturedBVars
-  blockInvalidMatches := mod.blockInvalidMatches.getD cfg.blockInvalidMatches
-  optimizeExpl        := mod.optimizeExpl.getD cfg.optimizeExpl
-  exitPoint           := mod.exitPoint.getD cfg.exitPoint
-  vizPath             := match mod.vizPath with | some p => p | none => cfg.vizPath
+  eraseProofs               := mod.eraseProofs.getD cfg.eraseProofs
+  eraseLambdaDomains        := mod.eraseLambdaDomains.getD cfg.eraseLambdaDomains
+  eraseForallDomains        := mod.eraseForallDomains.getD cfg.eraseForallDomains
+  betaReduceRws             := mod.betaReduceRws.getD cfg.betaReduceRws
+  etaReduceRws              := mod.etaReduceRws.getD cfg.etaReduceRws
+  genTcProjRws              := mod.genTcProjRws.getD cfg.genTcProjRws
+  genNatLitRws              := mod.genNatLitRws.getD cfg.genNatLitRws
+  genEtaRw                  := mod.genEtaRw.getD cfg.genEtaRw
+  genBetaRw                 := mod.genBetaRw.getD cfg.genBetaRw
+  explode                   := mod.explode.getD cfg.explode
+  shiftCapturedBVars        := mod.shiftCapturedBVars.getD cfg.shiftCapturedBVars
+  blockInvalidMatches       := mod.blockInvalidMatches.getD cfg.blockInvalidMatches
+  optimizeExpl              := mod.optimizeExpl.getD cfg.optimizeExpl
+  traceSubstitutions        := mod.traceSubstitutions.getD cfg.traceSubstitutions
+  traceCapturedBVarShifting := mod.traceCapturedBVarShifting.getD cfg.traceCapturedBVarShifting
+  exitPoint                 := mod.exitPoint.getD cfg.exitPoint
+  vizPath                   := match mod.vizPath with | some p => p | none => cfg.vizPath
 
 namespace Modifier
 

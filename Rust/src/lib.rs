@@ -18,6 +18,7 @@ mod nat_lit;
 mod replace_bvars;
 mod result;
 mod rewrite;
+mod trace;
 mod util;
 
 #[repr(C)]
