@@ -17,8 +17,9 @@ example : False := by
 
 -- BUG: This generates a completely broken e-graph.
 --      For example, a number node becomes equivalent to an application node.
+--      This seems to originate entirely from `replace_loose_bvars` though.
 set_option egg.shiftCapturedBVars true in
 example : True := by
   have h : (fun x => x) = (fun y : Nat => (fun x => x) (nat_lit 1)) := by
-    egg (config := { exitPoint := some .beforeProof, vizPath := "/Users/marcus/Desktop/dot" }) [thm]
+    egg (config := { traceCapturedBVarShifting := true }) [thm]
   constructor

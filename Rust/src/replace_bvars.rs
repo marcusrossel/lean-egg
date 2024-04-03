@@ -8,15 +8,15 @@ use crate::trace::*;
 #[derive(Clone)]
 pub enum ClassState {
     New(Id),
-    Visited(HashSet<LeanExpr>), 
+    Visited(HashSet<LeanExpr>, u64), 
 }
 
 impl ToString for ClassState {
     
     fn to_string(&self) -> String {
         match self {
-            ClassState::New(id)     => id.to_string(),
-            ClassState::Visited(ns) => format!("visited {:?}", ns.clone().into_iter().collect::<Vec<_>>().sort_by(|lhs, rhs| nonrec_cmp(lhs, rhs)))
+            ClassState::New(id)            => id.to_string(),
+            ClassState::Visited(ns, depth) => format!("visited (depth: {}) {:?}", depth, ns.clone().into_iter().collect::<Vec<_>>().sort_by(|lhs, rhs| nonrec_cmp(lhs, rhs)))
         }
     }
 }
@@ -27,9 +27,10 @@ pub enum Replacement {
 }
 
 pub fn replace_loose_bvars<C, F: Fn(u64, u64, &mut LeanEGraph, &mut C) -> Replacement>(replace: &F, target_class: Id, egraph: &mut LeanEGraph, rule: Symbol, ctx: &mut C) -> Id {
-    dbg_trace("Start subst", TraceGroup::Subst);
-    replace_loose_bvars_aux(replace, target_class, 0, egraph, &mut HashMap::new(), rule, ctx)
-    dbg_trace("End subst", TraceGroup::Subst);
+    dbg_trace("\nStart subst", TraceGroup::Subst);
+    let res = replace_loose_bvars_aux(replace, target_class, 0, egraph, &mut HashMap::new(), rule, ctx);
+    dbg_trace("End subst\n", TraceGroup::Subst);
+    return res
 }
 
 // TODO: Prove termination of this function based on the cycle breaking property of e-graphs.
@@ -64,6 +65,12 @@ fn replace_loose_bvars_aux<C, F: Fn(u64, u64, &mut LeanEGraph, &mut C) -> Replac
         return target_class
     }
     
+    // If the `target_class` has already been visited, we need to make sure to retain its binder depth.
+    let mut binder_depth = binder_depth;
+    if let Some(ClassState::Visited(_, depth)) = state.get(&target_class) {
+        binder_depth = *depth;
+    }
+
     // TODO: I think it might be really inefficient to fix the set of nodes we're going to visit 
     //       *before* the for-loop as this means we could be revisiting nodes unnecessarily when
     //       unrolling the recursion.
@@ -73,13 +80,13 @@ fn replace_loose_bvars_aux<C, F: Fn(u64, u64, &mut LeanEGraph, &mut C) -> Replac
     // nodes we simply allow all nodes to be visited again.
     let mut nodes: Vec<LeanExpr> = egraph[target_class].nodes.clone().into_iter().filter(|n| 
         match state.get(&target_class) {
-            Some(ClassState::Visited(visited)) => !visited.contains(n),
-            _                                  => true
+            Some(ClassState::Visited(visited, _)) => !visited.contains(n),
+            _                                     => true
         }
     ).collect();
 
     if nodes.is_empty() { 
-        state.insert(target_class, ClassState::Visited(HashSet::new()));
+        state.insert(target_class, ClassState::Visited(HashSet::new(), binder_depth));
         nodes = egraph[target_class].nodes.clone();
     }
 
@@ -96,7 +103,7 @@ fn replace_loose_bvars_aux<C, F: Fn(u64, u64, &mut LeanEGraph, &mut C) -> Replac
 
     for node in nodes {
         dbg_trace(format!("Entering: {}", node), TraceGroup::Subst);
-        visit_node(&node, state, target_class);
+        visit_node(&node, state, target_class, binder_depth);
         
         match node {
             LeanExpr::BVar(e) => {
@@ -127,11 +134,11 @@ fn replace_loose_bvars_aux<C, F: Fn(u64, u64, &mut LeanEGraph, &mut C) -> Replac
     new_class.unwrap()
 }
 
-fn visit_node(node: &LeanExpr, state: &mut HashMap<Id, ClassState>, target_class: Id) {
+fn visit_node(node: &LeanExpr, state: &mut HashMap<Id, ClassState>, target_class: Id, binder_depth: u64) {
     match state.get_mut(&target_class) {
-        None                               => _ = state.insert(target_class, ClassState::Visited(HashSet::from([node.clone()]))),
-        Some(ClassState::Visited(visited)) => _ = visited.insert(node.clone()),
-        _                                  => return
+        None                                  => _ = state.insert(target_class, ClassState::Visited(HashSet::from([node.clone()]), binder_depth)),
+        Some(ClassState::Visited(visited, _)) => _ = visited.insert(node.clone()),
+        _                                     => return
     }
 }
 

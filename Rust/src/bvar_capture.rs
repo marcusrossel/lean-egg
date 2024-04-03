@@ -29,7 +29,9 @@ impl Applier<LeanExpr, LeanAnalysis> for BVarCapture {
         }
 
         if self.shift_captured_bvars && !subst_is_safe(()) {
+            dbg_trace(format!("Start capture avoidance for\n  LHS: {}\n  RHS: {}\n  RHS Raw: {:?}\n  subst: {:?}", searcher_ast, self.rhs, self.rhs.ast.as_ref(), subst), TraceGroup::Capture);
             let (shifted_subst, shifted_rhs) = shifted_subst_for_pat(subst, &self.rhs, egraph);
+            dbg_trace("End capture avoidance\n", TraceGroup::Capture);
             let (from, did_union) = egraph.union_instantiations(searcher_ast, &shifted_rhs, &shifted_subst, rule);
             if did_union { vec![from] } else { vec![] }
         } else {
@@ -86,7 +88,7 @@ fn match_is_valid_aux(idx: usize, pos: ExprPos, parent_binder: BinderPos, subst:
     }
 }
 
-fn shifted_subst_for_pat(subst: &Subst, pat: &Pattern<LeanExpr>, egraph: &mut LeanEGraph) -> (Subst, PatternAst<LeanExpr>) {
+fn shifted_subst_for_pat(subst: &Subst, pat: &Pattern<LeanExpr>, egraph: &mut LeanEGraph) -> (Subst, PatternAst<LeanExpr>) {    
     let last = pat.ast.as_ref().len() - 1;
     let mut shifted_pat: PatternAst<LeanExpr> = Default::default();
     let mut shifted_subst = subst.clone();
@@ -118,8 +120,18 @@ fn shifted_subst_for_pat_aux(
     egraph: &mut LeanEGraph, 
     pat: &Pattern<LeanExpr>
 ) -> Id {
+    dbg_trace("", TraceGroup::Capture);
+    dbg_trace(format!("idx: {}", idx), TraceGroup::Capture);
+    dbg_trace(format!("binder_depth: {}", binder_depth), TraceGroup::Capture);
+    dbg_trace(format!("RHS: {}", shifted_pat), TraceGroup::Capture);
+    dbg_trace(format!("subst: {:?}", subst), TraceGroup::Capture);
+    dbg_trace(format!("pat_node_indices: {:?}", pat_node_indices), TraceGroup::Capture);
+    dbg_trace(format!("cache: {:?}", cache), TraceGroup::Capture);
+
     match &pat.ast.as_ref()[idx] {
         var_node@ENodeOrVar::Var(var) => {
+            dbg_trace(format!("node: {}", var), TraceGroup::Capture);
+            
             let target_class = subst[*var];
             
             if egraph[target_class].data.loose_bvars.is_empty() {
@@ -127,8 +139,10 @@ fn shifted_subst_for_pat_aux(
                 // then we can keep it as is. But we must add it to the `shifted_pat` if it does 
                 // not appear there yet.
                 if let Some(shifted_pat_idx) = pat_node_indices.get(var_node) {
+                    dbg_trace("var is needs no capture avoidance and is already contained in new RHS", TraceGroup::Capture);
                     return *shifted_pat_idx
                 } else {
+                    dbg_trace("var is needs no capture avoidance and is already and is being added to the new RHS", TraceGroup::Capture);
                     let new_idx = shifted_pat.add(var_node.clone());
                     pat_node_indices.insert(var_node.clone(), new_idx);
                     return new_idx
@@ -138,6 +152,7 @@ fn shifted_subst_for_pat_aux(
                 // to a shifted class with the correct binder depth, then simply replace the 
                 // current occurrence of `var` with that variable. Since that variable must be fresh,
                 // we expect it to already appear in `shift_pat` and thus in `pat_node_indices`.
+                dbg_trace("shifted version is already in cache", TraceGroup::Capture);
                 return *pat_node_indices.get(&ENodeOrVar::Var(*shifted_var)).unwrap()
             } else {
                 // If the given target has not yet been shifted, create a fresh variable, replace 
@@ -147,17 +162,21 @@ fn shifted_subst_for_pat_aux(
                 let new_idx = shifted_pat.add(ENodeOrVar::Var(fresh_var));
                 pat_node_indices.insert(ENodeOrVar::Var(fresh_var), new_idx);
                 let sub = replace_loose_bvars(&shift_up(binder_depth), target_class, egraph, Symbol::from("λ↕"), &mut ());
+                dbg_trace(format!("var is being replaced by fresh var {} with shifted class {}", fresh_var, sub), TraceGroup::Capture);
                 subst.insert(fresh_var, sub);
                 cache.insert((binder_depth, target_class), fresh_var);
                 return new_idx
             }
         },
         ENodeOrVar::ENode(e) => {
+            dbg_trace(format!("node: {}", e), TraceGroup::Capture);
+
             let mut expr = e.clone();
             for (i, child) in expr.children_mut().iter_mut().enumerate() {
                 // If `expr` is a binder, increase the binder depth for its body.
                 let child_binder_depth = if is_binder(&e) && i == 1 { binder_depth + 1 } else { binder_depth };
                 let child_idx = usize::from(*child);
+                dbg_trace(format!("\nvisiting child number {} of pattern node {}", child_idx, idx), TraceGroup::Capture);
                 *child = shifted_subst_for_pat_aux(child_idx, child_binder_depth, shifted_pat, subst, pat_node_indices, cache, egraph, pat);
             }
 
