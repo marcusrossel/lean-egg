@@ -18,6 +18,7 @@ mod nat_lit;
 mod replace_bvars;
 mod result;
 mod rewrite;
+mod subst;
 mod trace;
 mod util;
 

@@ -9,6 +9,14 @@ pub struct LeanAnalysisData {
     pub loose_bvars: HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
 }
 
+impl LeanAnalysisData {
+
+    // TODO: Replace `loose_bvars` with `max_loose_bvar` if eta doesn't require more precision.
+    pub fn max_loose_bvar(&self) -> Option<u64> {
+        self.loose_bvars.iter().max().copied()
+    }
+}
+
 #[derive(Default)]
 pub struct LeanAnalysis;
 impl Analysis<LeanExpr> for LeanAnalysis {

@@ -33,6 +33,25 @@ define_language! {
     }
 }
 
+impl LeanExpr {
+
+    pub fn bvar_idx(&self) -> Option<&Id> {
+        match self {
+            LeanExpr::BVar(idx) => Some(idx),
+            _                   => None
+        }    
+    }
+
+    // An expression is considered recursive if it can be part of a loop in an e-graph.
+    // Note that this is a result of the semantics of each constructor, not of its syntactic form.
+    pub fn is_rec(&self) -> bool {
+        match self {
+            LeanExpr::App(_) | LeanExpr::Lam(_) | LeanExpr::Forall(_) => true,
+            _                                                         => false
+        }
+    }
+}
+
 pub fn is_binder(expr: &LeanExpr) -> bool {
     match expr {
         LeanExpr::Lam(_) | LeanExpr::Forall(_) => true,
@@ -40,22 +59,13 @@ pub fn is_binder(expr: &LeanExpr) -> bool {
     }
 }
 
-// An expression is considered non-recursive if it can never be part of a loop in an e-graph.
-// Note that this is a result of the semantics of each constructor, not of its syntactic form.
-pub fn is_nonrec(expr: &LeanExpr) -> bool {
-    match expr {
-        LeanExpr::App(_) | LeanExpr::Lam(_) | LeanExpr::Forall(_) => false,
-        _ => true
-    }
-}
-
 // An expression `lhs` is smaller than another `rhs` wrt. non-recursiveness if `lhs` is not 
 // recursive but `rhs` is. If both are either recursive or non-recursive, the total order
 // derived by `define_language!` applies.
 pub fn nonrec_cmp(lhs: &LeanExpr, rhs: &LeanExpr) -> Ordering {
-    match (is_nonrec(lhs), is_nonrec(rhs)) {
-        (true, false) => Ordering::Less,
-        (false, true) => Ordering::Greater,
+    match (lhs.is_rec(), rhs.is_rec()) {
+        (false, true) => Ordering::Less,
+        (true, false) => Ordering::Greater,
         _             => lhs.cmp(rhs),
     }
 }
