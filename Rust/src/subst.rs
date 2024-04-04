@@ -56,7 +56,7 @@ struct Context {
 
 // Creates a new e-class which is the same as the given `class` but substitutes all loose bound variables 
 // in its sub-graph according to the given substitution function.
-fn subst<B>(class: SrcId, graph: &mut LeanEGraph, reason: Symbol, bvar_subst: &B) -> SubId 
+pub fn subst<B>(class: SrcId, graph: &mut LeanEGraph, reason: Symbol, bvar_subst: &B) -> SubId 
 where B : Fn(u64, u64, &mut LeanEGraph) -> LeanExpr {
     let tgt = Target { class, depth: 0 };
     let mut ctx: Context = Default::default();
@@ -115,7 +115,8 @@ where B : Fn(u64, u64, &mut LeanEGraph) -> LeanExpr {
     for node in nodes {
         if let Some(bvar_idx) = node.bvar_idx() {
             let idx_val = graph[*bvar_idx].data.nat_val.unwrap();
-            let node_sub = bvar_subst(idx_val, tgt.depth, graph);
+            // Only runs the bound variable substitution if the bound variable is loose.
+            let node_sub = if idx_val >= tgt.depth { bvar_subst(idx_val, tgt.depth, graph) } else { node };
             add_subst_node(node_sub, tgt, ctx, graph);
         } else if node.is_rec() {
             subst_recursive_node(&node, tgt, ctx, graph, bvar_subst);

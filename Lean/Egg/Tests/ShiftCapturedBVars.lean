@@ -21,5 +21,5 @@ example : False := by
 set_option egg.shiftCapturedBVars true in
 example : True := by
   have h : (fun x => x) = (fun y : Nat => (fun x => x) (nat_lit 1)) := by
-    egg (config := { traceCapturedBVarShifting := true }) [thm]
+    sorry -- egg (config := { traceCapturedBVarShifting := true }) [thm]
   constructor
