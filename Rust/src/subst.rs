@@ -85,10 +85,10 @@ where B : Fn(u64, u64, &mut LeanEGraph) -> LeanExpr {
     } else if graph[tgt.class].data.max_loose_bvar() < Some(tgt.depth) {
         // If the given e-class target does not contain any loose bound variables
         // which are large enough to escape the outermost binder of the subsitution's
-        // root e-class, we can just keep it as is. We do not even insert this information 
-        // into `ctx.sub`, as the only place where this can potentially be queried is in 
-        // the conditional branch above, in which case we just immediately skip to this 
-        // branch again.
+        // root e-class, we can just keep it as is. It is still important that we record 
+        // this in `ctx.sub`, as processing of todos assumes that all of the todo's children 
+        // have substitutes registered in `ctx.sub`.
+        ctx.sub.insert(tgt.clone(), tgt.class);
         return Some(tgt.class)
     } else if ctx.wip.get(&tgt.class).is_some_and(|w| w.contains(&tgt.depth)) {
         // If the e-class target is already WIP, we have reached a proper loop (one where
@@ -218,7 +218,12 @@ fn process_todo(todo: TodoIdx, ctx: &mut Context, graph: &mut LeanEGraph) {
         let child_tgt = Target { class: *child, depth: depth };
         // The substitutes of children of a todo node are expected to be present 
         // when this function (`process_todo`) is called.
-        *child = *ctx.sub.get(&child_tgt).unwrap();
+        if let Some(&child_sub) = ctx.sub.get(&child_tgt) {
+            *child = child_sub;
+        } else {
+            panic!("'process_todo' tried to access absent substitute child #{} of node {:?}", idx, node);
+        }
+        
     }
 
     add_subst_node(sub_node, &tgt, ctx, graph);
