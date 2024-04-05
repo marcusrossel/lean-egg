@@ -15,7 +15,6 @@ mod bvar_capture;
 mod eta;
 mod lean_expr;
 mod nat_lit;
-mod replace_bvars;
 mod result;
 mod rewrite;
 mod subst;

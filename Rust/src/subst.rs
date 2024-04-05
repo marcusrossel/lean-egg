@@ -69,13 +69,13 @@ struct Context {
 // in its sub-graph according to the given substitution function.
 pub fn subst<B>(class: SrcId, graph: &mut LeanEGraph, reason: Symbol, bvar_subst: &B) -> SubId 
 where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
-    let (s, u) = subst_without_unions(class, graph, reason, bvar_subst);
+    let (s, u) = subst_without_unions(class, graph, bvar_subst);
     perform_unions(u, reason, graph);
     return s
 }
 
 // Same as `subst` but returns the generated unions instead of performing them.
-pub fn subst_without_unions<B>(class: SrcId, graph: &mut LeanEGraph, reason: Symbol, bvar_subst: &B) -> (SubId, HashMap<SubId, HashSet<SubId>>)
+pub fn subst_without_unions<B>(class: SrcId, graph: &mut LeanEGraph, bvar_subst: &B) -> (SubId, HashMap<SubId, HashSet<SubId>>)
 where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
     let tgt = Target { class, depth: 0 };
     let mut ctx: Context = Default::default();
@@ -128,7 +128,7 @@ where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
     // e-nodes to the  front is simply an optimization as this means that we tend to visit 
     // leaves first which reduces the number of todo e-nodes and corresponding callbacks.
     let mut nodes = graph[tgt.class].nodes.clone();
-    nodes.sort_by(|lhs, rhs| nonrec_cmp(lhs, rhs));
+    nodes.sort_by(|lhs, rhs| lhs.rec_cmp(rhs));
 
     for node in nodes {
         if let Some(bvar_idx) = node.bvar_idx() {
@@ -166,7 +166,7 @@ where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
 
     for (idx, child) in sub_node.children_mut().iter_mut().enumerate() {
         // The depth is increased by 1 if the child is the body of a binder.
-        let depth = if idx == 1 && is_binder(rec_node) { tgt.depth + 1 } else { tgt.depth };
+        let depth = if idx == 1 && rec_node.is_binder() { tgt.depth + 1 } else { tgt.depth };
         let child_tgt = Target { class: *child, depth: depth };
         // If the substitution of the child works, replace the child with its substitute in `sub_node`.
         // Otherwise, record the given child target as being pending.
@@ -243,7 +243,7 @@ fn process_todo(todo: TodoIdx, ctx: &mut Context, graph: &mut LeanEGraph) {
     let mut sub_node = node.clone();
     for (idx, child) in sub_node.children_mut().iter_mut().enumerate() {
         // The depth is increased by 1 if the child is the body of a binder.
-        let depth = if idx == 1 && is_binder(&node) { tgt.depth + 1 } else { tgt.depth };
+        let depth = if idx == 1 && node.is_binder() { tgt.depth + 1 } else { tgt.depth };
         let child_tgt = Target { class: *child, depth: depth };
         // The substitutes of children of a todo node are expected to be present 
         // when this function (`process_todo`) is called.

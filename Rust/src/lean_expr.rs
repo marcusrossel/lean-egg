@@ -42,6 +42,13 @@ impl LeanExpr {
         }    
     }
 
+    pub fn is_binder(&self) -> bool {
+        match self {
+            LeanExpr::Lam(_) | LeanExpr::Forall(_) => true,
+            _                                      => false
+        }
+    }
+
     // An expression is considered recursive if it can be part of a loop in an e-graph.
     // Note that this is a result of the semantics of each constructor, not of its syntactic form.
     pub fn is_rec(&self) -> bool {
@@ -50,33 +57,15 @@ impl LeanExpr {
             _                                                         => false
         }
     }
-}
 
-pub fn is_binder(expr: &LeanExpr) -> bool {
-    match expr {
-        LeanExpr::Lam(_) | LeanExpr::Forall(_) => true,
-        _ => false
-    }
-}
-
-// An expression `lhs` is smaller than another `rhs` wrt. non-recursiveness if `lhs` is not 
-// recursive but `rhs` is. If both are either recursive or non-recursive, the total order
-// derived by `define_language!` applies.
-pub fn nonrec_cmp(lhs: &LeanExpr, rhs: &LeanExpr) -> Ordering {
-    match (lhs.is_rec(), rhs.is_rec()) {
-        (false, true) => Ordering::Less,
-        (true, false) => Ordering::Greater,
-        _             => lhs.cmp(rhs),
-    }
-}
-
-pub fn swap_children(two_child_node: &LeanExpr, new_children: [Id; 2]) -> LeanExpr {
-    match two_child_node {
-        LeanExpr::Max(_)    => LeanExpr::Max(new_children),
-        LeanExpr::IMax(_)   => LeanExpr::IMax(new_children),
-        LeanExpr::App(_)    => LeanExpr::App(new_children),
-        LeanExpr::Lam(_)    => LeanExpr::Lam(new_children),
-        LeanExpr::Forall(_) => LeanExpr::Forall(new_children),
-        _                   => panic!("Called 'swap_children' on 'LeanExpr' containing not exactly two children.")
+    // An expression `lhs` is smaller than another `rhs` wrt. recursiveness if `lhs` is not 
+    // recursive but `rhs` is. If both are either recursive or non-recursive, the total order
+    // derived by `define_language!` applies.
+    pub fn rec_cmp(&self, rhs: &LeanExpr) -> Ordering {
+        match (&self.is_rec(), rhs.is_rec()) {
+            (false, true) => Ordering::Less,
+            (true, false) => Ordering::Greater,
+            _             => self.cmp(rhs),
+        }
     }
 }

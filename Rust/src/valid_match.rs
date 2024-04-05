@@ -76,7 +76,7 @@ fn match_is_valid_core(idx: usize, loc: Location, ctx: &mut Context) -> bool {
             for (i, child) in e.children().iter().enumerate() {
                 // If `e` is a binder, set the parent binder and increase the binder depth for its body.
                 let (parent_binder, binder_depth) = 
-                    if is_binder(&e) && i == 1 { 
+                    if e.is_binder() && i == 1 { 
                         (Some(loc.pos.clone()), loc.binder_depth + 1) 
                     } else { 
                         (loc.parent_binder.clone(), loc.binder_depth) 

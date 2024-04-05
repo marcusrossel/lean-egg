@@ -15,7 +15,7 @@ impl Applier<LeanExpr, LeanAnalysis> for Beta {
     fn apply_one(&self, egraph: &mut LeanEGraph, beta_class: Id, s: &Subst, _: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
         let body_class = s[self.body];
         let arg_class = s[self.arg];
-        let substituted_body_class = subst(body_class, egraph, rule, &subst_bvar_0(arg_class, rule));
+        let substituted_body_class = subst(body_class, egraph, rule, &subst_bvar_0(arg_class));
         if egraph.union_trusted(beta_class, substituted_body_class, rule) {
             vec![beta_class]
         } else {
@@ -25,7 +25,7 @@ impl Applier<LeanExpr, LeanAnalysis> for Beta {
 }
 
 // TODO: Re-enable caching of shifted arg_classes.
-fn subst_bvar_0(arg_class: Id, rule: Symbol) -> impl Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
+fn subst_bvar_0(arg_class: Id) -> impl Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
     move |idx, binder_depth, graph| {
         match idx.cmp(&binder_depth) {
             Ordering::Greater => {
@@ -34,7 +34,7 @@ fn subst_bvar_0(arg_class: Id, rule: Symbol) -> impl Fn(u64, u64, &mut LeanEGrap
                 BVarSub { class, unions: HashMap::new() }
             },
             Ordering::Equal => {
-                let (class, unions) = subst_without_unions(arg_class, graph, rule, &shift_up(binder_depth));
+                let (class, unions) = subst_without_unions(arg_class, graph, &shift_up(binder_depth));
                 BVarSub { class, unions }
             },
             Ordering::Less => unreachable!() // `subst` provides the invariant that `idx >= binder_depth`.

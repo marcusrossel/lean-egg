@@ -125,7 +125,7 @@ fn shifted_subst_for_pat_aux(
             let mut expr = e.clone();
             for (i, child) in expr.children_mut().iter_mut().enumerate() {
                 // If `expr` is a binder, increase the binder depth for its body.
-                let child_binder_depth = if is_binder(&e) && i == 1 { binder_depth + 1 } else { binder_depth };
+                let child_binder_depth = if e.is_binder() && i == 1 { binder_depth + 1 } else { binder_depth };
                 let child_idx = usize::from(*child);
                 dbg_trace(format!("\nvisiting child number {} of pattern node {}", child_idx, idx), TraceGroup::Capture);
                 *child = shifted_subst_for_pat_aux(child_idx, child_binder_depth, shifted_pat, subst, pat_node_indices, cache, egraph, pat);
