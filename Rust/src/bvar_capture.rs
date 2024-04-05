@@ -3,6 +3,7 @@ use std::str::FromStr;
 use egg::*;
 use crate::lean_expr::*;
 use crate::analysis::*;
+use crate::subst::*;
 use crate::trace::*;
 use crate::valid_match::*;
 
@@ -142,10 +143,12 @@ fn shifted_subst_for_pat_aux(
     }
 }
 
-fn shift_up(offset: u64) -> impl Fn(u64, u64, &mut LeanEGraph) -> LeanExpr {
-    move |idx, binder_depth, egraph| {
+fn shift_up(offset: u64) -> impl Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
+    move |idx, binder_depth, graph| {
         if idx < binder_depth { unreachable!() } // `subst` provides the invariant that `idx >= binder_depth`. 
-        LeanExpr::BVar(egraph.add(LeanExpr::Nat(idx + offset)))
+        let idx_class = graph.add(LeanExpr::Nat(idx + offset));
+        let class = graph.add(LeanExpr::BVar(idx_class));
+        BVarSub { class, unions: HashMap::new() }
     }
 }
 

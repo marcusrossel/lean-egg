@@ -36,6 +36,14 @@ example : True := by
   have : (fun x => (fun a => (fun a => a) a) 0) = (fun x => x) := by sorry -- egg [thm₂]
   constructor
 
+-- BUG: This example also shows that something about capture avoidance is fundamentally broken, as
+--      it creates an e-graph where number nodes are in the same e-classes as things like
+--      application-nodes. Same goes for name nodes like `Nat.add`.
+example (h : ∀ x y : Nat, x = y ↔ y = x) : (∀ x y : Nat, x = y) ↔ (∀ a b : Nat, b = a + 0) := by
+  sorry -- egg [h, Nat.add_zero]
+
+
+
 -- Unrelated to capture avoidance:
 --
 -- TODO: If we have a theorem like `(fun a b => a) x y = x`, it's only applicable in the forward

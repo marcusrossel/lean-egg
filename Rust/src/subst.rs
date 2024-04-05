@@ -19,6 +19,17 @@ type SubId := Id;
 // An index of an e-node in `Context.todo`.
 type TodoIdx := usize;
 
+// A bound variable substitute is what is returned by the bound variables substitution function
+// used with `subst`. The `class` will be merged into the bound variables substitute class. A
+// simple example of this is a class containing just a single e-node, like a shifted bound variable.
+// If the `class` is constructed in a more complex manner, all unions which occur as part of this
+// construction should be delayed, as they might otherwise affect the traversal of `subst`. They
+// should therefore be passed along in the `unions`, which are performed at the end of `subst`.
+pub struct BVarSub {
+    pub class: SubId,
+    pub unions: HashMap<SubId, HashSet<SubId>>
+}
+
 // A "target" is an e-class at a specific binder depth. These two values need to be 
 // considered together so often during substitution that we given them an own type.
 #[derive(PartialEq, Eq, Hash, Clone)]
@@ -57,7 +68,7 @@ struct Context {
 // Creates a new e-class which is the same as the given `class` but substitutes all loose bound variables 
 // in its sub-graph according to the given substitution function.
 pub fn subst<B>(class: SrcId, graph: &mut LeanEGraph, reason: Symbol, bvar_subst: &B) -> SubId 
-where B : Fn(u64, u64, &mut LeanEGraph) -> LeanExpr {
+where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
     let tgt = Target { class, depth: 0 };
     let mut ctx: Context = Default::default();
     let s = subst_core(&tgt, &mut ctx, graph, bvar_subst).unwrap();
@@ -77,7 +88,7 @@ fn perform_unions(unions: HashMap<SubId, HashSet<SubId>>, reason: Symbol, graph:
 // When this function returns `None`, that means that a substitution for the given 
 // e-class target could not yet be created.
 fn subst_core<B>(tgt: &Target, ctx: &mut Context, graph: &mut LeanEGraph, bvar_subst: &B) -> Option<SubId> 
-where B : Fn(u64, u64, &mut LeanEGraph) -> LeanExpr {
+where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
     if let Some(&s) = ctx.sub.get(tgt) {
         // If the given e-class target has already been substituted, 
         // return the substitute immediately.
@@ -105,7 +116,7 @@ where B : Fn(u64, u64, &mut LeanEGraph) -> LeanExpr {
 
 // Implementation detail of `subst_core`.
 fn subst_core_new_target<B>(tgt: &Target, ctx: &mut Context, graph: &mut LeanEGraph, bvar_subst: &B) -> Option<SubId> 
-where B : Fn(u64, u64, &mut LeanEGraph) -> LeanExpr {
+where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
     // Gets and sorts the nodes we are going to visit by `nonrec_cmp`. Moving non-recursive 
     // e-nodes to the  front is simply an optimization as this means that we tend to visit 
     // leaves first which reduces the number of todo e-nodes and corresponding callbacks.
@@ -116,8 +127,13 @@ where B : Fn(u64, u64, &mut LeanEGraph) -> LeanExpr {
         if let Some(bvar_idx) = node.bvar_idx() {
             let idx_val = graph[*bvar_idx].data.nat_val.unwrap();
             // Only runs the bound variable substitution if the bound variable is loose.
-            let node_sub = if idx_val >= tgt.depth { bvar_subst(idx_val, tgt.depth, graph) } else { node };
-            add_subst_node(node_sub, tgt, ctx, graph);
+            if idx_val >= tgt.depth { 
+                let BVarSub { class: s, unions: u } = bvar_subst(idx_val, tgt.depth, graph);
+                add_subst_class(s, tgt, ctx, graph);
+                ctx.unions.extend(u);
+            } else { 
+                add_subst_node(node, tgt, ctx, graph);
+            };
         } else if node.is_rec() {
             subst_recursive_node(&node, tgt, ctx, graph, bvar_subst);
         } else {
@@ -137,7 +153,7 @@ where B : Fn(u64, u64, &mut LeanEGraph) -> LeanExpr {
 // If this is successful, the substitute is added to the substitute e-class in `ctx.sub`.
 // If it fails, the e-node is registered as a todo node.
 fn subst_recursive_node<B>(rec_node: &LeanExpr, tgt: &Target, ctx: &mut Context, graph: &mut LeanEGraph, bvar_subst: &B)
-where B : Fn(u64, u64, &mut LeanEGraph) -> LeanExpr {
+where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
     let mut sub_node = rec_node.clone();
     let mut pending = HashSet::<Target>::new();
 
@@ -167,14 +183,20 @@ where B : Fn(u64, u64, &mut LeanEGraph) -> LeanExpr {
 // If that substitute e-class does not exist yet, it is created and the todo e-nodes are updated.
 fn add_subst_node(node: LeanExpr, tgt: &Target, ctx: &mut Context, graph: &mut LeanEGraph) {
     let node_class = graph.add(node);
+    add_subst_class(node_class, tgt, ctx, graph);
+}
+
+// Merges the given (substituted) e-class into the substitute e-class of the given e-class target.
+// If that substitute e-class does not exist yet, it is created and the todo e-nodes are updated.
+fn add_subst_class(class: SubId, tgt: &Target, ctx: &mut Context, graph: &mut LeanEGraph) {
     if let Some(&s) = ctx.sub.get(tgt) {
-        // If the given e-class target already has a substitute, simply record the e-node's
-        // class as requiring a union with that substitute e-class.
-        ctx.unions.entry(s).or_insert(HashSet::new()).insert(node_class);
+        // If the given e-class target already has a substitute, simply record the new class
+        // as requiring a union with that substitute e-class.
+        ctx.unions.entry(s).or_insert(HashSet::new()).insert(class);
     } else {
-        // If the given e-node is the first substitute e-node for the given e-class target, 
+        // If the given class is the first substitute for the given e-class target, 
         // create the substitute e-class from it.
-        ctx.sub.insert(tgt.clone(), node_class);
+        ctx.sub.insert(tgt.clone(), class);
         // When a new substitute e-class is created, the todo e-nodes need to be updated.
         update_todos(tgt, ctx, graph);
     }

@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use egg::*;
 use crate::analysis::*;
 use crate::lean_expr::*;
@@ -22,11 +23,15 @@ impl Applier<LeanExpr, LeanAnalysis> for Eta {
     }
 }
 
-fn shift_down_loose_bvar(idx: u64, binder_depth: u64, egraph: &mut LeanEGraph) -> LeanExpr {
+fn shift_down_loose_bvar(idx: u64, binder_depth: u64, graph: &mut LeanEGraph) -> BVarSub {
     match idx.cmp(&binder_depth) {
-        Ordering::Greater => LeanExpr::BVar(egraph.add(LeanExpr::Nat(idx - 1))),
-        Ordering::Equal   => panic!("η-reduction encountered invalid bvar"),
-        Ordering::Less    => unreachable!() // `subst` provides the invariant that `idx >= binder_depth`.
+        Ordering::Greater => {
+            let idx_class = graph.add(LeanExpr::Nat(idx - 1));
+            let class = graph.add(LeanExpr::BVar(idx_class));
+            BVarSub { class, unions: HashMap::new() }
+        },
+        Ordering::Equal => panic!("η-reduction encountered invalid bvar"),
+        Ordering::Less  => unreachable!() // `subst` provides the invariant that `idx >= binder_depth`.
     }
 }
 
