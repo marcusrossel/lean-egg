@@ -69,14 +69,21 @@ struct Context {
 // in its sub-graph according to the given substitution function.
 pub fn subst<B>(class: SrcId, graph: &mut LeanEGraph, reason: Symbol, bvar_subst: &B) -> SubId 
 where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
-    let tgt = Target { class, depth: 0 };
-    let mut ctx: Context = Default::default();
-    let s = subst_core(&tgt, &mut ctx, graph, bvar_subst).unwrap();
-    perform_unions(ctx.unions, reason, graph);
+    let (s, u) = subst_without_unions(class, graph, reason, bvar_subst);
+    perform_unions(u, reason, graph);
     return s
 }
 
-// TODO: This might be the exact function in which to control justification propagation.
+// Same as `subst` but returns the generated unions instead of performing them.
+pub fn subst_without_unions<B>(class: SrcId, graph: &mut LeanEGraph, reason: Symbol, bvar_subst: &B) -> (SubId, HashMap<SubId, HashSet<SubId>>)
+where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
+    let tgt = Target { class, depth: 0 };
+    let mut ctx: Context = Default::default();
+    let s = subst_core(&tgt, &mut ctx, graph, bvar_subst).unwrap();
+    return (s, ctx.unions)
+}
+
+// TODO: This might be the function in which to control justification propagation.
 fn perform_unions(unions: HashMap<SubId, HashSet<SubId>>, reason: Symbol, graph: &mut LeanEGraph) {
     for (class, equivs) in unions.iter() {
         for other in equivs {
