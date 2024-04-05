@@ -59,7 +59,7 @@ extern egg_result c_egg_explain_congr(
 // `gen_beta_rw`: boolean indicating whether egg should use an additional rewrite to perform beta-reduction
 // `block_invalid_matches`: boolean indicating whether rewrites should be skipped if variables matched bvars in an invalid way
 // `shift_captured_bvars`: boolean indicating whether rewrites should shift captured bvars to avoid invalid capturing
-// `trace_substitutions`: boolean indicating whether calls to `replace_loose_bvars` should be traced
+// `trace_substitutions`: boolean indicating whether calls to `subst` should be traced
 // `trace_captured_bvar_shifting`: boolean indicating whether calls to `shifted_subst_for_pat` should be traced
 // `viz_path`: string
 // return value: string explaining the rewrite sequence

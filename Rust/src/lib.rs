@@ -21,6 +21,7 @@ mod rewrite;
 mod subst;
 mod trace;
 mod util;
+mod valid_match;
 
 #[repr(C)]
 #[derive(PartialEq)]

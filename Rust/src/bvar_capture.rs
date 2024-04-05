@@ -3,8 +3,8 @@ use std::str::FromStr;
 use egg::*;
 use crate::lean_expr::*;
 use crate::analysis::*;
-use crate::replace_bvars::*;
 use crate::trace::*;
+use crate::valid_match::*;
 
 pub struct BVarCapture {
     pub rhs: Pattern<LeanExpr>,
@@ -17,73 +17,23 @@ impl Applier<LeanExpr, LeanAnalysis> for BVarCapture {
     fn apply_one(&self, egraph: &mut LeanEGraph, _: Id, subst: &Subst, searcher_ast: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
         let searcher_ast = searcher_ast.unwrap();
         
-        // TODO: Is this cached once it is called?
-        // A substitution is safe if it does not map any variables to e-classes containing loose bvars.
-        let subst_is_safe = { |_ : ()| 
-            self.rhs.vars().iter().all(|var| egraph[subst[*var]].data.loose_bvars.is_empty()) 
-        };
-        
         // Abort the rewrite if invalid matches are disallowed and the given match is invalid.
-        if self.block_invalid_matches && !subst_is_safe(()) && !match_is_valid(subst, searcher_ast, egraph) {
+        if self.block_invalid_matches && !match_is_valid(subst, searcher_ast, egraph) {
             return vec![]
         }
 
-        if self.shift_captured_bvars && !subst_is_safe(()) {
+        // A substitution needs no shifting if it does not map any variables to e-classes containing loose bvars.
+        let needs_no_shift = self.rhs.vars().iter().all(|var| egraph[subst[*var]].data.loose_bvars.is_empty());
+        if !self.shift_captured_bvars || needs_no_shift {
+            // Following https://docs.rs/egg/latest/src/egg/pattern.rs.html#373
+            let (from, did_union) = egraph.union_instantiations(searcher_ast, &self.rhs.ast, subst, rule);
+            if did_union { vec![from] } else { vec![] }
+        } else {
             dbg_trace(format!("Start capture avoidance for\n  LHS: {}\n  RHS: {}\n  RHS Raw: {:?}\n  subst: {:?}", searcher_ast, self.rhs, self.rhs.ast.as_ref(), subst), TraceGroup::Capture);
             let (shifted_subst, shifted_rhs) = shifted_subst_for_pat(subst, &self.rhs, egraph);
             dbg_trace("End capture avoidance\n", TraceGroup::Capture);
             let (from, did_union) = egraph.union_instantiations(searcher_ast, &shifted_rhs, &shifted_subst, rule);
             if did_union { vec![from] } else { vec![] }
-        } else {
-            // Following https://docs.rs/egg/latest/src/egg/pattern.rs.html#373
-            let (from, did_union) = egraph.union_instantiations(searcher_ast, &self.rhs.ast, subst, rule);
-            if did_union { vec![from] } else { vec![] }
-        }
-    }
-}
-
-// A match (a substitution and pattern) is valid, if for each variable v in the substitution 
-// which maps to an e-class with loose bvars, v only appears under the same binder.
-//
-// Example of an invalid match: 
-// Pattern term `(lam _ (lam _, ?x) ?x)` matching against `(lam _ (lam _, (bvar 0)) (bvar 0))`.
-fn match_is_valid(subst: &Subst, pat: &PatternAst<LeanExpr>, egraph: &LeanEGraph) -> bool {
-    let last = pat.as_ref().len() - 1;
-    match_is_valid_aux(last, vec![], None, subst, pat, egraph, &mut HashMap::new())
-}
-
-type ExprPos = Vec<usize>; 
-// A binder position of `None` indicates that the associated value does not appear under a binder.
-type BinderPos = Option<ExprPos>;
-
-fn match_is_valid_aux(idx: usize, pos: ExprPos, parent_binder: BinderPos, subst: &Subst, pat: &PatternAst<LeanExpr>, egraph: &LeanEGraph, parent_binders: &mut HashMap<Var, BinderPos>) -> bool {
-    match &pat.as_ref()[idx] {
-        ENodeOrVar::Var(var) => {
-            if egraph[subst[*var]].data.loose_bvars.is_empty() { 
-                // If the given variable does not map to an e-class containing loose bvars, if cannot cause any problems.
-                true 
-            } else if let Some(required_parent) = parent_binders.get(var) {
-                // If the given variable has already occured elsewhere in the pattern, the parent binder of that occurrence 
-                // must be the same as the current parent binder.
-                parent_binder == *required_parent
-            } else {
-                // If the given variable has not been visited yet, record its parent binder.
-                parent_binders.insert(*var, parent_binder);
-                true
-            }
-        },
-        ENodeOrVar::ENode(e) => {
-            for (i, child) in e.children().iter().enumerate() {
-                // If `e` is a binder, set the `parent_binder` for its body.
-                let child_parent_binder = if is_binder(&e) && i == 1 { Some(pos.clone()) } else { parent_binder.clone() };
-                let child_idx = usize::from(*child);
-                let mut child_pos = pos.clone(); 
-                child_pos.push(i);
-                if !match_is_valid_aux(child_idx, child_pos, child_parent_binder, subst, pat, egraph, parent_binders) {
-                    return false
-                }
-            }
-            true
         }
     }
 }
@@ -161,7 +111,7 @@ fn shifted_subst_for_pat_aux(
                 let fresh_var = make_fresh_var();
                 let new_idx = shifted_pat.add(ENodeOrVar::Var(fresh_var));
                 pat_node_indices.insert(ENodeOrVar::Var(fresh_var), new_idx);
-                let sub = replace_loose_bvars(&shift_up(binder_depth), target_class, egraph, Symbol::from("λ↕"), &mut ());
+                let sub = crate::subst::subst(target_class, egraph, Symbol::from("λ↕"), &shift_up(binder_depth));
                 dbg_trace(format!("var is being replaced by fresh var {} with shifted class {}", fresh_var, sub), TraceGroup::Capture);
                 subst.insert(fresh_var, sub);
                 cache.insert((binder_depth, target_class), fresh_var);
@@ -189,6 +139,13 @@ fn shifted_subst_for_pat_aux(
                 return new_idx
             }
         }
+    }
+}
+
+fn shift_up(offset: u64) -> impl Fn(u64, u64, &mut LeanEGraph) -> LeanExpr {
+    move |idx, binder_depth, egraph| {
+        if idx < binder_depth { unreachable!() } // `subst` provides the invariant that `idx >= binder_depth`. 
+        LeanExpr::BVar(egraph.add(LeanExpr::Nat(idx + offset)))
     }
 }
 
