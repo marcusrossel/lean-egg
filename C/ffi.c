@@ -102,22 +102,24 @@ extern egg_result c_egg_explain_congr(
     const char* viz_path
 );
 
-// `init`: string
-// `goal`: string
-// `rws`: array of `Egg.Rewrite.Encoded`
-// `viz_path`: string
-// `cfg`: an `Egg.Request.Config`
-// return value: string explaining the rewrite sequence
-lean_obj_res lean_egg_explain_congr(lean_obj_arg init, lean_obj_arg goal, lean_obj_arg rws, lean_obj_arg viz_path, lean_obj_arg cfg) {
-    const char* init_c_str = lean_string_cstr(init);
-    const char* goal_c_str = lean_string_cstr(goal);
-    rewrite* rust_rws = rewrites_from_lean_obj(rws);
-    size_t rws_count = lean_array_size(rws);
-    const char* viz_path_c_str = lean_string_cstr(viz_path);
-    config rust_cfg = config_from_lean_obj(cfg);
+/*
+structure Egg.Request where
+  lhs     : Expression
+  rhs     : Expression
+  rws     : Rewrites.Encoded
+  vizPath : String
+  cfg     : Request.Config
+*/
+lean_obj_res run_egg_request(lean_obj_arg req) {
+    const char* lhs      = lean_string_cstr(lean_ctor_get(req, 0));
+    const char* rhs      = lean_string_cstr(lean_ctor_get(req, 1));
+    rewrite* rws         = rewrites_from_lean_obj(lean_ctor_get(req, 2));
+    size_t rws_count     = lean_array_size(lean_ctor_get(req, 2));
+    const char* viz_path = lean_string_cstr(lean_ctor_get(req, 3));
+    config cfg           = config_from_lean_obj(lean_ctor_get(req, 4));
 
-    egg_result result = c_egg_explain_congr(init_c_str, goal_c_str, rust_rws, rws_count, rust_cfg, viz_path_c_str);
-    free(rust_rws);
+    egg_result result = c_egg_explain_congr(lhs, rhs, rws, rws_count, cfg, viz_path);
+    free(rws);
 
     return lean_mk_string(result.expl);
 }

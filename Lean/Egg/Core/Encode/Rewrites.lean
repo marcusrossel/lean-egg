@@ -5,6 +5,7 @@ open Lean
 
 namespace Egg
 
+-- IMPORTANT: The C interface to egg depends on the order of these fields.
 structure Rewrite.Encoded where
   name : String
   lhs  : Expression

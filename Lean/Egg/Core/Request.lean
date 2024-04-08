@@ -7,6 +7,7 @@ open Lean
 
 namespace Egg.Request
 
+-- IMPORTANT: The C interface to egg depends on the order of these fields.
 protected structure Config where
   optimizeExpl        : Bool
   genNatLitRws        : Bool
@@ -29,6 +30,7 @@ instance : Coe Config Request.Config where
     traceBVarCorrection := cfg.traceBVarCorrection
   }
 
+-- IMPORTANT: The C interface to egg depends on the order of these fields.
 structure _root_.Egg.Request where
   private mk ::
   lhs     : Expression
@@ -46,9 +48,5 @@ def encoding (goal : Congr) (rws : Rewrites) (cfg : Egg.Config) : MetaM Request 
     cfg
   }
 
-@[extern "lean_egg_explain_congr"]
-private opaque explainCongr
-  (lhs rhs : Expression) (rws : Rewrites.Encoded) (vizPath : String) (cfg : Request.Config) : String
-
-def run (req : Request) : Explanation.Raw :=
-  explainCongr req.lhs req.rhs req.rws req.vizPath req.cfg
+@[extern "run_egg_request"]
+opaque run (req : Request) : Explanation.Raw
