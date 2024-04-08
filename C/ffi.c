@@ -87,13 +87,7 @@ config config_from_lean_obj(lean_obj_arg cfg) {
     };
 }
 
-// TODO: Remove this.
-typedef struct egg_result {
-    _Bool success;
-    char* expl;
-} egg_result;
-
-extern egg_result c_egg_explain_congr(
+extern char* c_egg_explain_congr(
     const char* init, 
     const char* goal, 
     rewrite* rws, 
@@ -118,10 +112,10 @@ lean_obj_res run_egg_request(lean_obj_arg req) {
     const char* viz_path = lean_string_cstr(lean_ctor_get(req, 3));
     config cfg           = config_from_lean_obj(lean_ctor_get(req, 4));
 
-    egg_result result = c_egg_explain_congr(lhs, rhs, rws, rws_count, cfg, viz_path);
+    char* result = c_egg_explain_congr(lhs, rhs, rws, rws_count, cfg, viz_path);
     free(rws);
 
-    return lean_mk_string(result.expl);
+    return lean_mk_string(result);
 }
 
 lean_object* dbg_trace_thunk(lean_object* t) { return lean_box(0); }

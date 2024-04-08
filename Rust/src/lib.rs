@@ -40,12 +40,6 @@ pub struct CRewrite {
     dirs: RewriteDirections
 }
 
-#[repr(C)]
-pub struct EggResult {
-    success: bool,
-    expl:    *const c_char,
-}
-
 fn rw_templates_from_c(rws: &[CRewrite]) -> Res<Vec<RewriteTemplate>> {
     let mut res: Vec<RewriteTemplate> = vec![];
     for rw in rws {
@@ -80,7 +74,7 @@ pub extern "C" fn c_egg_explain_congr(
     rws_count: usize,
     cfg: Config,
     viz_path_ptr: *const c_char
-) -> EggResult {
+) -> *const c_char {
     // Cf. https://doc.rust-lang.org/stable/std/ffi/struct.CStr.html#examples
     let init_c_str = unsafe { CStr::from_ptr(init_str_ptr) };
     let goal_c_str = unsafe { CStr::from_ptr(goal_str_ptr) };
@@ -95,7 +89,7 @@ pub extern "C" fn c_egg_explain_congr(
     let rw_templates = rw_templates_from_c(c_rws);
     if let Err(rws_err) = rw_templates { 
         let rws_err_c_str = CString::new(rws_err.to_string()).expect("conversion of error message to C-string failed");
-        return EggResult { success: false, expl: rws_err_c_str.into_raw() } 
+        return rws_err_c_str.into_raw()
     }
     let rw_templates = rw_templates.unwrap();
 
@@ -106,10 +100,10 @@ pub extern "C" fn c_egg_explain_congr(
     let expl = explain_congr(init, goal, rw_templates, cfg, viz_path);
     if let Err(expl_err) = expl {
         let rws_err_c_str = CString::new(expl_err.to_string()).expect("conversion of error message to C-string failed");
-        return EggResult { success: false, expl: rws_err_c_str.into_raw() } 
+        return rws_err_c_str.into_raw()
     }
     let expl = expl.unwrap();
 
     let expl_c_str = CString::new(expl).expect("conversion of explanation to C-string failed");
-    EggResult { success: true,  expl: expl_c_str.into_raw() }
+    expl_c_str.into_raw()
 }
