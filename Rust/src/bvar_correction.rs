@@ -75,17 +75,17 @@ pub fn correct_bvar_indices(subst: &Subst, pat: &Pattern<LeanExpr>, var_depths: 
 //
 // Returns the index of the current node in `shifted_pat`.
 fn correct_bvar_indices_core(idx: usize, binder_depth: u64, ctx: &mut Context, graph: &mut LeanEGraph) -> Id {
-    dbg_trace("", TraceGroup::Capture);
-    dbg_trace(format!("idx: {}", idx), TraceGroup::Capture);
-    dbg_trace(format!("binder_depth: {}", binder_depth), TraceGroup::Capture);
-    dbg_trace(format!("RHS: {}", ctx.shifted_pat), TraceGroup::Capture);
-    dbg_trace(format!("subst: {:?}", ctx.shifted_subst), TraceGroup::Capture);
-    dbg_trace(format!("pat_node_indices: {:?}", ctx.shifted_pat_indices), TraceGroup::Capture);
-    dbg_trace(format!("cache: {:?}", ctx.cache), TraceGroup::Capture);
+    dbg_trace("", TraceGroup::BVarCorrection);
+    dbg_trace(format!("idx: {}", idx), TraceGroup::BVarCorrection);
+    dbg_trace(format!("binder_depth: {}", binder_depth), TraceGroup::BVarCorrection);
+    dbg_trace(format!("RHS: {}", ctx.shifted_pat), TraceGroup::BVarCorrection);
+    dbg_trace(format!("subst: {:?}", ctx.shifted_subst), TraceGroup::BVarCorrection);
+    dbg_trace(format!("pat_node_indices: {:?}", ctx.shifted_pat_indices), TraceGroup::BVarCorrection);
+    dbg_trace(format!("cache: {:?}", ctx.cache), TraceGroup::BVarCorrection);
 
     match &ctx.src_pat.as_ref()[idx] {
         var_node@ENodeOrVar::Var(var) => {
-            dbg_trace(format!("node: {}", var), TraceGroup::Capture);
+            dbg_trace(format!("node: {}", var), TraceGroup::BVarCorrection);
             
             let target_class = ctx.shifted_subst[*var];
             // Only call this when `target_class` is known to contain loose bound variables. Otherwise,
@@ -97,10 +97,10 @@ fn correct_bvar_indices_core(idx: usize, binder_depth: u64, ctx: &mut Context, g
                 // or if the binder depth of that variable has not changed, then we can keep it as is. 
                 // But we must add it to the `shifted_pat` if it does not appear there yet.
                 if let Some(shifted_pat_idx) = ctx.shifted_pat_indices.get(var_node) {
-                    dbg_trace("var is needs no capture avoidance and is already contained in new RHS", TraceGroup::Capture);
+                    dbg_trace("var is needs no capture avoidance and is already contained in new RHS", TraceGroup::BVarCorrection);
                     return *shifted_pat_idx
                 } else {
-                    dbg_trace("var is needs no capture avoidance and is already and is being added to the new RHS", TraceGroup::Capture);
+                    dbg_trace("var is needs no capture avoidance and is already and is being added to the new RHS", TraceGroup::BVarCorrection);
                     let new_idx = ctx.shifted_pat.add(var_node.clone());
                     ctx.shifted_pat_indices.insert(var_node.clone(), new_idx);
                     return new_idx
@@ -110,7 +110,7 @@ fn correct_bvar_indices_core(idx: usize, binder_depth: u64, ctx: &mut Context, g
                 // to a shifted class with the correct binder depth, then simply replace the 
                 // current occurrence of `var` with that variable. Since that variable must be fresh,
                 // we expect it to already appear in `shift_pat` and thus in `pat_node_indices`.
-                dbg_trace("shifted version is already in cache", TraceGroup::Capture);
+                dbg_trace("shifted version is already in cache", TraceGroup::BVarCorrection);
                 return *ctx.shifted_pat_indices.get(&ENodeOrVar::Var(*shifted_var)).unwrap()
             } else {
                 // If the given target has not yet been shifted, create a fresh variable, replace 
@@ -121,21 +121,21 @@ fn correct_bvar_indices_core(idx: usize, binder_depth: u64, ctx: &mut Context, g
                 ctx.shifted_pat_indices.insert(ENodeOrVar::Var(fresh_var), new_idx);
                 let (sub, unions) = shift_loose_bvars_without_unions(offset(), target_class, false, graph);
                 ctx.delayed_unions.extend(unions);
-                dbg_trace(format!("var is being replaced by fresh var {} with shifted class {}", fresh_var, sub), TraceGroup::Capture);
+                dbg_trace(format!("var is being replaced by fresh var {} with shifted class {}", fresh_var, sub), TraceGroup::BVarCorrection);
                 ctx.shifted_subst.insert(fresh_var, sub);
                 ctx.cache.insert((binder_depth, target_class), fresh_var);
                 return new_idx
             }
         },
         ENodeOrVar::ENode(e) => {
-            dbg_trace(format!("node: {}", e), TraceGroup::Capture);
+            dbg_trace(format!("node: {}", e), TraceGroup::BVarCorrection);
 
             let mut expr = e.clone();
             for (i, child) in expr.children_mut().iter_mut().enumerate() {
                 // If `expr` is a binder, increase the binder depth for its body.
                 let child_binder_depth = if e.is_binder() && i == 1 { binder_depth + 1 } else { binder_depth };
                 let child_idx = usize::from(*child);
-                dbg_trace(format!("\nvisiting child number {} of pattern node {}", child_idx, idx), TraceGroup::Capture);
+                dbg_trace(format!("\nvisiting child number {} of pattern node {}", child_idx, idx), TraceGroup::BVarCorrection);
                 *child = correct_bvar_indices_core(child_idx, child_binder_depth, ctx, graph);
             }
 

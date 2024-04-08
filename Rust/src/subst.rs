@@ -4,7 +4,6 @@ use std::collections::HashSet;
 use indexmap::IndexSet;
 use crate::lean_expr::*;
 use crate::analysis::*;
-use crate::trace::*;
 
 // Binder depth.
 type Depth = u64;

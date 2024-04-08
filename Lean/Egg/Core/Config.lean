@@ -18,7 +18,7 @@ structure Gen where
 
 structure Backend where
   blockInvalidMatches := true
-  shiftCapturedBVars  := true
+  shiftCapturedBVars  := true -- This option implies `blockInvalidMatches`.
   optimizeExpl        := false
   deriving BEq
 
@@ -29,10 +29,10 @@ inductive Debug.ExitPoint
   deriving BEq, Inhabited
 
 structure Debug where
-  exitPoint  : Debug.ExitPoint := .none
-  vizPath    : Option String   := none
-  traceSubstitutions           := false
-  traceCapturedBVarShifting    := false
+  exitPoint           := Debug.ExitPoint.none
+  vizPath             := (none : Option String)
+  traceSubstitutions  := false
+  traceBVarCorrection := false
   deriving BEq
 
 end Config

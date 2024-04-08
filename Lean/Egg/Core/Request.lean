@@ -13,44 +13,44 @@ private opaque explainCongr
   (lhs rhs : Expression) (rwNames : Array String) (lhss rhss : Array Expression)
   (dirs : Array Rewrite.Directions)
   (optimizeExpl genNatLitRws genEtaRw genBetaRw blockInvalidMatches shiftCapturedBVars : Bool)
-  (traceSubstitutions traceCapturedBVarShifting : Bool)
+  (traceSubstitutions traceBVarCorrection : Bool)
   (vizPath : String) : String
 
 structure Request where
   private mk ::
-  lhs                       : Expression
-  rhs                       : Expression
-  rws                       : Rewrites.Encoded
-  optimizeExpl              : Bool
-  genNatLitRws              : Bool
-  genEtaRw                  : Bool
-  genBetaRw                 : Bool
-  blockInvalidMatches       : Bool
-  shiftCapturedBVars        : Bool
-  traceSubstitutions        : Bool
-  traceCapturedBVarShifting : Bool
-  vizPath                   : String
+  lhs                 : Expression
+  rhs                 : Expression
+  rws                 : Rewrites.Encoded
+  optimizeExpl        : Bool
+  genNatLitRws        : Bool
+  genEtaRw            : Bool
+  genBetaRw           : Bool
+  blockInvalidMatches : Bool
+  shiftCapturedBVars  : Bool
+  traceSubstitutions  : Bool
+  traceBVarCorrection : Bool
+  vizPath             : String
 
 namespace Request
 
 def encoding (goal : Congr) (rws : Rewrites) (cfg : Config) : MetaM Request := do
   return {
-    lhs                       := ← encode goal.lhs .goal cfg.toEncoding
-    rhs                       := ← encode goal.rhs .goal cfg.toEncoding
-    rws                       := ← rws.encode cfg.toEncoding
-    optimizeExpl              := cfg.optimizeExpl
-    genNatLitRws              := cfg.genNatLitRws
-    genEtaRw                  := cfg.genEtaRw
-    genBetaRw                 := cfg.genBetaRw
-    blockInvalidMatches       := cfg.blockInvalidMatches
-    shiftCapturedBVars        := cfg.shiftCapturedBVars
-    traceSubstitutions        := cfg.traceSubstitutions
-    traceCapturedBVarShifting := cfg.traceCapturedBVarShifting
-    vizPath                   := cfg.vizPath.getD ""
+    lhs                 := ← encode goal.lhs .goal cfg.toEncoding
+    rhs                 := ← encode goal.rhs .goal cfg.toEncoding
+    rws                 := ← rws.encode cfg.toEncoding
+    optimizeExpl        := cfg.optimizeExpl
+    genNatLitRws        := cfg.genNatLitRws
+    genEtaRw            := cfg.genEtaRw
+    genBetaRw           := cfg.genBetaRw
+    blockInvalidMatches := cfg.blockInvalidMatches
+    shiftCapturedBVars  := cfg.shiftCapturedBVars
+    traceSubstitutions  := cfg.traceSubstitutions
+    traceBVarCorrection := cfg.traceBVarCorrection
+    vizPath             := cfg.vizPath.getD ""
   }
 
 def run (r : Request) : Explanation.Raw :=
   explainCongr
     r.lhs r.rhs r.rws.names r.rws.lhss r.rws.rhss r.rws.dirs r.optimizeExpl r.genNatLitRws
     r.genEtaRw r.genBetaRw r.blockInvalidMatches r.shiftCapturedBVars r.traceSubstitutions
-    r.traceCapturedBVarShifting r.vizPath
+    r.traceBVarCorrection r.vizPath

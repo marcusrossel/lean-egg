@@ -30,7 +30,7 @@ typedef struct config {
     rust_bool block_invalid_matches;
     rust_bool shift_captured_bvars;
     rust_bool trace_substitutions;
-    rust_bool trace_captured_bvar_shifting;
+    rust_bool trace_bvar_correction;
 } config;
 
 typedef struct egg_result {
@@ -60,7 +60,7 @@ extern egg_result c_egg_explain_congr(
 // `block_invalid_matches`: boolean indicating whether rewrites should be skipped if variables matched bvars in an invalid way
 // `shift_captured_bvars`: boolean indicating whether rewrites should shift captured bvars to avoid invalid capturing
 // `trace_substitutions`: boolean indicating whether calls to `subst` should be traced
-// `trace_captured_bvar_shifting`: boolean indicating whether calls to `shifted_subst_for_pat` should be traced
+// `trace_bvar_correction`: boolean indicating whether calls to `correct_bvar_indices` should be traced
 // `viz_path`: string
 // return value: string explaining the rewrite sequence
 lean_obj_res lean_egg_explain_congr(
@@ -77,7 +77,7 @@ lean_obj_res lean_egg_explain_congr(
     lean_bool block_invalid_matches,
     lean_bool shift_captured_bvars,
     lean_bool trace_substitutions,
-    lean_bool trace_captured_bvar_shifting,
+    lean_bool trace_bvar_correction,
     lean_obj_arg viz_path
 ) {
     const char* init_c_str = lean_string_cstr(init);
@@ -99,14 +99,14 @@ lean_obj_res lean_egg_explain_congr(
         rws[idx] = (rewrite) { .name = name, .lhs = lhs, .rhs = rhs, .dir = dir };
     }
     config cfg = (config) { 
-        .optimize_expl                = lean_bool_to_rust(optimize_expl),  
-        .gen_nat_lit_rws              = lean_bool_to_rust(gen_nat_lit_rws),  
-        .gen_eta_rw                   = lean_bool_to_rust(gen_eta_rw),
-        .gen_beta_rw                  = lean_bool_to_rust(gen_beta_rw),
-        .block_invalid_matches        = lean_bool_to_rust(block_invalid_matches),
-        .shift_captured_bvars         = lean_bool_to_rust(shift_captured_bvars),
-        .trace_substitutions          = lean_bool_to_rust(trace_substitutions),
-        .trace_captured_bvar_shifting = lean_bool_to_rust(trace_captured_bvar_shifting), 
+        .optimize_expl         = lean_bool_to_rust(optimize_expl),  
+        .gen_nat_lit_rws       = lean_bool_to_rust(gen_nat_lit_rws),  
+        .gen_eta_rw            = lean_bool_to_rust(gen_eta_rw),
+        .gen_beta_rw           = lean_bool_to_rust(gen_beta_rw),
+        .block_invalid_matches = lean_bool_to_rust(block_invalid_matches),
+        .shift_captured_bvars  = lean_bool_to_rust(shift_captured_bvars),
+        .trace_substitutions   = lean_bool_to_rust(trace_substitutions),
+        .trace_bvar_correction = lean_bool_to_rust(trace_bvar_correction), 
     };
     const char* viz_path_c_str = lean_string_cstr(viz_path);
 

@@ -9,18 +9,18 @@ use crate::trace::*;
 
 #[repr(C)]
 pub struct Config {
-    optimize_expl:                bool, 
-    gen_nat_lit_rws:              bool, 
-    gen_eta_rw:                   bool,
-    gen_beta_rw:                  bool,
-    block_invalid_matches:        bool,
-    shift_captured_bvars:         bool,
-    trace_substitutions:          bool,
-    trace_captured_bvar_shifting: bool,
+    optimize_expl:         bool, 
+    gen_nat_lit_rws:       bool, 
+    gen_eta_rw:            bool,
+    gen_beta_rw:           bool,
+    block_invalid_matches: bool,
+    shift_captured_bvars:  bool,
+    trace_substitutions:   bool,
+    trace_bvar_correction: bool,
 }
 
 pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, cfg: Config, viz_path: Option<String>) -> Res<String> {
-    init_enabled_trace_groups(cfg.trace_substitutions, cfg.trace_captured_bvar_shifting);
+    init_enabled_trace_groups(cfg.trace_substitutions, cfg.trace_bvar_correction);
 
     let mut egraph: LeanEGraph = Default::default();
     egraph = egraph.with_explanations_enabled();

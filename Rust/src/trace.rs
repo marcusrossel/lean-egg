@@ -12,13 +12,13 @@ static mut ENABLED_TRACE_GROUPS: Option<HashSet<TraceGroup>> = None;
 #[derive(PartialEq, Eq, Hash)]
 pub enum TraceGroup {
     Subst,
-    Capture
+    BVarCorrection
 }
 
-pub fn init_enabled_trace_groups(trace_substitutions: bool, trace_captured_bvar_shifting: bool) {
+pub fn init_enabled_trace_groups(trace_substitutions: bool, trace_bvar_correction: bool) {
     let mut enabled: HashSet<TraceGroup> = HashSet::new();
     if trace_substitutions { enabled.insert(TraceGroup::Subst); }
-    if trace_captured_bvar_shifting { enabled.insert(TraceGroup::Capture); }
+    if trace_bvar_correction { enabled.insert(TraceGroup::BVarCorrection); }
     unsafe { ENABLED_TRACE_GROUPS = Some(enabled) }
 }
 

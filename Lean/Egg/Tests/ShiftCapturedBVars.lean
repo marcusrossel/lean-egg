@@ -27,22 +27,3 @@ example : True := by
   fail_if_success -- This fails because egg could not find a proof.
     have : (fun x => (x, 5).fst) = (fun _ : Nat => (fun x => x) 1) := by egg [thm₁]
   constructor
-
-theorem thm₂ : ∀ x : Nat, (fun _ => (fun _ => x) x) 0 = x :=
-  fun _ => rfl
-
--- TODO: This seems to cause an infinite loop or at least extremely long runtime in
---       `shifted_subst_for_pat` or `subst`. I think what is happening is that `thm₂` is applied in
---       the backward direction over and over again which quickly blows up the e-graph.
---       Investigate further what's happening by somehow tracing `shifted_subst_for_pat`.
-set_option egg.shiftCapturedBVars true in
-example : True := by
-  have : (fun x => (fun a => (fun a => a) a) 0) = (fun x => x) := by sorry -- egg [thm₂]
-  constructor
-
-
--- Unrelated to capture avoidance:
---
--- TODO: If we have a theorem like `(fun a b => a) x y = x`, it's only applicable in the forward
---       direction. But once we β-reduce it, it's applicable in both directions. I think that can
---       cause problems during reconstruction as we cannot reconstruct the assignment of `y`.

@@ -53,9 +53,9 @@ impl Applier<LeanExpr, LeanAnalysis> for SafeApplier {
                     let (from, did_union) = graph.union_instantiations(searcher_ast, &self.rhs.ast, subst, rule);
                     if did_union { vec![from] } else { vec![] }
                 } else {
-                    dbg_trace(format!("Start capture avoidance for\n  LHS: {}\n  RHS: {}\n  RHS Raw: {:?}\n  subst: {:?}", searcher_ast, self.rhs, self.rhs.ast.as_ref(), subst), TraceGroup::Capture);
+                    dbg_trace(format!("Start capture avoidance for\n  LHS: {}\n  RHS: {}\n  RHS Raw: {:?}\n  subst: {:?}", searcher_ast, self.rhs, self.rhs.ast.as_ref(), subst), TraceGroup::BVarCorrection);
                     let (shifted_subst, shifted_rhs) = correct_bvar_indices(subst, &self.rhs, var_depths, graph);
-                    dbg_trace("End capture avoidance\n", TraceGroup::Capture);
+                    dbg_trace("End capture avoidance\n", TraceGroup::BVarCorrection);
                     let (from, did_union) = graph.union_instantiations(searcher_ast, &shifted_rhs, &shifted_subst, rule);
                     if did_union { vec![from] } else { vec![] }
                 }
