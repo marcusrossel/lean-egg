@@ -1,13 +1,6 @@
 #include <lean/lean.h>
 #include <stdio.h>
 
-typedef uint8_t lean_bool;
-typedef _Bool rust_bool;
-
-rust_bool lean_bool_to_rust(lean_bool b) {
-    return b;
-}
-
 typedef enum rw_dir {
   NONE,
   FORWARD,
@@ -23,18 +16,18 @@ typedef struct rewrite {
 } rewrite;
 
 typedef struct config {
-    rust_bool optimize_expl;
-    rust_bool gen_nat_lit_rws;
-    rust_bool gen_eta_rw;
-    rust_bool gen_beta_rw;
-    rust_bool block_invalid_matches;
-    rust_bool shift_captured_bvars;
-    rust_bool trace_substitutions;
-    rust_bool trace_bvar_correction;
+    _Bool optimize_expl;
+    _Bool gen_nat_lit_rws;
+    _Bool gen_eta_rw;
+    _Bool gen_beta_rw;
+    _Bool block_invalid_matches;
+    _Bool shift_captured_bvars;
+    _Bool trace_substitutions;
+    _Bool trace_bvar_correction;
 } config;
 
 typedef struct egg_result {
-    rust_bool success;
+    _Bool success;
     char* expl;
 } egg_result;
 
@@ -47,21 +40,40 @@ extern egg_result c_egg_explain_congr(
     const char* viz_path
 );
 
+/*
+structure Config where
+  optimizeExpl        : Bool
+  genNatLitRws        : Bool
+  genEtaRw            : Bool
+  genBetaRw           : Bool
+  blockInvalidMatches : Bool
+  shiftCapturedBVars  : Bool
+  traceSubstitutions  : Bool
+  traceBVarCorrection : Bool
+*/
+config config_from_lean_obj(lean_obj_arg cfg) {
+    unsigned scalar_base_offset = lean_ctor_num_objs(cfg) * sizeof(void*);
+    unsigned bool_offset = sizeof(uint8_t);
+    return (config) { 
+        .optimize_expl         = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 0),  
+        .gen_nat_lit_rws       = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 1),  
+        .gen_eta_rw            = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 2),  
+        .gen_beta_rw           = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 3),  
+        .block_invalid_matches = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 4),  
+        .shift_captured_bvars  = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 5),  
+        .trace_substitutions   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6),  
+        .trace_bvar_correction = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7),  
+    };
+}
+
 // `init`: string
 // `goal`: string
 // `rw_names`: array of strings containing the names of rewrites
 // `rw_lhss`: array of strings containing the left-hands sides of rewrites
 // `rw_rhss`: array of strings containing the right-hands sides of rewrites
 // `rw_dirs`: array of uint8_t containing the directions (cf. `rw_dir`) of rewrites
-// `optimize_expl`: boolean indicating whether egg should try to shorten its explanations
-// `gen_nat_lit_rws`: boolean indicating whether egg should use additional rewrites to convert between nat-lits and `Nat.zero`/`Nat.succ`
-// `gen_eta_rw`: boolean indicating whether egg should use an additional rewrite to perform eta-reduction
-// `gen_beta_rw`: boolean indicating whether egg should use an additional rewrite to perform beta-reduction
-// `block_invalid_matches`: boolean indicating whether rewrites should be skipped if variables matched bvars in an invalid way
-// `shift_captured_bvars`: boolean indicating whether rewrites should shift captured bvars to avoid invalid capturing
-// `trace_substitutions`: boolean indicating whether calls to `subst` should be traced
-// `trace_bvar_correction`: boolean indicating whether calls to `correct_bvar_indices` should be traced
 // `viz_path`: string
+// `cfg`: an `Egg.Request.Config`
 // return value: string explaining the rewrite sequence
 lean_obj_res lean_egg_explain_congr(
     lean_obj_arg init, 
@@ -70,15 +82,8 @@ lean_obj_res lean_egg_explain_congr(
     lean_obj_arg rw_lhss, 
     lean_obj_arg rw_rhss, 
     lean_obj_arg rw_dirs,
-    lean_bool optimize_expl,
-    lean_bool gen_nat_lit_rws,
-    lean_bool gen_eta_rw,
-    lean_bool gen_beta_rw,
-    lean_bool block_invalid_matches,
-    lean_bool shift_captured_bvars,
-    lean_bool trace_substitutions,
-    lean_bool trace_bvar_correction,
-    lean_obj_arg viz_path
+    lean_obj_arg viz_path,
+    lean_obj_arg cfg
 ) {
     const char* init_c_str = lean_string_cstr(init);
     const char* goal_c_str = lean_string_cstr(goal);
@@ -98,19 +103,10 @@ lean_obj_res lean_egg_explain_congr(
         rw_dir dir = lean_unbox(rw_dirs_c_ptr[idx]);
         rws[idx] = (rewrite) { .name = name, .lhs = lhs, .rhs = rhs, .dir = dir };
     }
-    config cfg = (config) { 
-        .optimize_expl         = lean_bool_to_rust(optimize_expl),  
-        .gen_nat_lit_rws       = lean_bool_to_rust(gen_nat_lit_rws),  
-        .gen_eta_rw            = lean_bool_to_rust(gen_eta_rw),
-        .gen_beta_rw           = lean_bool_to_rust(gen_beta_rw),
-        .block_invalid_matches = lean_bool_to_rust(block_invalid_matches),
-        .shift_captured_bvars  = lean_bool_to_rust(shift_captured_bvars),
-        .trace_substitutions   = lean_bool_to_rust(trace_substitutions),
-        .trace_bvar_correction = lean_bool_to_rust(trace_bvar_correction), 
-    };
     const char* viz_path_c_str = lean_string_cstr(viz_path);
+    config rust_cfg = config_from_lean_obj(cfg);
 
-    egg_result result = c_egg_explain_congr(init_c_str, goal_c_str, rws, rws_count, cfg, viz_path_c_str);
+    egg_result result = c_egg_explain_congr(init_c_str, goal_c_str, rws, rws_count, rust_cfg, viz_path_c_str);
     free(rws);
 
     return lean_mk_string(result.expl);

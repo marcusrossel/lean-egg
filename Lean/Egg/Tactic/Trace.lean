@@ -14,11 +14,11 @@ def Request.trace (req : Request) : TacticM Unit := do
     withTraceNode `egg.frontend (fun _ => return "Goal") (collapsed := false) do
       withTraceNode `egg.frontend (fun _ => return "LHS") do trace[egg.frontend] req.lhs
       withTraceNode `egg.frontend (fun _ => return "RHS") do trace[egg.frontend] req.rhs
-    let rwsTitle := (if req.rws.isEmpty && !req.genNatLitRws then "No " else "") ++ "Rewrites"
+    let rwsTitle := (if req.rws.isEmpty && !req.cfg.genNatLitRws then "No " else "") ++ "Rewrites"
     withTraceNode `egg.frontend (fun _ => return rwsTitle) (collapsed := false) do
       for rw in req.rws do
         withTraceNode `egg.frontend (fun _ => return m!"{rw.name}") do
           trace[egg.frontend] "Directions: {rw.dirs}"
           withTraceNode `egg.frontend (fun _ => return "LHS") (collapsed := false) do trace[egg.frontend] rw.lhs
           withTraceNode `egg.frontend (fun _ => return "RHS") (collapsed := false) do trace[egg.frontend] rw.rhs
-      if req.genNatLitRws then trace[egg.frontend] "Nat Literal Conversions"
+      if req.cfg.genNatLitRws then trace[egg.frontend] "Nat Literal Conversions"
