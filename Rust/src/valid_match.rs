@@ -23,7 +23,17 @@ struct Context<'a> {
     pat:            &'a PatternAst<LeanExpr>,
     subst:          &'a Subst,
     graph:          &'a LeanEGraph,
-    parent_binders: HashMap<Var, BinderPos>
+    parent_binders: HashMap<Var, BinderPos>,
+    binder_depths:  HashMap<Var, u64>
+}
+
+// This is the return type of `match_is_valid`. If the given match is invalid, 
+// the `Invalid` case is returned. If the given match is valid, a map is returned 
+// where each variable mapping to loose bound variables is assigned its binder depth. 
+// This information is need in `correct_bvar_indices`.
+pub enum MatchValidity {
+    Invalid,
+    Valid(HashMap<Var, u64>)
 }
 
 // A match (a substitution and pattern) is valid if both:
@@ -39,11 +49,16 @@ struct Context<'a> {
 // the fact that our rewrites come from theorems of the form `forall x, y = z`. Thus, if a pattern
 // variable appears, it can never refer to a (non-loose) bound variable, as `x` cannot refer to any
 // bound variables in `y` or `z`.
-pub fn match_is_valid(subst: &Subst, pat: &PatternAst<LeanExpr>, graph: &LeanEGraph) -> bool {
-    let mut ctx = Context { pat, subst, graph, parent_binders: HashMap::new() };
+pub fn match_is_valid(subst: &Subst, pat: &PatternAst<LeanExpr>, graph: &LeanEGraph) -> MatchValidity {
+    let mut ctx = Context { pat, subst, graph, parent_binders: HashMap::new(), binder_depths: HashMap::new() };
     let root_idx = pat.as_ref().len() - 1;
     let loc = Location { pos: vec![], parent_binder: None, binder_depth: 0 };
-    match_is_valid_core(root_idx, loc, &mut ctx)
+    
+    if match_is_valid_core(root_idx, loc, &mut ctx) {
+        MatchValidity::Valid(ctx.binder_depths)
+    } else {
+        MatchValidity::Invalid
+    }
 }
 
 fn match_is_valid_core(idx: usize, loc: Location, ctx: &mut Context) -> bool {
@@ -66,8 +81,9 @@ fn match_is_valid_core(idx: usize, loc: Location, ctx: &mut Context) -> bool {
                     // then the parent binder of that occurrence must be the same as the current parent binder.
                     return loc.parent_binder == *required_parent
                 } else {
-                    // If the given variable has not been visited yet, record its parent binder.
+                    // If the given variable has not been visited yet, record its parent binder and binder depth.
                     ctx.parent_binders.insert(*var, loc.parent_binder);
+                    ctx.binder_depths.insert(*var, loc.binder_depth);
                     return true
                 }
             }

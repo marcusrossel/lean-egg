@@ -1,9 +1,7 @@
-use std::cmp::Ordering;
-use std::collections::HashMap;
 use egg::*;
 use crate::analysis::*;
 use crate::lean_expr::*;
-use crate::subst::*;
+use crate::shift_loose::*;
 
 struct Eta {
     fun: Var
@@ -11,27 +9,15 @@ struct Eta {
 
 impl Applier<LeanExpr, LeanAnalysis> for Eta {
 
-    fn apply_one(&self, egraph: &mut LeanEGraph, eta_class: Id, s: &Subst, _: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
-        let fun_class = s[self.fun];
-        if egraph[fun_class].data.loose_bvars.contains(&0) { return vec![] }
-        let shifted_fun_class = subst(fun_class, egraph, rule, &shift_down_loose_bvar);
-        if egraph.union_trusted(eta_class, shifted_fun_class, rule) {
+    fn apply_one(&self, graph: &mut LeanEGraph, eta_class: Id, subst: &Subst, _: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
+        let fun_class = subst[self.fun];
+        if graph[fun_class].data.loose_bvars.contains(&0) { return vec![] }
+        let shifted_fun_class = shift_loose_bvars(Offset::Down(1), fun_class, true, rule, graph);
+        if graph.union_trusted(eta_class, shifted_fun_class, rule) {
             vec![eta_class]
         } else {
             vec![]
         }
-    }
-}
-
-fn shift_down_loose_bvar(idx: u64, binder_depth: u64, graph: &mut LeanEGraph) -> BVarSub {
-    match idx.cmp(&binder_depth) {
-        Ordering::Greater => {
-            let idx_class = graph.add(LeanExpr::Nat(idx - 1));
-            let class = graph.add(LeanExpr::BVar(idx_class));
-            BVarSub { class, unions: HashMap::new() }
-        },
-        Ordering::Equal => panic!("η-reduction encountered invalid bvar"),
-        Ordering::Less  => unreachable!() // `subst` provides the invariant that `idx >= binder_depth`.
     }
 }
 

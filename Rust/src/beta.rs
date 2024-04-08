@@ -1,9 +1,9 @@
 use egg::*;
-use std::collections::HashMap;
 use std::cmp::Ordering;
 use crate::analysis::*;
 use crate::lean_expr::*;
 use crate::subst::*;
+use crate::shift_loose::*;
 
 struct Beta {
     body: Var,
@@ -31,24 +31,14 @@ fn subst_bvar_0(arg_class: Id) -> impl Fn(u64, u64, &mut LeanEGraph) -> BVarSub 
             Ordering::Greater => {
                 let idx_class = graph.add(LeanExpr::Nat(idx - 1));
                 let class = graph.add(LeanExpr::BVar(idx_class));
-                BVarSub { class, unions: HashMap::new() }
+                BVarSub { class, unions: Default::default() }
             },
             Ordering::Equal => {
-                let (class, unions) = subst_without_unions(arg_class, graph, &shift_up(binder_depth));
+                let (class, unions) = shift_loose_bvars_without_unions(Offset::Up(binder_depth), arg_class, false, graph);
                 BVarSub { class, unions }
             },
             Ordering::Less => unreachable!() // `subst` provides the invariant that `idx >= binder_depth`.
         }
-    }
-}
-
-// TODO: This function is duplicated from `bvar_capture.rs`.
-fn shift_up(offset: u64) -> impl Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
-    move |idx, binder_depth, graph| {
-        if idx < binder_depth { unreachable!() } // `subst` provides the invariant that `idx >= binder_depth`. 
-        let idx_class = graph.add(LeanExpr::Nat(idx + offset));
-        let class = graph.add(LeanExpr::BVar(idx_class));
-        BVarSub { class, unions: HashMap::new() }
     }
 }
 

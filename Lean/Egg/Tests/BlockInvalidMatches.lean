@@ -9,6 +9,7 @@ theorem thm₁ : ∀ y x : Nat, (fun _ => (fun _ => x) x) y = x :=
 -- In this example egg finds a proof, but we're not performing proof reconstruction (which would be
 -- impossible) as a result of setting `exitPoint := some .beforeProof`.
 set_option egg.blockInvalidMatches false in
+set_option egg.shiftCapturedBVars false in
 example : False := by
   have h : (fun x => (fun a => (fun a => a) a) 0) = (fun x => x) := by
     egg (config := { exitPoint := some .beforeProof }) [thm₁]

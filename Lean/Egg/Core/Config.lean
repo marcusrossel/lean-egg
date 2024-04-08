@@ -18,7 +18,7 @@ structure Gen where
 
 structure Backend where
   blockInvalidMatches := true
-  shiftCapturedBVars  := false
+  shiftCapturedBVars  := true
   optimizeExpl        := false
   deriving BEq
 

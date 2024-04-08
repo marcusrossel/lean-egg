@@ -1,5 +1,9 @@
 import Egg
 
+set_option egg.shiftCapturedBVars true in
+example (h : ∀ x y : Nat, x = y ↔ y = x) : (∀ x y : Nat, x = y) ↔ (∀ a b : Nat, b = a + 0) := by
+  egg [h, Nat.add_zero]
+
 -- We have to disable β-reduction as part of normalization, as otherwise `thm₁,₂` are useless, and
 -- disable β-reduction in egg, as this interferes with the test cases.
 set_option egg.betaReduceRws false
@@ -35,13 +39,6 @@ set_option egg.shiftCapturedBVars true in
 example : True := by
   have : (fun x => (fun a => (fun a => a) a) 0) = (fun x => x) := by sorry -- egg [thm₂]
   constructor
-
--- BUG: This example also shows that something about capture avoidance is fundamentally broken, as
---      it creates an e-graph where number nodes are in the same e-classes as things like
---      application-nodes. Same goes for name nodes like `Nat.add`.
-example (h : ∀ x y : Nat, x = y ↔ y = x) : (∀ x y : Nat, x = y) ↔ (∀ a b : Nat, b = a + 0) := by
-  sorry -- egg [h, Nat.add_zero]
-
 
 
 -- Unrelated to capture avoidance:

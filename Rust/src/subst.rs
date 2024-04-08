@@ -7,27 +7,30 @@ use crate::analysis::*;
 use crate::trace::*;
 
 // Binder depth.
-type Depth := u64;
+type Depth = u64;
 
 // Identifiers of e-classes already present in an e-graph prior to any substitution.
-type SrcId := Id;
+type SrcId = Id;
 
 // Identifiers of substitute e-classes. That is, those e-classes which are created
 // during substitution.
-type SubId := Id;
+type SubId = Id;
 
 // An index of an e-node in `Context.todo`.
-type TodoIdx := usize;
+type TodoIdx = usize;
+
+// A set of e-class pairs which should be unioned.
+pub type Unions = HashSet<(SubId, SubId)>;
 
 // A bound variable substitute is what is returned by the bound variables substitution function
-// used with `subst`. The `class` will be merged into the bound variables substitute class. A
+// used with `subst`. The `class` will be merged into the bound variable's substitute class. A
 // simple example of this is a class containing just a single e-node, like a shifted bound variable.
 // If the `class` is constructed in a more complex manner, all unions which occur as part of this
 // construction should be delayed, as they might otherwise affect the traversal of `subst`. They
 // should therefore be passed along in the `unions`, which are performed at the end of `subst`.
 pub struct BVarSub {
     pub class: SubId,
-    pub unions: HashMap<SubId, HashSet<SubId>>
+    pub unions: HashSet<(SubId, SubId)>
 }
 
 // A "target" is an e-class at a specific binder depth. These two values need to be 
@@ -48,8 +51,7 @@ struct Context {
     // The substitution map maps a given e-class target to a new substituted e-class.
     sub: HashMap<Target, SubId>,
     // The set of unions that need to be performed after the main DFS of subsitution has completed.
-    // For each `unions.get(c) = Some cs`, the unions need to be performed for all e-classes in `{c} ∪ cs`.
-    unions: HashMap<SubId, HashSet<SubId>>,   
+    unions: Unions,   
     // The set of e-nodes which are waiting for other e-classes to be subsituted before being able to
     // be substituted themselves. An e-node appears in this set, when it tried to substitute a child 
     // e-class which is work-in-progress (see `Context.wip`). That is, when there's a loop in the e-graph.
@@ -68,15 +70,15 @@ struct Context {
 // Creates a new e-class which is the same as the given `class` but substitutes all loose bound variables 
 // in its sub-graph according to the given substitution function.
 pub fn subst<B>(class: SrcId, graph: &mut LeanEGraph, reason: Symbol, bvar_subst: &B) -> SubId 
-where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
+where B: Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
     let (s, u) = subst_without_unions(class, graph, bvar_subst);
     perform_unions(u, reason, graph);
     return s
 }
 
 // Same as `subst` but returns the generated unions instead of performing them.
-pub fn subst_without_unions<B>(class: SrcId, graph: &mut LeanEGraph, bvar_subst: &B) -> (SubId, HashMap<SubId, HashSet<SubId>>)
-where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
+pub fn subst_without_unions<B>(class: SrcId, graph: &mut LeanEGraph, bvar_subst: &B) -> (SubId, Unions)
+where B: Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
     let tgt = Target { class, depth: 0 };
     let mut ctx: Context = Default::default();
     let s = subst_core(&tgt, &mut ctx, graph, bvar_subst).unwrap();
@@ -84,18 +86,16 @@ where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
 }
 
 // TODO: This might be the function in which to control justification propagation.
-fn perform_unions(unions: HashMap<SubId, HashSet<SubId>>, reason: Symbol, graph: &mut LeanEGraph) {
-    for (class, equivs) in unions.iter() {
-        for other in equivs {
-            graph.union_trusted(*class, *other, reason);
-        }
+pub fn perform_unions(unions: Unions, reason: Symbol, graph: &mut LeanEGraph) {
+    for (lhs, rhs) in unions.iter() {
+        graph.union_trusted(*lhs, *rhs, reason);
     }
 }
 
 // When this function returns `None`, that means that a substitution for the given 
 // e-class target could not yet be created.
 fn subst_core<B>(tgt: &Target, ctx: &mut Context, graph: &mut LeanEGraph, bvar_subst: &B) -> Option<SubId> 
-where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
+where B: Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
     if let Some(&s) = ctx.sub.get(tgt) {
         // If the given e-class target has already been substituted, 
         // return the substitute immediately.
@@ -123,7 +123,7 @@ where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
 
 // Implementation detail of `subst_core`.
 fn subst_core_new_target<B>(tgt: &Target, ctx: &mut Context, graph: &mut LeanEGraph, bvar_subst: &B) -> Option<SubId> 
-where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
+where B: Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
     // Gets and sorts the nodes we are going to visit by `nonrec_cmp`. Moving non-recursive 
     // e-nodes to the  front is simply an optimization as this means that we tend to visit 
     // leaves first which reduces the number of todo e-nodes and corresponding callbacks.
@@ -160,7 +160,7 @@ where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
 // If this is successful, the substitute is added to the substitute e-class in `ctx.sub`.
 // If it fails, the e-node is registered as a todo node.
 fn subst_recursive_node<B>(rec_node: &LeanExpr, tgt: &Target, ctx: &mut Context, graph: &mut LeanEGraph, bvar_subst: &B)
-where B : Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
+where B: Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
     let mut sub_node = rec_node.clone();
     let mut pending = HashSet::<Target>::new();
 
@@ -199,7 +199,7 @@ fn add_subst_class(class: SubId, tgt: &Target, ctx: &mut Context, graph: &mut Le
     if let Some(&s) = ctx.sub.get(tgt) {
         // If the given e-class target already has a substitute, simply record the new class
         // as requiring a union with that substitute e-class.
-        ctx.unions.entry(s).or_insert(HashSet::new()).insert(class);
+        ctx.unions.insert((s, class));
     } else {
         // If the given class is the first substitute for the given e-class target, 
         // create the substitute e-class from it.
@@ -247,12 +247,7 @@ fn process_todo(todo: TodoIdx, ctx: &mut Context, graph: &mut LeanEGraph) {
         let child_tgt = Target { class: *child, depth: depth };
         // The substitutes of children of a todo node are expected to be present 
         // when this function (`process_todo`) is called.
-        if let Some(&child_sub) = ctx.sub.get(&child_tgt) {
-            *child = child_sub;
-        } else {
-            panic!("'process_todo' tried to access absent substitute child #{} of node {:?}", idx, node);
-        }
-        
+        *child = *ctx.sub.get(&child_tgt).unwrap();
     }
 
     add_subst_node(sub_node, &tgt, ctx, graph);
