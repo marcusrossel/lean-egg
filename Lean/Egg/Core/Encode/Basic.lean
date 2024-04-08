@@ -59,10 +59,8 @@ where
 
   encodeLam (ty b : Expr) : EncodeM Expression := do
     let dom ← if (← config).eraseLambdaDomains then pure Expression.erased else go ty
-    withInstantiatedBVar ty b fun body => do
-      return s!"(λ {dom} {← go body})"
+    withInstantiatedBVar ty b fun body => return s!"(λ {dom} {← go body})"
 
   encodeForall (ty b : Expr) : EncodeM Expression := do
     let dom ← if (← config).eraseForallDomains then pure Expression.erased else go ty
-    withInstantiatedBVar ty b fun body => do
-      return s!"(∀ {dom} {← go body})"
+    withInstantiatedBVar ty b fun body => return s!"(∀ {dom} {← go body})"

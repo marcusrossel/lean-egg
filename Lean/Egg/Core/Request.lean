@@ -46,11 +46,9 @@ def encoding (goal : Congr) (rws : Rewrites) (cfg : Egg.Config) : MetaM Request 
     cfg
   }
 
--- TODO: Can you pass a `Rewrites.Encoded` instead of splitting it into arrays of its fields?
 @[extern "lean_egg_explain_congr"]
 private opaque explainCongr
-  (lhs rhs : Expression) (rwNames : Array String) (lhss rhss : Array Expression)
-  (dirs : Array Rewrite.Directions) (vizPath : String) (cfg : Request.Config) : String
+  (lhs rhs : Expression) (rws : Rewrites.Encoded) (vizPath : String) (cfg : Request.Config) : String
 
-def run (r : Request) : Explanation.Raw :=
-  explainCongr r.lhs r.rhs r.rws.names r.rws.lhss r.rws.rhss r.rws.dirs r.vizPath r.cfg
+def run (req : Request) : Explanation.Raw :=
+  explainCongr req.lhs req.rhs req.rws req.vizPath req.cfg

@@ -25,7 +25,7 @@ mod valid_match;
 
 #[repr(C)]
 #[derive(PartialEq)]
-pub enum RewriteDirection {
+pub enum RewriteDirections {
     None,
     Forward,
     Backward,
@@ -37,7 +37,7 @@ pub struct CRewrite {
     name: *const c_char,
     lhs:  *const c_char,
     rhs:  *const c_char,
-    dir:  RewriteDirection
+    dirs: RewriteDirections
 }
 
 #[repr(C)]
@@ -57,10 +57,10 @@ fn rw_templates_from_c(rws: &[CRewrite]) -> Res<Vec<RewriteTemplate>> {
         let rhs_str    = rhs_c_str.to_str().unwrap();
         let lhs        = Pattern::from_str(lhs_str).expect("Failed to parse lhs");
         let rhs        = Pattern::from_str(rhs_str).expect("Failed to parse rhs");
-        if rw.dir == RewriteDirection::Forward || rw.dir == RewriteDirection::Both {
+        if rw.dirs == RewriteDirections::Forward || rw.dirs == RewriteDirections::Both {
             res.push(RewriteTemplate { name: name_str.to_string(), lhs: lhs.clone(), rhs: rhs.clone() })
         }
-        if rw.dir == RewriteDirection::Backward || rw.dir == RewriteDirection::Both {
+        if rw.dirs == RewriteDirections::Backward || rw.dirs == RewriteDirections::Both {
             // It is important that we use the "-rev" suffix for reverse rules here, as this is also
             // what's used for adding the reverse rule when using egg's `rewrite!(_; _ <=> _)` macro.
             // If we choose another naming scheme, egg may complain about duplicate rules when 
