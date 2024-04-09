@@ -26,17 +26,3 @@ abbrev Encoded := Array Rewrite.Encoded
 
 def encode (rws : Rewrites) (cfg : Config.Encoding) : MetaM Rewrites.Encoded :=
   rws.mapM (Rewrite.encode cfg)
-
-namespace Encoded
-
-def names (rws : Encoded) : Array String :=
-  rws.map (·.name)
-
-def lhss (rws : Encoded) : Array Expression :=
-  rws.map (·.lhs)
-
-def rhss (rws : Encoded) : Array Expression :=
-  rws.map (·.rhs)
-
-def dirs (rws : Encoded) : Array Rewrite.Directions :=
-  rws.map (·.dirs)

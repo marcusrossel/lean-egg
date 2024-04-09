@@ -87,7 +87,7 @@ config config_from_lean_obj(lean_obj_arg cfg) {
     };
 }
 
-extern char* c_egg_explain_congr(
+extern char* egg_explain_congr(
     const char* init, 
     const char* goal, 
     rewrite* rws, 
@@ -112,7 +112,7 @@ lean_obj_res run_egg_request(lean_obj_arg req) {
     const char* viz_path = lean_string_cstr(lean_ctor_get(req, 3));
     config cfg           = config_from_lean_obj(lean_ctor_get(req, 4));
 
-    char* result = c_egg_explain_congr(lhs, rhs, rws, rws_count, cfg, viz_path);
+    char* result = egg_explain_congr(lhs, rhs, rws, rws_count, cfg, viz_path);
     free(rws);
 
     return lean_mk_string(result);

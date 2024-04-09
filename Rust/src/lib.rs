@@ -67,7 +67,7 @@ fn rw_templates_from_c(rws: &[CRewrite]) -> Res<Vec<RewriteTemplate>> {
 }
 
 #[no_mangle]
-pub extern "C" fn c_egg_explain_congr(
+pub extern "C" fn egg_explain_congr(
     init_str_ptr: *const c_char, 
     goal_str_ptr: *const c_char, 
     rws_ptr: *const CRewrite, 
