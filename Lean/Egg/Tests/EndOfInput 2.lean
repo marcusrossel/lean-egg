@@ -4,7 +4,4 @@ import Egg
 -- "Unexpected end of input".
 
 example : 0 = 0 := by
-  egg
-
-example : 0 = 0 := by
   egg (config := { optimizeExpl := true })
