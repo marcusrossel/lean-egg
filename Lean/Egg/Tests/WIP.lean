@@ -54,3 +54,9 @@ example : True := by
 -- TODO: If we have a theorem like `(fun a b => a) x y = x`, it's only applicable in the forward
 --       direction. But once we β-reduce it, it's applicable in both directions. I think that can
 --       cause problems during reconstruction as we cannot reconstruct the assignment of `y`.
+
+
+
+-- TODO: Something about tc-specialization isn'T quite working yet.
+--       The first calc step in inv_eq_of_mul_eq_one_left should be doable with egg, but no tc-spec
+--       is generated.
