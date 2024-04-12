@@ -1,4 +1,5 @@
 import Egg
+import Lean
 
 class Group (α) where
   zero          : α
@@ -27,8 +28,7 @@ theorem neg_add_cancel_left : -a + (a + b) = b := by group
 
 theorem add_neg_cancel_left : a + (-a + b) = b := by group
 
--- TODO: This test case should be fixed by typeclass specialization.
-theorem neg_zero : -(0 : G) = 0 := by sorry -- group
+theorem neg_zero : -(0 : G) = 0 := by group
 
 -- TODO: What is the proof of this?
 theorem neg_add : -(a + b) = -b + -a := by

@@ -1,6 +1,7 @@
 import Egg.Core.Request
 import Egg.Core.Explanation.Proof
 import Egg.Core.Gen.TcProjs
+import Egg.Core.Gen.TcSpecs
 import Egg.Tactic.Config.Option
 import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Explanation
@@ -42,7 +43,8 @@ private def genRewrites (goal : Goal) (rws : TSyntax `egg_rws) (cfg : Config) : 
   if cfg.genTcProjRws then
     let tcProjTargets := #[(goal.type, Source.goal)] ++ (rws.map fun rw => (rw.toCongr, rw.src))
     rws := rws ++ (← genTcProjReductions tcProjTargets cfg.betaReduceRws cfg.etaReduceRws)
-  if cfg.explode then rws := rws ++ (← rws.explode)
+  if cfg.genTcSpecRws then
+    rws := rws ++ (← genTcSpecializations rws)
   return rws
 
 private def processRawExpl

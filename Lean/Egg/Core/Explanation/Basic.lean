@@ -1,8 +1,7 @@
 import Egg.Core.Source
-import Egg.Core.Rewrites.Directions
+import Egg.Core.Directions
 
 open Lean
-open Egg.Rewrite (Direction)
 
 namespace Egg.Explanation
 

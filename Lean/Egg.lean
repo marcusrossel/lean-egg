@@ -3,10 +3,11 @@ import Egg.Core.Encode.EncodeM
 import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Proof
 import Egg.Core.Gen.TcProjs
+import Egg.Core.Gen.TcSpecs
 import Egg.Core.Rewrites.Basic
-import Egg.Core.Rewrites.Directions
 import Egg.Core.Config
 import Egg.Core.Congr
+import Egg.Core.Directions
 import Egg.Core.MVars
 import Egg.Core.Request
 import Egg.Core.Source

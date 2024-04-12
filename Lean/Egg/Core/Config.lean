@@ -10,10 +10,10 @@ structure Encoding where
 
 structure Gen where
   genTcProjRws := true
+  genTcSpecRws := true
   genNatLitRws := true
   genEtaRw     := true
   genBetaRw    := true
-  explode      := true
   deriving BEq
 
 structure Backend where

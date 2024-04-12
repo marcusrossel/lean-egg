@@ -10,7 +10,7 @@ structure Rewrite.Encoded where
   name : String
   lhs  : Expression
   rhs  : Expression
-  dirs : Rewrite.Directions
+  dirs : Directions
 
 def Rewrite.encode (cfg : Config.Encoding) (rw : Rewrite) : MetaM Encoded :=
   return {

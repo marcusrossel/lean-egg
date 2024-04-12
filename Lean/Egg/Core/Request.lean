@@ -1,6 +1,5 @@
 import Egg.Core.Encode.Rewrites
 import Egg.Core.Config
-import Egg.Core.Gen.Explosion
 import Egg.Core.Explanation.Basic
 import Egg.Core.Rewrites.Basic
 open Lean

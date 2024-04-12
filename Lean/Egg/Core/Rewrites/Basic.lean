@@ -1,4 +1,4 @@
-import Egg.Core.Rewrites.Directions
+import Egg.Core.Directions
 import Egg.Core.MVars
 import Egg.Core.Normalize
 import Egg.Core.Congr
@@ -34,8 +34,8 @@ def from? (proof : Expr) (type : Expr) (src : Source) (beta eta : Bool) : MetaM 
   type ← normalize type beta eta
   let proof := mkAppN proof args
   let some cgr ← Congr.from? type | return none
-  let lhsMVars := MVars.collect cgr.lhs
-  let rhsMVars := MVars.collect cgr.rhs
+  let lhsMVars ← MVars.collect cgr.lhs
+  let rhsMVars ← MVars.collect cgr.rhs
   return some { cgr with proof, src, lhsMVars, rhsMVars }
 
 def validDirs (rw : Rewrite) : Directions :=
@@ -54,56 +54,31 @@ def eqProof (rw : Rewrite) : MetaM Expr := do
   | .eq  => return rw.proof
   | .iff => mkPropExt rw.proof
 
--- TODO: Factor out some parts of this as functions on `MVars`.
+def freshWithSubst (rw : Rewrite) (src : Source := rw.src) : MetaM (Rewrite × MVars.Subst) := do
+  let (lhsMVars, subst) ← rw.lhsMVars.fresh
+  let (rhsMVars, subst) ← rw.rhsMVars.fresh (init := subst)
+  let rw' := { rw with
+    lhs   := subst.apply rw.lhs
+    rhs   := subst.apply rw.rhs
+    proof := subst.apply rw.proof
+    src, lhsMVars, rhsMVars
+  }
+  return (rw', subst)
+
 -- Returns the same rewrite but with all (expression and level) mvars replaced by fresh mvars. This
 -- is used during proof reconstruction, as rewrites may be used multiple times but instantiated
 -- differently. If we don't use fresh mvars, the mvars will already be assigned and new assignment
 -- (via `isDefEq`) will fail.
-def fresh (rw : Rewrite) (src : Source := rw.src) : MetaM Rewrite := do
-  let (mvarSubst, lmvarSubst, lhsMVars) ← mkSubsts ∅ ∅ rw.lhsMVars
-  let (mvarSubst, lmvarSubst, rhsMVars) ← mkSubsts mvarSubst lmvarSubst rw.rhsMVars
-  let lhs   := applySubsts rw.lhs   mvarSubst lmvarSubst
-  let rhs   := applySubsts rw.rhs   mvarSubst lmvarSubst
-  let proof := applySubsts rw.proof mvarSubst lmvarSubst
-  return { rw with lhs, rhs, proof, src, lhsMVars, rhsMVars }
-where
-  applySubsts (e : Expr) (mvarSubst : HashMap MVarId Expr) (lmvarSubst : HashMap LMVarId Level) : Expr :=
-    let replaceLvl : Level → Option Level
-      | .mvar id => lmvarSubst.find? id
-      | _ => none
-    let replaceExpr : Expr → Option Expr
-      | .mvar id         => mvarSubst.find? id
-      | .sort lvl        => Expr.sort <| lvl.replace replaceLvl
-      | .const name lvls => Expr.const name <| lvls.map (·.replace replaceLvl)
-      | _                => none
-    e.replace replaceExpr
-
-  mkSubsts (mvarSubst : HashMap MVarId Expr) (lmvarSubst : HashMap LMVarId Level) (mvars : MVars) :
-      MetaM (HashMap MVarId Expr × HashMap LMVarId Level × MVars) := do
-    let mut mvarSubst          := mvarSubst
-    let mut lmvarSubst         := lmvarSubst
-    let mut freshMVars : MVars := {}
-    for var in mvars.expr do
-      if let some fresh := mvarSubst.find? var then
-        freshMVars := { freshMVars with expr := freshMVars.expr.insert fresh.mvarId! }
-      else
-        let fresh ← mkFreshExprMVar (← var.getType)
-        mvarSubst := mvarSubst.insert var fresh
-        freshMVars := { freshMVars with expr := freshMVars.expr.insert fresh.mvarId! }
-    for var in mvars.lvl do
-      if let some fresh := lmvarSubst.find? var then
-        freshMVars := { freshMVars with lvl := freshMVars.lvl.insert fresh.mvarId! }
-      else
-        let fresh ← mkFreshLevelMVar
-        lmvarSubst := lmvarSubst.insert var fresh
-        freshMVars := { freshMVars with lvl := freshMVars.lvl.insert fresh.mvarId! }
-    return (mvarSubst, lmvarSubst, freshMVars)
+def fresh (rw : Rewrite) (src : Source := rw.src) : MetaM Rewrite :=
+  Prod.fst <$> rw.freshWithSubst src
 
 def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
   return { rw with
-    lhs   := ← Lean.instantiateMVars rw.lhs
-    rhs   := ← Lean.instantiateMVars rw.rhs
-    proof := ← Lean.instantiateMVars rw.proof
+    lhs      := ← Lean.instantiateMVars rw.lhs
+    rhs      := ← Lean.instantiateMVars rw.rhs
+    proof    := ← Lean.instantiateMVars rw.proof
+    lhsMVars := ← rw.lhsMVars.removeAssigned
+    rhsMVars := ← rw.rhsMVars.removeAssigned
   }
 
 end Rewrite

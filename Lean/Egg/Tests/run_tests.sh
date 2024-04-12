@@ -33,8 +33,10 @@ for file in "$tests_dir"/*; do
                 echo -n "Testing $file_name ..."
             fi
             
-            module_name="$module_prefix«$file_name»"
-            output=$(lake build $module_name 2>&1)
+            left_quote='«'
+            right_quote='»'
+            module_name="$module_prefix$left_quote$file_name$right_quote"
+            output=$(lake build "$module_name" 2>&1)
 
             if [[ $? -eq 0 ]]; then
                 if grep -q "sorry" "$file"; then

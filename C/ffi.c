@@ -20,11 +20,11 @@ structure Rewrite.Encoded where
   name : String
   lhs  : Expression
   rhs  : Expression
-  dirs : Rewrite.Directions
+  dirs : Directions
 
 abbrev Expression := String
 
-inductive Rewrite.Directions where
+inductive Directions where
   | none
   | forward
   | backward

@@ -28,6 +28,10 @@ register_option egg.genTcProjRws : Bool := {
   defValue := ({} : Config).genTcProjRws
 }
 
+register_option egg.genTcSpecRws : Bool := {
+  defValue := ({} : Config).genTcSpecRws
+}
+
 register_option egg.genNatLitRws : Bool := {
   defValue := ({} : Config).genNatLitRws
 }
@@ -38,10 +42,6 @@ register_option egg.genEtaRw : Bool := {
 
 register_option egg.genBetaRw : Bool := {
   defValue := ({} : Config).genBetaRw
-}
-
-register_option egg.explode : Bool := {
-  defValue := ({} : Config).explode
 }
 
 register_option egg.blockInvalidMatches : Bool := {
@@ -63,10 +63,10 @@ def Config.fromOptions : MetaM Config := return {
     betaReduceRws       := egg.betaReduceRws.get (← getOptions)
     etaReduceRws        := egg.etaReduceRws.get (← getOptions)
     genTcProjRws        := egg.genTcProjRws.get (← getOptions)
+    genTcSpecRws        := egg.genTcSpecRws.get (← getOptions)
     genNatLitRws        := egg.genNatLitRws.get (← getOptions)
     genEtaRw            := egg.genEtaRw.get (← getOptions)
     genBetaRw           := egg.genBetaRw.get (← getOptions)
-    explode             := egg.explode.get (← getOptions)
     blockInvalidMatches := egg.blockInvalidMatches.get (← getOptions)
     shiftCapturedBVars  := egg.shiftCapturedBVars.get (← getOptions)
     optimizeExpl        := egg.optimizeExpl.get (← getOptions)
