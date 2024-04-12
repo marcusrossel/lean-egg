@@ -32,6 +32,7 @@ inductive Source.NatLit where
 
 inductive Source where
   | goal
+  | guide (idx : Nat)
   | explicit (idx : Nat) (eqn? : Option Nat)
   | star (id : FVarId)
   | tcProj (src : Source) (side : Side) (pos : SubExpr.Pos)
@@ -56,6 +57,7 @@ def NatLit.description : Source.NatLit → String
 
 def description : Source → String
   | goal                    => "⊢"
+  | guide idx               => s!"↣{idx}"
   | explicit idx none       => s!"#{idx}"
   | explicit idx (some eqn) => s!"#{idx}/{eqn}"
   | star id                 => s!"*{id.uniqueIdx!}"

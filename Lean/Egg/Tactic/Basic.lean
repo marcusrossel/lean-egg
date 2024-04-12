@@ -74,7 +74,7 @@ elab "egg " mod:egg_cfg_mod rws:egg_rws base:(egg_base)? : tactic => do
     let amb  ← getAmbientMVars
     let goal ← parseGoal goal base
     let rws  ← genRewrites goal rws cfg
-    let req  ← Request.encoding goal.type rws cfg
+    let req  ← Request.encoding goal.type rws #[] cfg
     req.trace
     if cfg.exitPoint == .beforeEqSat then goal.id.admit; return
     let rawExpl := req.run

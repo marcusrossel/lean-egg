@@ -31,9 +31,13 @@ theorem add_neg_cancel_left : a + (-a + b) = b := by group
 theorem neg_zero : -(0 : G) = 0 := by group
 
 theorem neg_add : -(a + b) = -b + -a := by
-  calc -(a + b) = -b + -a + (a + b) + -(a + b) := by group
-              _ = -b + -a                      := by group
+  calc _ = -b + -a + (a + b) + -(a + b) := by group
+       _ = _                            := by group
 
 theorem inv_inv : -(-a) = a := by
-  calc -(-a) = -(-a) + (-a + a) := by group
-           _ = a                := by group
+  calc _ = -(-a) + (-a + a) := by group
+       _ = _                := by group
+
+/-
+group via -(-a) + (-a + a), -b + -a + (a + b) + -(a + b)
+-/

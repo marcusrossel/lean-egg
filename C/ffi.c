@@ -18,11 +18,9 @@ typedef struct rewrite {
 /*
 structure Rewrite.Encoded where
   name : String
-  lhs  : Expression
-  rhs  : Expression
+  lhs  : String
+  rhs  : String
   dirs : Directions
-
-abbrev Expression := String
 
 inductive Directions where
   | none
@@ -48,6 +46,16 @@ rewrite* rewrites_from_lean_obj(lean_obj_arg rws) {
         rust_rws[idx] = rewrite_from_lean_obj(rws_c_ptr[idx]);
     }
     return rust_rws;
+}
+
+const char** guides_from_lean_obj(lean_obj_arg guides) {
+    lean_object** guides_c_ptr = lean_array_cptr(guides);
+    size_t guides_count = lean_array_size(guides);
+    const char** rust_guides = malloc(guides_count * sizeof(const char*));
+    for (int idx = 0; idx < guides_count; idx++) {
+        rust_guides[idx] = lean_string_cstr(guides_c_ptr[idx]);
+    }
+    return rust_guides;
 }
 
 typedef struct config {
@@ -92,15 +100,18 @@ extern char* egg_explain_congr(
     const char* goal, 
     rewrite* rws, 
     size_t rws_count, 
+    const char** guides, 
+    size_t guides_count, 
     config cfg,
     const char* viz_path
 );
 
 /*
 structure Egg.Request where
-  lhs     : Expression
-  rhs     : Expression
-  rws     : Rewrites.Encoded
+  lhs     : String
+  rhs     : String
+  rws     : Array Rewrite.Encoded
+  guides  : Array String
   vizPath : String
   cfg     : Request.Config
 */
@@ -109,10 +120,12 @@ lean_obj_res run_egg_request(lean_obj_arg req) {
     const char* rhs      = lean_string_cstr(lean_ctor_get(req, 1));
     rewrite* rws         = rewrites_from_lean_obj(lean_ctor_get(req, 2));
     size_t rws_count     = lean_array_size(lean_ctor_get(req, 2));
-    const char* viz_path = lean_string_cstr(lean_ctor_get(req, 3));
-    config cfg           = config_from_lean_obj(lean_ctor_get(req, 4));
+    const char** guides  = guides_from_lean_obj(lean_ctor_get(req, 3));
+    size_t guides_count  = lean_array_size(lean_ctor_get(req, 3));
+    const char* viz_path = lean_string_cstr(lean_ctor_get(req, 4));
+    config cfg           = config_from_lean_obj(lean_ctor_get(req, 5));
 
-    char* result = egg_explain_congr(lhs, rhs, rws, rws_count, cfg, viz_path);
+    char* result = egg_explain_congr(lhs, rhs, rws, rws_count, guides, guides_count, cfg, viz_path);
     free(rws);
 
     return lean_mk_string(result);

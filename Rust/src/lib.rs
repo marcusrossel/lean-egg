@@ -72,6 +72,8 @@ pub extern "C" fn egg_explain_congr(
     goal_str_ptr: *const c_char, 
     rws_ptr: *const CRewrite, 
     rws_count: usize,
+    guides_ptr: *const *const c_char, 
+    guides_count: usize,
     cfg: Config,
     viz_path_ptr: *const c_char
 ) -> *const c_char {
@@ -82,6 +84,7 @@ pub extern "C" fn egg_explain_congr(
     let goal = String::from_utf8_lossy(goal_c_str.to_bytes()).to_string();
     assert!(rws_ptr != null()); 
     let c_rws = unsafe { std::slice::from_raw_parts(rws_ptr, rws_count) };
+    let c_guides = unsafe { std::slice::from_raw_parts(guides_ptr, guides_count) };
 
     // Note: The `into_raw`s below are important, as otherwise Rust deallocates the string.
     // TODO: I think this is a memory leak right now.
@@ -93,11 +96,16 @@ pub extern "C" fn egg_explain_congr(
     }
     let rw_templates = rw_templates.unwrap();
 
+    let guides = c_guides.iter().map(|&guide_c_str| {
+        let c_str = unsafe { CStr::from_ptr(guide_c_str) };
+        String::from_utf8_lossy(c_str.to_bytes()).to_string()
+    }).collect();    
+
     let viz_path_c_str = unsafe { CStr::from_ptr(viz_path_ptr) };
     let raw_viz_path = String::from_utf8_lossy(viz_path_c_str.to_bytes()).to_string();
     let viz_path = if raw_viz_path.is_empty() { None } else { Some(raw_viz_path) };
 
-    let expl = explain_congr(init, goal, rw_templates, cfg, viz_path);
+    let expl = explain_congr(init, goal, rw_templates, guides, cfg, viz_path);
     if let Err(expl_err) = expl {
         let rws_err_c_str = CString::new(expl_err.to_string()).expect("conversion of error message to C-string failed");
         return rws_err_c_str.into_raw()
