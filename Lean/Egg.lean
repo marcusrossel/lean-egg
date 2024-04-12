@@ -19,5 +19,6 @@ import Egg.Tactic.Config.Option
 import Egg.Tactic.Base
 import Egg.Tactic.Basic
 import Egg.Tactic.Explanation
+import Egg.Tactic.Guides
 import Egg.Tactic.Rewrites
 import Egg.Tactic.Trace

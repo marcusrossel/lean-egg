@@ -19,9 +19,9 @@ instance [Group α] : OfNat α 0 where ofNat := zero
 
 variable [Group G] {a b : G}
 
--- Note: Using `@add_assoc` etc, produces `.proj` expressions.
-macro "group" : tactic => `(tactic|
-  egg [add_assoc, zero_add, add_zero, add_left_neg, add_right_neg]
+open Egg.Guides Egg.Config.Modifier in
+macro "group" mod:egg_cfg_mod base:(egg_base)? guides:(egg_guides)? : tactic => `(tactic|
+  egg $mod [add_assoc, zero_add, add_zero, add_left_neg, add_right_neg] $[$base]? $[$guides]?
 )
 
 theorem neg_add_cancel_left : -a + (a + b) = b := by group
@@ -38,6 +38,9 @@ theorem inv_inv : -(-a) = a := by
   calc _ = -(-a) + (-a + a) := by group
        _ = _                := by group
 
-/-
-group via -(-a) + (-a + a), -b + -a + (a + b) + -(a + b)
--/
+theorem neg_add' : -(a + b) = -b + -a := by
+  group via -b + -a + (a + b) + -(a + b)
+
+-- BUG: Try adding a hypothesis. This should cause the backend to crash.
+theorem inv_inv' : -(-a) = a := by
+  group via -(-a) + (-a + a)

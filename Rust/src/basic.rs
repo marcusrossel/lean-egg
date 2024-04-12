@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use egg::*;
 use crate::result::*;
 use crate::analysis::*;
@@ -47,6 +49,7 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
     
     let mut runner = Runner::default()
         .with_egraph(egraph)
+        .with_time_limit(Duration::from_secs(10))
         .with_hook(move |runner| {
             if let Some(path) = &viz_path {
                 runner.egraph.dot().to_dot(format!("{}/{}.dot", path, runner.iterations.len())).unwrap();

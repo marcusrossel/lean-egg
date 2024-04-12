@@ -39,14 +39,15 @@ syntax ("/" num)+ : egg_subexpr_pos
 syntax "#" noWs num (noWs "/" noWs num)? : egg_basic_fwd_rw_src
 syntax "*" noWs num                      : egg_basic_fwd_rw_src
 
-syntax "[" egg_side egg_subexpr_pos "]" : egg_tc_proj
+syntax "[" (egg_side)? egg_subexpr_pos "]" : egg_tc_proj
 
 syntax "→" : egg_tc_spec_dir
 syntax "←" : egg_tc_spec_dir
 syntax "<" egg_tc_spec_dir ">" : egg_tc_spec
 
 syntax egg_basic_fwd_rw_src (egg_tc_proj)? (egg_tc_spec)? : egg_fwd_rw_src
-syntax "⊢" egg_tc_proj                                    : egg_fwd_rw_src
+syntax "⊢" egg_tc_proj (egg_tc_spec)?                     : egg_fwd_rw_src
+syntax "↣" num egg_tc_proj (egg_tc_spec)?                 : egg_fwd_rw_src
 syntax "≡0"                                               : egg_fwd_rw_src
 syntax "≡→S"                                              : egg_fwd_rw_src
 syntax "≡S→"                                              : egg_fwd_rw_src
@@ -123,18 +124,25 @@ private def parseBasicFwdRwSrc : (TSyntax `egg_basic_fwd_rw_src) → Source
   | _                                       => unreachable!
 
 private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
-  | `(egg_fwd_rw_src|⊢[$side$pos]) => .tcProj .goal (parseSide side) (parseSubexprPos pos)
-  | `(egg_fwd_rw_src|≡0)           => .natLit .zero
-  | `(egg_fwd_rw_src|≡→S)          => .natLit .toSucc
-  | `(egg_fwd_rw_src|≡S→)          => .natLit .ofSucc
-  | `(egg_fwd_rw_src|≡+)           => .natLit .add
-  | `(egg_fwd_rw_src|≡-)           => .natLit .sub
-  | `(egg_fwd_rw_src|≡*)           => .natLit .mul
-  | `(egg_fwd_rw_src|≡^)           => .natLit .pow
-  | `(egg_fwd_rw_src|≡/)           => .natLit .div
-  | `(egg_fwd_rw_src|"≡%")         => .natLit .mod
-  | `(egg_fwd_rw_src|≡η)           => .eta
-  | `(egg_fwd_rw_src|≡β)           => .beta
+  | `(egg_fwd_rw_src|≡0)   => .natLit .zero
+  | `(egg_fwd_rw_src|≡→S)  => .natLit .toSucc
+  | `(egg_fwd_rw_src|≡S→)  => .natLit .ofSucc
+  | `(egg_fwd_rw_src|≡+)   => .natLit .add
+  | `(egg_fwd_rw_src|≡-)   => .natLit .sub
+  | `(egg_fwd_rw_src|≡*)   => .natLit .mul
+  | `(egg_fwd_rw_src|≡^)   => .natLit .pow
+  | `(egg_fwd_rw_src|≡/)   => .natLit .div
+  | `(egg_fwd_rw_src|"≡%") => .natLit .mod
+  | `(egg_fwd_rw_src|≡η)   => .eta
+  | `(egg_fwd_rw_src|≡β)   => .beta
+  | `(egg_fwd_rw_src|⊢[$tcProjSide$tcProjPos]$[<$tcSpecDir?>]?) => Id.run do
+    let mut src := Source.tcProj .goal (parseSide tcProjSide) (parseSubexprPos tcProjPos)
+    if let some tcSpecDir := tcSpecDir? then src := .tcSpec src (parsTcSpecDir tcSpecDir)
+    return src
+  | `(egg_fwd_rw_src|↣$idx[$[$tcProjSide]?$tcProjPos]$[<$tcSpecDir?>]?) => Id.run do
+    let mut src := Source.tcProj (.guide idx.getNat) (tcProjSide.map parseSide) (parseSubexprPos tcProjPos)
+    if let some tcSpecDir := tcSpecDir? then src := .tcSpec src (parsTcSpecDir tcSpecDir)
+    return src
   | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src$[[$tcProjSide?$tcProjPos?]]?$[<$tcSpecDir?>]?) => Id.run do
     let mut src := parseBasicFwdRwSrc src
     if let some tcProjSide := tcProjSide? then

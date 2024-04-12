@@ -35,7 +35,7 @@ inductive Source where
   | guide (idx : Nat)
   | explicit (idx : Nat) (eqn? : Option Nat)
   | star (id : FVarId)
-  | tcProj (src : Source) (side : Side) (pos : SubExpr.Pos)
+  | tcProj (src : Source) (side? : Option Side) (pos : SubExpr.Pos)
   | tcSpec (src : Source) (dir : Direction)
   | natLit (src : Source.NatLit)
   | eta
@@ -61,7 +61,7 @@ def description : Source → String
   | explicit idx none       => s!"#{idx}"
   | explicit idx (some eqn) => s!"#{idx}/{eqn}"
   | star id                 => s!"*{id.uniqueIdx!}"
-  | tcProj src side pos     => s!"{src.description}[{side.description}{pos}]"
+  | tcProj src side pos     => s!"{src.description}[{side.map (·.description) |>.getD ""}{pos}]"
   | tcSpec src dir          => s!"{src.description}<{dir.description}>"
   | natLit src              => src.description
   | eta                     => "≡η"
@@ -69,6 +69,10 @@ def description : Source → String
 
 instance : ToString Source where
   toString := description
+
+def isRewrite : Source → Bool
+  | goal | guide _ => false
+  | _              => true
 
 def isDefEq : Source → Bool
   | natLit _ | eta | beta => true

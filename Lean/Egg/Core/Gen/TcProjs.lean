@@ -1,4 +1,5 @@
 import Egg.Core.Rewrites
+import Egg.Core.Guides
 import Lean
 open Lean Meta
 
@@ -30,7 +31,7 @@ private structure State where
   pos     : SubExpr.Pos           := .root
   deriving Inhabited
 
-private partial def tcProjs (e : Expr) (src : Source) (side : Side) (init : TcProjIndex) :
+private partial def tcProjs (e : Expr) (src : Source) (side? : Option Side) (init : TcProjIndex) :
     MetaM TcProjIndex :=
   State.projs <$> go e { projs := init }
 where
@@ -46,7 +47,7 @@ where
     unless info.fromClass && s.args.size > info.numParams do return s
     let args := s.args[:info.numParams + 1].toArray
     if args.back.isMVar || args.any (·.hasLooseBVars) then return s
-    let projs := s.projs.insertIfNew { const, lvls, args } (.tcProj src side s.pos)
+    let projs := s.projs.insertIfNew { const, lvls, args } (.tcProj src side? s.pos)
     return { s with projs }
 
   visitBindingBody (b : Expr) (s : State) : MetaM State := do
@@ -61,10 +62,24 @@ where
     let s' ← go arg { s with args := #[], pos := s.pos.pushAppArg }
     return { s' with args := s.args, pos := s.pos }
 
+structure TcProjTarget where
+  expr  : Expr
+  src   : Source
+  side? : Option Side
+
+def Rewrites.tcProjTargets (rws : Rewrites) : Array TcProjTarget := Id.run do
+  let mut sources : Array TcProjTarget := #[]
+  for rw in rws do
+    sources := sources.push { expr := rw.lhs, src := rw.src, side? := some .left }
+    sources := sources.push { expr := rw.rhs, src := rw.src, side? := some .right }
+  return sources
+
+def Guides.tcProjTargets (guides : Guides) : Array TcProjTarget :=
+  guides.map fun guide => { expr := guide.expr, src := guide.src, side? := none }
+
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
-def genTcProjReductions (targets : Array (Congr × Source)) (beta eta : Bool) : MetaM Rewrites := do
+def genTcProjReductions (targets : Array TcProjTarget) (beta eta : Bool) : MetaM Rewrites := do
   let mut projs : TcProjIndex := ∅
-  for (cgr, src) in targets do
-    projs ← tcProjs cgr.lhs src .left  projs
-    projs ← tcProjs cgr.rhs src .right projs
+  for target in targets do
+    projs ← tcProjs target.expr target.src target.side? projs
   projs.toArray.filterMapM fun (proj, src) => proj.reductionRewrite? src beta eta

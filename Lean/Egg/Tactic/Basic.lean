@@ -6,6 +6,7 @@ import Egg.Tactic.Config.Option
 import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Explanation
 import Egg.Tactic.Base
+import Egg.Tactic.Guides
 import Egg.Tactic.Rewrites
 import Egg.Tactic.Trace
 import Lean
@@ -20,6 +21,11 @@ private structure Goal where
   id    : MVarId
   type  : Congr
   base? : Option FVarId
+
+private def Goal.tcProjTargets (goal : Goal) : Array TcProjTarget := #[
+  { expr := goal.type.lhs, src := .goal, side? := some .left },
+  { expr := goal.type.rhs, src := .goal, side? := some .right }
+]
 
 private def getAmbientMVars : MetaM Explanation.AmbientMVars :=
   return (← getMCtx).decls
@@ -38,10 +44,11 @@ where
     else
       throwError "expected goal to be of type '=' or '↔', but found:\n{← ppExpr goalType}"
 
-private def genRewrites (goal : Goal) (rws : TSyntax `egg_rws) (cfg : Config) : TacticM Rewrites := do
+private def genRewrites (goal : Goal) (rws : TSyntax `egg_rws) (guides : Guides) (cfg : Config) :
+    TacticM Rewrites := do
   let mut rws ← Rewrites.parse cfg.betaReduceRws cfg.etaReduceRws rws
   if cfg.genTcProjRws then
-    let tcProjTargets := #[(goal.type, Source.goal)] ++ (rws.map fun rw => (rw.toCongr, rw.src))
+    let tcProjTargets := goal.tcProjTargets ++ guides.tcProjTargets ++ rws.tcProjTargets
     rws := rws ++ (← genTcProjReductions tcProjTargets cfg.betaReduceRws cfg.etaReduceRws)
   if cfg.genTcSpecRws then
     rws := rws ++ (← genTcSpecializations rws)
@@ -66,15 +73,16 @@ private def processRawExpl
 
 open Config.Modifier (egg_cfg_mod)
 
-elab "egg " mod:egg_cfg_mod rws:egg_rws base:(egg_base)? : tactic => do
+elab "egg " mod:egg_cfg_mod rws:egg_rws base:(egg_base)? guides:(egg_guides)? : tactic => do
   let goal ← getMainGoal
   let mod  ← Config.Modifier.parse mod
   let cfg := (← Config.fromOptions).modify mod
   goal.withContext do
-    let amb  ← getAmbientMVars
-    let goal ← parseGoal goal base
-    let rws  ← genRewrites goal rws cfg
-    let req  ← Request.encoding goal.type rws #[] cfg
+    let amb     ← getAmbientMVars
+    let goal    ← parseGoal goal base
+    let guides := (← guides.mapM Guides.parseGuides).getD #[]
+    let rws     ← genRewrites goal rws guides cfg
+    let req     ← Request.encoding goal.type rws guides cfg
     req.trace
     if cfg.exitPoint == .beforeEqSat then goal.id.admit; return
     let rawExpl := req.run
