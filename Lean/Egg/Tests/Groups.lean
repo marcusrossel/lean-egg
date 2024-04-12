@@ -19,7 +19,7 @@ instance [Group α] : OfNat α 0 where ofNat := zero
 
 variable [Group G] {a b : G}
 
--- NOTE: Using `@add_assoc` etc, produces `.proj` expressions.
+-- Note: Using `@add_assoc` etc, produces `.proj` expressions.
 macro "group" : tactic => `(tactic|
   egg [add_assoc, zero_add, add_zero, add_left_neg, add_right_neg]
 )
@@ -30,9 +30,9 @@ theorem add_neg_cancel_left : a + (-a + b) = b := by group
 
 theorem neg_zero : -(0 : G) = 0 := by group
 
--- TODO: What is the proof of this?
 theorem neg_add : -(a + b) = -b + -a := by
-  sorry -- group
+  calc -(a + b) = -b + -a + (a + b) + -(a + b) := by group
+              _ = -b + -a                      := by group
 
 theorem inv_inv : -(-a) = a := by
   calc -(-a) = -(-a) + (-a + a) := by group

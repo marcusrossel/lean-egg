@@ -11,7 +11,7 @@ inductive Side where
   deriving Inhabited, BEq, Hashable
 
 def Side.description : Side → String
-  | left => "l"
+  | left  => "l"
   | right => "r"
 
 def Side.isLeft : Side → Bool
@@ -28,7 +28,6 @@ inductive Source.NatLit where
   | pow
   | div
   | mod
-
   deriving Inhabited, BEq, Hashable
 
 inductive Source where

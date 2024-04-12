@@ -71,14 +71,14 @@ def merge (vars₁ vars₂ : MVars) : MVars where
   lvl := vars₁.lvl.merge vars₂.lvl
 
 protected structure Subst.Expr where
-  fwd  : HashMap MVarId MVarId := ∅
+  fwd : HashMap MVarId MVarId := ∅
   bwd : HashMap MVarId MVarId := ∅
 
 protected abbrev Subst.Lvl := HashMap LMVarId LMVarId
 
 structure Subst where
   expr : Subst.Expr := {}
-  lvl  : Subst.Lvl := ∅
+  lvl  : Subst.Lvl  := ∅
 
 def Subst.apply (subst : Subst) (e : Expr) : Expr :=
   e.replace replaceExpr

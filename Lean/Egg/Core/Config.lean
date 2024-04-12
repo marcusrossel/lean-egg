@@ -19,7 +19,7 @@ structure Gen where
 structure Backend where
   blockInvalidMatches := true
   shiftCapturedBVars  := true -- This option implies `blockInvalidMatches`.
-  optimizeExpl        := false
+  optimizeExpl        := true
   deriving BEq
 
 inductive Debug.ExitPoint
