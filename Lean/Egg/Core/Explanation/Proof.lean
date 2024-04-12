@@ -100,17 +100,17 @@ def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) (amb : AmbientMVar
       for step in steps, idx in [:steps.size] do
         withTraceNode `egg.reconstruction (fun _ => return s!"Step {idx}") do
           trace[egg.reconstruction] step.src.description
-          trace[egg.reconstruction] ← step.dst.toExpr
+          trace[egg.reconstruction] ← step.dst.mapM (·.toExpr)
     unless ← isDefEq cgr.lhs current do
       throwError s!"{errorPrefix} initial expression is not defeq to lhs of proof goal"
     let mut proof ← mkEqRefl current
     for step in steps, idx in [:steps.size] do
-      let next ← step.dst.toExpr
-      let stepEq ← do
+      let next? ← step.dst.mapM (·.toExpr)
+      let (stepEq, next) ← do
         withTraceNode `egg.reconstruction (fun _ => return m!"Step {idx}") do
           trace[egg.reconstruction] m!"Current: {current}"
-          trace[egg.reconstruction] m!"Next:    {next}"
-          proofStep current next step.toInfo
+          trace[egg.reconstruction] m!"Next:    {next?}"
+          proofStep current next? step.toInfo
       proof ← mkEqTrans proof stepEq
       current := next
     checkFinalProof proof current steps
@@ -120,30 +120,53 @@ def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) (amb : AmbientMVar
 where
   errorPrefix := "egg failed to reconstruct proof:"
 
-  proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Expr := do
-    if rwInfo.src.isDefEq then return ← mkReflStep current next rwInfo.src
+  proofStep (current : Expr) (next? : Option Expr) (rwInfo : Rewrite.Info) :
+      MetaM (Expr × Expr) := do
+    if rwInfo.src.isDefEq then
+      if let some next := next?
+      then return (← mkReflStep current next rwInfo.src, next)
+      else throwError s!"{errorPrefix} defeq steps in sparse explanations aren't supported yet"
     let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
-    if ← isRflProof rw.proof then return ← mkReflStep current next rwInfo.src
-    mkCongrStep current next rwInfo.pos (← rw.forDir rwInfo.dir)
+    if ← isRflProof rw.proof then
+      if let some next := next? then
+        return (← mkReflStep current next rwInfo.src, next)
+    mkCongrStep current next? rwInfo.pos (← rw.forDir rwInfo.dir)
 
   mkReflStep (current next : Expr) (src : Source) : MetaM Expr := do
     unless ← isDefEq current next do
       throwError s!"{errorPrefix} unification failure for proof by reflexivity with rw {src.description}"
     mkEqRefl next
 
-  mkCongrStep (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) : MetaM Expr := do
+  mkCongrStep (current : Expr) (next? : Option Expr) (pos : SubExpr.Pos) (rw : Rewrite) :
+      MetaM (Expr × Expr) := do
     let mvc := (← getMCtx).mvarCounter
-    let (lhs, rhs) ← placeCHoles current next pos rw
-    try (← mkCongrOf 0 mvc lhs rhs).eq
-    catch err => throwError m!"{errorPrefix} 'mkCongrOf' failed with\n  {err.toMessageData}"
+    let (lhs, rhs) ← placeCHoles current next? pos rw
+    try
+      let proof ← (← mkCongrOf 0 mvc lhs rhs).eq
+      let next := next?.getD (← unwrapHole rhs pos)
+      return (proof, next)
+    catch err =>
+      throwError m!"{errorPrefix} 'mkCongrOf' failed with\n  {err.toMessageData}"
 
-  placeCHoles (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) : MetaM (Expr × Expr) := do
-    replaceSubexprs (root₁ := current) (root₂ := next) (p := pos) fun lhs rhs => do
+  unwrapHole (expr : Expr) (pos : SubExpr.Pos) : MetaM Expr :=
+    replaceSubexpr (root := expr) (p := pos) fun h =>
+      if let some (_, val, _) := cHole? h
+      then return val
+      else throwError "{errorPrefix} expected to find congr-hole but didn't"
+
+  placeCHoles (current : Expr) (next? : Option Expr) (pos : SubExpr.Pos) (rw : Rewrite) :
+      MetaM (Expr × Expr) := do
+    replaceSubexprs (root₁ := current) (root₂ := next?.getD current) (p := pos) fun lhs rhs => do
       -- It's necessary that we create the fresh rewrite (that is, create the fresh mvars) in *this*
       -- local context as otherwise the mvars can't unify with variables under binders.
       let rw ← rw.fresh
       unless ← isDefEq lhs rw.lhs do throwError "{errorPrefix} unification failure for LHS of rewrite"
-      unless ← isDefEq rhs rw.rhs do throwError "{errorPrefix} unification failure for RHS of rewrite"
+      let rhs ←
+        if next?.isSome then
+          unless ← isDefEq rhs rw.rhs do throwError "{errorPrefix} unification failure for RHS of rewrite"
+          pure rhs
+        else
+          pure rw.rhs
       let proof ← rw.eqProof
       return (
         ← mkCHole (forLhs := true) lhs proof,
@@ -151,9 +174,9 @@ where
       )
 
   checkFinalProof (proof : Expr) (current : Expr) (steps : Array Step) : MetaM Unit := do
-    let last := steps.back?.map (·.dst) |>.getD expl.start
-    unless ← isDefEq current (← last.toExpr) do
-      throwError s!"{errorPrefix} final expression is not defeq to rhs of proof goal"
+    if let some last := steps.back?.map (·.dst) |>.getD (some expl.start) then
+      unless ← isDefEq current (← last.toExpr) do
+        throwError s!"{errorPrefix} final expression is not defeq to rhs of proof goal"
     let proof ← instantiateMVars proof
     for mvar in (proof.collectMVars {}).result do
       unless amb.contains mvar do throwError s!"{errorPrefix} final proof contains mvar {mvar.name}"

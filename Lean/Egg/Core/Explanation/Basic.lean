@@ -34,7 +34,7 @@ inductive Expression where
   deriving Inhabited
 
 structure Step extends Rewrite.Info where
-  dst : Expression
+  dst : Option Expression
   deriving Inhabited
 
 end Explanation
