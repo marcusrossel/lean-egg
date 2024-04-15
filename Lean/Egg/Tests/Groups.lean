@@ -1,25 +1,18 @@
 import Egg
-import Lean
 
-class Group (α) where
-  zero          : α
-  neg           : α → α
-  add           : α → α → α
-  add_assoc     : ∀ a b c, add (add a b) c = add a (add b c)
-  zero_add      : ∀ a, add zero a = a
-  add_zero      : ∀ a, add a zero = a
-  add_left_neg  : ∀ a, add (neg a) a = zero
-  add_right_neg : ∀ a, add a (neg a) = zero
+class Zero (α) where zero : α
+instance [Zero α] : OfNat α 0 where ofNat := Zero.zero
 
-open Group
-
-instance [Group α] : Neg α where neg := neg
-instance [Group α] : Add α where add := add
-instance [Group α] : OfNat α 0 where ofNat := zero
+class Group (α) extends Zero α, Neg α, Add α where
+  add_assoc     (a b c : α) : (a + b) + c = a + (b + c)
+  zero_add      (a : α)     : 0 + a = a
+  add_zero      (a : α)     : a + 0 = a
+  add_left_neg  (a : α)     : -a + a = 0
+  add_right_neg (a : α)     : a + -a = 0
 
 variable [Group G] {a b : G}
 
-open Egg.Guides Egg.Config.Modifier in
+open Group Egg.Guides Egg.Config.Modifier in
 macro "group" mod:egg_cfg_mod base:(egg_base)? guides:(egg_guides)? : tactic => `(tactic|
   egg $mod [add_assoc, zero_add, add_zero, add_left_neg, add_right_neg] $[$base]? $[$guides]?
 )
