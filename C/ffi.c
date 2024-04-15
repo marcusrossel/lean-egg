@@ -131,6 +131,7 @@ lean_obj_res run_egg_request(lean_obj_arg req) {
     return lean_mk_string(result);
 }
 
+/*
 lean_object* dbg_trace_thunk(lean_object* t) { return lean_box(0); }
 void c_dbg_trace(char const* str) {
     lean_object* thunk_obj = lean_alloc_closure(&dbg_trace_thunk, 1, 0);
@@ -138,3 +139,4 @@ void c_dbg_trace(char const* str) {
     lean_dbg_trace(lstr, thunk_obj);
     return;
 }
+*/

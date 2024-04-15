@@ -32,7 +32,8 @@ class CharTwoRing (α) extends Ring α where
 
 open Ring CharTwoRing Egg.Guides Egg.Config.Modifier in
 macro "char_two_ring" mod:egg_cfg_mod base:(egg_base)? guides:(egg_guides)? : tactic => `(tactic|
-  egg $mod [comm_add, comm_mul, add_assoc, mul_assoc, sub_canon, neg_add, div_canon, zero_add, zero_mul, one_mul, distrib, pow_zero, pow_one, pow_two, pow_three, char_two] $[$base]? $[$guides]?
+  egg $mod [comm_add, comm_mul, add_assoc, mul_assoc, sub_canon, neg_add, div_canon, zero_add,
+  zero_mul, one_mul, distrib, pow_zero, pow_one, pow_two, pow_three, char_two] $[$base]? $[$guides]?
 )
 
 variable [CharTwoRing α]
@@ -48,7 +49,7 @@ theorem freshmans_dream' (x y : α) : (x + y) ^ 2 = (x ^ 2) + (y ^ 2) := by
   char_two_ring
 
 theorem freshmans_dream₃ (x y : α) : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
-  calc (x + y)^ 3
+  calc (x + y) ^ 3
    _ = (x + y) * (x + y) * (x + y)                     := by char_two_ring
    _ = (x + y) * (x * (x + y) + y * (x + y))           := by char_two_ring
    _ = (x + y) * (x ^ 2 + x * y + y * x + y ^ 2)       := by char_two_ring

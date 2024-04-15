@@ -31,6 +31,7 @@ inductive Debug.ExitPoint
 structure Debug where
   exitPoint           := Debug.ExitPoint.none
   vizPath             := (none : Option String)
+  -- TODO: Debug tracing is currently disabled in Rust as it breaks builds on Linux.
   traceSubstitutions  := false
   traceBVarCorrection := false
   deriving BEq
