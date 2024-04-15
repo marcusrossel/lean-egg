@@ -15,6 +15,7 @@ declare_syntax_cat egg_basic_fwd_rw_src
 declare_syntax_cat egg_tc_proj
 declare_syntax_cat egg_tc_spec_dir
 declare_syntax_cat egg_tc_spec
+declare_syntax_cat egg_tc_extension
 declare_syntax_cat egg_fwd_rw_src
 declare_syntax_cat egg_rw_src
 
@@ -38,6 +39,8 @@ syntax ("/" num)+ : egg_subexpr_pos
 
 syntax "#" noWs num (noWs "/" noWs num)? : egg_basic_fwd_rw_src
 syntax "*" noWs num                      : egg_basic_fwd_rw_src
+syntax "⊢"                               : egg_basic_fwd_rw_src
+syntax "↣" noWs num                      : egg_basic_fwd_rw_src
 
 syntax "[" (egg_side)? egg_subexpr_pos "]" : egg_tc_proj
 
@@ -45,24 +48,23 @@ syntax "→" : egg_tc_spec_dir
 syntax "←" : egg_tc_spec_dir
 syntax "<" egg_tc_spec_dir ">" : egg_tc_spec
 
-syntax egg_basic_fwd_rw_src (egg_tc_proj)? (egg_tc_spec)? : egg_fwd_rw_src
-syntax "⊢" egg_tc_proj (egg_tc_spec)?                     : egg_fwd_rw_src
-syntax "↣" num egg_tc_proj (egg_tc_spec)?                 : egg_fwd_rw_src
-syntax "≡0"                                               : egg_fwd_rw_src
-syntax "≡→S"                                              : egg_fwd_rw_src
-syntax "≡S→"                                              : egg_fwd_rw_src
-syntax "≡+"                                               : egg_fwd_rw_src
-syntax "≡-"                                               : egg_fwd_rw_src
-syntax "≡*"                                               : egg_fwd_rw_src
-syntax "≡^"                                               : egg_fwd_rw_src
-syntax "≡/"                                               : egg_fwd_rw_src
+syntax egg_tc_proj : egg_tc_extension
+syntax egg_tc_spec : egg_tc_extension
 
+syntax egg_basic_fwd_rw_src (noWs egg_tc_extension)* : egg_fwd_rw_src
+syntax "≡η"                                          : egg_fwd_rw_src
+syntax "≡β"                                          : egg_fwd_rw_src
+syntax "≡0"                                          : egg_fwd_rw_src
+syntax "≡→S"                                         : egg_fwd_rw_src
+syntax "≡S→"                                         : egg_fwd_rw_src
+syntax "≡+"                                          : egg_fwd_rw_src
+syntax "≡-"                                          : egg_fwd_rw_src
+syntax "≡*"                                          : egg_fwd_rw_src
+syntax "≡^"                                          : egg_fwd_rw_src
+syntax "≡/"                                          : egg_fwd_rw_src
 -- WORKAROUND: https://egraphs.zulipchat.com/#narrow/stream/375765-egg.2Fegglog/topic/.25.20in.20rule.20name
-syntax str                                                  : egg_fwd_rw_src
--- syntax "≡%"                                              : egg_fwd_rw_src
-
-syntax "≡η"                                                 : egg_fwd_rw_src
-syntax "≡β"                                                 : egg_fwd_rw_src
+syntax str                                           : egg_fwd_rw_src
+-- syntax "≡%"                                       : egg_fwd_rw_src
 
 syntax egg_fwd_rw_src (noWs "-rev")? : egg_rw_src
 
@@ -121,7 +123,14 @@ private def parseSubexprPos : (TSyntax `egg_subexpr_pos) → SubExpr.Pos
 private def parseBasicFwdRwSrc : (TSyntax `egg_basic_fwd_rw_src) → Source
   | `(egg_basic_fwd_rw_src|#$idx$[/$eqn?]?) => .explicit idx.getNat (eqn?.map TSyntax.getNat)
   | `(egg_basic_fwd_rw_src|*$idx)           => .star (.fromUniqueIdx idx.getNat)
+  | `(egg_basic_fwd_rw_src|⊢)               => .goal
+  | `(egg_basic_fwd_rw_src|↣$idx)           => .guide idx.getNat
   | _                                       => unreachable!
+
+private def parseTcExtension (src : Source) : (TSyntax `egg_tc_extension) → Source
+  | `(egg_tc_extension|[$[$side?]?$pos]) => .tcProj src (side?.map parseSide) (parseSubexprPos pos)
+  | `(egg_tc_extension|<$dir>)           => .tcSpec src (parsTcSpecDir dir)
+  | _                                    => unreachable!
 
 private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
   | `(egg_fwd_rw_src|≡0)   => .natLit .zero
@@ -135,21 +144,8 @@ private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
   | `(egg_fwd_rw_src|"≡%") => .natLit .mod
   | `(egg_fwd_rw_src|≡η)   => .eta
   | `(egg_fwd_rw_src|≡β)   => .beta
-  | `(egg_fwd_rw_src|⊢[$tcProjSide$tcProjPos]$[<$tcSpecDir?>]?) => Id.run do
-    let mut src := Source.tcProj .goal (parseSide tcProjSide) (parseSubexprPos tcProjPos)
-    if let some tcSpecDir := tcSpecDir? then src := .tcSpec src (parsTcSpecDir tcSpecDir)
-    return src
-  | `(egg_fwd_rw_src|↣$idx[$[$tcProjSide]?$tcProjPos]$[<$tcSpecDir?>]?) => Id.run do
-    let mut src := Source.tcProj (.guide idx.getNat) (tcProjSide.map parseSide) (parseSubexprPos tcProjPos)
-    if let some tcSpecDir := tcSpecDir? then src := .tcSpec src (parsTcSpecDir tcSpecDir)
-    return src
-  | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src$[[$tcProjSide?$tcProjPos?]]?$[<$tcSpecDir?>]?) => Id.run do
-    let mut src := parseBasicFwdRwSrc src
-    if let some tcProjSide := tcProjSide? then
-      src := .tcProj src (parseSide tcProjSide) (parseSubexprPos tcProjPos?.get!)
-    if let some tcSpecDir := tcSpecDir? then
-      src := .tcSpec src (parsTcSpecDir tcSpecDir)
-    return src
+  | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src$tcExts:egg_tc_extension*) =>
+    tcExts.foldl (init := parseBasicFwdRwSrc src) parseTcExtension
   | _ => unreachable!
 
 private def parseRwSrc : (TSyntax `egg_rw_src) → Rewrite.Descriptor

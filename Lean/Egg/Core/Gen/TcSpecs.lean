@@ -21,9 +21,12 @@ private partial def genSpecialization (rw : Rewrite) (dir : Direction) (missing 
   return if rw.validDirs.contains dir then rw else none
 where
   instanceForType? (type : Expr) : MetaM (Option Expr) := do
-    if let some inst ← findLocalDeclWithType? type
-    then return (Expr.fvar inst)
-    else optional (synthInstance type)
+    if let some inst ← findLocalDeclWithType? type then
+      return (Expr.fvar inst)
+    else if let some inst ← optional (synthInstance type) then
+      normalize inst false false -- TODO: How should beta/eta be applied here?
+    else
+      return none
 
 private def genTcSpecializationsForRw (rw : Rewrite) : MetaM Rewrites := do
   let missingOnLhs := rw.rhsMVars.tc.subtract rw.lhsMVars.tc

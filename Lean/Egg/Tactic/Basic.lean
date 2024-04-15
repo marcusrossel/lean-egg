@@ -9,6 +9,7 @@ import Egg.Tactic.Base
 import Egg.Tactic.Guides
 import Egg.Tactic.Rewrites
 import Egg.Tactic.Trace
+import Std.Tactic.Exact
 import Lean
 
 open Lean Meta Elab Tactic
@@ -44,15 +45,30 @@ where
     else
       throwError "expected goal to be of type '=' or '↔', but found:\n{← ppExpr goalType}"
 
-private def genRewrites (goal : Goal) (rws : TSyntax `egg_rws) (guides : Guides) (cfg : Config) :
-    TacticM Rewrites := do
-  let mut rws ← Rewrites.parse cfg.betaReduceRws cfg.etaReduceRws rws
-  if cfg.genTcProjRws then
-    let tcProjTargets := goal.tcProjTargets ++ guides.tcProjTargets ++ rws.tcProjTargets
-    rws := rws ++ (← genTcProjReductions tcProjTargets cfg.betaReduceRws cfg.etaReduceRws)
-  if cfg.genTcSpecRws then
-    rws := rws ++ (← genTcSpecializations rws)
-  return rws
+private partial def genRewrites
+    (goal : Goal) (rws : TSyntax `egg_rws) (guides : Guides) (cfg : Config) : TacticM Rewrites := do
+  let rws ← Rewrites.parse cfg.betaReduceRws cfg.etaReduceRws rws
+  return rws ++ (← genTcRws rws)
+where
+  genTcRws (rws : Rewrites) : TacticM Rewrites := do
+    let mut projTodo := #[]
+    let mut specTodo := #[]
+    let mut tcRws := #[]
+    let mut covered : HashSet TcProj := ∅
+    if cfg.genTcProjRws then projTodo := goal.tcProjTargets ++ guides.tcProjTargets ++ rws.tcProjTargets
+    if cfg.genTcSpecRws then specTodo := rws
+    while (cfg.genTcProjRws && !projTodo.isEmpty) || (cfg.genTcSpecRws && !specTodo.isEmpty) do
+      if cfg.genTcProjRws then
+        let (projRws, cov) ← genTcProjReductions' projTodo covered cfg.betaReduceRws cfg.etaReduceRws
+        covered  := cov
+        specTodo := specTodo ++ projRws
+        tcRws := tcRws ++ projRws
+      if cfg.genTcSpecRws then
+        let specRws ← genTcSpecializations specTodo
+        specTodo := #[]
+        projTodo := specRws.tcProjTargets
+        tcRws := tcRws ++ specRws
+    return tcRws
 
 private def processRawExpl
     (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (cfg : Config.Debug)
@@ -69,7 +85,7 @@ private def processRawExpl
     if let some base := goal.base? then proof ← mkEqMP proof (.fvar base)
     withTraceNode `egg.reconstruction (fun _ => return "Final Proof") do
       trace[egg.reconstruction] proof
-    goal.id.assign proof
+    goal.id.assignIfDefeq proof
 
 open Config.Modifier (egg_cfg_mod)
 

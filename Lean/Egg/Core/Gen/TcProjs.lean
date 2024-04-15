@@ -8,7 +8,7 @@ namespace Egg
 -- We expect the `args` to contain `numParams + 1` elements where the `numParams + 1`th argument is
 -- the typeclass instance argument for `const`. Also, not arguments can contain loos bvars and the
 -- final argument (the typeclass instance) can not be an mvar.
-private structure TcProj where
+structure TcProj where
   const : Name
   lvls  : List Level
   args  : Array Expr
@@ -16,7 +16,8 @@ private structure TcProj where
 
 abbrev TcProjIndex := HashMap TcProj Source
 
-private def TcProj.reductionRewrite? (proj : TcProj) (src : Source) (beta eta : Bool) : MetaM (Option Rewrite) := do
+private def TcProj.reductionRewrite? (proj : TcProj) (src : Source) (beta eta : Bool) :
+    MetaM (Option Rewrite) := do
   let app := mkAppN (.const proj.const proj.lvls) proj.args
   let reduced ← withReducibleAndInstances do reduceAll app
   if app == reduced then return none
@@ -26,14 +27,16 @@ private def TcProj.reductionRewrite? (proj : TcProj) (src : Source) (beta eta : 
   return rw
 
 private structure State where
-  projs   : HashMap TcProj Source := ∅
-  args    : Array Expr            := #[]
-  pos     : SubExpr.Pos           := .root
+  projs   : TcProjIndex    := ∅
+  args    : Array Expr     := #[]
+  pos     : SubExpr.Pos    := .root
+  covered : HashSet TcProj := ∅
   deriving Inhabited
 
-private partial def tcProjs (e : Expr) (src : Source) (side? : Option Side) (init : TcProjIndex) :
+private partial def tcProjs
+    (e : Expr) (src : Source) (side? : Option Side) (covered : HashSet TcProj) :
     MetaM TcProjIndex :=
-  State.projs <$> go e { projs := init }
+  State.projs <$> go e { covered }
 where
   go : Expr → State → MetaM State
     | .const c lvls                   => visitConst c lvls
@@ -47,8 +50,13 @@ where
     unless info.fromClass && s.args.size > info.numParams do return s
     let args := s.args[:info.numParams + 1].toArray
     if args.back.isMVar || args.any (·.hasLooseBVars) then return s
-    let projs := s.projs.insertIfNew { const, lvls, args } (.tcProj src side? s.pos)
-    return { s with projs }
+    let proj : TcProj := { const, lvls, args }
+    return { s with
+      projs :=
+        if s.covered.contains proj
+        then s.projs
+        else s.projs.insertIfNew proj (.tcProj src side? s.pos)
+    }
 
   visitBindingBody (b : Expr) (s : State) : MetaM State := do
     let s' ← go b { s with pos := s.pos.pushBindingBody }
@@ -78,8 +86,17 @@ def Guides.tcProjTargets (guides : Guides) : Array TcProjTarget :=
   guides.map fun guide => { expr := guide.expr, src := guide.src, side? := none }
 
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
-def genTcProjReductions (targets : Array TcProjTarget) (beta eta : Bool) : MetaM Rewrites := do
-  let mut projs : TcProjIndex := ∅
+def genTcProjReductions'
+    (targets : Array TcProjTarget) (covered : HashSet TcProj) (beta eta : Bool) :
+    MetaM (Rewrites × HashSet TcProj) := do
+  let mut covered := covered
+  let mut rws := #[]
   for target in targets do
-    projs ← tcProjs target.expr target.src target.side? projs
-  projs.toArray.filterMapM fun (proj, src) => proj.reductionRewrite? src beta eta
+    let projs ← tcProjs target.expr target.src target.side? covered
+    for (proj, src) in projs.toArray do
+      covered := covered.insert proj
+      if let some rw ← proj.reductionRewrite? src beta eta then rws := rws.push rw
+  return (rws, covered)
+
+def genTcProjReductions (targets : Array TcProjTarget) (beta eta : Bool) : MetaM Rewrites :=
+  Prod.fst <$> genTcProjReductions' targets ∅ beta eta
