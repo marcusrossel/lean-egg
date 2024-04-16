@@ -53,7 +53,7 @@ syntax egg_cfg_mod := (Parser.Tactic.config)?
 section Elab
 
 private unsafe def evalUnsafe (e : Expr) : TermElabM Modifier :=
-    Meta.evalExpr' (safety := .unsafe) Modifier ``Modifier e
+  Meta.evalExpr' (safety := .unsafe) Modifier ``Modifier e
 
 @[implemented_by evalUnsafe]
 private opaque eval (e : Expr) : TermElabM Modifier

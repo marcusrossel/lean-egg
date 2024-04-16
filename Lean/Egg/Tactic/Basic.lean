@@ -106,6 +106,7 @@ elab "egg " mod:egg_cfg_mod rws:egg_rws base:(egg_base)? guides:(egg_guides)? : 
   let goal ← getMainGoal
   let mod  ← Config.Modifier.parse mod
   let cfg := (← Config.fromOptions).modify mod
+  cfg.trace `egg.config
   goal.withContext do
     let amb     ← getAmbientMVars
     let goal    ← parseGoal goal base
