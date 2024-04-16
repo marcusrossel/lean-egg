@@ -65,3 +65,8 @@ variable (and_assoc : ∀ a b c, (a ∧ b) ∧ c ↔ a ∧ (b ∧ c)) (and_idem 
 example (h : p ∧ q ∧ r) : r ∧ r ∧ q ∧ p ∧ q ∧ r ∧ p := by
   egg [And.comm, and_assoc, and_idem] from h
 ```
+
+## Related Work
+
+* [Guided Equality Saturation](https://dl.acm.org/doi/10.1145/3632900) introduces the original prototype of the `egg` tactic.
+* [Bridging Syntax and Semantics of Lean Expressions in E-Graphs](https://github.com/marcusrossel/egraphs-2024/releases/tag/release) contains a high-level description of how the tactic handles binders and definitional equality. 
