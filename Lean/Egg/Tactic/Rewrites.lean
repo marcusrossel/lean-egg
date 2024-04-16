@@ -78,8 +78,8 @@ def star (beta eta : Bool) : MetaM Rewrites := do
     then result := result.push rw
   return result
 
-def parse (beta eta : Bool) : (TSyntax `egg_rws) → TacticM Rewrites
-  | `(egg_rws|)          => return {}
+def parse (beta eta : Bool) : (TSyntax `egg_rws) → TacticM (Rewrites × Array Syntax)
+  | `(egg_rws|)          => return (#[], #[])
   | `(egg_rws|[$args,*]) => do
     let mut result : Rewrites := #[]
     let mut noStar := true
@@ -93,5 +93,5 @@ def parse (beta eta : Bool) : (TSyntax `egg_rws) → TacticM Rewrites
         result := result ++ (← star beta eta)
       | _ =>
         throwUnsupportedSyntax
-    return result
+    return (result, args)
   | _ => throwUnsupportedSyntax

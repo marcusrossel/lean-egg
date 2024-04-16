@@ -45,10 +45,23 @@ where
     else
       throwError "expected goal to be of type '=' or '↔', but found:\n{← ppExpr goalType}"
 
+private def traceRewrites
+    (basic : Rewrites) (stx : Array Syntax) (tc : Rewrites) (cfg : Config.Gen) : TacticM Unit := do
+  let cls := `egg.rewrites
+  withTraceNode cls (fun _ => return m!"Rewrites") do
+    withTraceNode cls (fun _ => return m!"Basic ({basic.size})") do basic.trace stx cls
+    withTraceNode cls (fun _ => return m!"Generated ({tc.size})") do tc.trace #[] cls
+    withTraceNode cls (fun _ => return "Definitional") do
+      if cfg.genBetaRw    then Lean.trace cls fun _ => "β-Reduction"
+      if cfg.genEtaRw     then Lean.trace cls fun _ => "η-Reduction"
+      if cfg.genNatLitRws then Lean.trace cls fun _ => "Natural Number Literals"
+
 private partial def genRewrites
     (goal : Goal) (rws : TSyntax `egg_rws) (guides : Guides) (cfg : Config) : TacticM Rewrites := do
-  let rws ← Rewrites.parse cfg.betaReduceRws cfg.etaReduceRws rws
-  return rws ++ (← genTcRws rws)
+  let (rws, stx) ← Rewrites.parse cfg.betaReduceRws cfg.etaReduceRws rws
+  let tcRws ← genTcRws rws
+  traceRewrites rws stx tcRws cfg.toGen
+  return rws ++ tcRws
 where
   genTcRws (rws : Rewrites) : TacticM Rewrites := do
     let mut projTodo := #[]
