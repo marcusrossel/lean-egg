@@ -48,7 +48,7 @@ example : ((a * b) - (2 * c)) * d - (a * b) = (d - 1) * (a * b) - (2 * c * d) :=
 ```
 
 Sometimes, `egg` needs a little help with finding the correct sequence of rewrites.
-You can help out by proving _guide terms_ with `using`:
+You can help out by providing _guide terms_ with nudge `egg` to try certain paths:
 
 ```lean
 -- From Lean/Egg/Tests/Groups.lean
