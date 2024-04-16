@@ -33,6 +33,9 @@ private structure State where
   covered : HashSet TcProj := ∅
   deriving Inhabited
 
+private def State.covers (s : State) (proj : TcProj) : Bool :=
+  s.covered.contains proj || s.projs.contains proj
+
 private partial def tcProjs
     (e : Expr) (src : Source) (side? : Option Side) (covered : HashSet TcProj) :
     MetaM TcProjIndex :=
@@ -51,12 +54,9 @@ where
     let args := s.args[:info.numParams + 1].toArray
     if args.back.isMVar || args.any (·.hasLooseBVars) then return s
     let proj : TcProj := { const, lvls, args }
-    return { s with
-      projs :=
-        if s.covered.contains proj
-        then s.projs
-        else s.projs.insertIfNew proj (.tcProj src side? s.pos)
-    }
+    if s.covers proj
+    then return s
+    else return { s with projs := s.projs.insert proj (.tcProj src side? s.pos) }
 
   visitBindingBody (b : Expr) (s : State) : MetaM State := do
     let s' ← go b { s with pos := s.pos.pushBindingBody }
@@ -85,8 +85,13 @@ def Rewrites.tcProjTargets (rws : Rewrites) : Array TcProjTarget := Id.run do
 def Guides.tcProjTargets (guides : Guides) : Array TcProjTarget :=
   guides.map fun guide => { expr := guide.expr, src := guide.src, side? := none }
 
+-- TODO: This still produces many redundant rewrites which differ only by mvars. Is there an
+--       efficient way to check if two `TcProj`s are equal up to mvar renaming?
+--       Note that for this check to be valid, you also need to know which mvars are "local" and
+--       which are ambient.
+--
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
-def genTcProjReductions'
+def genTcProjReductions
     (targets : Array TcProjTarget) (covered : HashSet TcProj) (beta eta : Bool) :
     MetaM (Rewrites × HashSet TcProj) := do
   let mut covered := covered
@@ -97,6 +102,3 @@ def genTcProjReductions'
       covered := covered.insert proj
       if let some rw ← proj.reductionRewrite? src beta eta then rws := rws.push rw
   return (rws, covered)
-
-def genTcProjReductions (targets : Array TcProjTarget) (beta eta : Bool) : MetaM Rewrites :=
-  Prod.fst <$> genTcProjReductions' targets ∅ beta eta

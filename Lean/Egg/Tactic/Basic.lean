@@ -72,15 +72,15 @@ where
     if cfg.genTcSpecRws then specTodo := rws
     while (cfg.genTcProjRws && !projTodo.isEmpty) || (cfg.genTcSpecRws && !specTodo.isEmpty) do
       if cfg.genTcProjRws then
-        let (projRws, cov) ← genTcProjReductions' projTodo covered cfg.betaReduceRws cfg.etaReduceRws
+        let (projRws, cov) ← genTcProjReductions projTodo covered cfg.betaReduceRws cfg.etaReduceRws
         covered  := cov
         specTodo := specTodo ++ projRws
-        tcRws := tcRws ++ projRws
+        tcRws    := tcRws ++ projRws
       if cfg.genTcSpecRws then
         let specRws ← genTcSpecializations specTodo
         specTodo := #[]
         projTodo := specRws.tcProjTargets
-        tcRws := tcRws ++ specRws
+        tcRws    := tcRws ++ specRws
     return tcRws
 
 private def processRawExpl
@@ -117,5 +117,5 @@ elab "egg " mod:egg_cfg_mod rws:egg_rws base:(egg_base)? guides:(egg_guides)? : 
     let rawExpl := req.run
     processRawExpl rawExpl goal rws cfg.toDebug amb
 
--- WORKAROUND: This fixes `Tests/EndOfInput`.
+-- WORKAROUND: This fixes `Tests/EndOfInput *`.
 macro "egg" mod:egg_cfg_mod : tactic => `(tactic| egg $mod)

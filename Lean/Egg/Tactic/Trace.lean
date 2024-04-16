@@ -9,8 +9,6 @@ initialize registerTraceClass `egg.reconstruction (inherited := true)
 
 namespace Egg
 
-#check MessageData
-
 nonrec def MVars.format (mvars : MVars) : MetaM Format := do
   let expr := format <| ← mvars.expr.toList.mapM (ppExpr <| Expr.mvar ·)
   let tc   := format <| ← mvars.tc.toList.mapM   (ppExpr <| Expr.mvar ·)
