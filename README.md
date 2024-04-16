@@ -28,12 +28,8 @@ example : 0 = 0 := by
 example (a b c : Nat) (h₁ : a = b) (h₂ : b = c) : a = c := by
   egg [h₁, h₂]
 
-example (h : y + 1 = z) : (fun x => y + 1) 0 = z := by
-  egg [h]
-
 open List in
-theorem reverse_append (as bs : List α) :
-    reverse (append as bs) = append (reverse bs) (reverse as) := by
+theorem reverse_append (as bs : List α) : reverse (as ++ bs) = (reverse bs) ++ (reverse as) := by
   induction as generalizing bs with
   | nil          => egg [reverse_nil, append_nil, append]
   | cons a as ih => egg [ih, append_assoc, reverse_cons, append]
@@ -45,7 +41,9 @@ But you can use it to solve some equations which `simp` cannot:
 import Egg
 import Std
 
-example (a b c d : Int) : ((a * b) - (2 * c)) * d - (a * b) = (d - 1) * (a * b) - (2 * c * d) := by
+variable (a b c d : Int)
+
+example : ((a * b) - (2 * c)) * d - (a * b) = (d - 1) * (a * b) - (2 * c * d) := by
   egg [Int.sub_mul, Int.sub_sub, Int.add_comm, Int.mul_comm, Int.one_mul]
 ```
 
