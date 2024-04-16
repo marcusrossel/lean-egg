@@ -48,7 +48,7 @@ where
 private def traceRewrites
     (basic : Rewrites) (stx : Array Syntax) (tc : Rewrites) (cfg : Config.Gen) : TacticM Unit := do
   let cls := `egg.rewrites
-  withTraceNode cls (fun _ => return m!"Rewrites") do
+  withTraceNode cls (fun _ => return "Rewrites") do
     withTraceNode cls (fun _ => return m!"Basic ({basic.size})") do basic.trace stx cls
     withTraceNode cls (fun _ => return m!"Generated ({tc.size})") do tc.trace #[] cls
     withTraceNode cls (fun _ => return "Definitional") do
@@ -100,6 +100,11 @@ private def processRawExpl
       trace[egg.reconstruction] proof
     goal.id.assignIfDefeq proof
 
+private def traceRequest (req : Request) : TacticM Unit := do
+  let cls := `egg.encoded
+  withTraceNode cls (fun _ => return "Encoded") do
+    req.trace cls
+
 open Config.Modifier (egg_cfg_mod)
 
 elab "egg " mod:egg_cfg_mod rws:egg_rws base:(egg_base)? guides:(egg_guides)? : tactic => do
@@ -113,7 +118,7 @@ elab "egg " mod:egg_cfg_mod rws:egg_rws base:(egg_base)? guides:(egg_guides)? : 
     let guides := (← guides.mapM Guides.parseGuides).getD #[]
     let rws     ← genRewrites goal rws guides cfg
     let req     ← Request.encoding goal.type rws guides cfg
-    req.trace
+    traceRequest req
     if cfg.exitPoint == .beforeEqSat then goal.id.admit; return
     let rawExpl := req.run
     processRawExpl rawExpl goal rws cfg.toDebug amb

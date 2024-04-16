@@ -3,9 +3,9 @@ import Lean
 open Lean Meta Elab Tactic Std Format
 
 initialize registerTraceClass `egg
-initialize registerTraceClass `egg.rewrites (inherited := true)
 initialize registerTraceClass `egg.config (inherited := true)
-initialize registerTraceClass `egg.frontend (inherited := true)
+initialize registerTraceClass `egg.rewrites (inherited := true)
+initialize registerTraceClass `egg.encoded (inherited := true)
 initialize registerTraceClass `egg.reconstruction (inherited := true)
 
 namespace Egg
@@ -74,12 +74,14 @@ def Config.trace (cfg : Config) (cls : Name) : TacticM Unit := do
       Lean.trace cls fun _ => m!"{toEmoji cfg.traceSubstitutions} Trace Substitutions"
       Lean.trace cls fun _ => m!"{toEmoji cfg.traceBVarCorrection} Trace BVar Index Correction"
 
-def Request.trace (req : Request) : TacticM Unit := do
-  withTraceNode `egg.frontend (fun _ => return "Request") do
-    withTraceNode `egg.frontend (fun _ => return "Goal") (collapsed := false) do
-      withTraceNode `egg.frontend (fun _ => return "LHS") do trace[egg.frontend] req.lhs
-      withTraceNode `egg.frontend (fun _ => return "RHS") do trace[egg.frontend] req.rhs
-    let rwsTitle := (if req.rws.isEmpty && !req.cfg.genNatLitRws then "No " else "") ++ "Rewrites"
-    withTraceNode `egg.frontend (fun _ => return rwsTitle) (collapsed := false) do
-      for rw in req.rws do rw.trace `egg.frontend
-      if req.cfg.genNatLitRws then trace[egg.frontend] "Nat Literal Conversions"
+def Request.trace (req : Request) (cls : Name) : TacticM Unit := do
+  withTraceNode cls (fun _ => return "Goal") do
+    Lean.trace cls fun _ => m!"LHS: {req.lhs}"
+    Lean.trace cls fun _ => m!"RHS: {req.rhs}"
+  let rwsHeader := s!"{if req.rws.isEmpty then "No " else ""}Rewrites"
+  withTraceNode `egg.frontend (fun _ => return rwsHeader) do
+    for rw in req.rws do
+      rw.trace cls
+  withTraceNode cls (fun _ => return "Guides") do
+    for guide in req.guides do
+      Lean.trace cls fun _ => guide
