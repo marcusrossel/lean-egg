@@ -19,7 +19,7 @@ nonrec def MVars.format (mvars : MVars) : MetaM Format := do
   let expr := format <| ← mvars.expr.toList.mapM (ppExpr <| Expr.mvar ·)
   let tc   := format <| ← mvars.tc.toList.mapM   (ppExpr <| Expr.mvar ·)
   let lvl  := format <|   mvars.lvl.toList.map   (Level.mvar ·)
-  return "expr: " ++ expr ++ "\n" ++ "class: " ++ tc ++ "\n" ++ "level: " ++ lvl
+  return "expr:  " ++ expr ++ "\n" ++ "class: " ++ tc ++ "\n" ++ "level: " ++ lvl
 
 def Directions.format : Directions → Format
   | .none     => "∅"

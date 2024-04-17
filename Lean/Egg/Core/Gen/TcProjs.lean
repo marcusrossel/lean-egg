@@ -5,26 +5,28 @@ open Lean Meta
 
 namespace Egg
 
--- We expect the `args` to contain `numParams + 1` elements where the `numParams + 1`th argument is
--- the typeclass instance argument for `const`. Also, not arguments can contain loos bvars and the
--- final argument (the typeclass instance) can not be an mvar.
-structure TcProj where
-  const : Name
-  lvls  : List Level
-  args  : Array Expr
-  deriving BEq, Hashable
+abbrev TcProj := Expr
 
-abbrev TcProjIndex := HashMap TcProj Source
+private def TcProj.mk (const : Name) (args : Array Expr) (lvls : List Level) : TcProj :=
+  mkAppN (.const const lvls) args
 
 private def TcProj.reductionRewrite? (proj : TcProj) (src : Source) (beta eta : Bool) :
     MetaM (Option Rewrite) := do
-  let app := mkAppN (.const proj.const proj.lvls) proj.args
-  let reduced ← withReducibleAndInstances do reduceAll app
-  if app == reduced then return none
-  let eq ← mkEq app reduced
-  let proof ← mkEqRefl app
-  let some rw ← Rewrite.from? proof eq src beta eta | throwError "egg: internal error in 'TcProj.reductionRewrite'"
+  let reduced ← withReducibleAndInstances do reduceAll proj
+  -- Sometimes the only reduction performed by `reduceAll` is to replace a application of a type
+  -- class projection with its corresponding `Expr.proj` expression. In that case, no real reduction
+  -- has been performed for our purposes. To catch these cases, we normalize `reduced` (which
+  -- expands `Expr.proj`s) *before* checking for equality with `proj`, and in return *don't*
+  -- normalize again in `Rewrite.from?`.
+  let reducedNorm ← Egg.normalize reduced beta eta
+  if proj == reducedNorm then return none
+  let eq ← mkEq proj reducedNorm
+  let proof ← mkEqRefl proj
+  let some rw ← Rewrite.from? proof eq src beta eta (normalize := false)
+    | throwError "egg: internal error in 'TcProj.reductionRewrite?'"
   return rw
+
+abbrev TcProjIndex := HashMap TcProj Source
 
 private structure State where
   projs   : TcProjIndex    := ∅
@@ -53,7 +55,7 @@ where
     unless info.fromClass && s.args.size > info.numParams do return s
     let args := s.args[:info.numParams + 1].toArray
     if args.back.isMVar || args.any (·.hasLooseBVars) then return s
-    let proj : TcProj := { const, lvls, args }
+    let proj := TcProj.mk const args lvls
     if s.covers proj
     then return s
     else return { s with projs := s.projs.insert proj (.tcProj src side? s.pos) }
