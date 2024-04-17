@@ -93,6 +93,7 @@ private def processRawExpl
   if cfg.exitPoint == .beforeProof then goal.id.admit; return
   let expl ← rawExpl.parse
   let proof ← expl.proof rws
+  proof.trace `egg.proof
   let mut prf ← proof.prove goal.type
   prf ← instantiateMVars prf
   catchLooseMVars prf amb

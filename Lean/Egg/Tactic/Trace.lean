@@ -1,4 +1,5 @@
 import Egg.Core.Request
+import Egg.Core.Explanation.Proof
 import Lean
 open Lean Meta Elab Tactic Std Format
 
@@ -39,9 +40,9 @@ def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) : TacticM U
   let mut header := m!"{rw.src.description}({rw.validDirs.format})"
   if let some stx := stx? then header := m!"{header}: {stx}"
   withTraceNode cls (fun _ => return header) do
-    Lean.traceM cls fun _ => return m!"{← rw.toCongr.format}"
-    Lean.traceM cls fun _ => return m!"LHS MVars\n{← rw.lhsMVars.format}"
-    Lean.traceM cls fun _ => return m!"RHS MVars\n{← rw.rhsMVars.format}"
+    traceM cls fun _ => return m!"{← rw.toCongr.format}"
+    traceM cls fun _ => return m!"LHS MVars\n{← rw.lhsMVars.format}"
+    traceM cls fun _ => return m!"RHS MVars\n{← rw.rhsMVars.format}"
 
 def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cls : Name) : TacticM Unit := do
   for rw in rws, idx in [:rws.size] do rw.trace stx[idx]? cls
@@ -52,37 +53,55 @@ def Rewrite.Encoded.trace (rw : Rewrite.Encoded) (cls : Name) : TacticM Unit := 
     Lean.trace cls fun _ => m!"LHS: {rw.lhs}"
     Lean.trace cls fun _ => m!"RHS: {rw.rhs}"
 
-def Config.trace (cfg : Config) (cls : Name) : TacticM Unit := do
+nonrec def Config.trace (cfg : Config) (cls : Name) : TacticM Unit := do
   let toEmoji (b : Bool) := if b then "✅" else "❌"
   withTraceNode cls (fun _ => return "Configuration") do
-    Lean.trace cls fun _ => m!"{toEmoji cfg.genTcProjRws} Generate Type Class Projection Rewrites"
-    Lean.trace cls fun _ => m!"{toEmoji cfg.genTcSpecRws} Generate Type Class Specialization Rewrites"
-    Lean.trace cls fun _ => m!"{toEmoji cfg.genNatLitRws} Enable Definitional Natural Number Literal Rewrites"
-    Lean.trace cls fun _ => m!"{toEmoji cfg.genBetaRw} Enable β-Reduction"
-    Lean.trace cls fun _ => m!"{toEmoji cfg.genEtaRw} Enable η-Reduction"
-    Lean.trace cls fun _ => m!"{toEmoji cfg.blockInvalidMatches} Block Invalid Matches"
-    Lean.trace cls fun _ => m!"{toEmoji cfg.shiftCapturedBVars} Correct BVar Indices"
-    Lean.trace cls fun _ => m!"{toEmoji cfg.optimizeExpl} Optimize Explanation Length"
+    trace cls fun _ => m!"{toEmoji cfg.genTcProjRws} Generate Type Class Projection Rewrites"
+    trace cls fun _ => m!"{toEmoji cfg.genTcSpecRws} Generate Type Class Specialization Rewrites"
+    trace cls fun _ => m!"{toEmoji cfg.genNatLitRws} Enable Definitional Natural Number Literal Rewrites"
+    trace cls fun _ => m!"{toEmoji cfg.genBetaRw} Enable β-Reduction"
+    trace cls fun _ => m!"{toEmoji cfg.genEtaRw} Enable η-Reduction"
+    trace cls fun _ => m!"{toEmoji cfg.blockInvalidMatches} Block Invalid Matches"
+    trace cls fun _ => m!"{toEmoji cfg.shiftCapturedBVars} Correct BVar Indices"
+    trace cls fun _ => m!"{toEmoji cfg.optimizeExpl} Optimize Explanation Length"
     withTraceNode cls (fun _ => return "Encoding") (collapsed := false) do
-      Lean.trace cls fun _ => m!"{toEmoji cfg.betaReduceRws} β-Reduce Rewrites"
-      Lean.trace cls fun _ => m!"{toEmoji cfg.etaReduceRws} η-Reduces Rewrites"
-      Lean.trace cls fun _ => m!"{toEmoji cfg.eraseProofs} Erase Proofs"
-      Lean.trace cls fun _ => m!"{toEmoji cfg.eraseLambdaDomains} Erase λ's Domains"
-      Lean.trace cls fun _ => m!"{toEmoji cfg.eraseForallDomains} Erase ∀'s Domains"
+      trace cls fun _ => m!"{toEmoji cfg.betaReduceRws} β-Reduce Rewrites"
+      trace cls fun _ => m!"{toEmoji cfg.etaReduceRws} η-Reduces Rewrites"
+      trace cls fun _ => m!"{toEmoji cfg.eraseProofs} Erase Proofs"
+      trace cls fun _ => m!"{toEmoji cfg.eraseLambdaDomains} Erase λ's Domains"
+      trace cls fun _ => m!"{toEmoji cfg.eraseForallDomains} Erase ∀'s Domains"
     withTraceNode cls (fun _ => return "Debug") (collapsed := false) do
-      Lean.trace cls fun _ => m!"Exit Point: {cfg.exitPoint.format}"
-      Lean.trace cls fun _ => m!"E-Graph Visualization Export Path: {cfg.vizPath.getD "None"}"
-      Lean.trace cls fun _ => m!"{toEmoji cfg.traceSubstitutions} Trace Substitutions"
-      Lean.trace cls fun _ => m!"{toEmoji cfg.traceBVarCorrection} Trace BVar Index Correction"
+      trace cls fun _ => m!"Exit Point: {cfg.exitPoint.format}"
+      trace cls fun _ => m!"E-Graph Visualization Export Path: {cfg.vizPath.getD "None"}"
+      trace cls fun _ => m!"{toEmoji cfg.traceSubstitutions} Trace Substitutions"
+      trace cls fun _ => m!"{toEmoji cfg.traceBVarCorrection} Trace BVar Index Correction"
 
-def Request.trace (req : Request) (cls : Name) : TacticM Unit := do
+nonrec def Request.trace (req : Request) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Goal") do
-    Lean.trace cls fun _ => m!"LHS: {req.lhs}"
-    Lean.trace cls fun _ => m!"RHS: {req.rhs}"
+    trace cls fun _ => m!"LHS: {req.lhs}"
+    trace cls fun _ => m!"RHS: {req.rhs}"
   let rwsHeader := s!"{if req.rws.isEmpty then "No " else ""}Rewrites"
   withTraceNode `egg.frontend (fun _ => return rwsHeader) do
     for rw in req.rws do
       rw.trace cls
   withTraceNode cls (fun _ => return "Guides") do
     for guide in req.guides do
-      Lean.trace cls fun _ => guide
+      trace cls fun _ => guide
+
+nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
+  withTraceNode cls (fun _ => return "Proof") do
+    for step in prf, idx in [:prf.size] do
+      if idx == 0 then trace cls fun _ => step.lhs
+      match step.rw with
+      | .defeq src =>
+        withTraceNode cls (fun _ => return step.rhs) do
+          trace cls fun _ => m!"{src.description}({dirFormat step.dir})"
+      | .rw rw _ =>
+        if rw.src.containsTcProj then continue
+        withTraceNode cls (fun _ => return step.rhs) do
+          trace  cls fun _ => m!"{rw.src.description}({dirFormat step.dir})"
+          traceM cls fun _ => return m!"{← rw.toCongr.format}"
+where
+  dirFormat : Direction → Format
+    | .forward  => "⇒"
+    | .backward => "⇐"

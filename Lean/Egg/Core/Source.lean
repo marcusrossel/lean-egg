@@ -77,3 +77,8 @@ def isRewrite : Source → Bool
 def isDefEq : Source → Bool
   | natLit _ | eta | beta => true
   | _                     => false
+
+def containsTcProj : Source → Bool
+  | tcProj ..     => true
+  | tcSpec src .. => src.containsTcProj
+  | _             => false

@@ -122,20 +122,6 @@ where
   fail (msg : String) : MetaM Unit := do
     throwError s!"egg failed to build proof: {msg}"
 
-/-
-private def traceExplSteps (current : Expr) (steps : Array Explanation.Step) (cls : Name) :
-    MetaM Unit := do
-  withTraceNode cls (fun _ => return m!"Steps ({steps.size})") do
-    trace cls fun _ => current
-    for step in steps do
-      trace  cls fun _ => m!"{step.src.description}({dirFormat step.dir})"
-      trace cls fun _ => step.dst.toExpr
-where
-  dirFormat : Direction → Format
-    | .forward  => "⇒"
-    | .backward => "⇐"
--/
-
 def Explanation.proof (expl : Explanation) (rws : Rewrites) : MetaM Proof := do
   let mut current ← expl.start.toExpr
   let mut proof : Proof := #[]
