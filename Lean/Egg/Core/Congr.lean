@@ -7,13 +7,19 @@ namespace Egg
 inductive Congr.Rel where
   | eq
   | iff
+  deriving Inhabited
 
 structure Congr where
   rel : Congr.Rel
   lhs : Expr
   rhs : Expr
+  deriving Inhabited
 
 namespace Congr
+
+def Rel.mkRefl (expr : Expr) : Rel → MetaM Expr
+  | eq  => mkEqRefl expr
+  | iff => mkAppM ``Iff.refl #[expr]
 
 def Rel.mkSymm (proof : Expr) : Rel → MetaM Expr
   | eq  => mkEqSymm proof

@@ -6,7 +6,8 @@ initialize registerTraceClass `egg
 initialize registerTraceClass `egg.config (inherited := true)
 initialize registerTraceClass `egg.rewrites (inherited := true)
 initialize registerTraceClass `egg.encoded (inherited := true)
-initialize registerTraceClass `egg.reconstruction (inherited := true)
+initialize registerTraceClass `egg.explanation (inherited := true)
+initialize registerTraceClass `egg.proof (inherited := true)
 
 namespace Egg
 

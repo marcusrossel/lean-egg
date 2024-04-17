@@ -87,71 +87,90 @@ def Expression.toExpr : Expression → MetaM Expr
   | lit l           => return .lit l
   | erased          => mkFreshExprMVar none
 
-abbrev AmbientMVars := PersistentHashMap MVarId MetavarDecl
+end Explanation
 
-def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) (amb : AmbientMVars) : MetaM Expr := do
-  withTraceNode `egg.reconstruction (fun _ => return "Reconstruction") do
-    let mut current ← expl.start.toExpr
-    let steps := expl.steps
-    withTraceNode `egg.reconstruction (fun _ => return "Explanation") do
-      trace[egg.reconstruction] current
-      for step in steps, idx in [:steps.size] do
-        withTraceNode `egg.reconstruction (fun _ => return s!"Step {idx}") do
-          trace[egg.reconstruction] step.src.description
-          trace[egg.reconstruction] ← step.dst.toExpr
-    unless ← isDefEq cgr.lhs current do
-      throwError s!"{errorPrefix} initial expression is not defeq to lhs of proof goal"
-    let mut proof ← mkEqRefl current
-    for step in steps, idx in [:steps.size] do
-      let next ← step.dst.toExpr
-      let stepEq ← do
-        withTraceNode `egg.reconstruction (fun _ => return m!"Step {idx}") do
-          trace[egg.reconstruction] m!"Current: {current}"
-          trace[egg.reconstruction] m!"Next:    {next}"
-          proofStep current next step.toInfo
-      proof ← mkEqTrans proof stepEq
-      current := next
-    checkFinalProof proof current steps
-    match cgr.rel with
-    | .eq  => return proof
-    | .iff => mkIffOfEq proof
+inductive Proof.Step.Rewrite where
+  | rw  (rw : Egg.Rewrite)
+  | src (src : Source)
+  deriving Inhabited
+
+structure Proof.Step where
+  lhs   : Expr
+  rhs   : Expr
+  proof : Expr
+  rw    : Step.Rewrite
+  dir   : Direction
+  deriving Inhabited
+
+abbrev Proof := Array Proof.Step
+
+-- TODO: Can you skip refl steps here?
+def Proof.prove (prf : Proof) (cgr : Congr) : MetaM Expr := do
+  let some first := prf[0]? | return (← cgr.rel.mkRefl cgr.lhs)
+  unless ← isDefEq first.lhs cgr.lhs do fail "initial expression is not defeq to lhs of proof goal"
+  let mut proof := first.proof
+  for step in prf[1:] do proof ← mkEqTrans proof step.proof
+  unless ← isDefEq prf.back.rhs cgr.rhs do fail "final expression is not defeq to rhs of proof goal"
+  match cgr.rel with
+  | .eq  => return proof
+  | .iff => mkIffOfEq proof
 where
-  errorPrefix := "egg failed to reconstruct proof:"
+  fail (msg : String) : MetaM Unit := do
+    throwError s!"egg failed to build proof: {msg}"
 
-  proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Expr := do
-    if rwInfo.src.isDefEq then return ← mkReflStep current next rwInfo.src
-    let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
-    if ← isRflProof rw.proof then return ← mkReflStep current next rwInfo.src
-    mkCongrStep current next rwInfo.pos (← rw.forDir rwInfo.dir)
+/-
+private def traceExplSteps (current : Expr) (steps : Array Explanation.Step) (cls : Name) :
+    MetaM Unit := do
+  withTraceNode cls (fun _ => return m!"Steps ({steps.size})") do
+    trace cls fun _ => current
+    for step in steps do
+      trace  cls fun _ => m!"{step.src.description}({dirFormat step.dir})"
+      trace cls fun _ => step.dst.toExpr
+where
+  dirFormat : Direction → Format
+    | .forward  => "⇒"
+    | .backward => "⇐"
+-/
 
-  mkReflStep (current next : Expr) (src : Source) : MetaM Expr := do
+def Explanation.proof (expl : Explanation) (rws : Rewrites) : MetaM Proof := do
+  let mut current ← expl.start.toExpr
+  let mut proof : Proof := #[]
+  for step in expl.steps do
+    let next ← step.dst.toExpr
+    proof := proof.push (← proofStep current next step.toInfo)
+    current := next
+  return proof
+where
+  fail {α} (msg : MessageData) : MetaM α := do
+    throwError m!"egg failed to build proof: {msg}"
+
+  proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Proof.Step := do
+    if rwInfo.src.isDefEq then return ← mkReflStep current next rwInfo.toDescriptor
+    let some rw := rws.find? rwInfo.src | fail s!"unknown rewrite {rwInfo.src.description}"
+    if ← isRflProof rw.proof then return ← mkReflStep current next rwInfo.toDescriptor
+    let prf ← mkCongrStep current next rwInfo.pos (← rw.forDir rwInfo.dir)
+    return { lhs := current, rhs := next, proof := prf, rw := .rw rw, dir := rwInfo.dir }
+
+  mkReflStep (current next : Expr) (rw : Rewrite.Descriptor) : MetaM Proof.Step := do
     unless ← isDefEq current next do
-      throwError s!"{errorPrefix} unification failure for proof by reflexivity with rw {src.description}"
-    mkEqRefl next
+      fail s!"unification failure for proof by reflexivity with rw {rw.src.description}"
+    return { lhs := current, rhs := next, proof := ← mkEqRefl next, rw := .src rw.src, dir := rw.dir }
 
   mkCongrStep (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) : MetaM Expr := do
     let mvc := (← getMCtx).mvarCounter
     let (lhs, rhs) ← placeCHoles current next pos rw
     try (← mkCongrOf 0 mvc lhs rhs).eq
-    catch err => throwError m!"{errorPrefix} 'mkCongrOf' failed with\n  {err.toMessageData}"
+    catch err => fail m!"'mkCongrOf' failed with\n  {err.toMessageData}"
 
   placeCHoles (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) : MetaM (Expr × Expr) := do
     replaceSubexprs (root₁ := current) (root₂ := next) (p := pos) fun lhs rhs => do
       -- It's necessary that we create the fresh rewrite (that is, create the fresh mvars) in *this*
       -- local context as otherwise the mvars can't unify with variables under binders.
       let rw ← rw.fresh
-      unless ← isDefEq lhs rw.lhs do throwError "{errorPrefix} unification failure for LHS of rewrite"
-      unless ← isDefEq rhs rw.rhs do throwError "{errorPrefix} unification failure for RHS of rewrite"
+      unless ← isDefEq lhs rw.lhs do fail "unification failure for LHS of rewrite"
+      unless ← isDefEq rhs rw.rhs do fail "unification failure for RHS of rewrite"
       let proof ← rw.eqProof
       return (
         ← mkCHole (forLhs := true) lhs proof,
         ← mkCHole (forLhs := false) rhs proof
       )
-
-  checkFinalProof (proof : Expr) (current : Expr) (steps : Array Step) : MetaM Unit := do
-    let last := steps.back?.map (·.dst) |>.getD expl.start
-    unless ← isDefEq current (← last.toExpr) do
-      throwError s!"{errorPrefix} final expression is not defeq to rhs of proof goal"
-    let proof ← instantiateMVars proof
-    for mvar in (proof.collectMVars {}).result do
-      unless amb.contains mvar do throwError s!"{errorPrefix} final proof contains mvar {mvar.name}"

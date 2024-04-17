@@ -9,6 +9,7 @@ structure MVars where
   lvl  : LMVarIdSet := ∅
   -- A subset of `expr` which tracks the mvars whose type is a type class.
   tc   : MVarIdSet  := ∅
+  deriving Inhabited
 
 private def MVars.insertExpr (mvars : MVars) (id : MVarId) : MetaM MVars := do
   let isClass := (← isClass? (← id.getType)).isSome

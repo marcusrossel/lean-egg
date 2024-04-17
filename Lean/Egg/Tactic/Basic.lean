@@ -28,7 +28,9 @@ private def Goal.tcProjTargets (goal : Goal) : Array TcProjTarget := #[
   { expr := goal.type.rhs, src := .goal, side? := some .right }
 ]
 
-private def getAmbientMVars : MetaM Explanation.AmbientMVars :=
+private abbrev AmbientMVars := PersistentHashMap MVarId MetavarDecl
+
+private def AmbientMVars.get : MetaM AmbientMVars :=
   return (← getMCtx).decls
 
 private def parseGoal (goal : MVarId) (base? : Option (TSyntax `egg_base)) : MetaM Goal := do
@@ -85,20 +87,23 @@ where
 
 private def processRawExpl
     (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (cfg : Config.Debug)
-    (amb : Explanation.AmbientMVars) : TacticM Unit := do
-  withTraceNode `egg.reconstruction (fun _ => return "Result") do trace[egg.reconstruction] rawExpl
+    (amb : AmbientMVars) : TacticM Unit := do
   if rawExpl.isEmpty then throwError "egg failed to prove goal"
-  if cfg.exitPoint == .beforeProof then
-    goal.id.admit
-  else
-    let expl ← rawExpl.parse
-    let mut proof ← expl.proof goal.type rws amb
-    -- When `goal.base? = some base`, then `proof` is a proof of `base = <goal type>`. We turn this
-    -- into a proof of `<goal type>` here.
-    if let some base := goal.base? then proof ← mkEqMP proof (.fvar base)
-    withTraceNode `egg.reconstruction (fun _ => return "Final Proof") do
-      trace[egg.reconstruction] proof
-    goal.id.assignIfDefeq proof
+  withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] rawExpl
+  if cfg.exitPoint == .beforeProof then goal.id.admit; return
+  let expl ← rawExpl.parse
+  let proof ← expl.proof rws
+  let mut prf ← proof.prove goal.type
+  prf ← instantiateMVars prf
+  catchLooseMVars prf amb
+  -- When `goal.base? = some base`, then `proof` is a proof of `base = <goal type>`. We turn this
+  -- into a proof of `<goal type>` here.
+  if let some base := goal.base? then prf ← mkEqMP prf (.fvar base)
+  goal.id.assignIfDefeq prf
+where
+  catchLooseMVars (prf : Expr) (amb : AmbientMVars) : MetaM Unit := do
+    for mvar in (prf.collectMVars {}).result do
+      unless amb.contains mvar do throwError s!"egg: final proof contains mvar {mvar.name}"
 
 private def traceRequest (req : Request) : TacticM Unit := do
   let cls := `egg.encoded
@@ -113,7 +118,7 @@ elab "egg " mod:egg_cfg_mod rws:egg_rws base:(egg_base)? guides:(egg_guides)? : 
   let cfg := (← Config.fromOptions).modify mod
   cfg.trace `egg.config
   goal.withContext do
-    let amb     ← getAmbientMVars
+    let amb     ← AmbientMVars.get
     let goal    ← parseGoal goal base
     let guides := (← guides.mapM Guides.parseGuides).getD #[]
     let rws     ← genRewrites goal rws guides cfg

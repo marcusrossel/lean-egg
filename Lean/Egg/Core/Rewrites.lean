@@ -14,6 +14,7 @@ structure _root_.Egg.Rewrite extends Congr where
   src      : Source
   lhsMVars : MVars
   rhsMVars : MVars
+  deriving Inhabited
 
 -- Note: We normalize the `lhs` and `rhs` of the rewrite.
 --

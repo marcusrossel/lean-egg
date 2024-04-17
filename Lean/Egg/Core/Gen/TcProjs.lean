@@ -10,15 +10,16 @@ abbrev TcProj := Expr
 private def TcProj.mk (const : Name) (args : Array Expr) (lvls : List Level) : TcProj :=
   mkAppN (.const const lvls) args
 
+-- Note: This function expects `proj` to be normalized (cf. `Egg.normalize`).
 private def TcProj.reductionRewrite? (proj : TcProj) (src : Source) (beta eta : Bool) :
     MetaM (Option Rewrite) := do
-  let reduced ← withReducibleAndInstances do reduceAll proj
   -- Sometimes the only reduction performed by `reduceAll` is to replace a application of a type
   -- class projection with its corresponding `Expr.proj` expression. In that case, no real reduction
   -- has been performed for our purposes. To catch these cases, we normalize `reduced` (which
   -- expands `Expr.proj`s) *before* checking for equality with `proj`, and in return *don't*
   -- normalize again in `Rewrite.from?`.
-  let reducedNorm ← Egg.normalize reduced beta eta
+  let reduced ← withReducibleAndInstances do reduceAll proj
+  let reducedNorm ← normalize reduced beta eta
   if proj == reducedNorm then return none
   let eq ← mkEq proj reducedNorm
   let proof ← mkEqRefl proj
