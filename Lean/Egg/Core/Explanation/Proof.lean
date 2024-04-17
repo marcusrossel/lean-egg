@@ -90,9 +90,13 @@ def Expression.toExpr : Expression → MetaM Expr
 end Explanation
 
 inductive Proof.Step.Rewrite where
-  | rw  (rw : Egg.Rewrite)
-  | src (src : Source)
+  | rw    (rw : Egg.Rewrite) (isRefl : Bool)
+  | defeq (src : Source)
   deriving Inhabited
+
+def Proof.Step.Rewrite.isRefl : Rewrite → Bool
+  | rw _ isRefl => isRefl
+  | defeq _     => true
 
 structure Proof.Step where
   lhs   : Expr
@@ -104,12 +108,12 @@ structure Proof.Step where
 
 abbrev Proof := Array Proof.Step
 
--- TODO: Can you skip refl steps here?
 def Proof.prove (prf : Proof) (cgr : Congr) : MetaM Expr := do
   let some first := prf[0]? | return (← cgr.rel.mkRefl cgr.lhs)
   unless ← isDefEq first.lhs cgr.lhs do fail "initial expression is not defeq to lhs of proof goal"
   let mut proof := first.proof
-  for step in prf[1:] do proof ← mkEqTrans proof step.proof
+  for step in prf[1:] do
+    if !step.rw.isRefl then proof ← mkEqTrans proof step.proof
   unless ← isDefEq prf.back.rhs cgr.rhs do fail "final expression is not defeq to rhs of proof goal"
   match cgr.rel with
   | .eq  => return proof
@@ -145,16 +149,25 @@ where
     throwError m!"egg failed to build proof: {msg}"
 
   proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Proof.Step := do
-    if rwInfo.src.isDefEq then return ← mkReflStep current next rwInfo.toDescriptor
+    if rwInfo.src.isDefEq then return {
+      lhs := current, rhs := next, proof := ← mkReflStep current next rwInfo.toDescriptor,
+      rw := .defeq rwInfo.src, dir := rwInfo.dir
+    }
     let some rw := rws.find? rwInfo.src | fail s!"unknown rewrite {rwInfo.src.description}"
-    if ← isRflProof rw.proof then return ← mkReflStep current next rwInfo.toDescriptor
+    if ← isRflProof rw.proof then return {
+      lhs := current, rhs := next, proof := ← mkReflStep current next rwInfo.toDescriptor,
+      rw := .rw rw (isRefl := true), dir := rwInfo.dir
+    }
     let prf ← mkCongrStep current next rwInfo.pos (← rw.forDir rwInfo.dir)
-    return { lhs := current, rhs := next, proof := prf, rw := .rw rw, dir := rwInfo.dir }
+    return {
+      lhs := current, rhs := next, proof := prf,
+      rw := .rw rw (isRefl := false), dir := rwInfo.dir
+    }
 
-  mkReflStep (current next : Expr) (rw : Rewrite.Descriptor) : MetaM Proof.Step := do
+  mkReflStep (current next : Expr) (rw : Rewrite.Descriptor) : MetaM Expr := do
     unless ← isDefEq current next do
       fail s!"unification failure for proof by reflexivity with rw {rw.src.description}"
-    return { lhs := current, rhs := next, proof := ← mkEqRefl next, rw := .src rw.src, dir := rw.dir }
+    mkEqRefl next
 
   mkCongrStep (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) : MetaM Expr := do
     let mvc := (← getMCtx).mvarCounter
