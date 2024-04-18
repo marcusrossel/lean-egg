@@ -1,8 +1,5 @@
 import Egg
 
--- TODO: Would it be nicer to allow any number of terms to be supplied into the list of rewrites
---       and make all of them potential bases by adding them to the e-graph?
-
 example (h : True) : True := by
   egg from h
 

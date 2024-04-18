@@ -19,6 +19,9 @@ example : Int.ofNat (Nat.succ 1) = Int.ofNat (Nat.succ (Nat.succ Nat.zero)) := b
 example (h : ∀ n, Nat.succ n = n + 1) : 1 = Nat.zero + 1 := by
   egg [h]
 
+example : 1 = Nat.zero + 1 := by
+  egg [Nat.succ_eq_add_one]
+
 elab "app" n:num fn:ident arg:term : term => open Lean.Elab.Term in do
   let fn ← elabTerm fn none
   let rec go (n : Nat) := if n = 0 then elabTerm arg none else return .app fn <| ← go (n - 1)
@@ -64,4 +67,6 @@ example : 12345 % 67890 = 12345 := by
 example : 12345 % 0 = 12345 := by
   egg
 
--- TODO: Add more tests involving rewrites with Nat.succ or Nat.zero.
+-- TODO: We currently only β- and η-reduce rewrites. We should also perform the nat-lit reductions.
+example (h : ∀ f : Nat → Nat, f (1 + 1) = x) : id 2 = x := by
+  rw [←h] -- egg [h]

@@ -79,7 +79,7 @@ where
         specTodo := specTodo ++ projRws
         tcRws    := tcRws ++ projRws
       if cfg.genTcSpecRws then
-        let specRws ← genTcSpecializations specTodo
+        let specRws ← genTcSpecializations specTodo cfg.betaReduceRws cfg.etaReduceRws
         specTodo := #[]
         projTodo := specRws.tcProjTargets
         tcRws    := tcRws ++ specRws

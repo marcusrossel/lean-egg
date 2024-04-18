@@ -7,7 +7,7 @@ define_language! {
     pub enum LeanExpr {
         // Primitives:
         Nat(u64),
-        Str(String), // TODO: Use `Symbol` instead of `String`.
+        Str(Symbol),
 
         // Encoding of universe levels:
         // Note, we don't encode `zero` explicitly, and use `Nat(0)` for that instead.
@@ -28,7 +28,7 @@ define_language! {
         "∀"     = Forall([Id; 2]),  // (<expr>, <expr>)
         "lit"   = Lit(Id),          // (Nat | Str)
 
-        // Constants for erased expressions:
+        // Constant for erased expressions:
         "_" = Erased,
     }
 }
