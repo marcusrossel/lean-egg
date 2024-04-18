@@ -12,9 +12,8 @@ example (a b : Nat) (h : a = b) : a = b := by
 example (a b c : Nat) (h₁ : a = b) (h₂ : b = c) : a = c := by
   egg [h₂] from h₁
 
--- TODO: Removing the last `p` in the goal causes 'maximum recursion depth has been reached'.
-example (h : p ∧ q ∧ r) (assoc : ∀ a b c, (a ∧ b) ∧ c ↔ a ∧ (b ∧ c)) (idem : ∀ a, a ↔ a ∧ a) :
-    r ∧ r ∧ q ∧ p ∧ q ∧ r ∧ p := by
+variable (assoc : ∀ a b c, (a ∧ b) ∧ c ↔ a ∧ (b ∧ c)) (idem : ∀ a, a ↔ a ∧ a) in
+example (h : p ∧ q ∧ r) : r ∧ r ∧ q ∧ p ∧ q ∧ r ∧ p := by
   egg [And.comm, assoc, idem] from h
 
 example (P : Nat → Prop) (hp : P Nat.zero.succ) (h : ∀ n, P n ↔ P n.succ) :
