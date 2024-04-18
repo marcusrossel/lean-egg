@@ -34,6 +34,5 @@ theorem inv_inv : -(-a) = a := by
 theorem neg_add' : -(a + b) = -b + -a := by
   group using -a + (a + b) + -(a + b)
 
--- BUG: Try adding a hypothesis. This should cause the backend to crash.
 theorem inv_inv' : -(-a) = a := by
   group using -a + a
