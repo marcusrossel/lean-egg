@@ -1,11 +1,13 @@
 namespace Egg.Config
 
 structure Encoding where
-  eraseProofs        := true
+  betaReduceRws := true
+  etaReduceRws  := true
+  eraseProofs   := true
+  -- TODO: Erasure of types might not work as `isDefEq` expects expressions to be well-typed:
+  --       https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Unify.20level.20mvars/near/416858547
   eraseLambdaDomains := false
   eraseForallDomains := false
-  betaReduceRws      := true
-  etaReduceRws       := true
   deriving BEq
 
 structure Gen where

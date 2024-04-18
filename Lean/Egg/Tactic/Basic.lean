@@ -96,6 +96,7 @@ private def processRawExpl
   proof.trace `egg.proof
   let mut prf ← proof.prove goal.type
   prf ← instantiateMVars prf
+  withTraceNode `egg.proof.term (fun _ => return "Proof Term") do trace[egg.proof.term] prf
   catchLooseMVars prf amb
   -- When `goal.base? = some base`, then `proof` is a proof of `base = <goal type>`. We turn this
   -- into a proof of `<goal type>` here.
