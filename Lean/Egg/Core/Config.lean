@@ -1,8 +1,17 @@
 namespace Egg.Config
 
-structure Encoding where
+structure Normalization where
   betaReduceRws := true
   etaReduceRws  := true
+  natReduceRws  := true
+  deriving BEq
+
+def Normalization.noReduce : Normalization where
+  betaReduceRws := false
+  etaReduceRws  := false
+  natReduceRws  := false
+
+structure Encoding extends Normalization where
   eraseProofs   := true
   -- TODO: Erasure of types might not work as `isDefEq` expects expressions to be well-typed:
   --       https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Unify.20level.20mvars/near/416858547

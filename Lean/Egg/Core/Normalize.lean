@@ -1,21 +1,22 @@
+import Egg.Core.Config
 import Lean
 open Lean Meta Core
 
 namespace Egg
 
 -- Performs ζ-, β- and η-reduction, converts `Expr.proj`s to `Expr.app`s and removes `Expr.mdata`s.
-partial def normalize (e : Expr) (beta eta : Bool) : MetaM Expr :=
+partial def normalize (e : Expr) (cfg : Config.Normalization) : MetaM Expr :=
   go e
 where
   go : Expr → MetaM Expr
     | .mdata _ e    => go e
     | .app fn arg   => do
       let app := .app (← go fn) (← go arg)
-      if beta then betaReduce app else return app
+      if cfg.betaReduceRws then betaReduce app else return app
     | .lam n ty b i => do
       withLocalDecl n i (← go ty) fun fvar => do
         let body ← mkLambdaFVars #[fvar] (← go <| b.instantiate1 fvar)
-        return if eta then body.eta else body
+        return if cfg.etaReduceRws then body.eta else body
     | .forallE n ty b i => do
       withLocalDecl n i (← go ty) fun fvar => do
         mkForallFVars #[fvar] (← go <| b.instantiate1 fvar)

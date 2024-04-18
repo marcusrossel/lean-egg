@@ -27,10 +27,10 @@ structure _root_.Egg.Rewrite extends Congr where
 --
 -- Note: We must instantiate mvars of the rewrite's type. For an example that breaks otherwise, cf.
 --       https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Different.20elab.20results
-def from? (proof : Expr) (type : Expr) (src : Source) (beta eta : Bool) (normalize := true) :
+def from? (proof : Expr) (type : Expr) (src : Source) (normalize : Option Config.Normalization) :
     MetaM (Option Rewrite) := do
   let mut (args, _, type) ← forallMetaTelescope (← instantiateMVars type)
-  type ← if normalize then Egg.normalize type beta eta else pure type
+  type ← if let some cfg := normalize then Egg.normalize type cfg else pure type
   let proof := mkAppN proof args
   let some cgr ← Congr.from? type | return none
   let lhsMVars ← MVars.collect cgr.lhs

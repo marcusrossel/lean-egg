@@ -19,7 +19,8 @@ namespace Rewrites
 
 -- Note: We must use `Tactic.elabTerm`, not `Term.elabTerm`. Otherwise elaborating `‹...›` doesn't
 --       work correctly. Cf. https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Elaborate.20.E2.80.B9.2E.2E.2E.E2.80.BA
-partial def explicit (arg : Term) (argIdx : Nat) (beta eta : Bool) : TacticM Rewrites := do
+partial def explicit (arg : Term) (argIdx : Nat) (norm : Config.Normalization) :
+    TacticM Rewrites := do
   match ← elabArg arg with
   | .inl (e, ty?) => return #[← mkRw e ty? none]
   | .inr eqns =>
@@ -40,7 +41,7 @@ where
   mkRw (e : Expr) (ty? : Option Expr) (eqnIdx? : Option Nat) : TacticM Rewrite := do
     let src := .explicit argIdx eqnIdx?
     let ty := ty?.getD (← inferType e)
-    let some rw ← Rewrite.from? e ty src beta eta
+    let some rw ← Rewrite.from? e ty src norm
       | throwErrorAt arg "egg requires arguments to be equalities, equivalences or (non-propositional) definitions"
     return rw
   elabArg (arg : Term) : TacticM (Sum (Expr × Option Expr) (Array Ident)) := do
@@ -70,15 +71,15 @@ where
 -- Note: We need to filter out auxiliary declaration and implementation details, as they are not
 --       visible in the proof context and, for example, contain the declaration being defined itself
 --       (to enable recursive calls). Cf. https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/local.20context.20without.20current.20decl
-def star (beta eta : Bool) : MetaM Rewrites := do
+def star (norm : Config.Normalization) : MetaM Rewrites := do
   let mut result : Rewrites := #[]
   for decl in ← getLCtx do
     if decl.isImplementationDetail || decl.isAuxDecl then continue
-    if let some rw ← Rewrite.from? decl.toExpr decl.type (.star decl.fvarId) beta eta
+    if let some rw ← Rewrite.from? decl.toExpr decl.type (.star decl.fvarId) norm
     then result := result.push rw
   return result
 
-def parse (beta eta : Bool) : (TSyntax `egg_rws) → TacticM (Rewrites × Array Syntax)
+def parse (norm : Config.Normalization) : (TSyntax `egg_rws) → TacticM (Rewrites × Array Syntax)
   | `(egg_rws|)          => return (#[], #[])
   | `(egg_rws|[$args,*]) => do
     let mut result : Rewrites := #[]
@@ -86,11 +87,11 @@ def parse (beta eta : Bool) : (TSyntax `egg_rws) → TacticM (Rewrites × Array 
     for arg in args.getElems, idx in [:args.getElems.size] do
       match arg with
       | `(egg_rws_arg|$arg:term) =>
-        result := result ++ (← explicit arg idx beta eta)
+        result := result ++ (← explicit arg idx norm)
       | `(egg_rws_arg|*%$tk) =>
         unless noStar do throwErrorAt tk "duplicate '*' in arguments to egg"
         noStar := false
-        result := result ++ (← star beta eta)
+        result := result ++ (← star norm)
       | _ =>
         throwUnsupportedSyntax
     return (result, args)

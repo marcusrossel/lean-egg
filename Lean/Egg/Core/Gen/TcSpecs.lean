@@ -6,7 +6,7 @@ open Lean Meta
 namespace Egg
 
 private partial def genSpecialization
-    (rw : Rewrite) (dir : Direction) (missing : MVarIdSet) (beta eta : Bool) :
+    (rw : Rewrite) (dir : Direction) (missing : MVarIdSet) (norm : Config.Normalization) :
     MetaM (Option Rewrite) := do
   let (rw, subst) ← rw.freshWithSubst (src := .tcSpec rw.src dir)
   let mut missing := missing.map subst.expr.fwd.find!
@@ -25,22 +25,23 @@ where
     if let some inst ← findLocalDeclWithType? type then
       return (Expr.fvar inst)
     else if let some inst ← optional (synthInstance type) then
-      normalize inst beta eta
+      normalize inst norm
     else
       return none
 
-private def genTcSpecializationsForRw (rw : Rewrite) (beta eta : Bool) : MetaM Rewrites := do
+private def genTcSpecializationsForRw (rw : Rewrite) (norm : Config.Normalization) :
+    MetaM Rewrites := do
   let missingOnLhs := rw.rhsMVars.tc.subtract rw.lhsMVars.tc
   let missingOnRhs := rw.lhsMVars.tc.subtract rw.rhsMVars.tc
   let mut specs : Rewrites := #[]
   if !missingOnLhs.isEmpty then
-    if let some spec ← genSpecialization rw .forward missingOnLhs beta eta then
+    if let some spec ← genSpecialization rw .forward missingOnLhs norm then
     specs := specs.push spec
   if !missingOnRhs.isEmpty then
-    if let some spec ← genSpecialization rw .backward missingOnRhs beta eta then
+    if let some spec ← genSpecialization rw .backward missingOnRhs norm then
     specs := specs.push spec
   return specs
 
-def genTcSpecializations (targets : Rewrites) (beta eta : Bool) : MetaM Rewrites :=
+def genTcSpecializations (targets : Rewrites) (norm : Config.Normalization) : MetaM Rewrites :=
   targets.foldlM (init := #[]) fun acc rw =>
-    return acc ++ (← genTcSpecializationsForRw rw beta eta)
+    return acc ++ (← genTcSpecializationsForRw rw norm)

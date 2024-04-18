@@ -12,9 +12,8 @@ example (a b : Nat) (h : a = b) : a = b := by
 example (a b c : Nat) (h₁ : a = b) (h₂ : b = c) : a = c := by
   egg [h₂] from h₁
 
-variable (assoc : ∀ a b c, (a ∧ b) ∧ c ↔ a ∧ (b ∧ c)) (idem : ∀ a, a ↔ a ∧ a) in
 example (h : p ∧ q ∧ r) : r ∧ r ∧ q ∧ p ∧ q ∧ r ∧ p := by
-  egg [And.comm, assoc, idem] from h
+  egg [and_comm, and_assoc, and_self] from h
 
 example (P : Nat → Prop) (hp : P Nat.zero.succ) (h : ∀ n, P n ↔ P n.succ) :
     P Nat.zero.succ.succ.succ.succ := by

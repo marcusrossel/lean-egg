@@ -11,7 +11,7 @@ private def TcProj.mk (const : Name) (args : Array Expr) (lvls : List Level) : T
   mkAppN (.const const lvls) args
 
 -- Note: This function expects `proj` to be normalized (cf. `Egg.normalize`).
-private def TcProj.reductionRewrite? (proj : TcProj) (src : Source) (beta eta : Bool) :
+private def TcProj.reductionRewrite? (proj : TcProj) (src : Source) (norm : Config.Normalization) :
     MetaM (Option Rewrite) := do
   -- Sometimes the only reduction performed by `reduceAll` is to replace a application of a type
   -- class projection with its corresponding `Expr.proj` expression. In that case, no real reduction
@@ -19,11 +19,11 @@ private def TcProj.reductionRewrite? (proj : TcProj) (src : Source) (beta eta : 
   -- expands `Expr.proj`s) *before* checking for equality with `proj`, and in return *don't*
   -- normalize again in `Rewrite.from?`.
   let reduced ← withReducibleAndInstances do reduceAll proj
-  let reducedNorm ← normalize reduced beta eta
+  let reducedNorm ← normalize reduced norm
   if proj == reducedNorm then return none
   let eq ← mkEq proj reducedNorm
   let proof ← mkEqRefl proj
-  let some rw ← Rewrite.from? proof eq src beta eta (normalize := false)
+  let some rw ← Rewrite.from? proof eq src none
     | throwError "egg: internal error in 'TcProj.reductionRewrite?'"
   return rw
 
@@ -95,7 +95,7 @@ def Guides.tcProjTargets (guides : Guides) : Array TcProjTarget :=
 --
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
 def genTcProjReductions
-    (targets : Array TcProjTarget) (covered : HashSet TcProj) (beta eta : Bool) :
+    (targets : Array TcProjTarget) (covered : HashSet TcProj) (norm : Config.Normalization) :
     MetaM (Rewrites × HashSet TcProj) := do
   let mut covered := covered
   let mut rws := #[]
@@ -103,5 +103,5 @@ def genTcProjReductions
     let projs ← tcProjs target.expr target.src target.side? covered
     for (proj, src) in projs.toArray do
       covered := covered.insert proj
-      if let some rw ← proj.reductionRewrite? src beta eta then rws := rws.push rw
+      if let some rw ← proj.reductionRewrite? src norm then rws := rws.push rw
   return (rws, covered)

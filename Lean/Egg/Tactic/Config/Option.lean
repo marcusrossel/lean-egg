@@ -4,71 +4,32 @@ open Lean
 
 namespace Egg
 
-register_option egg.eraseProofs : Bool := {
-  defValue := ({} : Config).eraseProofs
-}
+local macro "register_egg_options" opts:ident* : command => do
+  let regs ← opts.mapM fun (opt : Ident) => do
+    let name := mkIdentFrom opt (`egg ++ opt.getId)
+    `(register_option $name : Bool := { defValue := ({} : Config).$opt})
+  let defIdents := opts.map fun opt => mkIdentFrom opt (`egg ++ opt.getId ++ `get)
+  let cfgFromOpts ← `(
+    def $(mkIdent `Config.fromOptions) : MetaM Config := return {
+      $[$opts:ident := $defIdents (← getOptions)]*
+      toDebug := {}
+    }
+  )
+  let cmds := regs.push cfgFromOpts
+  return ⟨mkNullNode cmds⟩
 
-register_option egg.eraseLambdaDomains : Bool := {
-  defValue := ({} : Config).eraseLambdaDomains
-}
-
-register_option egg.eraseForallDomains : Bool := {
-  defValue := ({} : Config).eraseForallDomains
-}
-
-register_option egg.betaReduceRws : Bool := {
-  defValue := ({} : Config).betaReduceRws
-}
-
-register_option egg.etaReduceRws : Bool := {
-  defValue := ({} : Config).etaReduceRws
-}
-
-register_option egg.genTcProjRws : Bool := {
-  defValue := ({} : Config).genTcProjRws
-}
-
-register_option egg.genTcSpecRws : Bool := {
-  defValue := ({} : Config).genTcSpecRws
-}
-
-register_option egg.genNatLitRws : Bool := {
-  defValue := ({} : Config).genNatLitRws
-}
-
-register_option egg.genEtaRw : Bool := {
-  defValue := ({} : Config).genEtaRw
-}
-
-register_option egg.genBetaRw : Bool := {
-  defValue := ({} : Config).genBetaRw
-}
-
-register_option egg.blockInvalidMatches : Bool := {
-  defValue := ({} : Config).blockInvalidMatches
-}
-
-register_option egg.shiftCapturedBVars : Bool := {
-  defValue := ({} : Config).shiftCapturedBVars
-}
-
-register_option egg.optimizeExpl : Bool := {
-  defValue := ({} : Config).optimizeExpl
-}
-
-def Config.fromOptions : MetaM Config := return {
-    eraseLambdaDomains  := egg.eraseLambdaDomains.get (← getOptions)
-    eraseProofs         := egg.eraseProofs.get (← getOptions)
-    eraseForallDomains  := egg.eraseForallDomains.get (← getOptions)
-    betaReduceRws       := egg.betaReduceRws.get (← getOptions)
-    etaReduceRws        := egg.etaReduceRws.get (← getOptions)
-    genTcProjRws        := egg.genTcProjRws.get (← getOptions)
-    genTcSpecRws        := egg.genTcSpecRws.get (← getOptions)
-    genNatLitRws        := egg.genNatLitRws.get (← getOptions)
-    genEtaRw            := egg.genEtaRw.get (← getOptions)
-    genBetaRw           := egg.genBetaRw.get (← getOptions)
-    blockInvalidMatches := egg.blockInvalidMatches.get (← getOptions)
-    shiftCapturedBVars  := egg.shiftCapturedBVars.get (← getOptions)
-    optimizeExpl        := egg.optimizeExpl.get (← getOptions)
-    toDebug             := {}
-  }
+register_egg_options
+  eraseProofs
+  eraseLambdaDomains
+  eraseForallDomains
+  betaReduceRws
+  etaReduceRws
+  natReduceRws
+  genTcProjRws
+  genTcSpecRws
+  genNatLitRws
+  genEtaRw
+  genBetaRw
+  blockInvalidMatches
+  shiftCapturedBVars
+  optimizeExpl

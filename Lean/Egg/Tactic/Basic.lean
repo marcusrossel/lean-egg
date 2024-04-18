@@ -34,7 +34,7 @@ private def AmbientMVars.get : MetaM AmbientMVars :=
   return (← getMCtx).decls
 
 private def parseGoal (goal : MVarId) (base? : Option (TSyntax `egg_base)) : MetaM Goal := do
-  let goalType ← normalize (← goal.getType') (beta := false) (eta := false)
+  let goalType ← normalize (← goal.getType') .noReduce
   let base? ← base?.mapM parseBase
   let cgr ← getCongr goalType base?
   return { id := goal, type := cgr, base? }
@@ -60,7 +60,7 @@ private def traceRewrites
 
 private partial def genRewrites
     (goal : Goal) (rws : TSyntax `egg_rws) (guides : Guides) (cfg : Config) : TacticM Rewrites := do
-  let (rws, stx) ← Rewrites.parse cfg.betaReduceRws cfg.etaReduceRws rws
+  let (rws, stx) ← Rewrites.parse cfg.toNormalization rws
   let tcRws ← genTcRws rws
   traceRewrites rws stx tcRws cfg.toGen
   return rws ++ tcRws
@@ -74,12 +74,12 @@ where
     if cfg.genTcSpecRws then specTodo := rws
     while (cfg.genTcProjRws && !projTodo.isEmpty) || (cfg.genTcSpecRws && !specTodo.isEmpty) do
       if cfg.genTcProjRws then
-        let (projRws, cov) ← genTcProjReductions projTodo covered cfg.betaReduceRws cfg.etaReduceRws
+        let (projRws, cov) ← genTcProjReductions projTodo covered cfg.toNormalization
         covered  := cov
         specTodo := specTodo ++ projRws
         tcRws    := tcRws ++ projRws
       if cfg.genTcSpecRws then
-        let specRws ← genTcSpecializations specTodo cfg.betaReduceRws cfg.etaReduceRws
+        let specRws ← genTcSpecializations specTodo cfg.toNormalization
         specTodo := #[]
         projTodo := specRws.tcProjTargets
         tcRws    := tcRws ++ specRws
