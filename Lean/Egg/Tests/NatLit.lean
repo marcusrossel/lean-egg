@@ -67,6 +67,25 @@ example : 12345 % 67890 = 12345 := by
 example : 12345 % 0 = 12345 := by
   egg
 
--- TODO: We currently only β- and η-reduce rewrites. We should also perform the nat-lit reductions.
+set_option egg.natReduceRws false in
 example (h : ∀ f : Nat → Nat, f (1 + 1) = x) : id 2 = x := by
-  rw [←h] -- egg [h]
+  fail_if_success egg [h]
+  apply h
+
+example (h : ∀ f : Nat → Nat, f (1 + 1) = x) : id 2 = x := by
+  egg [h]
+
+example (h : ∀ f : Nat → Nat, f (3 - 2) = x) : id 1 = x := by
+  egg [h]
+
+example (h : ∀ f : Nat → Nat, f (2 * 3) = x) : id 6 = x := by
+  egg [h]
+
+example (h : ∀ f : Nat → Nat, f (4 / 2) = x) : id 2 = x := by
+  egg [h]
+
+example (h : ∀ f : Nat → Nat, f (5 % 3) = x) : id 2 = x := by
+  egg [h]
+
+example (h : ∀ f : Nat → Nat, f (2 ^ 3) = x) : id 8 = x := by
+  egg [h]
