@@ -113,6 +113,5 @@ where
 
 nonrec def MVars.Ambient.trace (amb : MVars.Ambient) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Ambient MVars") do
-    for m in amb do
-      -- if ← m.isAssigned then continue
+    for m in ← amb.unassigned do
       trace cls fun _ => m!"{Expr.mvar m}"

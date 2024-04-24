@@ -4,14 +4,18 @@ open Lean
 
 namespace Egg.MVars
 
-abbrev Ambient := MVarIdSet
+abbrev Ambient := PersistentHashMap MVarId MetavarDecl
 
-def Ambient.get : MetaM Ambient := do
-  let mut result := ∅
-  for (mvar, _) in (← getMCtx).decls do
-    if !(← mvar.isAssigned) then
-      result := result.insert mvar
-  return result
+namespace Ambient
+
+def get : MetaM Ambient :=
+  return (← getMCtx).decls
+
+def unassigned (amb : Ambient) : MetaM MVarIdSet :=
+  amb.foldlM (init := ∅) fun res mvar _ =>
+    return if !(← mvar.isAssigned) then res.insert mvar else res
+
+end Ambient
 
 def remove (mvars : MVars) (amb : Ambient) : MVars where
   expr := mvars.expr.filter (!amb.contains ·)
