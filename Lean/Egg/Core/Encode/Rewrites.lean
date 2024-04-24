@@ -1,5 +1,5 @@
 import Egg.Core.Encode.Basic
-import Egg.Core.Rewrites
+import Egg.Core.Premise.Rewrites
 import Lean
 open Lean
 

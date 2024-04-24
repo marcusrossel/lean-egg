@@ -1,4 +1,4 @@
-import Egg.Core.Rewrites
+import Egg.Core.Premise.Basic
 import Egg.Core.Guides
 import Lean
 open Lean Meta
@@ -24,7 +24,7 @@ private def TcProj.reductionRewrite?
   if proj == reducedNorm then return none
   let eq ← mkEq proj reducedNorm
   let proof ← mkEqRefl proj
-  let some rw ← Rewrite.from? proof eq src none amb
+  let .rw rw ← Premise.from proof eq src none amb
     | throwError "egg: internal error in 'TcProj.reductionRewrite?'"
   return rw
 

@@ -2,7 +2,6 @@ import Egg.Core.Encode.Rewrites
 import Egg.Core.Encode.Guides
 import Egg.Core.Config
 import Egg.Core.Explanation.Basic
-import Egg.Core.Rewrites
 open Lean
 
 namespace Egg.Request

@@ -1,6 +1,7 @@
 import Egg.Core.Request
 import Egg.Core.Explanation.Proof
 import Egg.Core.MVars.Ambient
+import Egg.Tactic.Premises
 import Lean
 open Lean Meta Elab Tactic Std Format
 
@@ -44,11 +45,21 @@ def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) : TacticM U
   if let some stx := stx? then header := m!"{header}: {stx}"
   withTraceNode cls (fun _ => return header) do
     traceM cls fun _ => return m!"{← rw.toCongr.format}"
+    if !rw.conds.isEmpty then
+      withTraceNode cls (fun _ => return "Conditions") (collapsed := false) do
+        for cond in rw.conds do
+          traceM cls fun _ => return m!"{← cond.mvarId!.getType}"
     traceM cls fun _ => return m!"LHS MVars\n{← rw.lhsMVars.format}"
     traceM cls fun _ => return m!"RHS MVars\n{← rw.rhsMVars.format}"
 
 def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cls : Name) : TacticM Unit := do
   for rw in rws, idx in [:rws.size] do rw.trace stx[idx]? cls
+
+nonrec def Fact.trace (f : Fact) (stx : Syntax) (cls : Name) : TacticM Unit := do
+  trace cls fun _ => m!"{f.src.description}: {stx} : {f.type}"
+
+def Facts.trace (fs : Facts) (stx : Array Syntax) (cls : Name) : TacticM Unit := do
+  for f in fs, s in stx do f.trace s cls
 
 def Rewrite.Encoded.trace (rw : Rewrite.Encoded) (cls : Name) : TacticM Unit := do
   let header := m!"{rw.name}({rw.dirs.format})"

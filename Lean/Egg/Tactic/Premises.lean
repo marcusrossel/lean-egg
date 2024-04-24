@@ -1,34 +1,55 @@
-import Egg.Core.Rewrites
+import Egg.Core.Premise.Basic
 import Lean
 
 open Lean Meta Elab Tactic
 
 namespace Egg
 
-declare_syntax_cat egg_rws_arg
-syntax "*"  : egg_rws_arg
-syntax term : egg_rws_arg
+declare_syntax_cat egg_prems_arg
+syntax "*"  : egg_prems_arg
+syntax term : egg_prems_arg
 
-declare_syntax_cat egg_rws_args
-syntax "[" egg_rws_arg,* "]": egg_rws_args
+declare_syntax_cat egg_prems_args
+syntax "[" egg_prems_arg,* "]": egg_prems_args
 
-declare_syntax_cat egg_rws
-syntax (egg_rws_args)? : egg_rws
+declare_syntax_cat egg_prems
+syntax (egg_prems_args)? : egg_prems
 
-namespace Rewrites
+structure Premises where
+  rws      : Rewrites     := #[]
+  rwsStx   : Array Syntax := #[]
+  facts    : Facts        := #[]
+  factsStx : Array Syntax := #[]
+
+namespace Premises
+
+private def push (ps : Premises) (stx : Syntax) : Premise → Premises
+  | .rw rw  => { ps with rws := ps.rws.push rw, rwsStx := ps.rwsStx.push stx }
+  | .fact f => { ps with facts := ps.facts.push f, factsStx := ps.factsStx.push stx }
+
+private def singleton (stx : Syntax)  (p : Premise) : Premises :=
+  ({} : Premises).push stx p
+
+private def append (ps₁ ps₂ : Premises) : Premises where
+  rws      := ps₁.rws.append ps₂.rws
+  rwsStx   := ps₁.rwsStx.append ps₂.rwsStx
+  facts    := ps₁.facts.append ps₂.facts
+  factsStx := ps₁.factsStx.append ps₂.factsStx
+
+instance : Append Premises where
+  append := append
 
 -- Note: We must use `Tactic.elabTerm`, not `Term.elabTerm`. Otherwise elaborating `‹...›` doesn't
 --       work correctly. Cf. https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Elaborate.20.E2.80.B9.2E.2E.2E.E2.80.BA
-partial def explicit
-    (arg : Term) (argIdx : Nat) (norm : Config.Normalization) (amb : MVars.Ambient) :
-    TacticM Rewrites := do
+partial def explicit (arg : Term) (argIdx : Nat) (norm : Config.Normalization) (amb : MVars.Ambient) :
+    TacticM Premises := do
   match ← elabArg arg with
-  | .inl (e, ty?) => return #[← mkRw e ty? none]
+  | .inl (e, ty?) => return Premises.singleton arg (← mkPremise e ty? none)
   | .inr eqns =>
-    let mut result : Rewrites := #[]
+    let mut result : Premises := {}
     for eqn in eqns, eqnIdx in [:eqns.size] do
       let e ← Tactic.elabTerm eqn none
-      result := result.push (← mkRw e none eqnIdx)
+      result := result.push arg (← mkPremise e none eqnIdx)
     return result
   -- We don't just elaborate the `arg` directly as:
   -- (1) this can cause problems for global constants with typeclass arguments, as Lean sometimes
@@ -39,12 +60,11 @@ where
   -- Note: When we infer the type of `e` it might not have the syntactic form we expect. For
   --       example, if `e` is `congrArg (fun x => x + 1) (_ : a = b)` then its type will be inferred
   --       as `a + 1 = b + 1` instead of `(fun x => x + 1) a = (fun x => x + 1) b`.
-  mkRw (e : Expr) (ty? : Option Expr) (eqnIdx? : Option Nat) : TacticM Rewrite := do
+  mkPremise (e : Expr) (ty? : Option Expr) (eqnIdx? : Option Nat) : TacticM Premise := do
     let src := .explicit argIdx eqnIdx?
     let ty := ty?.getD (← inferType e)
-    let some rw ← Rewrite.from? e ty src norm amb
-      | throwErrorAt arg "egg requires arguments to be equalities, equivalences or (non-propositional) definitions"
-    return rw
+    Premise.from e ty src norm amb
+
   elabArg (arg : Term) : TacticM (Sum (Expr × Option Expr) (Array Ident)) := do
     if let some hyp ← optional (getFVarId arg) then
       -- `arg` is a local declaration.
@@ -72,29 +92,26 @@ where
 -- Note: We need to filter out auxiliary declaration and implementation details, as they are not
 --       visible in the proof context and, for example, contain the declaration being defined itself
 --       (to enable recursive calls). Cf. https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/local.20context.20without.20current.20decl
-def star (norm : Config.Normalization) (amb : MVars.Ambient) : MetaM Rewrites := do
-  let mut result : Rewrites := #[]
+def star (stx : Syntax) (norm : Config.Normalization) (amb : MVars.Ambient) : MetaM Premises := do
+  let mut result : Premises := {}
   for decl in ← getLCtx do
     if decl.isImplementationDetail || decl.isAuxDecl then continue
-    if let some rw ← Rewrite.from? decl.toExpr decl.type (.star decl.fvarId) norm amb
-    then result := result.push rw
+    let src := Source.star decl.fvarId
+    result := result.push stx (← Premise.from decl.toExpr decl.type src norm amb)
   return result
 
-def parse (norm : Config.Normalization) (amb : MVars.Ambient) :
-    (TSyntax `egg_rws) → TacticM (Rewrites × Array Syntax)
-  | `(egg_rws|)          => return (#[], #[])
-  | `(egg_rws|[$args,*]) => do
-    let mut result : Rewrites := #[]
+def parse (norm : Config.Normalization) (amb : MVars.Ambient) : (TSyntax `egg_prems) → TacticM Premises
+  | `(egg_prems|)          => return {}
+  | `(egg_prems|[$args,*]) => do
+    let mut result : Premises := {}
     let mut noStar := true
     for arg in args.getElems, idx in [:args.getElems.size] do
       match arg with
-      | `(egg_rws_arg|$arg:term) =>
-        result := result ++ (← explicit arg idx norm amb)
-      | `(egg_rws_arg|*%$tk) =>
+      | `(egg_prems_arg|$arg:term) => result := result ++ (← explicit arg idx norm amb)
+      | `(egg_prems_arg|*%$tk) =>
         unless noStar do throwErrorAt tk "duplicate '*' in arguments to egg"
         noStar := false
-        result := result ++ (← star norm amb)
-      | _ =>
-        throwUnsupportedSyntax
-    return (result, args)
+        result := result ++ (← star tk norm amb)
+      | _ => throwUnsupportedSyntax
+    return result
   | _ => throwUnsupportedSyntax

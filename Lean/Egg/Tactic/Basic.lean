@@ -7,7 +7,7 @@ import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Explanation
 import Egg.Tactic.Base
 import Egg.Tactic.Guides
-import Egg.Tactic.Rewrites
+import Egg.Tactic.Premises
 import Egg.Tactic.Trace
 import Std.Tactic.Exact
 import Lean
@@ -42,24 +42,26 @@ where
     else
       throwError "expected goal to be of type '=' or '↔', but found:\n{← ppExpr goalType}"
 
-private def traceRewrites
-    (basic : Rewrites) (stx : Array Syntax) (tc : Rewrites) (cfg : Config.Gen) : TacticM Unit := do
+private def tracePremises (ps : Premises) (tc : Rewrites) (cfg : Config.Gen) : TacticM Unit := do
   let cls := `egg.rewrites
   withTraceNode cls (fun _ => return "Rewrites") do
-    withTraceNode cls (fun _ => return m!"Basic ({basic.size})") do basic.trace stx cls
+    withTraceNode cls (fun _ => return m!"Basic ({ps.rws.size})") do ps.rws.trace ps.rwsStx cls
     withTraceNode cls (fun _ => return m!"Generated ({tc.size})") do tc.trace #[] cls
     withTraceNode cls (fun _ => return "Definitional") do
       if cfg.genBetaRw    then Lean.trace cls fun _ => "β-Reduction"
       if cfg.genEtaRw     then Lean.trace cls fun _ => "η-Reduction"
       if cfg.genNatLitRws then Lean.trace cls fun _ => "Natural Number Literals"
+    withTraceNode cls (fun _ => return m!"Hypotheses ({ps.facts.size})") do
+      ps.facts.trace ps.factsStx cls
 
 private partial def genRewrites
-    (goal : Goal) (rws : TSyntax `egg_rws) (guides : Guides) (cfg : Config) (amb : MVars.Ambient) :
+    (goal : Goal) (ps : TSyntax `egg_prems) (guides : Guides) (cfg : Config) (amb : MVars.Ambient) :
     TacticM Rewrites := do
-  let (rws, stx) ← Rewrites.parse cfg.toNormalization amb rws
-  let tcRws ← genTcRws rws
-  traceRewrites rws stx tcRws cfg.toGen
-  return rws ++ tcRws
+  let ps ← Premises.parse cfg.toNormalization amb ps
+  let tcRws ← genTcRws ps.rws
+  tracePremises ps tcRws cfg.toGen
+  throwOnConditionalRw ps.rws ps.rwsStx
+  return ps.rws ++ tcRws
 where
   genTcRws (rws : Rewrites) : TacticM Rewrites := do
     let mut projTodo := #[]
@@ -80,6 +82,10 @@ where
         projTodo := specRws.tcProjTargets
         tcRws    := tcRws ++ specRws
     return tcRws
+
+  throwOnConditionalRw (rws : Rewrites) (stxs : Array Syntax) : TacticM Unit := do
+    for rw in rws, stx in stxs do
+      if rw.isConditional then throwErrorAt stx "egg does not currently support conditional rewrites"
 
 private def processRawExpl
     (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (amb : MVars.Ambient) :
@@ -107,7 +113,7 @@ private def traceRequest (req : Request) : TacticM Unit := do
 
 open Config.Modifier (egg_cfg_mod)
 
-elab "egg " mod:egg_cfg_mod rws:egg_rws base:(egg_base)? guides:(egg_guides)? : tactic => do
+elab "egg " mod:egg_cfg_mod rws:egg_prems base:(egg_base)? guides:(egg_guides)? : tactic => do
   let goal ← getMainGoal
   let mod  ← Config.Modifier.parse mod
   let cfg := (← Config.fromOptions).modify mod

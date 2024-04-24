@@ -1,6 +1,6 @@
  import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Congr
-import Egg.Core.Rewrites
+import Egg.Core.Premise.Rewrites
 open Lean Meta
 
 namespace Egg.Explanation
