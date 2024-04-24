@@ -28,11 +28,6 @@ private def Goal.tcProjTargets (goal : Goal) : Array TcProjTarget := #[
   { expr := goal.type.rhs, src := .goal, side? := some .right }
 ]
 
-private abbrev AmbientMVars := PersistentHashMap MVarId MetavarDecl
-
-private def AmbientMVars.get : MetaM AmbientMVars :=
-  return (← getMCtx).decls
-
 private def parseGoal (goal : MVarId) (base? : Option (TSyntax `egg_base)) : MetaM Goal := do
   let goalType ← normalize (← goal.getType') .noReduce
   let base? ← base?.mapM parseBase
@@ -59,8 +54,9 @@ private def traceRewrites
       if cfg.genNatLitRws then Lean.trace cls fun _ => "Natural Number Literals"
 
 private partial def genRewrites
-    (goal : Goal) (rws : TSyntax `egg_rws) (guides : Guides) (cfg : Config) : TacticM Rewrites := do
-  let (rws, stx) ← Rewrites.parse cfg.toNormalization rws
+    (goal : Goal) (rws : TSyntax `egg_rws) (guides : Guides) (cfg : Config) (amb : MVars.Ambient) :
+    TacticM Rewrites := do
+  let (rws, stx) ← Rewrites.parse cfg.toNormalization amb rws
   let tcRws ← genTcRws rws
   traceRewrites rws stx tcRws cfg.toGen
   return rws ++ tcRws
@@ -74,7 +70,7 @@ where
     if cfg.genTcSpecRws then specTodo := rws
     while (cfg.genTcProjRws && !projTodo.isEmpty) || (cfg.genTcSpecRws && !specTodo.isEmpty) do
       if cfg.genTcProjRws then
-        let (projRws, cov) ← genTcProjReductions projTodo covered cfg.toNormalization
+        let (projRws, cov) ← genTcProjReductions projTodo covered cfg.toNormalization amb
         covered  := cov
         specTodo := specTodo ++ projRws
         tcRws    := tcRws ++ projRws
@@ -86,26 +82,23 @@ where
     return tcRws
 
 private def processRawExpl
-    (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (cfg : Config.Debug)
-    (amb : AmbientMVars) : TacticM Unit := do
-  if rawExpl.isEmpty then throwError "egg failed to prove goal"
-  withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] rawExpl
-  if cfg.exitPoint == .beforeProof then goal.id.admit; return
+    (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (amb : MVars.Ambient) :
+    TacticM Expr := do
   let expl ← rawExpl.parse
   let proof ← expl.proof rws
   proof.trace `egg.proof
   let mut prf ← proof.prove goal.type
   prf ← instantiateMVars prf
   withTraceNode `egg.proof.term (fun _ => return "Proof Term") do trace[egg.proof.term] prf
-  catchLooseMVars prf amb
   -- When `goal.base? = some base`, then `proof` is a proof of `base = <goal type>`. We turn this
   -- into a proof of `<goal type>` here.
   if let some base := goal.base? then prf ← mkEqMP prf (.fvar base)
-  goal.id.assignIfDefeq prf
+  catchLooseMVars prf amb
+  return prf
 where
-  catchLooseMVars (prf : Expr) (amb : AmbientMVars) : MetaM Unit := do
+  catchLooseMVars (prf : Expr) (amb : MVars.Ambient) : MetaM Unit := do
     for mvar in (prf.collectMVars {}).result do
-      unless amb.contains mvar do throwError s!"egg: final proof contains mvar {mvar.name}"
+      unless amb.contains mvar do throwError m!"egg: final proof contains mvar {Expr.mvar mvar}"
 
 private def traceRequest (req : Request) : TacticM Unit := do
   let cls := `egg.encoded
@@ -120,15 +113,26 @@ elab "egg " mod:egg_cfg_mod rws:egg_rws base:(egg_base)? guides:(egg_guides)? : 
   let cfg := (← Config.fromOptions).modify mod
   cfg.trace `egg.config
   goal.withContext do
-    let amb     ← AmbientMVars.get
-    let goal    ← parseGoal goal base
-    let guides := (← guides.mapM Guides.parseGuides).getD #[]
-    let rws     ← genRewrites goal rws guides cfg
-    let req     ← Request.encoding goal.type rws guides cfg
-    traceRequest req
-    if cfg.exitPoint == .beforeEqSat then goal.id.admit; return
-    let rawExpl := req.run
-    processRawExpl rawExpl goal rws cfg.toDebug amb
+    let amb ← MVars.Ambient.get
+    amb.trace `egg.ambient
+    -- We increase the mvar context depth, so that ambient mvars aren't unified during proof
+    -- reconstruction. Note that this also means that we can't assign the `goal` mvar within this
+    -- do-block.
+    let proof? ← withNewMCtxDepth do
+      let goal ← parseGoal goal base
+      let guides := (← guides.mapM Guides.parseGuides).getD #[]
+      let rws ← genRewrites goal rws guides cfg amb
+      let req ← Request.encoding goal.type rws guides cfg amb
+      traceRequest req
+      if let .beforeEqSat := cfg.exitPoint then return none
+      let rawExpl := req.run
+      if rawExpl.isEmpty then throwError "egg failed to prove goal"
+      withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] rawExpl
+      if let .beforeProof := cfg.exitPoint then return none
+      return some (← processRawExpl rawExpl goal rws amb)
+    if let some proof := proof?
+    then goal.assignIfDefeq proof
+    else goal.admit
 
 -- WORKAROUND: This fixes `Tests/EndOfInput *`.
 macro "egg" mod:egg_cfg_mod : tactic => `(tactic| egg $mod)

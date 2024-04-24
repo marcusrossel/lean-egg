@@ -166,8 +166,8 @@ where
       -- It's necessary that we create the fresh rewrite (that is, create the fresh mvars) in *this*
       -- local context as otherwise the mvars can't unify with variables under binders.
       let rw ← rw.fresh
-      unless ← isDefEq lhs rw.lhs do fail "unification failure for LHS of rewrite"
-      unless ← isDefEq rhs rw.rhs do fail "unification failure for RHS of rewrite"
+      unless ← isDefEq lhs rw.lhs do fail m!"unification failure for LHS of rewrite {rw.src.description}"
+      unless ← isDefEq rhs rw.rhs do fail m!"unification failure for RHS of rewrite {rw.src.description}"
       let proof ← rw.eqProof
       return (
         ← mkCHole (forLhs := true) lhs proof,

@@ -11,7 +11,8 @@ private def TcProj.mk (const : Name) (args : Array Expr) (lvls : List Level) : T
   mkAppN (.const const lvls) args
 
 -- Note: This function expects `proj` to be normalized (cf. `Egg.normalize`).
-private def TcProj.reductionRewrite? (proj : TcProj) (src : Source) (norm : Config.Normalization) :
+private def TcProj.reductionRewrite?
+    (proj : TcProj) (src : Source) (norm : Config.Normalization) (amb : MVars.Ambient) :
     MetaM (Option Rewrite) := do
   -- Sometimes the only reduction performed by `reduceAll` is to replace a application of a type
   -- class projection with its corresponding `Expr.proj` expression. In that case, no real reduction
@@ -23,7 +24,7 @@ private def TcProj.reductionRewrite? (proj : TcProj) (src : Source) (norm : Conf
   if proj == reducedNorm then return none
   let eq ← mkEq proj reducedNorm
   let proof ← mkEqRefl proj
-  let some rw ← Rewrite.from? proof eq src none
+  let some rw ← Rewrite.from? proof eq src none amb
     | throwError "egg: internal error in 'TcProj.reductionRewrite?'"
   return rw
 
@@ -95,13 +96,13 @@ def Guides.tcProjTargets (guides : Guides) : Array TcProjTarget :=
 --
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
 def genTcProjReductions
-    (targets : Array TcProjTarget) (covered : HashSet TcProj) (norm : Config.Normalization) :
-    MetaM (Rewrites × HashSet TcProj) := do
+    (targets : Array TcProjTarget) (covered : HashSet TcProj) (norm : Config.Normalization)
+    (amb : MVars.Ambient) : MetaM (Rewrites × HashSet TcProj) := do
   let mut covered := covered
   let mut rws := #[]
   for target in targets do
     let projs ← tcProjs target.expr target.src target.side? covered
     for (proj, src) in projs.toArray do
       covered := covered.insert proj
-      if let some rw ← proj.reductionRewrite? src norm then rws := rws.push rw
+      if let some rw ← proj.reductionRewrite? src norm amb then rws := rws.push rw
   return (rws, covered)

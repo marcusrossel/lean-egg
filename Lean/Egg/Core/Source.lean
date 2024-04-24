@@ -82,3 +82,7 @@ def containsTcProj : Source → Bool
   | tcProj ..     => true
   | tcSpec src .. => src.containsTcProj
   | _             => false
+
+def isNatLitConversion : Source → Bool
+  | .natLit .zero | .natLit .toSucc | .natLit .ofSucc => true
+  | _                                                 => false

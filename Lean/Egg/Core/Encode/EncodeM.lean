@@ -1,5 +1,6 @@
 import Egg.Core.Config
 import Egg.Core.Source
+import Egg.Core.MVars.Ambient
 import Std.Data.List.Basic
 
 open Lean
@@ -10,6 +11,7 @@ structure EncodeM.State where
   exprSrc : Source
   config  : Config.Encoding
   bvars   : List FVarId := []
+  amb     : MVars.Ambient
 
 abbrev EncodeM := StateT EncodeM.State MetaM
 
@@ -20,6 +22,9 @@ def exprSrc : EncodeM Source :=
 
 def config : EncodeM Config.Encoding :=
   State.config <$> get
+
+def isAmbient (mvar : MVarId) : EncodeM Bool := do
+  return (← get).amb.contains mvar
 
 -- Note: This only works as intended if `m` does not add any additional bvars (permanently).
 def withInstantiatedBVar (ty body : Expr) (m : Expr → EncodeM α) : EncodeM α := do

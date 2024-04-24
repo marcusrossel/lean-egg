@@ -40,13 +40,14 @@ structure _root_.Egg.Request where
   vizPath : String
   cfg     : Request.Config
 
-def encoding (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Egg.Config) :
+def encoding
+    (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Egg.Config) (amb : MVars.Ambient) :
     MetaM Request := do
   return {
-    lhs     := ← encode goal.lhs .goal cfg.toEncoding
-    rhs     := ← encode goal.rhs .goal cfg.toEncoding
-    rws     := ← rws.encode cfg.toEncoding
-    guides  := ← guides.encode cfg.toEncoding
+    lhs     := ← encode goal.lhs .goal cfg.toEncoding amb
+    rhs     := ← encode goal.rhs .goal cfg.toEncoding amb
+    rws     := ← rws.encode cfg.toEncoding amb
+    guides  := ← guides.encode cfg.toEncoding amb
     vizPath := cfg.vizPath.getD ""
     cfg
   }

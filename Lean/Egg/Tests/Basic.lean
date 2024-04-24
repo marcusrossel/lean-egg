@@ -12,6 +12,7 @@ example : True := by
   fail_if_success have : true = true := by egg [true]
   constructor
 
+set_option trace.egg true in
 example : 0 = 0 := by
   egg
 

@@ -6,11 +6,13 @@ import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Proof
 import Egg.Core.Gen.TcProjs
 import Egg.Core.Gen.TcSpecs
+import Egg.Core.MVars.Ambient
+import Egg.Core.MVars.Basic
+import Egg.Core.MVars.Subst
 import Egg.Core.Config
 import Egg.Core.Congr
 import Egg.Core.Directions
 import Egg.Core.Guides
-import Egg.Core.MVars
 import Egg.Core.Request
 import Egg.Core.Rewrites
 import Egg.Core.Source

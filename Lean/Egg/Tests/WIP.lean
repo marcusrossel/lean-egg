@@ -1,5 +1,9 @@
 import Egg
 
+set_option trace.egg true in
+example (h : ∀ n : Nat, n > 2 → n = 5) : x = 5 := by
+  egg [h]
+
 -- The universe mvars (or universe params if you make this a theorem instead of an example) are
 -- different for the respective `α`s, so this doesn't hold by reflexivity. But `simp` can somehow
 -- prove this.

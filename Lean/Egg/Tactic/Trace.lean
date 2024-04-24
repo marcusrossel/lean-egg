@@ -1,11 +1,13 @@
 import Egg.Core.Request
 import Egg.Core.Explanation.Proof
+import Egg.Core.MVars.Ambient
 import Lean
 open Lean Meta Elab Tactic Std Format
 
 initialize registerTraceClass `egg
 initialize registerTraceClass `egg.config      (inherited := true)
 initialize registerTraceClass `egg.rewrites    (inherited := true)
+initialize registerTraceClass `egg.ambient     (inherited := true)
 initialize registerTraceClass `egg.encoded     (inherited := true)
 initialize registerTraceClass `egg.explanation (inherited := true)
 initialize registerTraceClass `egg.proof       (inherited := true)
@@ -85,9 +87,10 @@ nonrec def Request.trace (req : Request) (cls : Name) : TacticM Unit := do
   withTraceNode `egg.frontend (fun _ => return rwsHeader) do
     for rw in req.rws do
       rw.trace cls
-  withTraceNode cls (fun _ => return "Guides") do
-    for guide in req.guides do
-      trace cls fun _ => guide
+  if !req.guides.isEmpty then
+    withTraceNode cls (fun _ => return "Guides") do
+      for guide in req.guides do
+        trace cls fun _ => guide
 
 nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Proof") do
@@ -95,14 +98,21 @@ nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
       if idx == 0 then trace cls fun _ => step.lhs
       match step.rw with
       | .defeq src =>
+        if src.isNatLitConversion then continue
         withTraceNode cls (fun _ => return step.rhs) do
           trace cls fun _ => m!"{src.description}({dirFormat step.dir})"
       | .rw rw _ =>
         if rw.src.containsTcProj then continue
         withTraceNode cls (fun _ => return step.rhs) do
-          trace  cls fun _ => m!"{rw.src.description}({dirFormat step.dir})"
-          traceM cls fun _ => return m!"{← rw.toCongr.format}"
+          traceM cls fun _ => return m!"{rw.src.description}({dirFormat step.dir}) {← rw.toCongr.format}"
+          trace  cls fun _ => step.proof
 where
   dirFormat : Direction → Format
     | .forward  => "⇒"
     | .backward => "⇐"
+
+nonrec def MVars.Ambient.trace (amb : MVars.Ambient) (cls : Name) : TacticM Unit := do
+  withTraceNode cls (fun _ => return "Ambient MVars") do
+    for m in amb do
+      -- if ← m.isAssigned then continue
+      trace cls fun _ => m!"{Expr.mvar m}"
