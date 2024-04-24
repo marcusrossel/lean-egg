@@ -68,9 +68,10 @@ example : 12345 % 0 = 12345 := by
   egg
 
 set_option egg.natReduceRws false in
+/-- error: egg failed to prove goal -/
+#guard_msgs in
 example (h : ∀ f : Nat → Nat, f (1 + 1) = x) : id 2 = x := by
-  fail_if_success egg [h]
-  apply h
+  egg [h]
 
 example (h : ∀ f : Nat → Nat, f (1 + 1) = x) : id 2 = x := by
   egg [h]

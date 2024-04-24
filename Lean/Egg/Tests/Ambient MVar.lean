@@ -1,7 +1,9 @@
 import Egg
 import Lean
 
-example (h : ∀ x : Prop, True = x) : True = True := by
+variable (h : ∀ x : Prop, True = x)
+
+example : True = True := by
   apply Eq.trans
   · egg [h]
   · rfl -- This assigns the mvar resulting from `Eq.trans`.
@@ -13,7 +15,7 @@ h : ∀ (x : Prop), True = x
 ⊢ Prop
 -/
 #guard_msgs in
-example (h : ∀ x : Prop, True = x) : True = True := by
+example : True = True := by
   apply Eq.trans
   · egg [h]
   · egg [h]

@@ -5,9 +5,10 @@ set_option egg.genEtaRw true
 set_option egg.genBetaRw false
 
 set_option egg.genEtaRw false in
+/-- error: egg failed to prove goal -/
+#guard_msgs in
 example : (fun x => Nat.succ x) = Nat.succ := by
-  fail_if_success egg
-  rfl
+  egg
 
 example : (fun x => Nat.succ x) = Nat.succ := by
   egg
@@ -44,9 +45,10 @@ example : (eta 10 Nat.succ Nat) = Nat.succ := by
   egg
 
 set_option egg.genEtaRw false in
+/-- error: egg failed to prove goal -/
+#guard_msgs in
 example (a : Nat) (h : ∀ b : Nat, b.succ.add a = 0) : (10 |> fun x => Nat.succ x).add a = 0 := by
-  fail_if_success egg [h]
-  apply h
+  egg [h]
 
 example (a : Nat) (h : ∀ b : Nat, b.succ.add a = 0) : (10 |> fun x => Nat.succ x).add a = 0 := by
   egg [h]
