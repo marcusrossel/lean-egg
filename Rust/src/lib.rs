@@ -24,6 +24,12 @@ mod util;
 mod valid_match;
 
 #[repr(C)]
+pub struct CStringArray {
+    ptr: *const *const c_char,
+    len: usize, 
+}
+
+#[repr(C)]
 #[derive(PartialEq)]
 pub enum RewriteDirections {
     None,
@@ -34,10 +40,17 @@ pub enum RewriteDirections {
 
 #[repr(C)]
 pub struct CRewrite {
-    name: *const c_char,
-    lhs:  *const c_char,
-    rhs:  *const c_char,
-    dirs: RewriteDirections
+    name:  *const c_char,
+    lhs:   *const c_char,
+    rhs:   *const c_char,
+    dirs:  RewriteDirections,
+    conds: CStringArray
+}
+
+#[repr(C)]
+pub struct CRewritesArray {
+    ptr: *const CRewrite,
+    len: usize, 
 }
 
 fn rw_templates_from_c(rws: &[CRewrite]) -> Res<Vec<RewriteTemplate>> {
@@ -70,10 +83,8 @@ fn rw_templates_from_c(rws: &[CRewrite]) -> Res<Vec<RewriteTemplate>> {
 pub extern "C" fn egg_explain_congr(
     init_str_ptr: *const c_char, 
     goal_str_ptr: *const c_char, 
-    rws_ptr: *const CRewrite, 
-    rws_count: usize,
-    guides_ptr: *const *const c_char, 
-    guides_count: usize,
+    rws: CRewritesArray, 
+    guides: CStringArray, 
     cfg: Config,
     viz_path_ptr: *const c_char
 ) -> *const c_char {
@@ -82,9 +93,9 @@ pub extern "C" fn egg_explain_congr(
     let goal_c_str = unsafe { CStr::from_ptr(goal_str_ptr) };
     let init = String::from_utf8_lossy(init_c_str.to_bytes()).to_string();
     let goal = String::from_utf8_lossy(goal_c_str.to_bytes()).to_string();
-    assert!(rws_ptr != null()); 
-    let c_rws = unsafe { std::slice::from_raw_parts(rws_ptr, rws_count) };
-    let c_guides = unsafe { std::slice::from_raw_parts(guides_ptr, guides_count) };
+    assert!(rws.ptr != null()); 
+    let c_rws = unsafe { std::slice::from_raw_parts(rws.ptr, rws.len) };
+    let c_guides = unsafe { std::slice::from_raw_parts(guides.ptr, guides.len) };
 
     // Note: The `into_raw`s below are important, as otherwise Rust deallocates the string.
     // TODO: I think this is a memory leak right now.

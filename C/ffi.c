@@ -1,6 +1,21 @@
 #include <lean/lean.h>
 #include <stdio.h>
 
+typedef struct str_array {
+    const char** ptr;
+    size_t       len;
+} str_array;
+
+str_array str_array_from_lean_obj(lean_obj_arg strs) {
+    lean_object** strs_c_ptr = lean_array_cptr(strs);
+    size_t strs_count = lean_array_size(strs);
+    const char** c_strs = malloc(strs_count * sizeof(const char*));
+    for (int idx = 0; idx < strs_count; idx++) {
+        c_strs[idx] = lean_string_cstr(strs_c_ptr[idx]);
+    }
+    return (str_array) { .ptr = c_strs, .len = strs_count };
+}
+
 typedef enum rw_dirs {
   NONE,
   FORWARD,
@@ -12,15 +27,17 @@ typedef struct rewrite {
     const char* name;
     const char* lhs;
     const char* rhs;
-    rw_dirs dirs;
+    rw_dirs     dirs;
+    str_array   conds;
 } rewrite;
 
 /*
 structure Rewrite.Encoded where
-  name : String
-  lhs  : String
-  rhs  : String
-  dirs : Directions
+  name  : String
+  lhs   : String
+  rhs   : String
+  dirs  : Directions
+  conds : Array String
 
 inductive Directions where
   | none
@@ -31,31 +48,34 @@ inductive Directions where
 rewrite rewrite_from_lean_obj(lean_obj_arg rw) {
     unsigned scalar_base_offset = lean_ctor_num_objs(rw) * sizeof(void*);
     return (rewrite) {
-        .name = lean_string_cstr(lean_ctor_get(rw, 0)),
-        .lhs  = lean_string_cstr(lean_ctor_get(rw, 1)),
-        .rhs  = lean_string_cstr(lean_ctor_get(rw, 2)),
-        .dirs = lean_ctor_get_uint8(rw, scalar_base_offset + 0),
+        .name  = lean_string_cstr(lean_ctor_get(rw, 0)),
+        .lhs   = lean_string_cstr(lean_ctor_get(rw, 1)),
+        .rhs   = lean_string_cstr(lean_ctor_get(rw, 2)),
+        .dirs  = lean_ctor_get_uint8(rw, scalar_base_offset + 0),
+        .conds = str_array_from_lean_obj(lean_ctor_get(rw, 3))
     };
 }
 
-rewrite* rewrites_from_lean_obj(lean_obj_arg rws) {
+typedef struct rws_array {
+    rewrite* ptr;
+    size_t   len;
+} rws_array;
+
+rws_array rewrites_from_lean_obj(lean_obj_arg rws) {
     lean_object** rws_c_ptr = lean_array_cptr(rws);
     size_t rws_count = lean_array_size(rws);
     rewrite* rust_rws = malloc(rws_count * sizeof(rewrite));
     for (int idx = 0; idx < rws_count; idx++) {
         rust_rws[idx] = rewrite_from_lean_obj(rws_c_ptr[idx]);
     }
-    return rust_rws;
+    return (rws_array) { .ptr = rust_rws, .len = rws_count };
 }
 
-const char** guides_from_lean_obj(lean_obj_arg guides) {
-    lean_object** guides_c_ptr = lean_array_cptr(guides);
-    size_t guides_count = lean_array_size(guides);
-    const char** rust_guides = malloc(guides_count * sizeof(const char*));
-    for (int idx = 0; idx < guides_count; idx++) {
-        rust_guides[idx] = lean_string_cstr(guides_c_ptr[idx]);
+void free_rws_array(rws_array rws) {
+    for (int idx = 0; idx < rws.len; idx++) {
+        free(rws.ptr[idx].conds.ptr);
     }
-    return rust_guides;
+    free(rws.ptr);
 }
 
 typedef struct config {
@@ -98,10 +118,8 @@ config config_from_lean_obj(lean_obj_arg cfg) {
 extern char* egg_explain_congr(
     const char* init, 
     const char* goal, 
-    rewrite* rws, 
-    size_t rws_count, 
-    const char** guides, 
-    size_t guides_count, 
+    rws_array rws, 
+    str_array guides, 
     config cfg,
     const char* viz_path
 );
@@ -118,16 +136,16 @@ structure Egg.Request where
 lean_obj_res run_egg_request(lean_obj_arg req) {
     const char* lhs      = lean_string_cstr(lean_ctor_get(req, 0));
     const char* rhs      = lean_string_cstr(lean_ctor_get(req, 1));
-    rewrite* rws         = rewrites_from_lean_obj(lean_ctor_get(req, 2));
-    size_t rws_count     = lean_array_size(lean_ctor_get(req, 2));
-    const char** guides  = guides_from_lean_obj(lean_ctor_get(req, 3));
-    size_t guides_count  = lean_array_size(lean_ctor_get(req, 3));
+    rws_array rws        = rewrites_from_lean_obj(lean_ctor_get(req, 2));
+    str_array guides     = str_array_from_lean_obj(lean_ctor_get(req, 3));
     const char* viz_path = lean_string_cstr(lean_ctor_get(req, 4));
     config cfg           = config_from_lean_obj(lean_ctor_get(req, 5));
 
-    char* result = egg_explain_congr(lhs, rhs, rws, rws_count, guides, guides_count, cfg, viz_path);
-    free(rws);
-
+    char* result = egg_explain_congr(lhs, rhs, rws, guides, cfg, viz_path);
+    
+    free_rws_array(rws);
+    free(guides.ptr);
+    
     return lean_mk_string(result);
 }
 

@@ -7,17 +7,19 @@ namespace Egg
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 structure Rewrite.Encoded where
-  name : String
-  lhs  : Expression
-  rhs  : Expression
-  dirs : Directions
+  name  : String
+  lhs   : Expression
+  rhs   : Expression
+  dirs  : Directions
+  conds : Array Expression
 
 def Rewrite.encode (rw : Rewrite) (cfg : Config.Encoding) (amb : MVars.Ambient) : MetaM Encoded :=
   return {
-    name := rw.src.description
-    lhs  := ← Egg.encode rw.lhs rw.src cfg amb
-    rhs  := ← Egg.encode rw.rhs rw.src cfg amb
-    dirs := rw.validDirs
+    name  := rw.src.description
+    lhs   := ← Egg.encode rw.lhs rw.src cfg amb
+    rhs   := ← Egg.encode rw.rhs rw.src cfg amb
+    dirs  := rw.validDirs
+    conds := ← rw.conds.mapM (Egg.encode · rw.src cfg amb)
   }
 
 namespace Rewrites
