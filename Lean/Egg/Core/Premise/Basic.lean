@@ -28,10 +28,12 @@ def «from»
   type ← if let some cfg := normalize then Egg.normalize type cfg else pure type
   let proof := mkAppN proof args
   let some cgr ← Congr.from? type | return .fact { src, type, proof }
-  let lhsMVars := (← MVars.collect cgr.lhs).remove amb
-  let rhsMVars := (← MVars.collect cgr.rhs).remove amb
-  let conds := looseArgs args lhsMVars rhsMVars
-  return .rw { cgr with proof, src, conds, lhsMVars, rhsMVars }
+  let mLhs := (← MVars.collect cgr.lhs).remove amb
+  let mRhs := (← MVars.collect cgr.rhs).remove amb
+  let conds := looseArgs args mLhs mRhs
+  let mConds ← conds.mapM fun cond => return (← MVars.collect cond).remove amb
+  let mvars := { lhs := mLhs, rhs := mRhs, conds := mConds }
+  return .rw { cgr with proof, src, conds, mvars }
 where
   looseArgs (args : Array Expr) (lhsMVars rhsMVars : MVars) : Array Expr :=
     args.filter fun a => !lhsMVars.expr.contains a.mvarId! && !rhsMVars.expr.contains a.mvarId!

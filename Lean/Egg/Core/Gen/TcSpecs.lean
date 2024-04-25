@@ -31,8 +31,8 @@ where
 
 private def genTcSpecializationsForRw (rw : Rewrite) (norm : Config.Normalization) :
     MetaM Rewrites := do
-  let missingOnLhs := rw.rhsMVars.tc.subtract rw.lhsMVars.tc
-  let missingOnRhs := rw.lhsMVars.tc.subtract rw.rhsMVars.tc
+  let missingOnLhs := rw.mvars.rhs.tc.subtract rw.mvars.lhs.tc
+  let missingOnRhs := rw.mvars.lhs.tc.subtract rw.mvars.rhs.tc
   let mut specs : Rewrites := #[]
   if !missingOnLhs.isEmpty then
     if let some spec ← genSpecialization rw .forward missingOnLhs norm then

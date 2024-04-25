@@ -69,3 +69,12 @@ where
       let srcType ← (subst.expr.bwd.find! var).getType
       let freshType := subst.apply srcType
       var.setType freshType
+
+def fresh' (mvars : Array MVars) (init : Subst := {}) : MetaM (Array MVars × Subst) := do
+  let mut subst := init
+  let mut fresh := #[]
+  for m in mvars do
+    let (f, s) ← m.fresh (init := subst)
+    fresh := fresh.push f
+    subst := s
+  return (fresh, subst)

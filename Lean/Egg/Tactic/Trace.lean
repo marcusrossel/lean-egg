@@ -49,8 +49,8 @@ def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) : TacticM U
       withTraceNode cls (fun _ => return "Conditions") (collapsed := false) do
         for cond in rw.conds do
           traceM cls fun _ => return m!"{← cond.mvarId!.getType}"
-    traceM cls fun _ => return m!"LHS MVars\n{← rw.lhsMVars.format}"
-    traceM cls fun _ => return m!"RHS MVars\n{← rw.rhsMVars.format}"
+    traceM cls fun _ => return m!"LHS MVars\n{← rw.mvars.lhs.format}"
+    traceM cls fun _ => return m!"RHS MVars\n{← rw.mvars.rhs.format}"
 
 def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cls : Name) : TacticM Unit := do
   for rw in rws, idx in [:rws.size] do rw.trace stx[idx]? cls

@@ -9,12 +9,17 @@ open Lean Meta
 
 namespace Egg
 
+structure Rewrite.MVars where
+  lhs   : MVars
+  rhs   : MVars
+  conds : Array MVars
+  deriving Inhabited
+
 structure Rewrite extends Congr where
-  proof    : Expr
-  src      : Source
-  conds    : Array Expr
-  lhsMVars : MVars
-  rhsMVars : MVars
+  proof : Expr
+  src   : Source
+  conds : Array Expr
+  mvars : Rewrite.MVars
   deriving Inhabited
 
 namespace Rewrite
@@ -23,8 +28,8 @@ def isConditional (rw : Rewrite) : Bool :=
   !rw.conds.isEmpty
 
 def validDirs (rw : Rewrite) : Directions :=
-  let exprDirs := Directions.satisfyingSuperset rw.lhsMVars.expr rw.rhsMVars.expr
-  let lvlDirs  := Directions.satisfyingSuperset rw.lhsMVars.lvl rw.rhsMVars.lvl
+  let exprDirs := Directions.satisfyingSuperset rw.mvars.lhs.expr rw.mvars.rhs.expr
+  let lvlDirs  := Directions.satisfyingSuperset rw.mvars.lhs.lvl rw.mvars.rhs.lvl
   exprDirs.meet lvlDirs
 
 -- Returns the same rewrite but with its type and proof potentially flipped to match the given
@@ -39,13 +44,16 @@ def eqProof (rw : Rewrite) : MetaM Expr := do
   | .iff => mkPropExt rw.proof
 
 def freshWithSubst (rw : Rewrite) (src : Source := rw.src) : MetaM (Rewrite × MVars.Subst) := do
-  let (lhsMVars, subst) ← rw.lhsMVars.fresh
-  let (rhsMVars, subst) ← rw.rhsMVars.fresh (init := subst)
+  let (mLhs,   subst) ← rw.mvars.lhs.fresh
+  let (mRhs,   subst) ← rw.mvars.rhs.fresh (init := subst)
+  let (mConds, subst) ← MVars.fresh' rw.mvars.conds (init := subst)
   let rw' := { rw with
+    src
     lhs   := subst.apply rw.lhs
     rhs   := subst.apply rw.rhs
     proof := subst.apply rw.proof
-    src, lhsMVars, rhsMVars
+    conds := rw.conds.map subst.apply
+    mvars := { lhs := mLhs, rhs := mRhs, conds := mConds }
   }
   return (rw', subst)
 
@@ -58,11 +66,12 @@ def fresh (rw : Rewrite) (src : Source := rw.src) : MetaM Rewrite :=
 
 def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
   return { rw with
-    lhs      := ← Lean.instantiateMVars rw.lhs
-    rhs      := ← Lean.instantiateMVars rw.rhs
-    proof    := ← Lean.instantiateMVars rw.proof
-    lhsMVars := ← rw.lhsMVars.removeAssigned
-    rhsMVars := ← rw.rhsMVars.removeAssigned
+    lhs         := ← Lean.instantiateMVars rw.lhs
+    rhs         := ← Lean.instantiateMVars rw.rhs
+    proof       := ← Lean.instantiateMVars rw.proof
+    mvars.lhs   := ← rw.mvars.lhs.removeAssigned
+    mvars.rhs   := ← rw.mvars.rhs.removeAssigned
+    mvars.conds := ← rw.mvars.conds.mapM (·.removeAssigned)
   }
 
 end Rewrite
