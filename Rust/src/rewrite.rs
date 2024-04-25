@@ -7,9 +7,10 @@ use crate::valid_match::*;
 use crate::trace::*;
 
 pub struct RewriteTemplate {
-    pub name: String,
-    pub lhs: Pattern<LeanExpr>,
-    pub rhs: Pattern<LeanExpr>
+    pub name:  String,
+    pub lhs:   Pattern<LeanExpr>,
+    pub rhs:   Pattern<LeanExpr>,
+    pub conds: Vec<Pattern<LeanExpr>>
 }
 
 pub fn templates_to_rewrites(templates: Vec<RewriteTemplate>, block_invalid_matches: bool, shift_captured_bvars: bool) -> Res<Vec<LeanRewrite>> {
