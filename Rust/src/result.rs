@@ -3,6 +3,7 @@ pub enum Error {
     Init(String),
     Goal(String),
     Guide(String),
+    Fact(String),
     Rewrite(String),
     Failed,
 }
@@ -14,6 +15,7 @@ impl ToString for Error {
             Error::Init(s)    => format!("⚡️ {s}"),
             Error::Goal(s)    => format!("⚡️ {s}"),
             Error::Guide(s)   => format!("⚡️ {s}"),
+            Error::Fact(s)    => format!("⚡️ {s}"),
             Error::Rewrite(s) => format!("⚡️ {s}"),
             Error::Failed     => "".to_string(),
         }

@@ -131,7 +131,7 @@ pub extern "C" fn egg_explain_congr(
     let raw_viz_path = String::from_utf8_lossy(viz_path_c_str.to_bytes()).to_string();
     let viz_path = if raw_viz_path.is_empty() { None } else { Some(raw_viz_path) };
 
-    let expl = explain_congr(init, goal, rw_templates, guides, cfg, viz_path);
+    let expl = explain_congr(init, goal, rw_templates, facts, guides, cfg, viz_path);
     if let Err(expl_err) = expl {
         let rws_err_c_str = CString::new(expl_err.to_string()).expect("conversion of error message to C-string failed");
         return rws_err_c_str.into_raw()
