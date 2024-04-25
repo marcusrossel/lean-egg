@@ -119,6 +119,7 @@ extern char* egg_explain_congr(
     const char* init, 
     const char* goal, 
     rws_array rws, 
+    str_array facts, 
     str_array guides, 
     config cfg,
     const char* viz_path
@@ -129,6 +130,7 @@ structure Egg.Request where
   lhs     : String
   rhs     : String
   rws     : Array Rewrite.Encoded
+  facts   : Array String
   guides  : Array String
   vizPath : String
   cfg     : Request.Config
@@ -137,13 +139,15 @@ lean_obj_res run_egg_request(lean_obj_arg req) {
     const char* lhs      = lean_string_cstr(lean_ctor_get(req, 0));
     const char* rhs      = lean_string_cstr(lean_ctor_get(req, 1));
     rws_array rws        = rewrites_from_lean_obj(lean_ctor_get(req, 2));
-    str_array guides     = str_array_from_lean_obj(lean_ctor_get(req, 3));
-    const char* viz_path = lean_string_cstr(lean_ctor_get(req, 4));
-    config cfg           = config_from_lean_obj(lean_ctor_get(req, 5));
+    str_array facts      = str_array_from_lean_obj(lean_ctor_get(req, 3));
+    str_array guides     = str_array_from_lean_obj(lean_ctor_get(req, 4));
+    const char* viz_path = lean_string_cstr(lean_ctor_get(req, 5));
+    config cfg           = config_from_lean_obj(lean_ctor_get(req, 6));
 
-    char* result = egg_explain_congr(lhs, rhs, rws, guides, cfg, viz_path);
+    char* result = egg_explain_congr(lhs, rhs, rws, facts, guides, cfg, viz_path);
     
     free_rws_array(rws);
+    free(facts.ptr);
     free(guides.ptr);
     
     return lean_mk_string(result);

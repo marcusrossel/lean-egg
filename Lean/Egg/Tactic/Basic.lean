@@ -24,8 +24,8 @@ private structure Goal where
   base? : Option FVarId
 
 private def Goal.tcProjTargets (goal : Goal) : Array TcProjTarget := #[
-  { expr := goal.type.lhs, src := .goal, side? := some .left },
-  { expr := goal.type.rhs, src := .goal, side? := some .right }
+  { expr := goal.type.lhs, src := .goal, loc := .left },
+  { expr := goal.type.rhs, src := .goal, loc := .right }
 ]
 
 private def parseGoal (goal : MVarId) (base? : Option (TSyntax `egg_base)) : MetaM Goal := do
@@ -54,30 +54,30 @@ private def tracePremises (ps : Premises) (tc : Rewrites) (cfg : Config.Gen) : T
     withTraceNode cls (fun _ => return m!"Hypotheses ({ps.facts.size})") do
       ps.facts.trace ps.factsStx cls
 
-private partial def genRewrites
+private partial def genPremises
     (goal : Goal) (ps : TSyntax `egg_prems) (guides : Guides) (cfg : Config) (amb : MVars.Ambient) :
-    TacticM Rewrites := do
-  let ps ← Premises.parse cfg.toNormalization amb ps
-  let tcRws ← genTcRws ps.rws
-  tracePremises ps tcRws cfg.toGen
+    TacticM (Rewrites × Facts) := do
+  let ps ← Premises.parse cfg amb ps
+  let tcRws ← genTcRws ps
+  tracePremises ps tcRws cfg
   throwOnConditionalRw ps.rws ps.rwsStx
-  return ps.rws ++ tcRws
+  return (ps.rws ++ tcRws, ps.facts)
 where
-  genTcRws (rws : Rewrites) : TacticM Rewrites := do
+  genTcRws (ps : Premises) : TacticM Rewrites := do
     let mut projTodo := #[]
     let mut specTodo := #[]
     let mut tcRws := #[]
     let mut covered : HashSet TcProj := ∅
-    if cfg.genTcProjRws then projTodo := goal.tcProjTargets ++ guides.tcProjTargets ++ rws.tcProjTargets
-    if cfg.genTcSpecRws then specTodo := rws
+    if cfg.genTcProjRws then projTodo := goal.tcProjTargets ++ ps.facts.tcProjTargets ++ guides.tcProjTargets ++ ps.rws.tcProjTargets
+    if cfg.genTcSpecRws then specTodo := ps.rws
     while (cfg.genTcProjRws && !projTodo.isEmpty) || (cfg.genTcSpecRws && !specTodo.isEmpty) do
       if cfg.genTcProjRws then
-        let (projRws, cov) ← genTcProjReductions projTodo covered cfg.toNormalization amb
+        let (projRws, cov) ← genTcProjReductions projTodo covered cfg amb
         covered  := cov
         specTodo := specTodo ++ projRws
         tcRws    := tcRws ++ projRws
       if cfg.genTcSpecRws then
-        let specRws ← genTcSpecializations specTodo cfg.toNormalization
+        let specRws ← genTcSpecializations specTodo cfg
         specTodo := #[]
         projTodo := specRws.tcProjTargets
         tcRws    := tcRws ++ specRws
@@ -127,8 +127,8 @@ elab "egg " mod:egg_cfg_mod rws:egg_prems base:(egg_base)? guides:(egg_guides)? 
     let proof? ← withNewMCtxDepth do
       let goal ← parseGoal goal base
       let guides := (← guides.mapM Guides.parseGuides).getD #[]
-      let rws ← genRewrites goal rws guides cfg amb
-      let req ← Request.encoding goal.type rws guides cfg amb
+      let (rws, facts) ← genPremises goal rws guides cfg amb
+      let req ← Request.encoding goal.type rws facts guides cfg amb
       traceRequest req
       if let .beforeEqSat := cfg.exitPoint then return none
       let rawExpl := req.run

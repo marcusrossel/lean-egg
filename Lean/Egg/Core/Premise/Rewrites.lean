@@ -15,6 +15,7 @@ structure Rewrite.MVars where
   conds : Array MVars
   deriving Inhabited
 
+-- Note: We don't create `Rewrite`s directly, but use `Premise.from` instead.
 structure Rewrite extends Congr where
   proof : Expr
   src   : Source

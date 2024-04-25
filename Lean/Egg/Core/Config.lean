@@ -47,7 +47,15 @@ structure Debug where
   traceBVarCorrection := false
   deriving BEq
 
-end Config
-open Config
+structure _root_.Egg.Config extends Encoding, Gen, Backend, Debug
 
-structure Config extends Encoding, Gen, Backend, Debug
+-- TODO: Why aren't these coercions automatic?
+
+instance : Coe Encoding Normalization where
+  coe := Encoding.toNormalization
+
+instance : Coe Config Encoding where
+  coe := toEncoding
+
+instance : Coe Config Gen where
+  coe := toGen

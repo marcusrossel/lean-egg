@@ -1,5 +1,6 @@
 import Egg.Core.Encode.Rewrites
 import Egg.Core.Encode.Guides
+import Egg.Core.Encode.Facts
 import Egg.Core.Config
 import Egg.Core.Explanation.Basic
 open Lean
@@ -35,18 +36,20 @@ structure _root_.Egg.Request where
   lhs     : Expression
   rhs     : Expression
   rws     : Rewrites.Encoded
+  facts   : Facts.Encoded
   guides  : Guides.Encoded
   vizPath : String
   cfg     : Request.Config
 
 def encoding
-    (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Egg.Config) (amb : MVars.Ambient) :
+    (goal : Congr) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Egg.Config) (amb : MVars.Ambient) :
     MetaM Request := do
   return {
-    lhs     := ← encode goal.lhs .goal cfg.toEncoding amb
-    rhs     := ← encode goal.rhs .goal cfg.toEncoding amb
-    rws     := ← rws.encode cfg.toEncoding amb
-    guides  := ← guides.encode cfg.toEncoding amb
+    lhs     := ← encode goal.lhs .goal cfg amb
+    rhs     := ← encode goal.rhs .goal cfg amb
+    rws     := ← rws.encode cfg amb
+    facts   := ← facts.encode cfg amb
+    guides  := ← guides.encode cfg amb
     vizPath := cfg.vizPath.getD ""
     cfg
   }

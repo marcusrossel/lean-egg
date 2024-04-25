@@ -2,7 +2,6 @@ use egg::*;
 use core::ffi::c_char;
 use core::ffi::CStr;
 use std::ffi::CString;
-use std::ptr::null;
 use std::str::FromStr;
 use basic::*;
 use result::*;
@@ -84,6 +83,7 @@ pub extern "C" fn egg_explain_congr(
     init_str_ptr: *const c_char, 
     goal_str_ptr: *const c_char, 
     rws: CRewritesArray, 
+    facts: CStringArray, 
     guides: CStringArray, 
     cfg: Config,
     viz_path_ptr: *const c_char
@@ -93,8 +93,8 @@ pub extern "C" fn egg_explain_congr(
     let goal_c_str = unsafe { CStr::from_ptr(goal_str_ptr) };
     let init = String::from_utf8_lossy(init_c_str.to_bytes()).to_string();
     let goal = String::from_utf8_lossy(goal_c_str.to_bytes()).to_string();
-    assert!(rws.ptr != null()); 
     let c_rws = unsafe { std::slice::from_raw_parts(rws.ptr, rws.len) };
+    let c_facts = unsafe { std::slice::from_raw_parts(facts.ptr, facts.len) };
     let c_guides = unsafe { std::slice::from_raw_parts(guides.ptr, guides.len) };
 
     // Note: The `into_raw`s below are important, as otherwise Rust deallocates the string.

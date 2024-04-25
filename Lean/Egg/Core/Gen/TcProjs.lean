@@ -41,7 +41,7 @@ private def State.covers (s : State) (proj : TcProj) : Bool :=
   s.covered.contains proj || s.projs.contains proj
 
 private partial def tcProjs
-    (e : Expr) (src : Source) (side? : Option Side) (covered : HashSet TcProj) :
+    (e : Expr) (src : Source) (loc : Source.TcProjLocation) (covered : HashSet TcProj) :
     MetaM TcProjIndex :=
   State.projs <$> go e { covered }
 where
@@ -60,7 +60,7 @@ where
     let proj := TcProj.mk const args lvls
     if s.covers proj
     then return s
-    else return { s with projs := s.projs.insert proj (.tcProj src side? s.pos) }
+    else return { s with projs := s.projs.insert proj (.tcProj src loc s.pos) }
 
   visitBindingBody (b : Expr) (s : State) : MetaM State := do
     let s' ← go b { s with pos := s.pos.pushBindingBody }
@@ -75,19 +75,24 @@ where
     return { s' with args := s.args, pos := s.pos }
 
 structure TcProjTarget where
-  expr  : Expr
-  src   : Source
-  side? : Option Side
+  expr : Expr
+  src  : Source
+  loc  : Source.TcProjLocation
 
 def Rewrites.tcProjTargets (rws : Rewrites) : Array TcProjTarget := Id.run do
   let mut sources : Array TcProjTarget := #[]
   for rw in rws do
-    sources := sources.push { expr := rw.lhs, src := rw.src, side? := some .left }
-    sources := sources.push { expr := rw.rhs, src := rw.src, side? := some .right }
+    sources := sources.push { expr := rw.lhs, src := rw.src, loc := .left }
+    sources := sources.push { expr := rw.rhs, src := rw.src, loc := .right }
+    for cond in rw.conds, idx in [:rw.conds.size] do
+      sources := sources.push { expr := cond, src := rw.src, loc := .cond idx }
   return sources
 
+def Facts.tcProjTargets (facts : Facts) : Array TcProjTarget :=
+  facts.map fun fact => { expr := fact.type, src := fact.src, loc := .root }
+
 def Guides.tcProjTargets (guides : Guides) : Array TcProjTarget :=
-  guides.map fun guide => { expr := guide.expr, src := guide.src, side? := none }
+  guides.map fun guide => { expr := guide.expr, src := guide.src, loc := .root }
 
 -- TODO: This still produces many redundant rewrites which differ only by mvars. Is there an
 --       efficient way to check if two `TcProj`s are equal up to mvar renaming?
@@ -101,7 +106,7 @@ def genTcProjReductions
   let mut covered := covered
   let mut rws := #[]
   for target in targets do
-    let projs ← tcProjs target.expr target.src target.side? covered
+    let projs ← tcProjs target.expr target.src target.loc covered
     for (proj, src) in projs.toArray do
       covered := covered.insert proj
       if let some rw ← proj.reductionRewrite? src norm amb then rws := rws.push rw

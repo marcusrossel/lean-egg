@@ -9,9 +9,9 @@ declare_syntax_cat egg_expl_step
 declare_syntax_cat egg_lvl
 declare_syntax_cat egg_lit
 declare_syntax_cat egg_rw_dir
-declare_syntax_cat egg_side
 declare_syntax_cat egg_subexpr_pos
 declare_syntax_cat egg_basic_fwd_rw_src
+declare_syntax_cat egg_tc_proj_loc
 declare_syntax_cat egg_tc_proj
 declare_syntax_cat egg_tc_spec_dir
 declare_syntax_cat egg_tc_spec
@@ -32,17 +32,17 @@ syntax str : egg_lit
 syntax "=>" : egg_rw_dir
 syntax "<=" : egg_rw_dir
 
-syntax ident : egg_side
-
-syntax "/"        : egg_subexpr_pos
-syntax ("/" num)+ : egg_subexpr_pos
+syntax "▪"     : egg_tc_proj_loc
+syntax "◂"     : egg_tc_proj_loc
+syntax "▸"     : egg_tc_proj_loc
+syntax num "?" : egg_tc_proj_loc
 
 syntax "#" noWs num (noWs "/" noWs num)? : egg_basic_fwd_rw_src
 syntax "*" noWs num                      : egg_basic_fwd_rw_src
 syntax "⊢"                               : egg_basic_fwd_rw_src
 syntax "↣" noWs num                      : egg_basic_fwd_rw_src
 
-syntax "[" (egg_side)? egg_subexpr_pos "]" : egg_tc_proj
+syntax "[" egg_tc_proj_loc num "]" : egg_tc_proj
 
 syntax "→" : egg_tc_spec_dir
 syntax "←" : egg_tc_spec_dir
@@ -110,14 +110,11 @@ private def parsTcSpecDir : (TSyntax `egg_tc_spec_dir) → Direction
   | `(egg_tc_spec_dir|←) => .backward
   | _                    => unreachable!
 
-private def parseSide : (TSyntax `egg_side) → Side
-  | `(egg_side|l) => .left
-  | `(egg_side|r) => .right
-  | _             => unreachable!
-
-private def parseSubexprPos : (TSyntax `egg_subexpr_pos) → SubExpr.Pos
-  | `(egg_subexpr_pos|/)        => .root
-  | `(egg_subexpr_pos|$[/$ps]*) => SubExpr.Pos.ofArray <| ps.map (·.getNat)
+private def parseTcProjLocation : (TSyntax `egg_tc_proj_loc) → Source.TcProjLocation
+  | `(egg_tc_proj_loc|▪)        => .root
+  | `(egg_tc_proj_loc|◂)        => .left
+  | `(egg_tc_proj_loc|▸)        => .right
+  | `(egg_tc_proj_loc|$n:num ?) => .cond n.getNat
   | _                           => unreachable!
 
 private def parseBasicFwdRwSrc : (TSyntax `egg_basic_fwd_rw_src) → Source
@@ -128,9 +125,9 @@ private def parseBasicFwdRwSrc : (TSyntax `egg_basic_fwd_rw_src) → Source
   | _                                       => unreachable!
 
 private def parseTcExtension (src : Source) : (TSyntax `egg_tc_extension) → Source
-  | `(egg_tc_extension|[$[$side?]?$pos]) => .tcProj src (side?.map parseSide) (parseSubexprPos pos)
-  | `(egg_tc_extension|<$dir>)           => .tcSpec src (parsTcSpecDir dir)
-  | _                                    => unreachable!
+  | `(egg_tc_extension|[$loc$pos]) => .tcProj src (parseTcProjLocation loc) pos.getNat
+  | `(egg_tc_extension|<$dir>)     => .tcSpec src (parsTcSpecDir dir)
+  | _                              => unreachable!
 
 private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
   | `(egg_fwd_rw_src|≡0)   => .natLit .zero
