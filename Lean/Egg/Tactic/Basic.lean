@@ -83,10 +83,10 @@ where
     return tcRws
 
 private def processRawExpl
-    (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (amb : MVars.Ambient) :
-    TacticM Expr := do
+    (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (facts : Facts)
+    (amb : MVars.Ambient) : TacticM Expr := do
   let expl ← rawExpl.parse
-  let proof ← expl.proof rws
+  let proof ← expl.proof rws facts
   proof.trace `egg.proof
   let mut prf ← proof.prove goal.type
   prf ← instantiateMVars prf
@@ -130,7 +130,7 @@ elab "egg " mod:egg_cfg_mod rws:egg_prems base:(egg_base)? guides:(egg_guides)? 
       if rawExpl.isEmpty then throwError "egg failed to prove goal"
       withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] rawExpl
       if let .beforeProof := cfg.exitPoint then return none
-      return some (← processRawExpl rawExpl goal rws amb)
+      return some (← processRawExpl rawExpl goal rws facts amb)
     if let some proof := proof?
     then goal.assignIfDefeq proof
     else goal.admit

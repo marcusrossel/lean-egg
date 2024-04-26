@@ -1,6 +1,7 @@
- import Egg.Core.Explanation.Basic
+import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Congr
 import Egg.Core.Premise.Rewrites
+import Egg.Core.Premise.Facts
 open Lean Meta
 
 namespace Egg.Explanation
@@ -122,7 +123,7 @@ where
   fail (msg : String) : MetaM Unit := do
     throwError s!"egg failed to build proof: {msg}"
 
-def Explanation.proof (expl : Explanation) (rws : Rewrites) : MetaM Proof := do
+def Explanation.proof (expl : Explanation) (rws : Rewrites) (facts : Facts) : MetaM Proof := do
   let mut current ← expl.start.toExpr
   let mut proof : Proof := #[]
   for step in expl.steps do
@@ -168,6 +169,10 @@ where
       let rw ← rw.fresh
       unless ← isDefEq lhs rw.lhs do fail m!"unification failure for LHS of rewrite {rw.src.description}"
       unless ← isDefEq rhs rw.rhs do fail m!"unification failure for RHS of rewrite {rw.src.description}"
+      -- TODO: It would be more efficient to pass the used facts back from egg as part of the src name.
+      for cond in rw.conds do
+        for fact in facts do
+          if ← isDefEq cond fact.proof then break
       let proof ← rw.eqProof
       return (
         ← mkCHole (forLhs := true) lhs proof,
