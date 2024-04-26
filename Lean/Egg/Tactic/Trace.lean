@@ -48,7 +48,7 @@ def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) : TacticM U
     if !rw.conds.isEmpty then
       withTraceNode cls (fun _ => return "Conditions") (collapsed := false) do
         for cond in rw.conds do
-          traceM cls fun _ => return m!"{← cond.mvarId!.getType}"
+          traceM cls fun _ => return m!"{cond.type}"
     traceM cls fun _ => return m!"LHS MVars\n{← rw.mvars.lhs.format}"
     traceM cls fun _ => return m!"RHS MVars\n{← rw.mvars.rhs.format}"
 

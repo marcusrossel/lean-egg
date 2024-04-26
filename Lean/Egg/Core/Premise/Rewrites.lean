@@ -10,16 +10,20 @@ open Lean Meta
 namespace Egg
 
 structure Rewrite.MVars where
-  lhs   : MVars
-  rhs   : MVars
-  conds : Array MVars
+  lhs : MVars
+  rhs : MVars
   deriving Inhabited
+
+structure Rewrite.Condition where
+  expr  : Expr -- Without instantiation, this is an mvar.
+  type  : Expr
+  mvars : Egg.MVars
 
 -- Note: We don't create `Rewrite`s directly, but use `Premise.from` instead.
 structure Rewrite extends Congr where
   proof : Expr
   src   : Source
-  conds : Array Expr -- This holds the *mvar* of each condition, not its type.
+  conds : Array Rewrite.Condition
   mvars : Rewrite.MVars
   deriving Inhabited
 
@@ -42,18 +46,30 @@ def eqProof (rw : Rewrite) : MetaM Expr := do
   | .iff => mkPropExt rw.proof
 
 def freshWithSubst (rw : Rewrite) (src : Source := rw.src) : MetaM (Rewrite × MVars.Subst) := do
-  let (mLhs,   subst) ← rw.mvars.lhs.fresh
-  let (mRhs,   subst) ← rw.mvars.rhs.fresh (init := subst)
-  let (mConds, subst) ← MVars.fresh' rw.mvars.conds (init := subst)
+  let (mLhs, subst)  ← rw.mvars.lhs.fresh
+  let (mRhs, subst)  ← rw.mvars.rhs.fresh (init := subst)
+  let (conds, subst) ← freshConds (init := subst)
+  -- Note: The `conds` already have `subst` applied. So If you have more substitution targets in the
+  --       future, you might need to consider that.
   let rw' := { rw with
     src
     lhs   := subst.apply rw.lhs
     rhs   := subst.apply rw.rhs
     proof := subst.apply rw.proof
-    conds := rw.conds.map subst.apply
-    mvars := { lhs := mLhs, rhs := mRhs, conds := mConds }
+    conds := conds
+    mvars := { lhs := mLhs, rhs := mRhs }
   }
   return (rw', subst)
+where
+  freshConds (init : MVars.Subst) : MetaM (Array Condition × MVars.Subst) := do
+    let mut subst := init
+    let mut conds := #[]
+    for cond in rw.conds do
+      let (m, s) ← MVars.freshExpr cond.expr.mvarId! (init := subst)
+      let (mvars, s) ← cond.mvars.fresh (init := s)
+      conds := conds.push { expr := .mvar m, type := s.apply cond.type, mvars }
+      subst := s
+    return (conds, subst)
 
 -- Returns the same rewrite but with all (expression and level) mvars replaced by fresh mvars. This
 -- is used during proof reconstruction, as rewrites may be used multiple times but instantiated
@@ -69,7 +85,7 @@ def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
     proof       := ← Lean.instantiateMVars rw.proof
     mvars.lhs   := ← rw.mvars.lhs.removeAssigned
     mvars.rhs   := ← rw.mvars.rhs.removeAssigned
-    mvars.conds := ← rw.mvars.conds.mapM (·.removeAssigned)
+    -- TODO: Instantiate mvars in conditions and remove their assigned mvars.
   }
 
 end Rewrite

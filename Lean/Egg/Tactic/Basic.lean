@@ -60,6 +60,7 @@ private partial def genPremises
   let ps ← Premises.parse cfg amb ps
   let tcRws ← genTcRws ps
   tracePremises ps tcRws cfg
+  catchInvalidConditionals ps.rws ps.rwsStx
   return (ps.rws ++ tcRws, ps.facts)
 where
   genTcRws (ps : Premises) : TacticM Rewrites := do
@@ -81,6 +82,13 @@ where
         projTodo := specRws.tcProjTargets
         tcRws    := tcRws ++ specRws
     return tcRws
+
+  catchInvalidConditionals (rws : Rewrites) (stx : Array Syntax) : MetaM Unit := do
+    for rw in rws, s in stx do
+      for cond in rw.conds do
+        for m in cond.mvars.expr do
+          unless rw.mvars.lhs.expr.contains m || rw.mvars.rhs.expr.contains m do
+            throwErrorAt s "egg does not currently support rewrites with unbound conditions"
 
 private def processRawExpl
     (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (facts : Facts)

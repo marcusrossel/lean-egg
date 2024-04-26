@@ -19,8 +19,7 @@ def Rewrite.encode (rw : Rewrite) (cfg : Config.Encoding) (amb : MVars.Ambient) 
     lhs   := ← Egg.encode rw.lhs rw.src cfg amb
     rhs   := ← Egg.encode rw.rhs rw.src cfg amb
     dirs  := rw.validDirs
-    -- We are encoding the *type* of each condition, not the condition mvar itself.
-    conds := ← rw.conds.mapM fun cond => do Egg.encode (← cond.mvarId!.getType) rw.src cfg amb
+    conds := ← rw.conds.mapM fun cond => do Egg.encode cond.type rw.src cfg amb
   }
 
 namespace Rewrites

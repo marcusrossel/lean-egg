@@ -85,7 +85,7 @@ def Rewrites.tcProjTargets (rws : Rewrites) : Array TcProjTarget := Id.run do
     sources := sources.push { expr := rw.lhs, src := rw.src, loc := .left }
     sources := sources.push { expr := rw.rhs, src := rw.src, loc := .right }
     for cond in rw.conds, idx in [:rw.conds.size] do
-      sources := sources.push { expr := cond, src := rw.src, loc := .cond idx }
+      sources := sources.push { expr := cond.type, src := rw.src, loc := .cond idx }
   return sources
 
 def Facts.tcProjTargets (facts : Facts) : Array TcProjTarget :=

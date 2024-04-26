@@ -172,7 +172,7 @@ where
       -- TODO: It would be more efficient to pass the used facts back from egg as part of the src name.
       for cond in rw.conds do
         for fact in facts do
-          if ← isDefEq cond fact.proof then break
+          if ← isDefEq cond.expr fact.proof then break
       let proof ← rw.eqProof
       return (
         ← mkCHole (forLhs := true) lhs proof,

@@ -48,8 +48,9 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
         }
 
         'cond_loop: for cond in self.conds.clone() {
-            // TODO: I think `add_instantiation` crashes when the pattern contains variables not covered by the subst.
-            //       Do we know that conditions' variables are always a subset of the rewrite's body's variables?
+            // `add_instantiation` crashes when the pattern contains variables not covered by the subst.
+            // This is currently handled in Lean by filtering out rewrites where a condition's variables are not
+            // covered by the body's variables.
             let id = graph.add_instantiation(&cond.ast, subst);
             for fact in self.facts.clone() {
                 if id == graph.add_expr(&fact) { continue 'cond_loop }

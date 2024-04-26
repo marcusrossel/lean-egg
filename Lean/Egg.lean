@@ -1,5 +1,6 @@
 import Egg.Core.Encode.Basic
 import Egg.Core.Encode.EncodeM
+import Egg.Core.Encode.Facts
 import Egg.Core.Encode.Guides
 import Egg.Core.Encode.Rewrites
 import Egg.Core.Explanation.Basic

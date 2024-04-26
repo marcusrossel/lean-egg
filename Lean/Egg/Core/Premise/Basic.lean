@@ -30,10 +30,14 @@ def «from»
   let some cgr ← Congr.from? type | return .fact { src, type, proof }
   let mLhs := (← MVars.collect cgr.lhs).remove amb
   let mRhs := (← MVars.collect cgr.rhs).remove amb
-  let conds := looseArgs args mLhs mRhs
-  let mConds ← conds.mapM fun cond => return (← MVars.collect cond).remove amb
-  let mvars := { lhs := mLhs, rhs := mRhs, conds := mConds }
+  let conds ← collectConds args mLhs mRhs
+  let mvars := { lhs := mLhs, rhs := mRhs }
   return .rw { cgr with proof, src, conds, mvars }
 where
-  looseArgs (args : Array Expr) (lhsMVars rhsMVars : MVars) : Array Expr :=
-    args.filter fun a => !lhsMVars.expr.contains a.mvarId! && !rhsMVars.expr.contains a.mvarId!
+  collectConds (args : Array Expr) (mLhs mRhs : MVars) : MetaM (Array Rewrite.Condition) := do
+    let mut conds := #[]
+    for arg in args do
+      if mLhs.expr.contains arg.mvarId! || mRhs.expr.contains arg.mvarId! then continue
+      let ty ← arg.mvarId!.getType -- TODO: Does this need to be normalized?
+      conds := conds.push { expr := arg, type := ty, mvars := (← MVars.collect ty).remove amb }
+    return conds
