@@ -47,7 +47,15 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             }
         }
 
-        // TODO: check conditions against facts
+        'cond_loop: for cond in self.conds.clone() {
+            // TODO: I think `add_instantiation` crashes when the pattern contains variables not covered by the subst.
+            //       Do we know that conditions' variables are always a subset of the rewrite's body's variables?
+            let id = graph.add_instantiation(&cond.ast, subst);
+            for fact in self.facts.clone() {
+                if id == graph.add_expr(&fact) { continue 'cond_loop }
+            } 
+            return vec![] // This is only reached if `cond` is not satisfied by any fact.
+        }
 
         // A substitution needs no shifting if it does not map any variables to e-classes containing loose bvars.
         // This is the case exactly when `var_depths` is empty.

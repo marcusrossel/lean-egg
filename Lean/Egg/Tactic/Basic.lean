@@ -60,7 +60,6 @@ private partial def genPremises
   let ps ← Premises.parse cfg amb ps
   let tcRws ← genTcRws ps
   tracePremises ps tcRws cfg
-  throwOnConditionalRw ps.rws ps.rwsStx
   return (ps.rws ++ tcRws, ps.facts)
 where
   genTcRws (ps : Premises) : TacticM Rewrites := do
@@ -82,10 +81,6 @@ where
         projTodo := specRws.tcProjTargets
         tcRws    := tcRws ++ specRws
     return tcRws
-
-  throwOnConditionalRw (rws : Rewrites) (stxs : Array Syntax) : TacticM Unit := do
-    for rw in rws, stx in stxs do
-      if rw.isConditional then throwErrorAt stx "egg does not currently support conditional rewrites"
 
 private def processRawExpl
     (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (amb : MVars.Ambient) :

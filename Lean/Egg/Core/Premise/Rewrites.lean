@@ -19,14 +19,11 @@ structure Rewrite.MVars where
 structure Rewrite extends Congr where
   proof : Expr
   src   : Source
-  conds : Array Expr
+  conds : Array Expr -- This holds the *mvar* of each condition, not its type.
   mvars : Rewrite.MVars
   deriving Inhabited
 
 namespace Rewrite
-
-def isConditional (rw : Rewrite) : Bool :=
-  !rw.conds.isEmpty
 
 def validDirs (rw : Rewrite) : Directions :=
   let exprDirs := Directions.satisfyingSuperset rw.mvars.lhs.expr rw.mvars.rhs.expr

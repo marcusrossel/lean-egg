@@ -66,6 +66,12 @@ def Rewrite.Encoded.trace (rw : Rewrite.Encoded) (cls : Name) : TacticM Unit := 
   withTraceNode cls (fun _ => return header) do
     Lean.trace cls fun _ => m!"LHS: {rw.lhs}"
     Lean.trace cls fun _ => m!"RHS: {rw.rhs}"
+    if rw.conds.isEmpty then
+      Lean.trace cls fun _ => "No Conditions"
+    else
+      withTraceNode cls (fun _ => return "Conditions") (collapsed := false) do
+        for cond in rw.conds do
+          Lean.trace cls fun _ => cond
 
 nonrec def Config.trace (cfg : Config) (cls : Name) : TacticM Unit := do
   let toEmoji (b : Bool) := if b then "✅" else "❌"

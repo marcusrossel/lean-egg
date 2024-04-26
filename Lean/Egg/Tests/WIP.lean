@@ -1,10 +1,5 @@
 import Egg
 
-set_option trace.egg true in
-example (h : ∀ n, n > 2 → n = 5) : 3 = 5 := by
-  have h' : 3 > 2 := by simp
-  egg [h, h']
-
 -- The universe mvars (or universe params if you make this a theorem instead of an example) are
 -- different for the respective `α`s, so this doesn't hold by reflexivity. But `simp` can somehow
 -- prove this.
