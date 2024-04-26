@@ -38,6 +38,6 @@ where
     let mut conds := #[]
     for arg in args do
       if mLhs.expr.contains arg.mvarId! || mRhs.expr.contains arg.mvarId! then continue
-      let ty ← arg.mvarId!.getType -- TODO: Does this need to be normalized?
+      let ty ← instantiateMVars (← arg.mvarId!.getType) -- TODO: Does this need to be normalized?
       conds := conds.push { expr := arg, type := ty, mvars := (← MVars.collect ty).remove amb }
     return conds

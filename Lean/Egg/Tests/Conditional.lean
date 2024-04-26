@@ -6,10 +6,6 @@ example (h₁ : x ∧ y) (h₂ : x ∧ y → 1 = 2) : 1 = 2 := by
 example (h₁ : x ∧ y) (h₂ : x ∧ y → 1 = 2) : 1 = 2 := by
   egg [*]
 
--- TODO: Add all rewrites to the set of facts.
-example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
-  sorry -- egg [h₁, h₂]
-
 example (h₁ : ∀ n, n > 2 → n = x) (h₂ : 3 > 2) : 3 = x := by
   egg [h₁, h₂]
 
@@ -24,18 +20,19 @@ example (h₁ : ∀ n, n > 2 → n > 3 → n = x) (h₃ : 4 > 3) (h₂ : 4 > 2) 
 example {a : Nat} (h : a < b) : a % b = a := by
   egg [Nat.mod_eq_of_lt, h]
 
-/-- error: egg does not currently support rewrites with unbound conditions -/
+-- TODO: Add all rewrites to the set of facts.
+example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
+  sorry -- egg [h₁, h₂]
+
+/-- error: egg does not currently support rewrites with unbound conditions (level) -/
+#guard_msgs in
+example (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
+  egg [h₁, h₂]
+
+/-- error: egg does not currently support rewrites with unbound conditions (expression) -/
 #guard_msgs in
 example (h₁ : Prop) (h₂ : ∀ p : Prop, p → 1 = id 1) : 1 = id 1 := by
   egg [h₁, h₂]
-
--- CRASH: This comes from `add_instantiation` missing a var in the substitution.
---        The missing var is a universe mvar in the condition of h₂.
---        I think that universe mvar is actually ambient though, so we should implement the ambient
---        encoding of universe mvars.
-set_option trace.egg true in
-example (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
-  egg (config := { exitPoint := some .beforeEqSat }) [h₁, h₂]
 
 /- TODO:
 

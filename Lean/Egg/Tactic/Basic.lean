@@ -95,7 +95,10 @@ where
       for cond in rw.conds do
         for m in cond.mvars.expr do
           unless rw.mvars.lhs.expr.contains m || rw.mvars.rhs.expr.contains m do
-            throwErrorAt s "egg does not currently support rewrites with unbound conditions"
+            throwErrorAt s "egg does not currently support rewrites with unbound conditions (expression)"
+        for m in cond.mvars.lvl do
+          unless rw.mvars.lhs.lvl.contains m || rw.mvars.rhs.lvl.contains m do
+            throwErrorAt s "egg does not currently support rewrites with unbound conditions (level)"
 
 private def processRawExpl
     (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (facts : Facts)
