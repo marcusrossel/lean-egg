@@ -42,6 +42,13 @@ where
     else
       throwError "expected goal to be of type '=' or '↔', but found:\n{← ppExpr goalType}"
 
+-- TODO: We should also consider the level mvars of all `Fact`s.
+private def collectAmbientMVars (goal : Goal) (guides : Guides) : MetaM MVars.Ambient := do
+  let expr ← MVars.Ambient.Expr.get
+  let goalLvl := (← MVars.collect (← goal.type.expr)).lvl
+  let guidesLvl ← guides.foldlM (init := ∅) fun res g => return res.merge (← MVars.collect g.expr).lvl
+  return { expr, lvl := goalLvl.merge guidesLvl }
+
 private def tracePremises (ps : Premises) (tc : Rewrites) (cfg : Config.Gen) : TacticM Unit := do
   let cls := `egg.rewrites
   withTraceNode cls (fun _ => return "Rewrites") do
@@ -106,8 +113,13 @@ private def processRawExpl
   return prf
 where
   catchLooseMVars (prf : Expr) (amb : MVars.Ambient) : MetaM Unit := do
-    for mvar in (prf.collectMVars {}).result do
-      unless amb.contains mvar do throwError m!"egg: final proof contains mvar {Expr.mvar mvar}"
+    let mvars ← MVars.collect prf
+    for mvar in mvars.expr do
+      unless amb.expr.contains mvar do
+        throwError m!"egg: final proof contains expression mvar {Expr.mvar mvar}"
+    for lmvar in mvars.lvl do
+      unless amb.lvl.contains lmvar do
+        throwError m!"egg: final proof contains level mvar {Level.mvar lmvar}"
 
 private def traceRequest (req : Request) : TacticM Unit := do
   let cls := `egg.encoded
@@ -122,14 +134,14 @@ elab "egg " mod:egg_cfg_mod rws:egg_prems base:(egg_base)? guides:(egg_guides)? 
   let cfg := (← Config.fromOptions).modify mod
   cfg.trace `egg.config
   goal.withContext do
-    let amb ← MVars.Ambient.get
+    let goal ← parseGoal goal base
+    let guides := (← guides.mapM Guides.parseGuides).getD #[]
+    let amb ← collectAmbientMVars goal guides
     amb.trace `egg.ambient
     -- We increase the mvar context depth, so that ambient mvars aren't unified during proof
     -- reconstruction. Note that this also means that we can't assign the `goal` mvar within this
     -- do-block.
     let proof? ← withNewMCtxDepth do
-      let goal ← parseGoal goal base
-      let guides := (← guides.mapM Guides.parseGuides).getD #[]
       let (rws, facts) ← genPremises goal rws guides cfg amb
       let req ← Request.encoding goal.type rws facts guides cfg amb
       traceRequest req
@@ -140,8 +152,8 @@ elab "egg " mod:egg_cfg_mod rws:egg_prems base:(egg_base)? guides:(egg_guides)? 
       if let .beforeProof := cfg.exitPoint then return none
       return some (← processRawExpl rawExpl goal rws facts amb)
     if let some proof := proof?
-    then goal.assignIfDefeq proof
-    else goal.admit
+    then goal.id.assignIfDefeq proof
+    else goal.id.admit
 
 -- WORKAROUND: This fixes `Tests/EndOfInput *`.
 macro "egg" mod:egg_cfg_mod : tactic => `(tactic| egg $mod)

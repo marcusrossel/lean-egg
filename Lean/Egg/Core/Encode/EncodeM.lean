@@ -8,7 +8,6 @@ open Lean
 namespace Egg
 
 structure EncodeM.State where
-  exprSrc : Source
   config  : Config.Encoding
   bvars   : List FVarId := []
   amb     : MVars.Ambient
@@ -17,14 +16,14 @@ abbrev EncodeM := StateT EncodeM.State MetaM
 
 namespace EncodeM
 
-def exprSrc : EncodeM Source :=
-  State.exprSrc <$> get
-
 def config : EncodeM Config.Encoding :=
   State.config <$> get
 
-def isAmbient (mvar : MVarId) : EncodeM Bool := do
-  return (← get).amb.contains mvar
+def isAmbientExpr (mvar : MVarId) : EncodeM Bool := do
+  return (← get).amb.expr.contains mvar
+
+def isAmbientLvl (lmvar : LMVarId) : EncodeM Bool := do
+  return (← get).amb.lvl.contains lmvar
 
 -- Note: This only works as intended if `m` does not add any additional bvars (permanently).
 def withInstantiatedBVar (ty body : Expr) (m : Expr → EncodeM α) : EncodeM α := do

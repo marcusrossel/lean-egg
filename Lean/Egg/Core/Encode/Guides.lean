@@ -11,4 +11,4 @@ abbrev Guides.Encoded := Array Guide.Encoded
 
 def Guides.encode (guides : Guides) (cfg : Config.Encoding) (amb : MVars.Ambient) :
     MetaM Guides.Encoded :=
-  guides.mapM fun guide => Egg.encode guide.expr guide.src cfg amb
+  guides.mapM fun guide => Egg.encode guide.expr cfg amb

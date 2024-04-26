@@ -45,8 +45,8 @@ def encoding
     (goal : Congr) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Egg.Config) (amb : MVars.Ambient) :
     MetaM Request := do
   return {
-    lhs     := ← encode goal.lhs .goal cfg amb
-    rhs     := ← encode goal.rhs .goal cfg amb
+    lhs     := ← encode goal.lhs cfg amb
+    rhs     := ← encode goal.rhs cfg amb
     rws     := ← rws.encode cfg amb
     facts   := ← facts.encode cfg amb
     guides  := ← guides.encode cfg amb

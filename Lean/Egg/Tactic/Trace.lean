@@ -130,5 +130,10 @@ where
 
 nonrec def MVars.Ambient.trace (amb : MVars.Ambient) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Ambient MVars") do
-    for m in ← amb.unassigned do
-      trace cls fun _ => m!"{Expr.mvar m}"
+    let (exprs, lvls) ← amb.unassigned
+    withTraceNode cls (fun _ => return "Expression") (collapsed := false) do
+      for m in exprs do
+        trace cls fun _ => m!"{Expr.mvar m}"
+    withTraceNode cls (fun _ => return "Level") (collapsed := false) do
+      for m in lvls do
+        trace cls fun _ => m!"{Level.mvar m}"

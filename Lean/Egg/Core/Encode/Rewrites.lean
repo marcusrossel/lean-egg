@@ -16,10 +16,10 @@ structure Rewrite.Encoded where
 def Rewrite.encode (rw : Rewrite) (cfg : Config.Encoding) (amb : MVars.Ambient) : MetaM Encoded :=
   return {
     name  := rw.src.description
-    lhs   := ← Egg.encode rw.lhs rw.src cfg amb
-    rhs   := ← Egg.encode rw.rhs rw.src cfg amb
+    lhs   := ← Egg.encode rw.lhs cfg amb
+    rhs   := ← Egg.encode rw.rhs cfg amb
     dirs  := rw.validDirs
-    conds := ← rw.conds.mapM fun cond => do Egg.encode cond.type rw.src cfg amb
+    conds := ← rw.conds.mapM fun cond => do Egg.encode cond.type cfg amb
   }
 
 namespace Rewrites
