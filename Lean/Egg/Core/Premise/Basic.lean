@@ -24,10 +24,11 @@ namespace Premise
 def «from»
     (proof : Expr) (type : Expr) (src : Source) (normalize : Option Config.Normalization)
     (amb : MVars.Ambient) : MetaM Premise := do
-  let mut (args, _, type) ← forallMetaTelescope (← instantiateMVars type)
+  let mut type ← instantiateMVars type
   type ← if let some cfg := normalize then Egg.normalize type cfg else pure type
+  let mut (args, _, eqOrIff?) ← forallMetaTelescope type
+  let some cgr ← Congr.from? eqOrIff? | return .fact { src, type, proof }
   let proof := mkAppN proof args
-  let some cgr ← Congr.from? type | return .fact { src, type, proof }
   let mLhs := (← MVars.collect cgr.lhs).remove amb
   let mRhs := (← MVars.collect cgr.rhs).remove amb
   let conds ← collectConds args mLhs mRhs
@@ -38,6 +39,6 @@ where
     let mut conds := #[]
     for arg in args do
       if mLhs.expr.contains arg.mvarId! || mRhs.expr.contains arg.mvarId! then continue
-      let ty ← instantiateMVars (← arg.mvarId!.getType) -- TODO: Does this need to be normalized?
+      let ty ← arg.mvarId!.getType
       conds := conds.push { expr := arg, type := ty, mvars := (← MVars.collect ty).remove amb }
     return conds

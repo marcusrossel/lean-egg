@@ -124,11 +124,6 @@ where
       unless amb.lvl.contains lmvar do
         throwError m!"egg: final proof contains level mvar {Level.mvar lmvar}"
 
-private def traceRequest (req : Request) : TacticM Unit := do
-  let cls := `egg.encoded
-  withTraceNode cls (fun _ => return "Encoded") do
-    req.trace cls
-
 open Config.Modifier (egg_cfg_mod)
 
 elab "egg " mod:egg_cfg_mod rws:egg_prems base:(egg_base)? guides:(egg_guides)? : tactic => do
@@ -147,7 +142,7 @@ elab "egg " mod:egg_cfg_mod rws:egg_prems base:(egg_base)? guides:(egg_guides)? 
     let proof? ← withNewMCtxDepth do
       let (rws, facts) ← genPremises goal rws guides cfg amb
       let req ← Request.encoding goal.type rws facts guides cfg amb
-      traceRequest req
+      withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
       if let .beforeEqSat := cfg.exitPoint then return none
       let rawExpl := req.run
       if rawExpl.isEmpty then throwError "egg failed to prove goal"

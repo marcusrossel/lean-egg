@@ -24,6 +24,9 @@ example {a : Nat} (h : a < b) : a % b = a := by
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   sorry -- egg [h₁, h₂]
 
+example (h₁ : ∀ p, p ∧ p) (h₂ : (∀ p, p ∧ p) → q = True) : q = True := by
+  egg [h₁, h₂]
+
 /-- error: egg does not currently support rewrites with unbound conditions (level) -/
 #guard_msgs in
 example (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
