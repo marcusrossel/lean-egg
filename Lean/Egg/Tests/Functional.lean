@@ -65,5 +65,5 @@ def all' (p : α → Bool) : List α → Bool
 
 theorem all_deforestation (p : α → Bool) (xs : List α) : all p xs = all' p xs := by
   induction xs with
-  | nil         => egg [all, all', foldr, map]
-  | cons _ _ ih => egg [all, all', foldr, map, ih]
+  | nil         => /-simp [all, all', foldr, map, ih]-/ egg [all, all', foldr, map]
+  | cons _ _ ih => try simp [all, all', foldr, map, ih]; egg [all, all', foldr, map, ih]
