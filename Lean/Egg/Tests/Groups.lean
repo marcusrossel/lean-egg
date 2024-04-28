@@ -42,10 +42,5 @@ theorem inv_inv' : (a⁻¹)⁻¹ = a := by
 theorem inv_mul'' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using a⁻¹ * (a * b) * (a * b)⁻¹
 
-<<<<<<< HEAD
 theorem inv_inv'' : (a⁻¹)⁻¹ = a := by
   group using a⁻¹ * a
-=======
-theorem inv_inv' : -(-a) = a := by
-  group using -a + a
->>>>>>> origin/main
