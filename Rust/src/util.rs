@@ -21,7 +21,6 @@ pub fn union_clone<T: Eq + Hash + Copy>(fst: &HashSet<T>, snd: &HashSet<T>) -> H
     return result
 }
 
-// TODO: Figure out how to fold over a hashset.
 pub fn shift_down(indices: &HashSet<u64>) -> HashSet<u64> {
     let mut result = HashSet::with_capacity(indices.len());
     for &idx in indices {

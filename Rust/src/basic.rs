@@ -21,7 +21,7 @@ pub struct Config {
     trace_bvar_correction: bool,
 }
 
-pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Res<String> {
+pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<String>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Res<String> {
     init_enabled_trace_groups(cfg.trace_substitutions, cfg.trace_bvar_correction);
 
     let mut egraph: LeanEGraph = Default::default();
@@ -38,8 +38,14 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
         egraph.add_expr(&expr);
     }
 
+    let mut fs = vec![];
+    for f in facts {
+        let expr = f.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
+        fs.push(expr);
+    }
+    
     let mut rws;
-    match templates_to_rewrites(rw_templates, cfg.block_invalid_matches, cfg.shift_captured_bvars) {
+    match templates_to_rewrites(rw_templates, fs, cfg.block_invalid_matches, cfg.shift_captured_bvars) {
         Ok(r)    => rws = r,
         Err(err) => return Err(Error::Rewrite(err.to_string()))
     }

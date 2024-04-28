@@ -1,16 +1,22 @@
 import Egg
 
-example : True := by
-  fail_if_success have : true = false := by egg
-  constructor
+/-- error: egg failed to prove goal -/
+#guard_msgs in
+example : true = false := by
+  egg
 
+/--
+error: expected goal to be of type '=' or '↔', but found:
+True
+-/
+#guard_msgs in
 example : True := by
-  fail_if_success have : True := by egg
-  constructor
+  egg
 
-example : True := by
-  fail_if_success have : true = true := by egg [true]
-  constructor
+/-- error: egg requires arguments to be theorems or definitions -/
+#guard_msgs in
+example : true = true := by
+  egg [true]
 
 example : 0 = 0 := by
   egg

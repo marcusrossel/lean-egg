@@ -5,19 +5,6 @@ open Lean
 
 namespace Egg
 
-inductive Side where
-  | left
-  | right
-  deriving Inhabited, BEq, Hashable
-
-def Side.description : Side → String
-  | left  => "l"
-  | right => "r"
-
-def Side.isLeft : Side → Bool
-  | left  => true
-  | right => false
-
 inductive Source.NatLit where
   | zero
   | toSucc
@@ -30,12 +17,19 @@ inductive Source.NatLit where
   | mod
   deriving Inhabited, BEq, Hashable
 
+inductive Source.TcProjLocation where
+  | root
+  | left
+  | right
+  | cond (idx : Nat)
+  deriving Inhabited, BEq, Hashable
+
 inductive Source where
   | goal
   | guide (idx : Nat)
   | explicit (idx : Nat) (eqn? : Option Nat)
   | star (id : FVarId)
-  | tcProj (src : Source) (side? : Option Side) (pos : SubExpr.Pos)
+  | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos)
   | tcSpec (src : Source) (dir : Direction)
   | natLit (src : Source.NatLit)
   | eta
@@ -44,7 +38,7 @@ inductive Source where
 
 namespace Source
 
-def NatLit.description : Source.NatLit → String
+def NatLit.description : NatLit → String
   | zero   => "≡0"
   | toSucc => "≡→S"
   | ofSucc => "≡S→"
@@ -55,13 +49,19 @@ def NatLit.description : Source.NatLit → String
   | div    => "≡/"
   | mod    => "≡%"
 
+def TcProjLocation.description : TcProjLocation → String
+  | root     => "▪"
+  | left     => "◂"
+  | right    => "▸"
+  | cond idx => s!"{idx}?"
+
 def description : Source → String
   | goal                    => "⊢"
   | guide idx               => s!"↣{idx}"
   | explicit idx none       => s!"#{idx}"
   | explicit idx (some eqn) => s!"#{idx}/{eqn}"
   | star id                 => s!"*{id.uniqueIdx!}"
-  | tcProj src side pos     => s!"{src.description}[{side.map (·.description) |>.getD ""}{pos}]"
+  | tcProj src loc pos     => s!"{src.description}[{loc.description}{pos.asNat}]"
   | tcSpec src dir          => s!"{src.description}<{dir.description}>"
   | natLit src              => src.description
   | eta                     => "≡η"
@@ -77,3 +77,12 @@ def isRewrite : Source → Bool
 def isDefEq : Source → Bool
   | natLit _ | eta | beta => true
   | _                     => false
+
+def containsTcProj : Source → Bool
+  | tcProj ..     => true
+  | tcSpec src .. => src.containsTcProj
+  | _             => false
+
+def isNatLitConversion : Source → Bool
+  | .natLit .zero | .natLit .toSucc | .natLit .ofSucc => true
+  | _                                                 => false

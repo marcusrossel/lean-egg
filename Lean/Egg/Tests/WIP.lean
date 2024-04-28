@@ -12,7 +12,7 @@ set_option trace.egg true in
 example : (if 0 = 0 then 0 else 1) = 0 := by
   have h1 : (0 = 0) = True := eq_self 0
   have h2 : 0 = 0 := rfl
-  egg (config := { optimizeExpl := true }) [h1, h2, ite_congr, if_true]
+  egg [h1, h2, ite_congr, if_true]
 
 -- For typeclass arguments we might be able to work around this by the following:
 -- When a rewrite is applied to a term containing a typeclass argument (which we might be able to
@@ -39,10 +39,11 @@ theorem t : (if 0 = 0 then 0 else 1) = 0 := by
 
 
 theorem thm₂ : ∀ x : Nat, (fun _ => (fun _ => x) x) 0 = x := fun _ => rfl
--- TODO: This seems to cause an infinite loop or at least extremely long runtime in
---       `correct_bvar_indices` or `subst`. I think what is happening is that `thm₂` is applied in
---       the backward direction over and over again which quickly blows up the e-graph.
---       Investigate further what's happening by somehow tracing `correct_bvar_indices`.
+
+-- This seems to cause an infinite loop or at least extremely long runtime in
+-- `correct_bvar_indices` or `subst`. I think what is happening is that `thm₂` is applied in
+-- the backward direction over and over again which quickly blows up the e-graph.
+-- Investigate further what's happening by somehow tracing `correct_bvar_indices`.
 set_option egg.shiftCapturedBVars true in
 example : True := by
   have : (fun x => (fun a => (fun a => a) a) 0) = (fun x => x) := by sorry -- egg [thm₂]

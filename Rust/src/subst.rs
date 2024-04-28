@@ -99,7 +99,7 @@ where B: Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
         // If the given e-class target has already been substituted, 
         // return the substitute immediately.
         return Some(s)
-    } else if graph[tgt.class].data.max_loose_bvar() < Some(tgt.depth) {
+    } else if graph[tgt.class].data.loose_bvars.iter().max() < Some(&tgt.depth) {
         // If the given e-class target does not contain any loose bound variables
         // which are large enough to escape the outermost binder of the subsitution's
         // root e-class, we can just keep it as is. It is still important that we record 

@@ -4,7 +4,7 @@ import Std.Logic
 import Lean.Meta.Tactic.Cleanup
 open Lean Meta
 
--- TODO: We currently need to hide this all in the `Egg` namespace as otherwise our Mathlib tests
+-- NOTE: We currently need to hide this all in the `Egg` namespace as otherwise our Mathlib tests
 --       don't work.
 namespace Egg
 

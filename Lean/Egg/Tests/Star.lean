@@ -2,21 +2,25 @@ import Egg
 
 -- Tests for the `*` argument.
 
-example : True := by
-  fail_if_success have : true = false := by egg [*]
-  constructor
+/-- error: egg failed to prove goal -/
+#guard_msgs in
+example : true = false := by
+  egg [*]
 
+/-- error: egg failed to prove goal -/
+#guard_msgs in
 example (_ : true = true) : [true] ++ [] = [true] := by
-  fail_if_success egg [*]
-  rfl
+  egg [*]
 
+/-- error: duplicate '*' in arguments to egg -/
+#guard_msgs in
 example : 0 = 0 := by
-  fail_if_success egg [*, *]
-  rfl
+  egg [*, *]
 
+/-- error: duplicate '*' in arguments to egg -/
+#guard_msgs in
 example (h : 0 = 0) : 0 = 0 := by
-  fail_if_success egg [*, h, *]
-  rfl
+  egg [*, h, *]
 
 example : 0 = 0 := by
   egg [*]

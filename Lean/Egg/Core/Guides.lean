@@ -11,9 +11,6 @@ structure Guide where
   src  : Source
 
 def Guide.from (expr : Expr) (src : Source) : MetaM Guide :=
-  return {
-    expr := ← normalize expr false false
-    src
-  }
+  return { expr := ← normalize expr .noReduce, src }
 
 abbrev Guides := Array Guide

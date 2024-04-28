@@ -39,10 +39,6 @@ def LMVarId.fromUniqueIdx (idx : Nat) : LMVarId :=
 
 deriving instance BEq, Hashable for SubExpr.Pos
 
-def HashMap.insertIfNew [BEq α] [BEq β] [Hashable α] [Hashable β]
-    (m : HashMap α β) (a : α) (b : β) : HashMap α β :=
-  if m.contains a then m else m.insert a b
-
 def RBTree.merge (t₁ t₂ : RBTree α cmp) : RBTree α cmp :=
   t₁.mergeBy (fun _ _ _ => .unit) t₂
 

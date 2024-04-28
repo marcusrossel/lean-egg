@@ -17,12 +17,11 @@ example : False := by
   contradiction
 
 -- This test covers Condition (2) of valid matches.
+/-- error: egg failed to prove goal -/
+#guard_msgs in
 set_option egg.blockInvalidMatches true in
-example : True := by
-  fail_if_success -- This fails because egg could not find a proof.
-    have : (fun x => (fun a => (fun a => a) a) 0) = (fun x => x) := by
-      egg (config := { exitPoint := some .beforeProof }) [thm]
-  constructor
+example : (fun x => (fun a => (fun a => a) a) 0) = (fun x => x) := by
+  egg (config := { exitPoint := some .beforeProof }) [thm₁]
 
 -- This theorem is only applicable in the backward direction.
 theorem thm₂ : ∀ x y : Nat, x = (fun _ => x) y :=
@@ -30,7 +29,7 @@ theorem thm₂ : ∀ x y : Nat, x = (fun _ => x) y :=
 
 -- This test covers Condition (1) of valid matches.
 set_option egg.blockInvalidMatches true in
-example : True := by
-  fail_if_success -- This fails because egg could not find a proof.
-    have : (fun x => x) = (fun _ : Nat => (fun x => x) 1) := by egg [thm₂]
-  constructor
+/-- error: egg failed to prove goal -/
+#guard_msgs in
+example : (fun x => x) = (fun _ : Nat => (fun x => x) 1) := by
+  egg [thm₂]

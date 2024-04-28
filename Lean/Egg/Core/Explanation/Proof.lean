@@ -1,9 +1,8 @@
- import Egg.Core.Explanation.Basic
+import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Congr
-import Egg.Core.Rewrites
+import Egg.Core.Premise.Rewrites
+import Egg.Core.Premise.Facts
 open Lean Meta
-
--- TODO: Simplify tracing by adding `MessageData` instances for relevant types.
 
 namespace Egg.Explanation
 
@@ -89,94 +88,93 @@ def Expression.toExpr : Expression → MetaM Expr
   | lit l           => return .lit l
   | erased          => mkFreshExprMVar none
 
-abbrev AmbientMVars := PersistentHashMap MVarId MetavarDecl
+end Explanation
 
-def proof (expl : Explanation) (cgr : Congr) (rws : Rewrites) (amb : AmbientMVars) : MetaM Expr := do
-  withTraceNode `egg.reconstruction (fun _ => return "Reconstruction") do
-    let mut current ← expl.start.toExpr
-    let steps := expl.steps
-    withTraceNode `egg.reconstruction (fun _ => return "Explanation") do
-      trace[egg.reconstruction] current
-      for step in steps, idx in [:steps.size] do
-        withTraceNode `egg.reconstruction (fun _ => return s!"Step {idx}") do
-          trace[egg.reconstruction] step.src.description
-          trace[egg.reconstruction] ← step.dst.mapM (·.toExpr)
-    unless ← isDefEq cgr.lhs current do
-      throwError s!"{errorPrefix} initial expression is not defeq to lhs of proof goal"
-    let mut proof ← mkEqRefl current
-    for step in steps, idx in [:steps.size] do
-      let next? ← step.dst.mapM (·.toExpr)
-      let (stepEq, next) ← do
-        withTraceNode `egg.reconstruction (fun _ => return m!"Step {idx}") do
-          trace[egg.reconstruction] m!"Current: {current}"
-          trace[egg.reconstruction] m!"Next:    {next?}"
-          proofStep current next? step.toInfo
-      proof ← mkEqTrans proof stepEq
-      current := next
-    checkFinalProof proof current steps
-    match cgr.rel with
-    | .eq  => return proof
-    | .iff => mkIffOfEq proof
+inductive Proof.Step.Rewrite where
+  | rw    (rw : Egg.Rewrite) (isRefl : Bool)
+  | defeq (src : Source)
+  deriving Inhabited
+
+def Proof.Step.Rewrite.isRefl : Rewrite → Bool
+  | rw _ isRefl => isRefl
+  | defeq _     => true
+
+structure Proof.Step where
+  lhs   : Expr
+  rhs   : Expr
+  proof : Expr
+  rw    : Step.Rewrite
+  dir   : Direction
+  deriving Inhabited
+
+abbrev Proof := Array Proof.Step
+
+def Proof.prove (prf : Proof) (cgr : Congr) : MetaM Expr := do
+  let some first := prf[0]? | return (← cgr.rel.mkRefl cgr.lhs)
+  unless ← isDefEq first.lhs cgr.lhs do fail "initial expression is not defeq to lhs of proof goal"
+  let mut proof := first.proof
+  for step in prf[1:] do
+    if !step.rw.isRefl then proof ← mkEqTrans proof step.proof
+  unless ← isDefEq prf.back.rhs cgr.rhs do fail "final expression is not defeq to rhs of proof goal"
+  match cgr.rel with
+  | .eq  => return proof
+  | .iff => mkIffOfEq proof
 where
-  errorPrefix := "egg failed to reconstruct proof:"
+  fail (msg : String) : MetaM Unit := do
+    throwError s!"egg failed to build proof: {msg}"
 
-  proofStep (current : Expr) (next? : Option Expr) (rwInfo : Rewrite.Info) :
-      MetaM (Expr × Expr) := do
-    if rwInfo.src.isDefEq then
-      if let some next := next?
-      then return (← mkReflStep current next rwInfo.src, next)
-      else throwError s!"{errorPrefix} defeq steps in sparse explanations aren't supported yet"
-    let some rw := rws.find? rwInfo.src | throwError s!"{errorPrefix} unknown rewrite"
-    if ← isRflProof rw.proof then
-      if let some next := next? then
-        return (← mkReflStep current next rwInfo.src, next)
-    mkCongrStep current next? rwInfo.pos (← rw.forDir rwInfo.dir)
+def Explanation.proof (expl : Explanation) (rws : Rewrites) (facts : Facts) : MetaM Proof := do
+  let mut current ← expl.start.toExpr
+  let mut proof : Proof := #[]
+  for step in expl.steps do
+    let next ← step.dst.toExpr
+    proof := proof.push (← proofStep current next step.toInfo)
+    current := next
+  return proof
+where
+  fail {α} (msg : MessageData) : MetaM α := do
+    throwError m!"egg failed to build proof: {msg}"
 
-  mkReflStep (current next : Expr) (src : Source) : MetaM Expr := do
+  proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Proof.Step := do
+    if rwInfo.src.isDefEq then return {
+      lhs := current, rhs := next, proof := ← mkReflStep current next rwInfo.toDescriptor,
+      rw := .defeq rwInfo.src, dir := rwInfo.dir
+    }
+    let some rw := rws.find? rwInfo.src | fail s!"unknown rewrite {rwInfo.src.description}"
+    if ← isRflProof rw.proof then return {
+      lhs := current, rhs := next, proof := ← mkReflStep current next rwInfo.toDescriptor,
+      rw := .rw rw (isRefl := true), dir := rwInfo.dir
+    }
+    let prf ← mkCongrStep current next rwInfo.pos (← rw.forDir rwInfo.dir)
+    return {
+      lhs := current, rhs := next, proof := prf,
+      rw := .rw rw (isRefl := false), dir := rwInfo.dir
+    }
+
+  mkReflStep (current next : Expr) (rw : Rewrite.Descriptor) : MetaM Expr := do
     unless ← isDefEq current next do
-      throwError s!"{errorPrefix} unification failure for proof by reflexivity with rw {src.description}"
+      fail s!"unification failure for proof by reflexivity with rw {rw.src.description}"
     mkEqRefl next
 
-  mkCongrStep (current : Expr) (next? : Option Expr) (pos : SubExpr.Pos) (rw : Rewrite) :
-      MetaM (Expr × Expr) := do
+  mkCongrStep (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) : MetaM Expr := do
     let mvc := (← getMCtx).mvarCounter
-    let (lhs, rhs) ← placeCHoles current next? pos rw
-    try
-      let proof ← (← mkCongrOf 0 mvc lhs rhs).eq
-      let next := next?.getD (← unwrapHole rhs pos)
-      return (proof, next)
-    catch err =>
-      throwError m!"{errorPrefix} 'mkCongrOf' failed with\n  {err.toMessageData}"
+    let (lhs, rhs) ← placeCHoles current next pos rw
+    try (← mkCongrOf 0 mvc lhs rhs).eq
+    catch err => fail m!"'mkCongrOf' failed with\n  {err.toMessageData}"
 
-  unwrapHole (expr : Expr) (pos : SubExpr.Pos) : MetaM Expr :=
-    replaceSubexpr (root := expr) (p := pos) fun h =>
-      if let some (_, val, _) := cHole? h
-      then return val
-      else throwError "{errorPrefix} expected to find congr-hole but didn't"
-
-  placeCHoles (current : Expr) (next? : Option Expr) (pos : SubExpr.Pos) (rw : Rewrite) :
-      MetaM (Expr × Expr) := do
-    replaceSubexprs (root₁ := current) (root₂ := next?.getD current) (p := pos) fun lhs rhs => do
+  placeCHoles (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) : MetaM (Expr × Expr) := do
+    replaceSubexprs (root₁ := current) (root₂ := next) (p := pos) fun lhs rhs => do
       -- It's necessary that we create the fresh rewrite (that is, create the fresh mvars) in *this*
       -- local context as otherwise the mvars can't unify with variables under binders.
       let rw ← rw.fresh
-      unless ← isDefEq lhs rw.lhs do throwError "{errorPrefix} unification failure for LHS of rewrite"
-      let rhs ←
-        if next?.isSome then
-          unless ← isDefEq rhs rw.rhs do throwError "{errorPrefix} unification failure for RHS of rewrite"
-          pure rhs
-        else
-          pure rw.rhs
+      unless ← isDefEq lhs rw.lhs do fail m!"unification failure for LHS of rewrite {rw.src.description}"
+      unless ← isDefEq rhs rw.rhs do fail m!"unification failure for RHS of rewrite {rw.src.description}"
+      -- TODO: It would be more efficient to pass the used facts back from egg as part of the src name.
+      for cond in rw.conds do
+        for fact in facts do
+          if ← isDefEq cond.expr fact.proof then break
       let proof ← rw.eqProof
       return (
         ← mkCHole (forLhs := true) lhs proof,
         ← mkCHole (forLhs := false) rhs proof
       )
-
-  checkFinalProof (proof : Expr) (current : Expr) (steps : Array Step) : MetaM Unit := do
-    if let some last := steps.back?.map (·.dst) |>.getD (some expl.start) then
-      unless ← isDefEq current (← last.toExpr) do
-        throwError s!"{errorPrefix} final expression is not defeq to rhs of proof goal"
-    let proof ← instantiateMVars proof
-    for mvar in (proof.collectMVars {}).result do
-      unless amb.contains mvar do throwError s!"{errorPrefix} final proof contains mvar {mvar.name}"

@@ -4,9 +4,11 @@ import Egg
 set_option egg.genEtaRw true
 set_option egg.genBetaRw false
 
+set_option egg.genEtaRw false in
+/-- error: egg failed to prove goal -/
+#guard_msgs in
 example : (fun x => Nat.succ x) = Nat.succ := by
-  fail_if_success egg (config := { genEtaRw := false })
-  rfl
+  egg
 
 example : (fun x => Nat.succ x) = Nat.succ := by
   egg
@@ -42,9 +44,11 @@ example : id (eta 2 Nat.succ Nat) = id Nat.succ := by
 example : (eta 10 Nat.succ Nat) = Nat.succ := by
   egg
 
+set_option egg.genEtaRw false in
+/-- error: egg failed to prove goal -/
+#guard_msgs in
 example (a : Nat) (h : ∀ b : Nat, b.succ.add a = 0) : (10 |> fun x => Nat.succ x).add a = 0 := by
-  fail_if_success egg (config := { genEtaRw := false }) [h]
-  apply h
+  egg [h]
 
 example (a : Nat) (h : ∀ b : Nat, b.succ.add a = 0) : (10 |> fun x => Nat.succ x).add a = 0 := by
   egg [h]
@@ -53,7 +57,7 @@ example (a : Nat) (h : ∀ b : Nat, b.succ.add a = 0) : (10 |> fun x => Nat.succ
 example : (fun x => x) = Add.add 0 := by
   sorry -- egg [Nat.zero_add]
 
-/- BUG: Why is proof reconstruction failing here? The explanation seems totally fine:
+/- TODO: Why is proof reconstruction failing here? The explanation seems totally fine:
 
   (app (app (λ (const Nat) (app f (bvar 0))) y) y)
   (app (app (Rewrite=> ≡η f) y) y)
@@ -65,8 +69,6 @@ Even stranger, if you flip the LHS and RHS of the goal, it suddenly works. The p
 in that case is the same just backwards. So a hacky fix would be to always obtain explanations from
 egg in both directions and if one fails try the other.
 -/
-set_option trace.egg true in
-set_option egg.optimizeExpl true in
 example (f i : Nat → Nat → Nat) (h₁ : f y = g) (h₂ : g y = i y (nat_lit 0)) :
     (f ·) y y = (i ·) y (nat_lit 0) := by
   sorry -- egg [h₁, h₂]

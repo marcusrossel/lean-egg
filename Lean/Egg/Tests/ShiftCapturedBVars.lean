@@ -23,7 +23,7 @@ example : False := by
   contradiction
 
 set_option egg.shiftCapturedBVars true in
-example : True := by
-  fail_if_success -- This fails because egg could not find a proof.
-    have : (fun x => (x, 5).fst) = (fun _ : Nat => (fun x => x) 1) := by egg [thm₁]
-  constructor
+/-- error: egg failed to prove goal -/
+#guard_msgs in
+example : (fun x => (x, 5).fst) = (fun _ : Nat => (fun x => x) 1) := by
+  egg [thm₁]

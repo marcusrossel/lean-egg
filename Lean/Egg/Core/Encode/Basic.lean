@@ -15,17 +15,20 @@ private def Expression.erased : Expression :=
 
 open EncodeM
 
-private def encodeLevel (src : Source) : Level → EncodeM Expression
+private def encodeLevel : Level → EncodeM Expression
   | .zero       => return "0"
-  | .succ l     => return s!"(succ {← encodeLevel src l})"
-  | .max l₁ l₂  => return s!"(max {← encodeLevel src l₁} {← encodeLevel src l₂})"
-  | .imax l₁ l₂ => return s!"(imax {← encodeLevel src l₁} {← encodeLevel src l₂})"
-  | .mvar id    => return if src.isRewrite then s!"?{id.uniqueIdx!}" else s!"(uvar {id.uniqueIdx!})"
+  | .succ l     => return s!"(succ {← encodeLevel l})"
+  | .max l₁ l₂  => return s!"(max {← encodeLevel l₁} {← encodeLevel l₂})"
+  | .imax l₁ l₂ => return s!"(imax {← encodeLevel l₁} {← encodeLevel l₂})"
   | .param name => return s!"(param {name})"
+  | .mvar id    => do
+    if (← isAmbientLvl id)
+    then return s!"(uvar {id.uniqueIdx!})"
+    else return s!"?{id.uniqueIdx!}"
 
 -- Note: This function expects its input expression to be normalized (cf. `Egg.normalize`).
-partial def encode (e : Expr) (src : Source) (cfg : Config.Encoding) : MetaM Expression :=
-  Prod.fst <$> (go e).run { exprSrc := src, config := cfg }
+partial def encode (e : Expr) (cfg : Config.Encoding) (amb : MVars.Ambient) : MetaM Expression :=
+  Prod.fst <$> (go e).run { config := cfg, amb }
 where
   go (e : Expr) : EncodeM Expression := do
     if ← needsProofErasure e then return Expression.erased else core e
@@ -34,7 +37,7 @@ where
     | .bvar idx         => return s!"(bvar {idx})"
     | .fvar id          => encodeFVar id
     | .mvar id          => encodeMVar id
-    | .sort lvl         => return s!"(sort {← encodeLevel (← exprSrc) lvl})"
+    | .sort lvl         => return s!"(sort {← encodeLevel lvl})"
     | .const name lvls  => return s!"(const {name}{← encodeConstLvls lvls})"
     | .app fn arg       => return s!"(app {← go fn} {← go arg})"
     | .lam _ ty b _     => encodeLam ty b
@@ -49,12 +52,12 @@ where
     else return s!"(fvar {id.uniqueIdx!})"
 
   encodeMVar (id : MVarId) : EncodeM Expression := do
-    if (← exprSrc).isRewrite
-    then return s!"?{id.uniqueIdx!}"
-    else return s!"(mvar {id.uniqueIdx!})"
+    if (← isAmbientExpr id)
+    then return s!"(mvar {id.uniqueIdx!})"
+    else return s!"?{id.uniqueIdx!}"
 
   encodeConstLvls (lvls : List Level) : EncodeM Expression :=
-    lvls.foldlM (init := "") (return s!"{·} {← encodeLevel (← exprSrc) ·}")
+    lvls.foldlM (init := "") (return s!"{·} {← encodeLevel ·}")
 
   encodeLam (ty b : Expr) : EncodeM Expression := do
     let dom ← if (← config).eraseLambdaDomains then pure Expression.erased else go ty

@@ -1,11 +1,12 @@
-import Egg.Core.Rewrites
+import Egg.Core.Premise.Rewrites
 import Std.Tactic.Exact
 import Lean
 open Lean Meta
 
 namespace Egg
 
-private partial def genSpecialization (rw : Rewrite) (dir : Direction) (missing : MVarIdSet) :
+private partial def genSpecialization
+    (rw : Rewrite) (dir : Direction) (missing : MVarIdSet) (norm : Config.Normalization) :
     MetaM (Option Rewrite) := do
   let (rw, subst) ← rw.freshWithSubst (src := .tcSpec rw.src dir)
   let mut missing := missing.map subst.expr.fwd.find!
@@ -24,21 +25,23 @@ where
     if let some inst ← findLocalDeclWithType? type then
       return (Expr.fvar inst)
     else if let some inst ← optional (synthInstance type) then
-      normalize inst false false -- TODO: How should beta/eta be applied here?
+      normalize inst norm
     else
       return none
 
-private def genTcSpecializationsForRw (rw : Rewrite) : MetaM Rewrites := do
-  let missingOnLhs := rw.rhsMVars.tc.subtract rw.lhsMVars.tc
-  let missingOnRhs := rw.lhsMVars.tc.subtract rw.rhsMVars.tc
+private def genTcSpecializationsForRw (rw : Rewrite) (norm : Config.Normalization) :
+    MetaM Rewrites := do
+  let missingOnLhs := rw.mvars.rhs.tc.subtract rw.mvars.lhs.tc
+  let missingOnRhs := rw.mvars.lhs.tc.subtract rw.mvars.rhs.tc
   let mut specs : Rewrites := #[]
   if !missingOnLhs.isEmpty then
-    if let some spec ← genSpecialization rw .forward missingOnLhs then
+    if let some spec ← genSpecialization rw .forward missingOnLhs norm then
     specs := specs.push spec
   if !missingOnRhs.isEmpty then
-    if let some spec ← genSpecialization rw .backward missingOnRhs then
+    if let some spec ← genSpecialization rw .backward missingOnRhs norm then
     specs := specs.push spec
   return specs
 
-def genTcSpecializations (targets : Rewrites) : MetaM Rewrites :=
-  targets.foldlM (init := #[]) fun acc rw => return acc ++ (← genTcSpecializationsForRw rw)
+def genTcSpecializations (targets : Rewrites) (norm : Config.Normalization) : MetaM Rewrites :=
+  targets.foldlM (init := #[]) fun acc rw =>
+    return acc ++ (← genTcSpecializationsForRw rw norm)

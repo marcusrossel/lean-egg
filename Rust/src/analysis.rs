@@ -9,14 +9,6 @@ pub struct LeanAnalysisData {
     pub loose_bvars: HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
 }
 
-impl LeanAnalysisData {
-
-    // TODO: Replace `loose_bvars` with `max_loose_bvar` if eta doesn't require more precision.
-    pub fn max_loose_bvar(&self) -> Option<u64> {
-        self.loose_bvars.iter().max().copied()
-    }
-}
-
 #[derive(Default)]
 pub struct LeanAnalysis;
 impl Analysis<LeanExpr> for LeanAnalysis {
@@ -25,12 +17,6 @@ impl Analysis<LeanExpr> for LeanAnalysis {
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
         // `merge_max` prefers `Some` value over `None`. Note that if `to` and `from` both have nat values,
         // then they should have the *same* value as otherwise merging their e-classes indicates an invalid rewrite.
-        //
-        // TODO: We can't activate these assertions, because then egg can crashs from unsound rewrites 
-        //       (cf. `Tests/Soundness.lean`). Is there a way to gracefully fail?
-        // 
-        // if let (Some(t), Some(f)) = (*to.nat_val, from.nat_val) { assert_eq!(t, f) }
-        
         egg::merge_max(&mut to.nat_val, from.nat_val) | 
         union_sets(&mut to.loose_bvars, from.loose_bvars)
     }
