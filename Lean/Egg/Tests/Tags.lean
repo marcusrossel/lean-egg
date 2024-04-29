@@ -21,11 +21,16 @@ attribute [egg] Group.mul_one
 attribute [egg] Group.inv_mul_self
 attribute [egg] Group.mul_inv_self
 
+/-- info: egg set: [Group.mul_assoc, Group.one_mul, Group.mul_one, Group.inv_mul_self, Group.mul_inv_self] -/
+ #guard_msgs(info) in
+#show_egg_set
 
 @[egg]
 theorem inv_mul_cancel_left : a⁻¹ * (a * b) = b := by
   egg
 
+/-- info: egg set: [Group.mul_assoc, Group.one_mul, Group.mul_one, Group.inv_mul_self, Group.mul_inv_self, inv_mul_cancel_left] -/
+ #guard_msgs(info) in
 #show_egg_set
 
 @[egg]

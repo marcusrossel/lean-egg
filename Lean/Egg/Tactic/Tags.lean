@@ -97,7 +97,7 @@ syntax (name := showEgg) "#show_egg_set" : command
 --  modifyEnv fun env => eggXtension.addEntry env stx[1].getId
 --
 @[command_elab showEgg] def elabShowEgg : CommandElab := fun _ => do
-  IO.println s!"egg set: {eggXtension.getState (← getEnv) |>.toList}"
+   logInfo m!"egg set: {eggXtension.getState (← getEnv) |>.toList}"
 --
 --
 --initialize eggTag : TagAttribute ←
