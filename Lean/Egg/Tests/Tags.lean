@@ -15,13 +15,11 @@ class Group (α) extends Mul α, One α, Inv α where
 
 variable [Group α] (a b x y : α)
 
-#insert_egg mul_assoc
-#insert_egg one_mul
-#insert_egg mul_one
-#insert_egg inv_mul_self
-#insert_egg mul_inv_self
-
-#show_egg_set
+attribute [egg] Group.mul_assoc
+attribute [egg] Group.one_mul
+attribute [egg] Group.mul_one
+attribute [egg] Group.inv_mul_self
+attribute [egg] Group.mul_inv_self
 
 
 @[egg]
