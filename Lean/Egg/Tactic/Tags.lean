@@ -74,7 +74,7 @@ def mkEggAttr (attrName : Name) (attrDescr : String) (ext : EggXtension)
 
 abbrev EggXtensionMap := HashMap Name EggXtension
 
-builtin_initialize eggXtensionMapRef : IO.Ref EggXtensionMap ← IO.mkRef {}
+initialize eggXtensionMapRef : IO.Ref EggXtensionMap ← IO.mkRef {}
 
 def registerEggAttr (attrName : Name) (attrDescr : String)
     (ref : Name := by exact decl_name%) : IO EggXtension := do
@@ -83,7 +83,7 @@ def registerEggAttr (attrName : Name) (attrDescr : String)
   eggXtensionMapRef.modify fun map => map.insert attrName ext
   return ext
 
-builtin_initialize eggXtension : EggXtension ← registerEggAttr `egg "equality saturation theorem theorem"
+initialize eggXtension : EggXtension ← registerEggAttr `egg "equality saturation theorem theorem"
 
 
 syntax (name := showEgg) "#show_egg_set" : command
