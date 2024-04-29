@@ -57,10 +57,5 @@ theorem freshmans_dream₃ : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3
    _ = (x * x ^ 2) + x * y ^ 2 + y * x ^ 2 + y * y ^ 2 := by char_two_ring
    _ = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3           := by char_two_ring
 
---#print freshmans_dream₃
-
---set_option trace.egg true in
 theorem freshmans_dream₃' : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
   char_two_ring
-
---#print freshmans_dream₃'
