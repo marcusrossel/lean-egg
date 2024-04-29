@@ -27,3 +27,4 @@ import Egg.Tactic.Explanation
 import Egg.Tactic.Guides
 import Egg.Tactic.Premises
 import Egg.Tactic.Trace
+import Egg.Tactic.Tags
