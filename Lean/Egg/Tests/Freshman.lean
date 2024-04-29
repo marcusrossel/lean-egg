@@ -9,7 +9,7 @@ instance [Zero α] : OfNat α 0 where ofNat := Zero.zero
 class One (α) where one : α
 instance [One α] : OfNat α 1 where ofNat := One.one
 
-class Ring (α) extends Zero α, One α, Add α, Sub α, Mul α, Div α, Pow α Nat, Inv α, Neg α where
+class CommRing (α) extends Zero α, One α, Add α, Sub α, Mul α, Div α, Pow α Nat, Inv α, Neg α where
   comm_add  (a b : α)   : a + b = b + a
   comm_mul  (a b : α)   : a * b = b * a
   add_assoc (a b c : α) : a + (b + c) = (a + b) + c
@@ -26,10 +26,10 @@ class Ring (α) extends Zero α, One α, Add α, Sub α, Mul α, Div α, Pow α 
   pow_two   (a : α)     : a ^ 2 = (a ^ 1) * a
   pow_three (a : α)     : a ^ 3 = (a ^ 2) * a
 
-class CharTwoRing (α) extends Ring α where
+class CharTwoRing (α) extends CommRing α where
   char_two (a : α) : a + a = 0
 
-open Ring CharTwoRing Egg.Guides Egg.Config.Modifier in
+open CommRing CharTwoRing Egg.Guides Egg.Config.Modifier in
 macro "char_two_ring" mod:egg_cfg_mod base:(egg_base)? guides:(egg_guides)? : tactic => `(tactic|
   egg $mod [comm_add, comm_mul, add_assoc, mul_assoc, sub_canon, neg_add, div_canon, zero_add,
   zero_mul, one_mul, distrib, pow_zero, pow_one, pow_two, pow_three, char_two] $[$base]? $[$guides]?
