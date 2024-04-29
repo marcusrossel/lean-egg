@@ -8,8 +8,8 @@ initialize eggXtension : SimplePersistentEnvExtension Name NameSet ←
     addImportedFn := fun es => mkStateFromImportedEntries NameSet.insert {} es
   }
 
-syntax (name := insertEgg) "insert_egg " ident : command
-syntax (name := showEgg) "show_gg_set" : command
+syntax (name := insertEgg) "#insert_egg " ident : command
+syntax (name := showEgg) "#show_egg_set" : command
 
 open Lean.Elab
 open Lean.Elab.Command
