@@ -20,9 +20,9 @@ example (h₁ : ∀ n, n > 2 → n > 3 → n = x) (h₃ : 4 > 3) (h₂ : 4 > 2) 
 example {a : Nat} (h : a < b) : a % b = a := by
   egg [Nat.mod_eq_of_lt, h]
 
--- TODO: Add all rewrites to the set of facts.
+-- This tests that all rewrites are added as facts, too.
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
-  sorry -- egg [h₁, h₂]
+  egg [h₁, h₂]
 
 -- TODO:
 -- This test tricks the condition matcher in egg into using `q` as a fact, because it is in the same

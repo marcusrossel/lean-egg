@@ -5,9 +5,9 @@ open Lean Meta
 
 namespace Egg
 
-inductive Premise where
-  | rw   (rw : Rewrite)
-  | fact (f : Fact)
+structure Premise where
+  fact : Fact
+  rw?  : Option Rewrite := none
 
 namespace Premise
 
@@ -27,13 +27,15 @@ def «from»
   let mut type ← instantiateMVars type
   type ← if let some cfg := normalize then Egg.normalize type cfg else pure type
   let mut (args, _, eqOrIff?) ← forallMetaTelescope type
-  let some cgr ← Congr.from? eqOrIff? | return .fact { src, type, proof }
+  let fact : Fact := { src, type, proof }
+  let some cgr ← Congr.from? eqOrIff? | return { fact }
   let proof := mkAppN proof args
   let mLhs := (← MVars.collect cgr.lhs).remove amb
   let mRhs := (← MVars.collect cgr.rhs).remove amb
   let conds ← collectConds args mLhs mRhs
   let mvars := { lhs := mLhs, rhs := mRhs }
-  return .rw { cgr with proof, src, conds, mvars }
+  let rw : Rewrite := { cgr with proof, src, conds, mvars }
+  return { fact, rw? := rw }
 where
   collectConds (args : Array Expr) (mLhs mRhs : MVars) : MetaM (Array Rewrite.Condition) := do
     let mut conds := #[]

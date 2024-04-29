@@ -18,13 +18,13 @@ private def TcProj.reductionRewrite?
   -- class projection with its corresponding `Expr.proj` expression. In that case, no real reduction
   -- has been performed for our purposes. To catch these cases, we normalize `reduced` (which
   -- expands `Expr.proj`s) *before* checking for equality with `proj`, and in return *don't*
-  -- normalize again in `Rewrite.from?`.
+  -- normalize again in `Premise.from`.
   let reduced ← withReducibleAndInstances do reduceAll proj
   let reducedNorm ← normalize reduced norm
   if proj == reducedNorm then return none
   let eq ← mkEq proj reducedNorm
   let proof ← mkEqRefl proj
-  let .rw rw ← Premise.from proof eq src none amb
+  let { fact := _, rw? := some rw } ← Premise.from proof eq src none amb
     | throwError "egg: internal error in 'TcProj.reductionRewrite?'"
   return rw
 

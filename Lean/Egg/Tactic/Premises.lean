@@ -23,9 +23,11 @@ structure Premises where
 
 namespace Premises
 
-private def push (ps : Premises) (stx : Syntax) : Premise → Premises
-  | .rw rw  => { ps with rws := ps.rws.push rw, rwsStx := ps.rwsStx.push stx }
-  | .fact f => { ps with facts := ps.facts.push f, factsStx := ps.factsStx.push stx }
+private def push (ps : Premises) (stx : Syntax) (p : Premise) : Premises :=
+  let ps' := { ps with facts := ps.facts.push p.fact, factsStx := ps.factsStx.push stx }
+  if let some rw := p.rw?
+  then { ps' with rws := ps'.rws.push rw, rwsStx := ps'.rwsStx.push stx }
+  else ps'
 
 private def singleton (stx : Syntax)  (p : Premise) : Premises :=
   ({} : Premises).push stx p
