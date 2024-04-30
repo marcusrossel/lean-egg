@@ -11,7 +11,8 @@ use crate::trace::*;
 
 #[repr(C)]
 pub struct Config {
-    optimize_expl:         bool, 
+    optimize_expl:         bool,
+    time_limit:            usize, 
     gen_nat_lit_rws:       bool, 
     gen_eta_rw:            bool,
     gen_beta_rw:           bool,
@@ -56,7 +57,7 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
     
     let mut runner = Runner::default()
         .with_egraph(egraph)
-        .with_time_limit(Duration::from_secs(10))
+        .with_time_limit(Duration::from_secs(cfg.time_limit.try_into().unwrap()))
         .with_hook(move |runner| {
             if let Some(path) = &viz_path {
                 runner.egraph.dot().to_dot(format!("{}/{}.dot", path, runner.iterations.len())).unwrap();

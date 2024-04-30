@@ -1,6 +1,11 @@
 #include <lean/lean.h>
 #include <stdio.h>
 
+size_t nat_from_lean_obj(lean_obj_arg nat) {
+    assert(lean_is_scalar(nat));
+    return lean_unbox(nat);
+}
+
 typedef struct str_array {
     const char** ptr;
     size_t       len;
@@ -79,19 +84,21 @@ void free_rws_array(rws_array rws) {
 }
 
 typedef struct config {
-    _Bool optimize_expl;
-    _Bool gen_nat_lit_rws;
-    _Bool gen_eta_rw;
-    _Bool gen_beta_rw;
-    _Bool block_invalid_matches;
-    _Bool shift_captured_bvars;
-    _Bool trace_substitutions;
-    _Bool trace_bvar_correction;
+    _Bool  optimize_expl;
+    size_t time_limit;
+    _Bool  gen_nat_lit_rws;
+    _Bool  gen_eta_rw;
+    _Bool  gen_beta_rw;
+    _Bool  block_invalid_matches;
+    _Bool  shift_captured_bvars;
+    _Bool  trace_substitutions;
+    _Bool  trace_bvar_correction;
 } config;
 
 /*
 structure Config where
   optimizeExpl        : Bool
+  timeLimit           : Nat
   genNatLitRws        : Bool
   genEtaRw            : Bool
   genBetaRw           : Bool
@@ -104,7 +111,8 @@ config config_from_lean_obj(lean_obj_arg cfg) {
     unsigned scalar_base_offset = lean_ctor_num_objs(cfg) * sizeof(void*);
     unsigned bool_offset = sizeof(uint8_t);
     return (config) { 
-        .optimize_expl         = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 0),  
+        .optimize_expl         = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 0),
+        .time_limit            = nat_from_lean_obj(lean_ctor_get(cfg, 0)),  
         .gen_nat_lit_rws       = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 1),  
         .gen_eta_rw            = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 2),  
         .gen_beta_rw           = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 3),  

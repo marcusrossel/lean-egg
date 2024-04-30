@@ -10,6 +10,7 @@ namespace Egg.Request
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 protected structure Config where
   optimizeExpl        : Bool
+  timeLimit           : Nat
   genNatLitRws        : Bool
   genEtaRw            : Bool
   genBetaRw           : Bool
@@ -21,6 +22,7 @@ protected structure Config where
 instance : Coe Config Request.Config where
   coe cfg := {
     optimizeExpl        := cfg.optimizeExpl
+    timeLimit           := cfg.timeLimit
     genNatLitRws        := cfg.genNatLitRws
     genEtaRw            := cfg.genEtaRw
     genBetaRw           := cfg.genBetaRw
@@ -42,8 +44,8 @@ structure _root_.Egg.Request where
   cfg     : Request.Config
 
 def encoding
-    (goal : Congr) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Egg.Config) (amb : MVars.Ambient) :
-    MetaM Request := do
+    (goal : Congr) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Egg.Config)
+    (amb : MVars.Ambient) : MetaM Request := do
   return {
     lhs     := ← encode goal.lhs cfg amb
     rhs     := ← encode goal.rhs cfg amb

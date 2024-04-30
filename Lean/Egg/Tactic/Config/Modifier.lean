@@ -20,6 +20,7 @@ structure Modifier where
   shiftCapturedBVars  : Option Bool            := none
   blockInvalidMatches : Option Bool            := none
   optimizeExpl        : Option Bool            := none
+  timeLimit           : Option Nat             := none
   traceSubstitutions  : Option Bool            := none
   traceBVarCorrection : Option Bool            := none
   exitPoint           : Option Debug.ExitPoint := none
@@ -40,6 +41,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   shiftCapturedBVars  := mod.shiftCapturedBVars.getD cfg.shiftCapturedBVars
   blockInvalidMatches := mod.blockInvalidMatches.getD cfg.blockInvalidMatches
   optimizeExpl        := mod.optimizeExpl.getD cfg.optimizeExpl
+  timeLimit           := mod.timeLimit.getD cfg.timeLimit
   traceSubstitutions  := mod.traceSubstitutions.getD cfg.traceSubstitutions
   traceBVarCorrection := mod.traceBVarCorrection.getD cfg.traceBVarCorrection
   exitPoint           := mod.exitPoint.getD cfg.exitPoint
