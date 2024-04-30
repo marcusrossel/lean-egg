@@ -31,9 +31,16 @@ example (h₁ : ∀ n, n > 2 → n > 3 → n = x) (h₃ : 4 > 3) (h₂ : 4 > 2) 
 example {a : Nat} (h : a < b) : a % b = a := by
   egg [Nat.mod_eq_of_lt, h]
 
--- This tests that all rewrites are added as facts, too.
+set_option egg.useRwsAsFacts false in
+/-- error: egg failed to prove goal -/
+#guard_msgs in
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂]
+
+set_option egg.useRwsAsFacts true in
+example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
+  egg [h₁, h₂]
+
 
 example (h₁ : ∀ p, p ∧ p) (h₂ : (∀ p, p ∧ p) → q = True) : q = True := by
   egg [h₁, h₂]

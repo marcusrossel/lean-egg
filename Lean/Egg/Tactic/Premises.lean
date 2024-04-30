@@ -23,11 +23,13 @@ structure Premises where
 
 namespace Premises
 
-private def push (ps : Premises) (stx : Syntax) (p : Premise) : Premises :=
-  let ps' := { ps with facts := ps.facts.push p.fact, factsStx := ps.factsStx.push stx }
-  if let some rw := p.rw?
-  then { ps' with rws := ps'.rws.push rw, rwsStx := ps'.rwsStx.push stx }
-  else ps'
+private def push (ps : Premises) (stx : Syntax) (p : Premise) : Premises := Id.run do
+  let mut ps   := ps
+  let mut isRw := false
+  if let some rw := p.rw? then
+    ps := { ps with rws := ps.rws.push rw, rwsStx := ps.rwsStx.push stx }
+    isRw := true
+  return { ps with facts := ps.facts.push p.fact, factsStx := ps.factsStx.push stx }
 
 private def singleton (stx : Syntax)  (p : Premise) : Premises :=
   ({} : Premises).push stx p

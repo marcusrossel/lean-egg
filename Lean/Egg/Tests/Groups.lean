@@ -37,10 +37,8 @@ theorem inv_inv : a⁻¹⁻¹ = a := by
   calc _ = a⁻¹⁻¹ * (a⁻¹ * a) := by group
        _ = _                 := by group
 
--- Note: Without adding all rewrites as facts to the e-graph, the guide `a⁻¹ * (a * b) * (a * b)⁻¹`
---       sufficed to solve this.
 theorem inv_mul' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
-  group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
+  group using a⁻¹ * (a * b) * (a * b)⁻¹
 
 theorem inv_inv' : a⁻¹⁻¹ = a := by
   group using a⁻¹ * a

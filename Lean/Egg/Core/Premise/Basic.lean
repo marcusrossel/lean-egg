@@ -27,14 +27,15 @@ def «from»
   let mut type ← instantiateMVars type
   type ← if let some cfg := normalize then Egg.normalize type cfg else pure type
   let mut (args, _, eqOrIff?) ← forallMetaTelescope type
-  let fact : Fact := { src, type, proof }
-  let some cgr ← Congr.from? eqOrIff? | return { fact }
+  let factNoRw : Fact := { src, type, proof, isRw := false }
+  let some cgr ← Congr.from? eqOrIff? | return { fact := factNoRw }
   let proof := mkAppN proof args
   let mLhs := (← MVars.collect cgr.lhs).remove amb
   let mRhs := (← MVars.collect cgr.rhs).remove amb
   let conds ← collectConds args mLhs mRhs
   let mvars := { lhs := mLhs, rhs := mRhs }
   let rw : Rewrite := { cgr with proof, src, conds, mvars }
+  let fact := { factNoRw with isRw := true }
   return { fact, rw? := rw }
 where
   collectConds (args : Array Expr) (mLhs mRhs : MVars) : MetaM (Array Rewrite.Condition) := do

@@ -10,5 +10,6 @@ structure Fact where
   src   : Source
   type  : Expr
   proof : Expr
+  isRw  : Bool
 
 abbrev Facts := Array Fact
