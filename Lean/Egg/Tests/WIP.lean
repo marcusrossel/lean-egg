@@ -1,5 +1,10 @@
 import Egg
 
+-- This fails because we're lacking universe level defeqs.
+set_option trace.egg true in
+example (h : ∀ γ : Sort (max u v), γ = id γ) (α : Sort (u + 1)) (β : Sort (v + 1)) : (α × β) = id (α × β) := by
+  egg [h]
+
 -- The universe mvars (or universe params if you make this a theorem instead of an example) are
 -- different for the respective `α`s, so this doesn't hold by reflexivity. But `simp` can somehow
 -- prove this.

@@ -7,7 +7,7 @@ define_language! {
     pub enum LeanExpr {
         // Primitives:
         Nat(u64),
-        Str(Symbol),
+        Str(String),
 
         // Encoding of universe levels:
         // Note, we don't encode `zero` explicitly, and use `Nat(0)` for that instead.
