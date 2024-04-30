@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use egg::*;
 use crate::result::*;
 use crate::lean_expr::*;
@@ -14,7 +15,7 @@ pub struct RewriteTemplate {
     pub conds: Vec<Pattern<LeanExpr>>
 }
 
-pub fn templates_to_rewrites(templates: Vec<RewriteTemplate>, facts: Vec<RecExpr<LeanExpr>>, block_invalid_matches: bool, shift_captured_bvars: bool) -> Res<Vec<LeanRewrite>> {
+pub fn templates_to_rewrites(templates: Vec<RewriteTemplate>, facts: HashSet<Id>, block_invalid_matches: bool, shift_captured_bvars: bool) -> Res<Vec<LeanRewrite>> {
     let mut result: Vec<LeanRewrite> = vec![];
     for template in templates {
         let applier = LeanApplier { rhs: template.rhs, conds: template.conds, facts: facts.clone(), block_invalid_matches, shift_captured_bvars };
@@ -29,7 +30,7 @@ pub fn templates_to_rewrites(templates: Vec<RewriteTemplate>, facts: Vec<RecExpr
 struct LeanApplier {
     pub rhs: Pattern<LeanExpr>,
     pub conds: Vec<Pattern<LeanExpr>>,
-    pub facts: Vec<RecExpr<LeanExpr>>,
+    pub facts: HashSet<Id>,
     pub block_invalid_matches: bool,
     pub shift_captured_bvars: bool,
 }
@@ -47,15 +48,12 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             }
         }
 
-        'cond_loop: for cond in self.conds.clone() {
+        for cond in self.conds.clone() {
             // `add_instantiation` crashes when the pattern contains variables not covered by the subst.
             // This is currently handled in Lean by filtering out rewrites where a condition's variables are not
             // covered by the body's variables.
             let id = graph.add_instantiation(&cond.ast, subst);
-            for fact in self.facts.clone() {
-                if id == graph.add_expr(&fact) { continue 'cond_loop }
-            } 
-            return vec![] // This is only reached if `cond` is not satisfied by any fact.
+            if !self.facts.contains(&id) { return vec![] }
         }
 
         // A substitution needs no shifting if it does not map any variables to e-classes containing loose bvars.

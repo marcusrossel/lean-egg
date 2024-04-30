@@ -67,6 +67,7 @@ example : 12345 % 67890 = 12345 := by
 example : 12345 % 0 = 12345 := by
   egg
 
+set_option egg.genNatLitRws false in
 set_option egg.natReduceRws false in
 /-- error: egg failed to prove goal -/
 #guard_msgs in
