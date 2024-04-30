@@ -50,7 +50,7 @@ def encoding
     lhs     := ← encode goal.lhs cfg amb
     rhs     := ← encode goal.rhs cfg amb
     rws     := ← rws.encode cfg amb
-    facts   := ← facts.encode cfg amb
+    facts   := if rws.any (·.isConditional) then ← facts.encode cfg amb else #[]
     guides  := ← guides.encode cfg amb
     vizPath := cfg.vizPath.getD ""
     cfg
