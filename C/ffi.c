@@ -184,7 +184,7 @@ egg_result run_egg_request_core(lean_obj_arg req) {
 
     egg_result result = egg_explain_congr(lhs, rhs, rws, facts, guides, cfg, viz_path);
     
-    // TODO: Is it safe to free this in the impure `run_egg_request`?
+    // TODO: Is it safe to free this?
     free_rws_array(rws);
     free(facts.ptr);
     free(guides.ptr);
@@ -192,22 +192,24 @@ egg_result run_egg_request_core(lean_obj_arg req) {
     return result;
 }
 
-lean_obj_res run_egg_request_pure(lean_obj_arg req) {
-    egg_result result = run_egg_request_core(req);
-    egraph_finalize(result.graph);
-    return lean_mk_string(result.expl);
-}
-
 lean_obj_res run_egg_request(lean_obj_arg req) {
     egg_result result = run_egg_request_core(req);
     lean_object* expl = lean_mk_string(result.expl);
     lean_object* graph = egraph_to_lean(result.graph);
     
-    lean_object* pair = lean_alloc_ctor(0, 2, 0);
-    lean_ctor_set(pair, 0, expl);
-    lean_ctor_set(pair, 1, graph);
+    lean_object* graph_opt;
+    if (graph == NULL) {
+        graph_opt = lean_alloc_ctor(0, 0, 0); // Option.nil
+    } else {
+        graph_opt = lean_alloc_ctor(1, 1, 0); // Option.some
+        lean_ctor_set(graph_opt, 0, graph);
+    }
 
-    return lean_io_result_mk_ok(pair);
+    lean_object* pair = lean_alloc_ctor(0, 2, 0); // Prod.mk
+    lean_ctor_set(pair, 0, expl);
+    lean_ctor_set(pair, 1, graph_opt);
+
+    return pair;
 }
 
 /*

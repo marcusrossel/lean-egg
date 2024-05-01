@@ -144,7 +144,7 @@ elab "egg " mod:egg_cfg_mod rws:egg_prems base:(egg_base)? guides:(egg_guides)? 
       let req ← Request.encoding goal.type rws facts guides cfg amb
       withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
       if let .beforeEqSat := cfg.exitPoint then return none
-      let rawExpl := req.run'
+      let (rawExpl, _) := req.run
       if rawExpl.isEmpty then throwError "egg failed to prove goal"
       withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] rawExpl
       if let .beforeProof := cfg.exitPoint then return none

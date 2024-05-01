@@ -1,3 +1,4 @@
+import Egg.Core.Request.EGraph
 import Egg.Core.Encode.Rewrites
 import Egg.Core.Encode.Guides
 import Egg.Core.Encode.Facts
@@ -56,5 +57,5 @@ def encoding
     cfg
   }
 
-@[extern "run_egg_request_pure"]
-opaque run' (req : Request) : Explanation.Raw
+@[extern "run_egg_request"]
+opaque run (req : Request) : (Explanation.Raw × Option EGraph)
