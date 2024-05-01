@@ -13,11 +13,11 @@ import Egg.Core.MVars.Subst
 import Egg.Core.Premise.Basic
 import Egg.Core.Premise.Facts
 import Egg.Core.Premise.Rewrites
+import Egg.Core.Request.Basic
 import Egg.Core.Config
 import Egg.Core.Congr
 import Egg.Core.Directions
 import Egg.Core.Guides
-import Egg.Core.Request
 import Egg.Core.Source
 import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Config.Option

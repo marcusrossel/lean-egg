@@ -1,4 +1,4 @@
-import Egg.Core.Request
+import Egg.Core.Request.Basic
 import Egg.Core.Explanation.Proof
 import Egg.Core.MVars.Ambient
 import Egg.Tactic.Premises

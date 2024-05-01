@@ -123,7 +123,37 @@ config config_from_lean_obj(lean_obj_arg cfg) {
     };
 }
 
-extern char* egg_explain_congr(
+typedef void* egraph;
+
+extern void free_egraph(egraph);
+
+void egraph_finalize(egraph obj) {
+    free_egraph(obj);
+}
+
+void egraph_foreach(egraph _x, b_lean_obj_arg _y) {
+    // do nothing since `egraph` does not contain nested Lean objects
+}
+
+static lean_external_class* egraph_class = NULL;
+
+lean_object* egraph_to_lean(egraph e) {
+    if (egraph_class == NULL) {
+        egraph_class = lean_register_external_class(egraph_finalize, egraph_foreach);
+    }
+    return lean_alloc_external(egraph_class, e);
+}
+
+egraph to_egraph(b_lean_obj_arg e) {
+    return (egraph)(lean_get_external_data(e));
+}
+
+typedef struct egg_result {
+    char* expl;
+    egraph graph;
+} egg_result;
+
+extern egg_result egg_explain_congr(
     const char* init, 
     const char* goal, 
     rws_array rws, 
@@ -143,7 +173,7 @@ structure Egg.Request where
   vizPath : String
   cfg     : Request.Config
 */
-lean_obj_res run_egg_request(lean_obj_arg req) {
+egg_result run_egg_request_core(lean_obj_arg req) {
     const char* lhs      = lean_string_cstr(lean_ctor_get(req, 0));
     const char* rhs      = lean_string_cstr(lean_ctor_get(req, 1));
     rws_array rws        = rewrites_from_lean_obj(lean_ctor_get(req, 2));
@@ -152,13 +182,32 @@ lean_obj_res run_egg_request(lean_obj_arg req) {
     const char* viz_path = lean_string_cstr(lean_ctor_get(req, 5));
     config cfg           = config_from_lean_obj(lean_ctor_get(req, 6));
 
-    char* result = egg_explain_congr(lhs, rhs, rws, facts, guides, cfg, viz_path);
+    egg_result result = egg_explain_congr(lhs, rhs, rws, facts, guides, cfg, viz_path);
     
+    // TODO: Is it safe to free this in the impure `run_egg_request`?
     free_rws_array(rws);
     free(facts.ptr);
     free(guides.ptr);
     
-    return lean_mk_string(result);
+    return result;
+}
+
+lean_obj_res run_egg_request_pure(lean_obj_arg req) {
+    egg_result result = run_egg_request_core(req);
+    egraph_finalize(result.graph);
+    return lean_mk_string(result.expl);
+}
+
+lean_obj_res run_egg_request(lean_obj_arg req) {
+    egg_result result = run_egg_request_core(req);
+    lean_object* expl = lean_mk_string(result.expl);
+    lean_object* graph = egraph_to_lean(result.graph);
+    
+    lean_object* pair = lean_alloc_ctor(0, 2, 0);
+    lean_ctor_set(pair, 0, expl);
+    lean_ctor_set(pair, 1, graph);
+
+    return lean_io_result_mk_ok(pair);
 }
 
 /*

@@ -22,7 +22,7 @@ pub struct Config {
     trace_bvar_correction: bool,
 }
 
-pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<String>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Res<String> {
+pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<String>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Res<(String, LeanEGraph)> {
     init_enabled_trace_groups(cfg.trace_substitutions, cfg.trace_bvar_correction);
 
     let mut egraph: LeanEGraph = Default::default();
@@ -73,7 +73,7 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
     if runner.egraph.find(init_id) == runner.egraph.find(goal_id) {
         let mut expl = runner.explain_equivalence(&init_expr, &goal_expr);
         let expl_str = expl.get_flat_string();
-        Ok(expl_str)
+        Ok((expl_str, runner.egraph))
     } else {
         Err(Error::Failed)
     }
