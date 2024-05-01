@@ -154,6 +154,28 @@ pub extern "C" fn egg_explain_congr(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn egg_query_equiv(
+    egraph: *mut LeanEGraph,
+    init_str_ptr: *const c_char, 
+    goal_str_ptr: *const c_char
+) -> *const c_char {
+    let egraph = egraph.as_mut().unwrap();
+    let init = c_str_to_string(init_str_ptr).parse().unwrap();
+    let goal = c_str_to_string(goal_str_ptr).parse().unwrap();
+    let init_id = egraph.add_expr(&init);
+    let goal_id = egraph.add_expr(&goal);
+
+    if egraph.find(init_id) == egraph.find(goal_id) {
+        let mut expl = egraph.explain_equivalence(&init, &goal);
+        let expl_str = expl.get_flat_string();
+        let expl_c_str = CString::new(expl_str.to_string()).expect("conversion of explanation to C-string failed");
+        expl_c_str.into_raw()
+    } else {
+        CString::new("").unwrap().into_raw()
+    }
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn free_egraph(egraph: *mut LeanEGraph) {
     if !egraph.is_null() { drop(Box::from_raw(egraph)); }
 }

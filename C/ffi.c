@@ -212,6 +212,19 @@ lean_obj_res run_egg_request(lean_obj_arg req) {
     return pair;
 }
 
+extern const char* egg_query_equiv(
+    egraph graph,
+    const char* init, 
+    const char* goal
+);
+
+lean_obj_res explain_equiv(b_lean_obj_arg graph, lean_obj_arg init, lean_obj_arg goal) {
+    egraph graph_c     = to_egraph(graph);
+    const char* init_c = lean_string_cstr(init);
+    const char* goal_c = lean_string_cstr(goal);
+    return lean_mk_string(egg_query_equiv(graph_c, init_c, goal_c));
+}
+
 /*
 lean_object* dbg_trace_thunk(lean_object* t) { return lean_box(0); }
 void c_dbg_trace(char const* str) {

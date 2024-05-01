@@ -46,7 +46,7 @@ structure _root_.Egg.Request where
 
 def encoding
     (goal : Congr) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Egg.Config)
-    (amb : MVars.Ambient) : MetaM Request := do
+    (amb : MVars.Ambient) : MetaM Request :=
   return {
     lhs     := ← encode goal.lhs cfg amb
     rhs     := ← encode goal.rhs cfg amb
@@ -58,4 +58,4 @@ def encoding
   }
 
 @[extern "run_egg_request"]
-opaque run (req : Request) : (Explanation.Raw × Option EGraph)
+opaque run (req : Request) : Explanation.Raw × Option EGraph
