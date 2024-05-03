@@ -126,8 +126,9 @@ where
   fail (msg : String) : MetaM Unit := do
     throwError s!"egg failed to build proof: {msg}"
 
-partial def Explanation.proof (expl : Explanation) (rws : Rewrites) (facts : Facts) (egraph : EGraph)
-    (cfg : Config) (amb : MVars.Ambient) : MetaM Proof := do
+partial def Explanation.proof
+    (expl : Explanation) (rws : Rewrites) (facts : Facts) (egraph : EGraph) (ctx : EncodingCtx) :
+    MetaM Proof := do
   let mut current ← expl.start.toExpr
   let mut proof : Proof := #[]
   for step in expl.steps do
@@ -192,9 +193,9 @@ where
       )
 
   mkConditionSubproof (fact : Fact) (cond : Expr) : MetaM (Option Expr) := do
-    let rawExpl := egraph.run (← Request.Equiv.encoding fact.type cond cfg amb)
+    let rawExpl := egraph.run (← Request.Equiv.encoding fact.type cond ctx)
     if rawExpl.isEmpty then return none
     let expl ← rawExpl.parse
-    let proof ← expl.proof rws facts egraph cfg amb
+    let proof ← expl.proof rws facts egraph ctx
     let factEqCond ← proof.prove { lhs := fact.type, rhs := cond, rel := .eq }
     mkEqMP factEqCond fact.proof

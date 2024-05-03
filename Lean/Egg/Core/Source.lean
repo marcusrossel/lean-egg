@@ -29,6 +29,7 @@ inductive Source where
   | guide (idx : Nat)
   | explicit (idx : Nat) (eqn? : Option Nat)
   | star (id : FVarId)
+  | fact (src : Source)
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos)
   | tcSpec (src : Source) (dir : Direction)
   | natLit (src : Source.NatLit)
@@ -61,7 +62,8 @@ def description : Source → String
   | explicit idx none       => s!"#{idx}"
   | explicit idx (some eqn) => s!"#{idx}/{eqn}"
   | star id                 => s!"*{id.uniqueIdx!}"
-  | tcProj src loc pos     => s!"{src.description}[{loc.description}{pos.asNat}]"
+  | fact src                => s!"!{src.description}"
+  | tcProj src loc pos      => s!"{src.description}[{loc.description}{pos.asNat}]"
   | tcSpec src dir          => s!"{src.description}<{dir.description}>"
   | natLit src              => src.description
   | eta                     => "≡η"

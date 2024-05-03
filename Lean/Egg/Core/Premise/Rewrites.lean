@@ -19,8 +19,9 @@ structure Rewrite.Condition where
   type  : Expr
   mvars : Egg.MVars
 
--- Note: We don't create `Rewrite`s directly, but use `Premise.from` instead.
+-- Note: We don't create `Rewrite`s directly, but use `Rewrite.from` instead.
 structure Rewrite extends Congr where
+  private mk ::
   proof : Expr
   src   : Source
   conds : Array Rewrite.Condition
@@ -28,6 +29,29 @@ structure Rewrite extends Congr where
   deriving Inhabited
 
 namespace Rewrite
+
+structure Config where
+  norm? : Option Config.Normalization := none
+  amb   : MVars.Ambient
+
+def from? (proof : Expr) (type : Expr) (src : Source) (cfg : Config) : MetaM (Option Rewrite) := do
+  let type ← if let some norm := cfg.norm? then normalize type norm else pure type
+  let mut (args, _, eqOrIff?) ← forallMetaTelescope type
+  let some cgr ← Congr.from? eqOrIff? | return none
+  let proof := mkAppN proof args
+  let mLhs := (← MVars.collect cgr.lhs).remove cfg.amb
+  let mRhs := (← MVars.collect cgr.rhs).remove cfg.amb
+  let conds ← collectConds args mLhs mRhs
+  return some { cgr with proof, src, conds, mvars.lhs := mLhs, mvars.rhs := mRhs }
+where
+  collectConds (args : Array Expr) (mLhs mRhs : Egg.MVars) : MetaM (Array Rewrite.Condition) := do
+    let mut conds := #[]
+    for arg in args do
+      if mLhs.expr.contains arg.mvarId! || mRhs.expr.contains arg.mvarId! then continue
+      let ty ← arg.mvarId!.getType
+      unless ← isProp (← whnf ty) do continue
+      conds := conds.push { expr := arg, type := ty, mvars := (← MVars.collect ty).remove cfg.amb }
+    return conds
 
 def isConditional (rw : Rewrite) : Bool :=
   !rw.conds.isEmpty

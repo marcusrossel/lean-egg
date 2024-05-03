@@ -55,7 +55,6 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             let id = graph.add_instantiation(&cond.ast, subst);
             if let Some(fact_name) = self.facts.get(&id) { 
                 let mut r = rule.as_str().to_string();
-                r.push('$');
                 r.push_str(&fact_name);
                 rule = Symbol::from(r);
             } else {

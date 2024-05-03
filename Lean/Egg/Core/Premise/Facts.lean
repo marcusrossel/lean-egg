@@ -5,11 +5,15 @@ open Lean
 
 namespace Egg
 
--- Note: We don't create `Fact`s directly, but use `Premise.from` instead.
+-- Note: We don't create `Fact`s directly, but use `Fact.from` instead.
 structure Fact where
-  src   : Source
-  type  : Expr
+  private mk ::
   proof : Expr
-  isRw  : Bool
+  type  : Expr
+  src   : Source
+
+def Fact.«from» (proof : Expr) (type : Expr) (src : Source) : MetaM Fact := do
+  let type ← normalize type .noReduce
+  return { src, type, proof }
 
 abbrev Facts := Array Fact

@@ -45,14 +45,15 @@ structure _root_.Egg.Request where
   cfg     : Request.Config
 
 def encoding
-    (goal : Congr) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Egg.Config)
+    (goal : Congr) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Config)
     (amb : MVars.Ambient) : MetaM Request :=
+  let ctx := { cfg, amb }
   return {
-    lhs     := ← encode goal.lhs cfg amb
-    rhs     := ← encode goal.rhs cfg amb
-    rws     := ← rws.encode cfg amb
-    facts   := if rws.any (·.isConditional) then ← facts.encode cfg amb else #[]
-    guides  := ← guides.encode cfg amb
+    lhs     := ← encode goal.lhs ctx
+    rhs     := ← encode goal.rhs ctx
+    rws     := ← rws.encode ctx
+    facts   := if rws.any (·.isConditional) then ← facts.encode ctx else #[]
+    guides  := ← guides.encode ctx
     vizPath := cfg.vizPath.getD ""
     cfg
   }

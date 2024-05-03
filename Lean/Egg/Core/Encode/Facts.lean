@@ -12,11 +12,8 @@ structure Fact.Encoded where
 
 abbrev Facts.Encoded := Array Fact.Encoded
 
-def Facts.encode (facts : Facts) (cfg : Config.Encoding) (amb : MVars.Ambient) :
-    MetaM Facts.Encoded :=
-  facts.filterMapM fun fact => do
-    unless cfg.useRwsAsFacts || !fact.isRw do return none
-    return some {
+def Facts.encode (facts : Facts) (ctx : EncodingCtx) : MetaM Facts.Encoded :=
+  facts.mapM fun fact => return {
       name := fact.src.description,
-      expr := ← Egg.encode fact.type cfg amb
+      expr := ← Egg.encode fact.type ctx
     }

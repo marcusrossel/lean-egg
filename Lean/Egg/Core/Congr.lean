@@ -34,10 +34,13 @@ def expr (cgr : Congr) : MetaM Expr := do
 --       `forallMetaTelescope`.
 --       Cf. https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/MVar.20Inclusion.20Implies.20LMVar.20Inclusion.3F
 def from? (type : Expr) : MetaM (Option Congr) := do
-  let type ← instantiateMVars type
+  let type ← normalize type .noReduce
   if let some (_, lhs, rhs) := type.eq? then
     return some { rel := .eq, lhs, rhs }
   else if let some (lhs, rhs) := type.iff? then
     return some { rel := .iff, lhs, rhs }
   else
     return none
+
+def from! (type : Expr) : MetaM Congr := do
+  return (← Congr.from? type).get!

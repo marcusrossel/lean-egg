@@ -28,14 +28,13 @@ private def Goal.tcProjTargets (goal : Goal) : Array TcProjTarget := #[
 ]
 
 private def parseGoal (goal : MVarId) (base? : Option (TSyntax `egg_base)) : MetaM Goal := do
-  let goalType ← normalize (← goal.getType') .noReduce
   let base? ← base?.mapM parseBase
-  let cgr ← getCongr goalType base?
+  let cgr ← getCongr (← goal.getType') base?
   return { id := goal, type := cgr, base? }
 where
   getCongr (goalType : Expr) (base? : Option FVarId) : MetaM Congr := do
     if let some base := base? then
-      return { lhs := ← base.getType, rhs := goalType, rel := .eq : Congr }
+      Congr.from! (← mkEq (← base.getType) goalType)
     else if let some c ← Congr.from? goalType then
       return c
     else
@@ -51,32 +50,31 @@ private def collectAmbientMVars (goal : Goal) (guides : Guides) : MetaM MVars.Am
 private def tracePremises (ps : Premises) (tc : Rewrites) (cfg : Config.Gen) : TacticM Unit := do
   let cls := `egg.rewrites
   withTraceNode cls (fun _ => return "Rewrites") do
-    withTraceNode cls (fun _ => return m!"Basic ({ps.rws.size})") do ps.rws.trace ps.rwsStx cls
+    withTraceNode cls (fun _ => return m!"Basic ({ps.rws.elems.size})") do ps.rws.elems.trace ps.rws.stxs cls
     withTraceNode cls (fun _ => return m!"Generated ({tc.size})") do tc.trace #[] cls
     withTraceNode cls (fun _ => return "Definitional") do
       if cfg.genBetaRw    then Lean.trace cls fun _ => "β-Reduction"
       if cfg.genEtaRw     then Lean.trace cls fun _ => "η-Reduction"
       if cfg.genNatLitRws then Lean.trace cls fun _ => "Natural Number Literals"
-    withTraceNode cls (fun _ => return m!"Hypotheses ({ps.facts.size})") do
-
-      ps.facts.trace ps.factsStx cls
+    withTraceNode cls (fun _ => return m!"Hypotheses ({ps.facts.elems.size})") do
+      ps.facts.elems.trace ps.facts.stxs cls
 
 private partial def genPremises
-    (goal : Goal) (ps : TSyntax `egg_prems) (guides : Guides) (cfg : Config) (amb : MVars.Ambient) :
-    TacticM (Rewrites × Facts) := do
-  let ps ← Premises.parse cfg amb ps
+    (goal : Goal) (ps : TSyntax `egg_premises) (guides : Guides) (cfg : Config)
+    (amb : MVars.Ambient) : TacticM (Rewrites × Facts) := do
+  let ps ← Premises.elab { norm? := cfg, amb } ps
   let tcRws ← genTcRws ps
   tracePremises ps tcRws cfg
-  catchInvalidConditionals ps.rws ps.rwsStx
-  return (ps.rws ++ tcRws, ps.facts)
+  catchInvalidConditionals ps.rws
+  return (ps.rws.elems ++ tcRws, ps.facts.elems)
 where
   genTcRws (ps : Premises) : TacticM Rewrites := do
     let mut projTodo := #[]
     let mut specTodo := #[]
     let mut tcRws := #[]
     let mut covered : HashSet TcProj := ∅
-    if cfg.genTcProjRws then projTodo := goal.tcProjTargets ++ ps.facts.tcProjTargets ++ guides.tcProjTargets ++ ps.rws.tcProjTargets
-    if cfg.genTcSpecRws then specTodo := ps.rws
+    if cfg.genTcProjRws then projTodo := goal.tcProjTargets ++ ps.facts.elems.tcProjTargets ++ guides.tcProjTargets ++ ps.rws.elems.tcProjTargets
+    if cfg.genTcSpecRws then specTodo := ps.rws.elems
     while (cfg.genTcProjRws && !projTodo.isEmpty) || (cfg.genTcSpecRws && !specTodo.isEmpty) do
       if cfg.genTcProjRws then
         let (projRws, cov) ← genTcProjReductions projTodo covered cfg amb
@@ -90,22 +88,22 @@ where
         tcRws    := tcRws ++ specRws
     return tcRws
 
-  catchInvalidConditionals (rws : Rewrites) (stx : Array Syntax) : MetaM Unit := do
-    for rw in rws, s in stx do
+  catchInvalidConditionals (rws : WithSyntax Rewrites) : MetaM Unit := do
+    for rw in rws.elems, stx in rws.stxs do
       for cond in rw.conds do
         for m in cond.mvars.expr do
           unless rw.mvars.lhs.expr.contains m || rw.mvars.rhs.expr.contains m do
-            throwErrorAt s "egg does not currently support rewrites with unbound conditions (expression)"
+            throwErrorAt stx "egg does not currently support rewrites with unbound conditions (expression)"
         for m in cond.mvars.lvl do
           unless rw.mvars.lhs.lvl.contains m || rw.mvars.rhs.lvl.contains m do
-            throwErrorAt s "egg does not currently support rewrites with unbound conditions (level)"
+            throwErrorAt stx "egg does not currently support rewrites with unbound conditions (level)"
 
 private def processRawExpl
-    (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (facts : Facts)
-    (amb : MVars.Ambient) (cfg : Config) (egraph? : Option EGraph) : TacticM Expr := do
+    (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (facts : Facts) (ctx : EncodingCtx)
+    (egraph? : Option EGraph) : TacticM Expr := do
   let expl ← rawExpl.parse
   let some egraph := egraph? | throwError "egg: internal error: e-graph is absent"
-  let proof ← expl.proof rws facts egraph cfg amb
+  let proof ← expl.proof rws facts egraph ctx
   proof.trace `egg.proof
   let mut prf ← proof.prove goal.type
   prf ← instantiateMVars prf
@@ -113,7 +111,7 @@ private def processRawExpl
   -- When `goal.base? = some base`, then `proof` is a proof of `base = <goal type>`. We turn this
   -- into a proof of `<goal type>` here.
   if let some base := goal.base? then prf ← mkEqMP prf (.fvar base)
-  catchLooseMVars prf amb
+  catchLooseMVars prf ctx.amb
   return prf
 where
   catchLooseMVars (prf : Expr) (amb : MVars.Ambient) : MetaM Unit := do
@@ -127,7 +125,7 @@ where
 
 open Config.Modifier (egg_cfg_mod)
 
-elab "egg " mod:egg_cfg_mod rws:egg_prems base:(egg_base)? guides:(egg_guides)? : tactic => do
+elab "egg " mod:egg_cfg_mod rws:egg_premises base:(egg_base)? guides:(egg_guides)? : tactic => do
   let goal ← getMainGoal
   let mod  ← Config.Modifier.parse mod
   let cfg := (← Config.fromOptions).modify mod
@@ -149,7 +147,7 @@ elab "egg " mod:egg_cfg_mod rws:egg_prems base:(egg_base)? guides:(egg_guides)? 
       if rawExpl.isEmpty then throwError "egg failed to prove goal"
       withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] rawExpl
       if let .beforeProof := cfg.exitPoint then return none
-      return some (← processRawExpl rawExpl goal rws facts amb cfg egraph?)
+      return some (← processRawExpl rawExpl goal rws facts {amb, cfg} egraph?)
     if let some proof := proof?
     then goal.id.assignIfDefeq proof
     else goal.id.admit

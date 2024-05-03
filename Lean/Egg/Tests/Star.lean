@@ -12,12 +12,12 @@ example : true = false := by
 example (_ : true = true) : [true] ++ [] = [true] := by
   egg [*]
 
-/-- error: duplicate '*' in arguments to egg -/
+/-- error: duplicate '*' -/
 #guard_msgs in
 example : 0 = 0 := by
   egg [*, *]
 
-/-- error: duplicate '*' in arguments to egg -/
+/-- error: duplicate '*' -/
 #guard_msgs in
 example (h : 0 = 0) : 0 = 0 := by
   egg [*, h, *]

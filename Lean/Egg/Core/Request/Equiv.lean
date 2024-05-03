@@ -10,8 +10,8 @@ structure Equiv where
   init : Expression
   goal : Expression
 
-def Equiv.encoding (init goal : Expr) (cfg : Egg.Config) (amb : MVars.Ambient) : MetaM Equiv :=
-  return { init := ← encode init cfg amb, goal := ← encode goal cfg amb }
+def Equiv.encoding (init goal : Expr) (ctx : EncodingCtx) : MetaM Equiv :=
+  return { init := ← encode init ctx, goal := ← encode goal ctx }
 
 end Request
 

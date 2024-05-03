@@ -6,7 +6,6 @@ open Lean Elab
 namespace Egg.Config
 
 structure Modifier where
-  useRwsAsFacts       : Option Bool            := none
   eraseProofs         : Option Bool            := none
   eraseLambdaDomains  : Option Bool            := none
   eraseForallDomains  : Option Bool            := none
@@ -28,7 +27,6 @@ structure Modifier where
   vizPath             : Option String          := none
 
 def modify (cfg : Config) (mod : Modifier) : Config where
-  useRwsAsFacts       := mod.useRwsAsFacts.getD cfg.useRwsAsFacts
   eraseProofs         := mod.eraseProofs.getD cfg.eraseProofs
   eraseLambdaDomains  := mod.eraseLambdaDomains.getD cfg.eraseLambdaDomains
   eraseForallDomains  := mod.eraseForallDomains.getD cfg.eraseForallDomains
