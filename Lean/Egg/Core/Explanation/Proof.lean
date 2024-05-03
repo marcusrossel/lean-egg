@@ -141,11 +141,14 @@ where
       rw := .defeq rwInfo.src, dir := rwInfo.dir
     }
     let some rw := rws.find? rwInfo.src | fail s!"unknown rewrite {rwInfo.src.description}"
+    -- TODO: Can there be conditional rfl proofs?
     if ← isRflProof rw.proof then return {
       lhs := current, rhs := next, proof := ← mkReflStep current next rwInfo.toDescriptor,
       rw := .rw rw (isRefl := true), dir := rwInfo.dir
     }
-    let prf ← mkCongrStep current next rwInfo.pos (← rw.forDir rwInfo.dir)
+    let facts ← rwInfo.facts.mapM fun src =>
+      facts.find? (·.src == src) |>.getDM <| fail m!"explanation references unknown fact {src}"
+    let prf ← mkCongrStep current next rwInfo.pos (← rw.forDir rwInfo.dir) facts
     return {
       lhs := current, rhs := next, proof := prf,
       rw := .rw rw (isRefl := false), dir := rwInfo.dir
@@ -156,23 +159,24 @@ where
       fail s!"unification failure for proof by reflexivity with rw {rw.src.description}"
     mkEqRefl next
 
-  mkCongrStep (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) : MetaM Expr := do
+  mkCongrStep (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) (facts : Facts) :
+      MetaM Expr := do
     let mvc := (← getMCtx).mvarCounter
-    let (lhs, rhs) ← placeCHoles current next pos rw
+    let (lhs, rhs) ← placeCHoles current next pos rw facts
     try (← mkCongrOf 0 mvc lhs rhs).eq
     catch err => fail m!"'mkCongrOf' failed with\n  {err.toMessageData}"
 
-  placeCHoles (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) : MetaM (Expr × Expr) := do
+  placeCHoles (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) (facts : Facts) :
+      MetaM (Expr × Expr) := do
     replaceSubexprs (root₁ := current) (root₂ := next) (p := pos) fun lhs rhs => do
       -- It's necessary that we create the fresh rewrite (that is, create the fresh mvars) in *this*
       -- local context as otherwise the mvars can't unify with variables under binders.
       let rw ← rw.fresh
       unless ← isDefEq lhs rw.lhs do fail m!"unification failure for LHS of rewrite {rw.src.description}"
       unless ← isDefEq rhs rw.rhs do fail m!"unification failure for RHS of rewrite {rw.src.description}"
-      -- TODO: It would be more efficient to pass the used facts back from egg as part of the src name.
-      for cond in rw.conds do
-        for fact in facts do
-          if ← isDefEq cond.expr fact.proof then break
+      for cond in rw.conds, fact in facts do
+        unless ← isDefEq cond.expr fact.proof do
+          fail m!"fact {fact.src} does not prove rewrite {rw.src.description}'s condition {cond.type}"
       let proof ← rw.eqProof
       return (
         ← mkCHole (forLhs := true) lhs proof,
