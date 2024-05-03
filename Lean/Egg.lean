@@ -4,6 +4,7 @@ import Egg.Core.Encode.Facts
 import Egg.Core.Encode.Guides
 import Egg.Core.Encode.Rewrites
 import Egg.Core.Explanation.Basic
+import Egg.Core.Explanation.Parse
 import Egg.Core.Explanation.Proof
 import Egg.Core.Gen.TcProjs
 import Egg.Core.Gen.TcSpecs
@@ -23,7 +24,6 @@ import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Config.Option
 import Egg.Tactic.Base
 import Egg.Tactic.Basic
-import Egg.Tactic.Explanation
 import Egg.Tactic.Guides
 import Egg.Tactic.Premises
 import Egg.Tactic.Trace

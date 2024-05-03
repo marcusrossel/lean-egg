@@ -1,7 +1,9 @@
 import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Congr
+import Egg.Core.Explanation.Parse
 import Egg.Core.Premise.Rewrites
 import Egg.Core.Premise.Facts
+import Egg.Core.Request.Equiv
 open Lean Meta
 
 namespace Egg.Explanation
@@ -105,6 +107,7 @@ structure Proof.Step where
   proof : Expr
   rw    : Step.Rewrite
   dir   : Direction
+  -- TODO: conds : Array Proof
   deriving Inhabited
 
 abbrev Proof := Array Proof.Step
@@ -123,7 +126,8 @@ where
   fail (msg : String) : MetaM Unit := do
     throwError s!"egg failed to build proof: {msg}"
 
-def Explanation.proof (expl : Explanation) (rws : Rewrites) (facts : Facts) : MetaM Proof := do
+partial def Explanation.proof (expl : Explanation) (rws : Rewrites) (facts : Facts) (egraph : EGraph)
+    (cfg : Config) (amb : MVars.Ambient) : MetaM Proof := do
   let mut current ← expl.start.toExpr
   let mut proof : Proof := #[]
   for step in expl.steps do
@@ -175,10 +179,22 @@ where
       unless ← isDefEq lhs rw.lhs do fail m!"unification failure for LHS of rewrite {rw.src.description}"
       unless ← isDefEq rhs rw.rhs do fail m!"unification failure for RHS of rewrite {rw.src.description}"
       for cond in rw.conds, fact in facts do
-        unless ← isDefEq cond.expr fact.proof do
-          fail m!"fact {fact.src} does not prove rewrite {rw.src.description}'s condition {cond.type}"
+        if ← isDefEq cond.expr fact.proof then
+          continue
+        else
+          if let some condProof ← mkConditionSubproof fact cond.type then
+            if ← isDefEq cond.expr condProof then continue
+          fail m!"condition {cond.type} of rewrite {rw.src.description} could not be proven"
       let proof ← rw.eqProof
       return (
         ← mkCHole (forLhs := true) lhs proof,
         ← mkCHole (forLhs := false) rhs proof
       )
+
+  mkConditionSubproof (fact : Fact) (cond : Expr) : MetaM (Option Expr) := do
+    let rawExpl := egraph.run (← Request.Equiv.encoding fact.type cond cfg amb)
+    if rawExpl.isEmpty then return none
+    let expl ← rawExpl.parse
+    let proof ← expl.proof rws facts egraph cfg amb
+    let factEqCond ← proof.prove { lhs := fact.type, rhs := cond, rel := .eq }
+    mkEqMP factEqCond fact.proof

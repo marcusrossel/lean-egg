@@ -4,7 +4,6 @@ import Egg.Core.Gen.TcProjs
 import Egg.Core.Gen.TcSpecs
 import Egg.Tactic.Config.Option
 import Egg.Tactic.Config.Modifier
-import Egg.Tactic.Explanation
 import Egg.Tactic.Base
 import Egg.Tactic.Guides
 import Egg.Tactic.Premises
@@ -102,9 +101,10 @@ where
 
 private def processRawExpl
     (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (facts : Facts)
-    (amb : MVars.Ambient) : TacticM Expr := do
+    (amb : MVars.Ambient) (cfg : Config) (egraph? : Option EGraph) : TacticM Expr := do
   let expl ← rawExpl.parse
-  let proof ← expl.proof rws facts
+  let some egraph := egraph? | throwError "egg: internal error: e-graph is absent"
+  let proof ← expl.proof rws facts egraph cfg amb
   proof.trace `egg.proof
   let mut prf ← proof.prove goal.type
   prf ← instantiateMVars prf
@@ -144,11 +144,11 @@ elab "egg " mod:egg_cfg_mod rws:egg_prems base:(egg_base)? guides:(egg_guides)? 
       let req ← Request.encoding goal.type rws facts guides cfg amb
       withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
       if let .beforeEqSat := cfg.exitPoint then return none
-      let (rawExpl, _) := req.run
+      let (rawExpl, egraph?) := req.run
       if rawExpl.isEmpty then throwError "egg failed to prove goal"
       withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] rawExpl
       if let .beforeProof := cfg.exitPoint then return none
-      return some (← processRawExpl rawExpl goal rws facts amb)
+      return some (← processRawExpl rawExpl goal rws facts amb cfg egraph?)
     if let some proof := proof?
     then goal.id.assignIfDefeq proof
     else goal.id.admit
