@@ -42,6 +42,7 @@ set_option egg.useRwsAsFacts false in
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂]
 
+
 set_option egg.useRwsAsFacts true in
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂]
@@ -66,6 +67,32 @@ example {p q r : Prop} (h₁ : p) (h₂ : p ↔ q) (h₃ : q → (p ↔ r)) : p 
 -- This test checks that multiple rewriting of facts is handled correctly.
 example {p q r : Prop} (h₁ : p) (h₂ : p ↔ q) (h₃ : q ↔ r) (h₄ : r → (p ↔ s)) : p ↔ s := by
   egg [h₁, h₂, h₃, h₄]
+
+-- This test checks that we don't consider non-propositional arguments as conditions to a rewrite.
+/--
+info: [egg.rewrites] Rewrites
+  [egg.rewrites] Basic (1)
+    [egg.rewrites] #0(∅): h
+      [egg.rewrites] ?l₁ = ?l₂
+      [egg.rewrites] LHS MVars
+          expr:  [?l₁]
+          class: []
+          level: []
+      [egg.rewrites] RHS MVars
+          expr:  [?l₂]
+          class: []
+          level: []
+  [egg.rewrites] Generated (0)
+  [egg.rewrites] Definitional
+    [egg.rewrites] β-Reduction
+    [egg.rewrites] η-Reduction
+    [egg.rewrites] Natural Number Literals
+  [egg.rewrites] Hypotheses (1)
+    [egg.rewrites] #0: h : ∀ (α : Type) (l₁ l₂ : List α), l₁ = l₂
+-/
+#guard_msgs(info, drop error) in
+example (l₁ l₂ : List Nat) (h : ∀ (α : Type) (l₁ l₂ : List α), l₁ = l₂) : l₁ = l₂ := by
+  set_option trace.egg.rewrites true in egg [h]
 
 /- TODO:
 

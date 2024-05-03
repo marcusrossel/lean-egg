@@ -58,6 +58,7 @@ private def tracePremises (ps : Premises) (tc : Rewrites) (cfg : Config.Gen) : T
       if cfg.genEtaRw     then Lean.trace cls fun _ => "η-Reduction"
       if cfg.genNatLitRws then Lean.trace cls fun _ => "Natural Number Literals"
     withTraceNode cls (fun _ => return m!"Hypotheses ({ps.facts.size})") do
+
       ps.facts.trace ps.factsStx cls
 
 private partial def genPremises

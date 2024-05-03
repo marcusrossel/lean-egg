@@ -43,5 +43,6 @@ where
     for arg in args do
       if mLhs.expr.contains arg.mvarId! || mRhs.expr.contains arg.mvarId! then continue
       let ty ← arg.mvarId!.getType
+      unless ← isProp (← whnf ty) do continue
       conds := conds.push { expr := arg, type := ty, mvars := (← MVars.collect ty).remove amb }
     return conds
