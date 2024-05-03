@@ -1,5 +1,5 @@
 use std::time::Duration;
-use std::collections::HashSet;
+use std::collections::HashMap;
 use egg::*;
 use crate::result::*;
 use crate::analysis::*;
@@ -22,7 +22,7 @@ pub struct Config {
     trace_bvar_correction: bool,
 }
 
-pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<String>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Res<(String, LeanEGraph)> {
+pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Res<(String, LeanEGraph)> {
     init_enabled_trace_groups(cfg.trace_substitutions, cfg.trace_bvar_correction);
 
     let mut egraph: LeanEGraph = Default::default();
@@ -39,15 +39,15 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
         egraph.add_expr(&expr);
     }
 
-    let mut fact_classes: HashSet<Id> = Default::default();
-    for f in facts {
-        let expr = f.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
+    let mut fact_map: HashMap<Id, String> = Default::default();
+    for (name, expr) in facts {
+        let expr = expr.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
         let class = egraph.add_expr(&expr);
-        fact_classes.insert(class);
+        fact_map.insert(class, name);
     }
     
     let mut rws;
-    match templates_to_rewrites(rw_templates, fact_classes, cfg.block_invalid_matches, cfg.shift_captured_bvars) {
+    match templates_to_rewrites(rw_templates, fact_map, cfg.block_invalid_matches, cfg.shift_captured_bvars) {
         Ok(r)    => rws = r,
         Err(err) => return Err(Error::Rewrite(err.to_string()))
     }

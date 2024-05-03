@@ -5,13 +5,18 @@ open Lean
 
 namespace Egg
 
-abbrev Fact.Encoded := Expression
+-- IMPORTANT: The C interface to egg depends on the order of these fields.
+structure Fact.Encoded where
+  name : String
+  expr : Expression
 
 abbrev Facts.Encoded := Array Fact.Encoded
 
 def Facts.encode (facts : Facts) (cfg : Config.Encoding) (amb : MVars.Ambient) :
     MetaM Facts.Encoded :=
   facts.filterMapM fun fact => do
-    if cfg.useRwsAsFacts || !fact.isRw
-    then Egg.encode fact.type cfg amb
-    else return none
+    unless cfg.useRwsAsFacts || !fact.isRw do return none
+    return some {
+      name := fact.src.description,
+      expr := ← Egg.encode fact.type cfg amb
+    }

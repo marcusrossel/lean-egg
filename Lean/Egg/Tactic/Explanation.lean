@@ -17,6 +17,7 @@ declare_syntax_cat egg_tc_spec_dir
 declare_syntax_cat egg_tc_spec
 declare_syntax_cat egg_tc_extension
 declare_syntax_cat egg_fwd_rw_src
+declare_syntax_cat egg_fact_src
 declare_syntax_cat egg_rw_src
 
 syntax num                             : egg_lvl
@@ -66,7 +67,9 @@ syntax "≡/"                                          : egg_fwd_rw_src
 syntax str                                           : egg_fwd_rw_src
 -- syntax "≡%"                                       : egg_fwd_rw_src
 
-syntax egg_fwd_rw_src (noWs "-rev")? : egg_rw_src
+syntax "$" egg_fwd_rw_src : egg_fact_src
+
+syntax egg_fwd_rw_src (noWs "-rev")? egg_fact_src* : egg_rw_src
 
 -- Note: This syntax allows quite a few invalid constructions which we only handle in the parsing
 --       functions below. For example, expression type tags should never contain a "Rewrite", but we
@@ -145,10 +148,17 @@ private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
     tcExts.foldl (init := parseBasicFwdRwSrc src) parseTcExtension
   | _ => unreachable!
 
+private def parseFactSrc : (TSyntax `egg_fact_src) → Source
+  | `(egg_fact_src|$$f:egg_fwd_rw_src) => parseFwdRwSrc f
+  | _                                   => unreachable!
+
 private def parseRwSrc : (TSyntax `egg_rw_src) → Rewrite.Descriptor
-  | `(egg_rw_src|$fwdSrc:egg_fwd_rw_src)     => { src := parseFwdRwSrc fwdSrc, dir := .forward }
-  | `(egg_rw_src|$fwdSrc:egg_fwd_rw_src-rev) => { src := parseFwdRwSrc fwdSrc, dir := .backward }
-  | _                                        => unreachable!
+  | `(egg_rw_src|$fwdSrc:egg_fwd_rw_src$[-rev%$rev]?$[$facts]*) =>
+    let src   := parseFwdRwSrc fwdSrc
+    let dir   := if rev.isSome then .backward else .forward
+    let facts := facts.map parseFactSrc
+    { src, dir, facts }
+  | _ => unreachable!
 
 inductive ParseError where
   | noSteps

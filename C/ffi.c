@@ -83,6 +83,38 @@ void free_rws_array(rws_array rws) {
     free(rws.ptr);
 }
 
+/*
+structure Fact.Encoded where
+  name : String
+  expr : String
+*/
+typedef struct fact {
+    const char* name;
+    const char* expr;
+} fact;
+
+fact fact_from_lean_obj(lean_obj_arg f) {
+    return (fact) {
+        .name = lean_string_cstr(lean_ctor_get(f, 0)),
+        .expr = lean_string_cstr(lean_ctor_get(f, 1))
+    };
+}
+
+typedef struct facts_array {
+    fact*  ptr;
+    size_t len;
+} facts_array;
+
+facts_array facts_from_lean_obj(lean_obj_arg facts) {
+    lean_object** facts_c_ptr = lean_array_cptr(facts);
+    size_t facts_count = lean_array_size(facts);
+    fact* rust_facts = malloc(facts_count * sizeof(fact));
+    for (int idx = 0; idx < facts_count; idx++) {
+        rust_facts[idx] = fact_from_lean_obj(facts_c_ptr[idx]);
+    }
+    return (facts_array) { .ptr = rust_facts, .len = facts_count };
+}
+
 typedef struct config {
     _Bool  optimize_expl;
     size_t time_limit;
@@ -157,7 +189,7 @@ extern egg_result egg_explain_congr(
     const char* init, 
     const char* goal, 
     rws_array rws, 
-    str_array facts, 
+    facts_array facts, 
     str_array guides, 
     config cfg,
     const char* viz_path
@@ -168,7 +200,7 @@ structure Egg.Request where
   lhs     : String
   rhs     : String
   rws     : Array Rewrite.Encoded
-  facts   : Array String
+  facts   : Array Fact.Encoded
   guides  : Array String
   vizPath : String
   cfg     : Request.Config
@@ -177,7 +209,7 @@ egg_result run_egg_request_core(lean_obj_arg req) {
     const char* lhs      = lean_string_cstr(lean_ctor_get(req, 0));
     const char* rhs      = lean_string_cstr(lean_ctor_get(req, 1));
     rws_array rws        = rewrites_from_lean_obj(lean_ctor_get(req, 2));
-    str_array facts      = str_array_from_lean_obj(lean_ctor_get(req, 3));
+    facts_array facts    = facts_from_lean_obj(lean_ctor_get(req, 3));
     str_array guides     = str_array_from_lean_obj(lean_ctor_get(req, 4));
     const char* viz_path = lean_string_cstr(lean_ctor_get(req, 5));
     config cfg           = config_from_lean_obj(lean_ctor_get(req, 6));

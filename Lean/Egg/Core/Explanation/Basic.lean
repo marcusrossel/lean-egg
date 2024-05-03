@@ -10,8 +10,9 @@ abbrev Raw := String
 namespace Rewrite
 
 structure Descriptor where
-  src : Source
-  dir : Direction
+  src   : Source
+  dir   : Direction
+  facts : Array Source
   deriving Inhabited
 
 structure Info extends Descriptor where

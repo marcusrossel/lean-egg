@@ -1,5 +1,10 @@
 import Egg
 
+/-- error: egg failed to prove goal -/
+#guard_msgs in
+example (h : x ∧ y → 1 = 2) : 1 = 2 := by
+  egg [h]
+
 example (h₁ : x ∧ y) (h₂ : x ∧ y → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂]
 

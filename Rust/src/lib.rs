@@ -39,10 +39,7 @@ impl CStringArray {
 
     fn to_vec(&self) -> Vec<String> {
         let slice = unsafe { std::slice::from_raw_parts(self.ptr, self.len) };
-        slice.iter().map(|&str_ptr| {
-            let c_str = unsafe { CStr::from_ptr(str_ptr) };
-            String::from_utf8_lossy(c_str.to_bytes()).to_string()
-        }).collect()
+        slice.iter().map(|&str_ptr| c_str_to_string(str_ptr)).collect()
     }
 }
 
@@ -104,6 +101,30 @@ impl CRewritesArray {
 }
 
 #[repr(C)]
+pub struct CFact {
+    name: *const c_char,
+    expr: *const c_char
+}
+
+#[repr(C)]
+pub struct CFactsArray {
+    ptr: *const CFact,
+    len: usize, 
+}
+
+impl CFactsArray {
+
+    fn to_vec(&self) -> Vec<(String, String)> {
+        let slice = unsafe { std::slice::from_raw_parts(self.ptr, self.len) };
+        slice.iter().map(|fact| {
+            let name = c_str_to_string(fact.name);
+            let expr = c_str_to_string(fact.expr);
+            (name, expr)
+        }).collect()
+    }
+}
+
+#[repr(C)]
 pub struct EggResult {
     expl: *const c_char,
     graph: Option<Box<LeanEGraph>>,
@@ -114,7 +135,7 @@ pub extern "C" fn egg_explain_congr(
     init_str_ptr: *const c_char, 
     goal_str_ptr: *const c_char, 
     rws: CRewritesArray, 
-    facts: CStringArray, 
+    facts: CFactsArray, 
     guides: CStringArray, 
     cfg: Config,
     viz_path_ptr: *const c_char
