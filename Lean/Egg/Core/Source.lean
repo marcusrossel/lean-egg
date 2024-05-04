@@ -31,7 +31,7 @@ inductive Source where
   | star (id : FVarId)
   | fact (src : Source)
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos)
-  | tcSpec (src : Source) (dir : Direction)
+  | tcSpec (src : Source) (dir : Directions)
   | natLit (src : Source.NatLit)
   | eta
   | beta
@@ -64,7 +64,7 @@ def description : Source → String
   | star id                 => s!"*{id.uniqueIdx!}"
   | fact src                => s!"!{src.description}"
   | tcProj src loc pos      => s!"{src.description}[{loc.description}{pos.asNat}]"
-  | tcSpec src dir          => s!"{src.description}<{dir.description}>"
+  | tcSpec src dirs         => s!"{src.description}<{dirs.description}>"
   | natLit src              => src.description
   | eta                     => "≡η"
   | beta                    => "≡β"

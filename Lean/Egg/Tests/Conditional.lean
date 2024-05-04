@@ -47,7 +47,9 @@ example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   egg [h₂, h₁; h₁]
 
--- BUG: Cf. the example above.
+-- BUG: In a variety of these tests cases, adding a fact as a rewrite, and vice versa can lead to
+--      egg not finding a proof.
+set_option trace.egg true in
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   sorry -- egg [h₁, h₂; h₁]
 

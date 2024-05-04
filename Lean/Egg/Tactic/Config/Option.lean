@@ -39,6 +39,7 @@ register_egg_options
   natReduceRws
   genTcProjRws
   genTcSpecRws
+  eagerTcSpec
   genNatLitRws
   genEtaRw
   genBetaRw

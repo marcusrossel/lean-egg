@@ -75,6 +75,9 @@ def Rewrite.Encoded.trace (rw : Rewrite.Encoded) (cls : Name) : TacticM Unit := 
         for cond in rw.conds do
           Lean.trace cls fun _ => cond
 
+def Fact.Encoded.trace (fact : Fact.Encoded) (cls : Name) : TacticM Unit := do
+  Lean.trace cls fun _ => m!"{fact.name}: {fact.expr}"
+
 nonrec def Config.trace (cfg : Config) (cls : Name) : TacticM Unit := do
   let toEmoji (b : Bool) := if b then "✅" else "❌"
   withTraceNode cls (fun _ => return "Configuration") do
@@ -106,6 +109,10 @@ nonrec def Request.trace (req : Request) (cls : Name) : TacticM Unit := do
   withTraceNode `egg.frontend (fun _ => return rwsHeader) do
     for rw in req.rws do
       rw.trace cls
+  if !req.facts.isEmpty then
+    withTraceNode cls (fun _ => return "Facts") do
+      for fact in req.facts do
+        fact.trace cls
   if !req.guides.isEmpty then
     withTraceNode cls (fun _ => return "Guides") do
       for guide in req.guides do

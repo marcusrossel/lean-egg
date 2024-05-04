@@ -22,6 +22,7 @@ structure Encoding extends Normalization where
 structure Gen where
   genTcProjRws := true
   genTcSpecRws := true
+  eagerTcSpec  := false
   genNatLitRws := true
   genEtaRw     := true
   genBetaRw    := true

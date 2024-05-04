@@ -14,6 +14,7 @@ structure Modifier where
   natReduceRws        : Option Bool            := none
   genTcProjRws        : Option Bool            := none
   genTcSpecRws        : Option Bool            := none
+  eagerTcSpec         : Option Bool            := none
   genNatLitRws        : Option Bool            := none
   genEtaRw            : Option Bool            := none
   genBetaRw           : Option Bool            := none
@@ -35,6 +36,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   natReduceRws        := mod.natReduceRws.getD cfg.natReduceRws
   genTcProjRws        := mod.genTcProjRws.getD cfg.genTcProjRws
   genTcSpecRws        := mod.genTcSpecRws.getD cfg.genTcSpecRws
+  eagerTcSpec         := mod.eagerTcSpec.getD cfg.eagerTcSpec
   genNatLitRws        := mod.genNatLitRws.getD cfg.genNatLitRws
   genEtaRw            := mod.genEtaRw.getD cfg.genEtaRw
   genBetaRw           := mod.genBetaRw.getD cfg.genBetaRw
