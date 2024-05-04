@@ -52,10 +52,6 @@ structure WithSyntax (α) where
   elems : α
   stxs  : Array Syntax := #[]
 
--- TODO?:
--- instance : Coe (WithSyntax α) α where
---   coe := WithSyntax.elems
-
 private instance : EmptyCollection <| WithSyntax (Array α) where
   emptyCollection := {
     elems := #[]

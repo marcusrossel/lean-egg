@@ -53,7 +53,9 @@ def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) : TacticM U
     traceM cls fun _ => return m!"RHS MVars\n{← rw.mvars.rhs.format}"
 
 def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cls : Name) : TacticM Unit := do
-  for rw in rws, idx in [:rws.size] do rw.trace stx[idx]? cls
+  for rw in rws, idx in [:rws.size] do
+    let stx? := stx[idx]? >>= fun s => if s.getAtomVal == "*" then none else s
+    rw.trace stx? cls
 
 nonrec def Fact.trace (f : Fact) (stx : Syntax) (cls : Name) : TacticM Unit := do
   trace cls fun _ => m!"{f.src.description}: {stx} : {f.type}"
