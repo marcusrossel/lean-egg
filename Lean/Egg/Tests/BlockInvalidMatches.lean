@@ -17,14 +17,11 @@ example : False := by
   contradiction
 
 -- This test covers Condition (2) of valid matches.
-/- error: egg failed to prove goal -/
--- #guard_msgs in
+/-- error: egg failed to prove goal -/
+#guard_msgs in
 set_option egg.blockInvalidMatches true in
 example : (fun x => (fun a => (fun a => a) a) 0) = (fun x => x) := by
-  sorry -- egg (config := { exitPoint := some .beforeProof }) [thm₁]
-  -- TODO: This started failing (in the sense of seeming to loop infinitely) once we started adding
-  --       all rewrites to the e-graph as facts. That is, when `thm₁` became part of the e-graph.
-  --       The problem then seems to be β-reduction. Setting `egg.genBetaRw` to false doesn't loop.
+  egg (config := { exitPoint := some .beforeProof }) [thm₁]
 
 -- This theorem is only applicable in the backward direction.
 theorem thm₂ : ∀ x y : Nat, x = (fun _ => x) y :=

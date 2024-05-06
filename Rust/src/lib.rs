@@ -72,6 +72,7 @@ impl CRewritesArray {
     fn to_templates(&self) -> Res<Vec<RewriteTemplate>> {
         let rws = unsafe { std::slice::from_raw_parts(self.ptr, self.len) };
         let mut res: Vec<RewriteTemplate> = vec![];
+        
         for rw in rws {
             let name_c_str    = unsafe { CStr::from_ptr(rw.name) };
             let lhs_c_str     = unsafe { CStr::from_ptr(rw.lhs) };
@@ -165,9 +166,9 @@ pub extern "C" fn egg_explain_congr(
         return EggResult { expl: res_err_c_str.into_raw(), graph: None }
     }
     let (expl, egraph) = res.unwrap();
-
-    let expl_c_str = CString::new(expl).expect("conversion of explanation to C-string failed");
     
+    let expl_c_str = CString::new(expl).expect("conversion of explanation to C-string failed");
+
     return EggResult {
         expl: expl_c_str.into_raw(),
         graph: Some(Box::new(egraph))

@@ -45,7 +45,7 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
         let class = egraph.add_expr(&expr);
         fact_map.insert(class, name);
     }
-    
+
     let mut rws;
     match templates_to_rewrites(rw_templates, fact_map, cfg.block_invalid_matches, cfg.shift_captured_bvars) {
         Ok(r)    => rws = r,
@@ -54,7 +54,7 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
     if cfg.gen_nat_lit_rws { rws.append(&mut nat_lit_rws()) }
     if cfg.gen_eta_rw      { rws.push(eta_reduction_rw()) }
     if cfg.gen_beta_rw     { rws.push(beta_reduction_rw()) }
-    
+
     let mut runner = Runner::default()
         .with_egraph(egraph)
         .with_time_limit(Duration::from_secs(cfg.time_limit.try_into().unwrap()))

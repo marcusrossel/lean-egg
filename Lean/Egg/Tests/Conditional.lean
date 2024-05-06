@@ -41,17 +41,16 @@ example {a : Nat} (h : a < b) : a % b = a := by
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂]
 
+-- This test, and the following two, check that adding redundant rewrites and changing their order
+-- does not affect the outcome of the tactic.
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   egg [h₂; h₁]
 
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   egg [h₂, h₁; h₁]
 
--- BUG: In a variety of these tests cases, adding a fact as a rewrite, and vice versa can lead to
---      egg not finding a proof.
-set_option trace.egg true in
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
-  sorry -- egg [h₁, h₂; h₁]
+  egg [h₁, h₂; h₁]
 
 example (h₁ : ∀ p, p ∧ p) (h₂ : (∀ p, p ∧ p) → q = True) : q = True := by
   egg [h₂; h₁]

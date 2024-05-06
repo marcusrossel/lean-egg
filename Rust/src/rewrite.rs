@@ -53,9 +53,14 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             // This is currently handled in Lean by filtering out rewrites where a condition's variables are not
             // covered by the body's variables.
             let id = graph.add_instantiation(&cond.ast, subst);
-            if let Some(fact_name) = self.facts.get(&id) { 
-                let mut r = rule.as_str().to_string();
-                r.push_str(&fact_name);
+            // Note: If we don't find a fact matching `id`, this might just be because the fact id isn't canonical. 
+            //       Thus, in the `else if` branch we also check whether there exists a fact id whose canonicalization
+            //       matches `id`.
+            if let Some(fact_name) = self.facts.get(&id) {
+                let mut r = rule.as_str().to_string(); r.push_str(&fact_name);
+                rule = Symbol::from(r);
+            } else if let Some((_, fact_name)) = self.facts.iter().find(|(&f_id, _)| graph.find(f_id) == id) { 
+                let mut r = rule.as_str().to_string(); r.push_str(&fact_name);
                 rule = Symbol::from(r);
             } else {
                 return vec![] 

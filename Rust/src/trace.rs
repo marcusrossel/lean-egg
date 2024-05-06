@@ -31,7 +31,7 @@ pub fn dbg_trace<T: ToString>(_obj: T, group: TraceGroup) {
         } 
     }
 
-    /* 
+    /*
     let str = obj.to_string();
     let c_str = CString::new(str).expect("conversion of explanation to C-string failed");
     unsafe { c_dbg_trace(c_str.into_raw()) }
