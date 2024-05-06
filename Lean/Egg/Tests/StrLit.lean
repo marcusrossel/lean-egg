@@ -1,8 +1,29 @@
 import Egg
 
--- TODO: We probably need to escape strings before we encode them.
+-- TODO: It seems that for strings not containing "(", ")", or " ", egg removes the surrounding
+--       double-quotes in explanations. I think the problem comes somewhere from here:
+--       https://docs.rs/symbolic_expressions/5.0.3/src/symbolic_expressions/formatter.rs.html#10-25
 
--- TODO: The explanation produced by egg removes the quotes around the string.
-set_option trace.egg true in
-example (h : "Le" ++ "an" = "Lean") : "Le" ++ "an" = "Lean" := by
-  sorry -- egg [h]
+example : "a" = "a" := by
+  sorry -- egg
+
+example : "a\nb" = "a\nb" := by
+  sorry -- egg
+
+example : "" = "" := by
+  egg
+
+example : " " = " " := by
+  egg
+
+example : "a b" = "a b" := by
+  egg
+
+example : "(" = "(" := by
+  egg
+
+example : ")" = ")" := by
+  egg
+
+example (h : "Le " ++ " an" = "Le  an") : "Le " ++ " an" = "Le  an" := by
+  egg [h]

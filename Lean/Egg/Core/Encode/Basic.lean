@@ -46,7 +46,7 @@ where
     | .app fn arg       => return s!"(app {← go fn} {← go arg})"
     | .lam _ ty b _     => encodeLam ty b
     | .forallE _ ty b _ => encodeForall ty b
-    | .lit (.strVal l)  => return s!"(lit \"{l}\")"
+    | .lit (.strVal l)  => return s!"(lit {Json.renderString l})"
     | .lit (.natVal l)  => return s!"(lit {l})"
     | _                 => panic! "'Egg.encode.core' received non-normalized expression"
 

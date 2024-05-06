@@ -104,6 +104,7 @@ private def parseLit : (TSyntax `egg_lit) → Literal
   | `(egg_lit|$s:str) => .strVal s.getString
   | _                 => unreachable!
 
+
 private def parseRwDir : (TSyntax `egg_rw_dir) → Direction
   | `(egg_rw_dir|=>) => .forward
   | `(egg_rw_dir|<=) => .backward

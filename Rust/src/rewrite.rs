@@ -53,6 +53,7 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             // This is currently handled in Lean by filtering out rewrites where a condition's variables are not
             // covered by the body's variables.
             let id = graph.add_instantiation(&cond.ast, subst);
+            
             // Note: If we don't find a fact matching `id`, this might just be because the fact id isn't canonical. 
             //       Thus, in the `else if` branch we also check whether there exists a fact id whose canonicalization
             //       matches `id`.
