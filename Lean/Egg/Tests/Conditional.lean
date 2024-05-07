@@ -99,14 +99,7 @@ example (l₁ l₂ : List Nat) (h : ∀ (α : Type) (l₁ l₂ : List α), l₁ 
   set_option trace.egg.rewrites true in egg [h]
 
 /- TODO:
-
-Example of a sensible theorem (rewrite) with an unbound condition:
-
-theorem thm (n m : Nat) (h : n > m) : n > 0 := by
-  induction n
-  case zero => contradiction
-  case succ => simp
-
+Example of a sensible theorem (rewrite) with an unbound condition: `Nat.zero_lt_of_lt`
 We could still try a best effort approach which checks the set of facts for statements of the
-form `n > ?m`.
+form of the partially substituted condition.
 -/

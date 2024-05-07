@@ -28,7 +28,11 @@ private inductive Premise.Raw where
 private partial def Premise.Raw.elab (prem : Term) : TacticM Premise.Raw := do
   if let some hyp ← optional (getFVarId prem) then
     -- `prem` is a local declaration.
-    return .single (.fvar hyp) (← hyp.getType)
+    let decl ← hyp.getDecl
+    if decl.isImplementationDetail || decl.isAuxDecl then
+      throwErrorAt prem "egg does not support using auxiliary declarations"
+    else
+      return .single (.fvar hyp) (← hyp.getType)
   else if let some const ← optional (resolveGlobalConstNoOverload prem) then
     if let some eqs ← getEqnsFor? const (nonRec := true) then
       -- `prem` is a global definition.

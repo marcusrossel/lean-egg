@@ -1,5 +1,11 @@
 import Egg
 
+-- CRASH: When turning on proof erasure.
+set_option egg.eraseProofs false in
+theorem Array.get_set_ne (a : Array α) (i : Fin a.size) {j : Nat} (v : α) (hj : j < a.size)
+    (h : i.1 ≠ j) : (a.set i v)[j]'(by simp [*]) = a[j] := by
+  sorry -- egg [set, Array.getElem_eq_data_get, List.get_set_ne _ h]
+
 -- The universe mvars (or universe params if you make this a theorem instead of an example) are
 -- different for the respective `α`s, so this doesn't hold by reflexivity. But `simp` can somehow
 -- prove this.
@@ -36,15 +42,3 @@ theorem t : (if 0 = 0 then 0 else 1) = 0 := by
 -- Where does it pull `ite_congr` from? Does it have something to do with the `congr` attribute?
 #print t
 #check ite_congr
-
-
-theorem thm₂ : ∀ x : Nat, (fun _ => (fun _ => x) x) 0 = x := fun _ => rfl
-
--- This seems to cause an infinite loop or at least extremely long runtime in
--- `correct_bvar_indices` or `subst`. I think what is happening is that `thm₂` is applied in
--- the backward direction over and over again which quickly blows up the e-graph.
--- Investigate further what's happening by somehow tracing `correct_bvar_indices`.
-set_option egg.shiftCapturedBVars true in
-example : True := by
-  have : (fun x => (fun a => (fun a => a) a) 0) = (fun x => x) := by sorry -- egg [thm₂]
-  constructor
