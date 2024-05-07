@@ -17,6 +17,13 @@ inductive Source.NatLit where
   | mod
   deriving Inhabited, BEq, Hashable
 
+inductive Source.Level where
+  | maxSucc
+  | maxComm
+  | imaxZero
+  | imaxSucc
+  deriving Inhabited, BEq, Hashable
+
 inductive Source.TcProjLocation where
   | root
   | left
@@ -35,6 +42,7 @@ inductive Source where
   | natLit (src : Source.NatLit)
   | eta
   | beta
+  | level (src : Source.Level)
   deriving Inhabited, BEq, Hashable
 
 namespace Source
@@ -49,6 +57,12 @@ def NatLit.description : NatLit → String
   | pow    => "≡^"
   | div    => "≡/"
   | mod    => "≡%"
+
+def Level.description : Level → String
+  | maxSucc  => "≡maxS"
+  | maxComm  => "≡max↔"
+  | imaxZero => "≡imax0"
+  | imaxSucc => "≡imaxS"
 
 def TcProjLocation.description : TcProjLocation → String
   | root     => "▪"
@@ -68,6 +82,7 @@ def description : Source → String
   | natLit src              => src.description
   | eta                     => "≡η"
   | beta                    => "≡β"
+  | level src               => src.description
 
 instance : ToString Source where
   toString := description
@@ -77,8 +92,8 @@ def isRewrite : Source → Bool
   | _              => true
 
 def isDefEq : Source → Bool
-  | natLit _ | eta | beta => true
-  | _                     => false
+  | natLit _ | eta | beta | level _ => true
+  | _                               => false
 
 def containsTcProj : Source → Bool
   | tcProj ..     => true

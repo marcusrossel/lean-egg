@@ -121,6 +121,7 @@ typedef struct config {
     _Bool  gen_nat_lit_rws;
     _Bool  gen_eta_rw;
     _Bool  gen_beta_rw;
+    _Bool  gen_level_rws;
     _Bool  block_invalid_matches;
     _Bool  shift_captured_bvars;
     _Bool  trace_substitutions;
@@ -134,6 +135,7 @@ structure Config where
   genNatLitRws        : Bool
   genEtaRw            : Bool
   genBetaRw           : Bool
+  genLevelRws         : Bool
   blockInvalidMatches : Bool
   shiftCapturedBVars  : Bool
   traceSubstitutions  : Bool
@@ -148,10 +150,11 @@ config config_from_lean_obj(lean_obj_arg cfg) {
         .gen_nat_lit_rws       = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 1),  
         .gen_eta_rw            = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 2),  
         .gen_beta_rw           = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 3),  
-        .block_invalid_matches = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 4),  
-        .shift_captured_bvars  = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 5),  
-        .trace_substitutions   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6),  
-        .trace_bvar_correction = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7),  
+        .gen_level_rws         = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 4),  
+        .block_invalid_matches = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 5),  
+        .shift_captured_bvars  = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6),  
+        .trace_substitutions   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7),  
+        .trace_bvar_correction = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 8),  
     };
 }
 

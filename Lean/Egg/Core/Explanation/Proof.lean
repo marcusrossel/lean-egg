@@ -153,7 +153,7 @@ where
     }
     let facts ← rwInfo.facts.mapM fun src =>
       facts.find? (·.src == src) |>.getDM <| fail m!"explanation references unknown fact {src}"
-    let prf ← mkCongrStep current next rwInfo.pos (← rw.forDir rwInfo.dir) facts
+    let prf ← mkCongrStep current next rwInfo.pos?.get! (← rw.forDir rwInfo.dir) facts
     return {
       lhs := current, rhs := next, proof := prf,
       rw := .rw rw (isRefl := false), dir := rwInfo.dir

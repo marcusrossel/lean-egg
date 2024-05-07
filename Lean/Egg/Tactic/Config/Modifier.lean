@@ -18,6 +18,7 @@ structure Modifier where
   genNatLitRws        : Option Bool            := none
   genEtaRw            : Option Bool            := none
   genBetaRw           : Option Bool            := none
+  genLevelRws         : Option Bool            := none
   shiftCapturedBVars  : Option Bool            := none
   blockInvalidMatches : Option Bool            := none
   optimizeExpl        : Option Bool            := none
@@ -40,6 +41,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   genNatLitRws        := mod.genNatLitRws.getD cfg.genNatLitRws
   genEtaRw            := mod.genEtaRw.getD cfg.genEtaRw
   genBetaRw           := mod.genBetaRw.getD cfg.genBetaRw
+  genLevelRws         := mod.genLevelRws.getD cfg.genLevelRws
   shiftCapturedBVars  := mod.shiftCapturedBVars.getD cfg.shiftCapturedBVars
   blockInvalidMatches := mod.blockInvalidMatches.getD cfg.blockInvalidMatches
   optimizeExpl        := mod.optimizeExpl.getD cfg.optimizeExpl

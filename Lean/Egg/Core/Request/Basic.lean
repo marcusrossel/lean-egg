@@ -15,6 +15,7 @@ protected structure Config where
   genNatLitRws        : Bool
   genEtaRw            : Bool
   genBetaRw           : Bool
+  genLevelRws         : Bool
   blockInvalidMatches : Bool
   shiftCapturedBVars  : Bool
   traceSubstitutions  : Bool
@@ -27,6 +28,7 @@ instance : Coe Config Request.Config where
     genNatLitRws        := cfg.genNatLitRws
     genEtaRw            := cfg.genEtaRw
     genBetaRw           := cfg.genBetaRw
+    genLevelRws         := cfg.genLevelRws
     blockInvalidMatches := cfg.blockInvalidMatches
     shiftCapturedBVars  := cfg.shiftCapturedBVars
     traceSubstitutions  := cfg.traceSubstitutions

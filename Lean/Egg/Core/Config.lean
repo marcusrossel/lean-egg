@@ -26,6 +26,7 @@ structure Gen where
   genNatLitRws := true
   genEtaRw     := true
   genBetaRw    := true
+  genLevelRws  := true
   deriving BEq
 
 structure Backend where

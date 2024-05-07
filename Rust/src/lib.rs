@@ -14,6 +14,7 @@ mod beta;
 mod bvar_correction;
 mod eta;
 mod lean_expr;
+mod levels;
 mod nat_lit;
 mod result;
 mod rewrite;

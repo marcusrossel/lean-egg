@@ -16,7 +16,7 @@ structure Descriptor where
   deriving Inhabited
 
 structure Info extends Descriptor where
-  pos : SubExpr.Pos
+  pos? : Option SubExpr.Pos
   deriving Inhabited
 
 end Rewrite

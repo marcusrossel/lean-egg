@@ -34,7 +34,7 @@ def withInstantiatedBVar (ty body : Expr) (m : Expr → EncodeM α) : EncodeM α
     return a
 
 def bvarIdx? (id : FVarId) : EncodeM (Option Nat) := do
-  return (← get).bvars.indexOf? id
+  return (← get).bvars.idxOf? id
 
 def needsProofErasure (e : Expr) : EncodeM Bool := do
   (return (← config).eraseProofs) <&&> Meta.isProof e

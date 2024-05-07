@@ -5,6 +5,7 @@ use crate::result::*;
 use crate::analysis::*;
 use crate::beta::*;
 use crate::eta::*;
+use crate::levels::*;
 use crate::nat_lit::*;
 use crate::rewrite::*;
 use crate::trace::*;
@@ -16,6 +17,7 @@ pub struct Config {
     gen_nat_lit_rws:       bool, 
     gen_eta_rw:            bool,
     gen_beta_rw:           bool,
+    gen_level_rws:         bool,
     block_invalid_matches: bool,
     shift_captured_bvars:  bool,
     trace_substitutions:   bool,
@@ -54,6 +56,7 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
     if cfg.gen_nat_lit_rws { rws.append(&mut nat_lit_rws()) }
     if cfg.gen_eta_rw      { rws.push(eta_reduction_rw()) }
     if cfg.gen_beta_rw     { rws.push(beta_reduction_rw()) }
+    if cfg.gen_level_rws   { rws.append(&mut level_rws()) }
 
     let mut runner = Runner::default()
         .with_egraph(egraph)

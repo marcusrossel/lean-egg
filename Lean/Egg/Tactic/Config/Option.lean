@@ -43,6 +43,7 @@ register_egg_options
   genNatLitRws
   genEtaRw
   genBetaRw
+  genLevelRws
   blockInvalidMatches
   shiftCapturedBVars
   optimizeExpl

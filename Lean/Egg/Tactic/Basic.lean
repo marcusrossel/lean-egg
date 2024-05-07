@@ -148,7 +148,7 @@ elab "egg " mod:egg_cfg_mod rws:egg_premises base:(egg_base)? guides:(egg_guides
       if let .beforeProof := cfg.exitPoint then return none
       return some (← processRawExpl rawExpl goal rws facts {amb, cfg} egraph?)
     if let some proof := proof?
-    then goal.id.assignIfDefeq proof
+    then goal.id.assignIfDefeq' proof
     else goal.id.admit
 
 -- WORKAROUND: This fixes `Tests/EndOfInput *`.
