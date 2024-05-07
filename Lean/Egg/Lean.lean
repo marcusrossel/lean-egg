@@ -6,7 +6,22 @@ def List.replicateM [Monad m] (count : Nat) (f : m α) : m (List α) := do
     result := result.concat (← f)
   return result
 
+-- From Batteries
+def List.findIdx? (p : α → Bool) : List α → (start : Nat := 0) → Option Nat
+| [], _ => none
+| a :: l, i => if p a then some i else findIdx? p l (i + 1)
+
+-- From Batteries
+@[inline] def List.indexOf? [BEq α] (a : α) : List α → Option Nat := findIdx? (· == a)
+
 namespace Lean
+
+-- From Batteries
+open Meta in
+def MVarId.assignIfDefeq (g : MVarId) (e : Expr) : MetaM Unit := do
+  guard <| ← isDefEq (← g.getType) (← inferType e)
+  g.checkNotAssigned `assignIfDefeq
+  g.assign e
 
 -- Note: The `_uniq` prefix comes from the `NameGenerator`.
 

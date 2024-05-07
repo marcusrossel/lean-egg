@@ -52,7 +52,7 @@ def encoding
     lhs     := ← encode goal.lhs ctx
     rhs     := ← encode goal.rhs ctx
     rws     := ← rws.encode ctx
-    facts   := if rws.any (·.isConditional) then ← facts.encode ctx else #[]
+    facts   := ← do if rws.any (·.isConditional) then facts.encode ctx else return #[]
     guides  := ← guides.encode ctx
     vizPath := cfg.vizPath.getD ""
     cfg

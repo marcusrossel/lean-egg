@@ -1,7 +1,6 @@
 import Egg.Core.Config
 import Egg.Core.Source
 import Egg.Core.MVars.Ambient
-import Std.Data.List.Basic
 
 open Lean
 

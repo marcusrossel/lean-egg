@@ -8,7 +8,6 @@ import Egg.Tactic.Base
 import Egg.Tactic.Guides
 import Egg.Tactic.Premises
 import Egg.Tactic.Trace
-import Std.Tactic.Exact
 import Lean
 
 open Lean Meta Elab Tactic
