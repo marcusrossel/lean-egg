@@ -2,3 +2,7 @@
 	path = Lean/Egg/Tests/mathlib4
 	url = https://github.com/marcusrossel/mathlib4.git
 	branch = egg-tests
+[submodule "batteries-tests"]
+	path = Lean/Egg/Tests/batteries
+	url = https://github.com/marcusrossel/batteries.git
+	branch = egg-tests
