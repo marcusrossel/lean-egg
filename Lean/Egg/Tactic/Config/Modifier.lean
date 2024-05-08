@@ -12,6 +12,7 @@ structure Modifier where
   betaReduceRws       : Option Bool            := none
   etaReduceRws        : Option Bool            := none
   natReduceRws        : Option Bool            := none
+  builtins            : Option Bool            := none
   genTcProjRws        : Option Bool            := none
   genTcSpecRws        : Option Bool            := none
   eagerTcSpec         : Option Bool            := none
@@ -35,6 +36,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   betaReduceRws       := mod.betaReduceRws.getD cfg.betaReduceRws
   etaReduceRws        := mod.etaReduceRws.getD cfg.etaReduceRws
   natReduceRws        := mod.natReduceRws.getD cfg.natReduceRws
+  builtins            := mod.builtins.getD cfg.builtins
   genTcProjRws        := mod.genTcProjRws.getD cfg.genTcProjRws
   genTcSpecRws        := mod.genTcSpecRws.getD cfg.genTcSpecRws
   eagerTcSpec         := mod.eagerTcSpec.getD cfg.eagerTcSpec

@@ -43,6 +43,7 @@ inductive Source where
   | eta
   | beta
   | level (src : Source.Level)
+  | builtin (idx : Nat)
   deriving Inhabited, BEq, Hashable
 
 namespace Source
@@ -83,6 +84,7 @@ def description : Source → String
   | eta                     => "≡η"
   | beta                    => "≡β"
   | level src               => src.description
+  | builtin idx             => s!"◯{idx}"
 
 instance : ToString Source where
   toString := description

@@ -20,6 +20,7 @@ structure Encoding extends Normalization where
   deriving BEq
 
 structure Gen where
+  builtins     := true
   genTcProjRws := true
   genTcSpecRws := true
   eagerTcSpec  := false

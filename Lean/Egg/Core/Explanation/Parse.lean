@@ -35,6 +35,7 @@ syntax "#" noWs num (noWs "/" noWs num)? : egg_basic_fwd_rw_src
 syntax "*" noWs num                      : egg_basic_fwd_rw_src
 syntax "⊢"                               : egg_basic_fwd_rw_src
 syntax "↣" noWs num                      : egg_basic_fwd_rw_src
+syntax "◯" noWs num                      : egg_basic_fwd_rw_src
 
 syntax "[" egg_tc_proj_loc num "]" : egg_tc_proj
 
@@ -119,6 +120,7 @@ private def parseBasicFwdRwSrc : (TSyntax `egg_basic_fwd_rw_src) → Source
   | `(egg_basic_fwd_rw_src|*$idx)           => .star (.fromUniqueIdx idx.getNat)
   | `(egg_basic_fwd_rw_src|⊢)               => .goal
   | `(egg_basic_fwd_rw_src|↣$idx)           => .guide idx.getNat
+  | `(egg_basic_fwd_rw_src|◯$idx)           => .builtin idx.getNat
   | _                                       => unreachable!
 
 private def parseTcExtension (src : Source) : (TSyntax `egg_tc_extension) → Source

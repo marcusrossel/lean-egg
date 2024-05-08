@@ -10,29 +10,6 @@ variable (h : ∀ (p : Nat → Nat) (x : Nat), p x = p (x.add .zero)) in
 example (f : Nat → Nat → Nat) : (f 1) x = (f 1) (x + 0) := by
   egg [h]
 
-
-
-
-
-set_option egg.genTcProjRws false in
-set_option trace.egg true in
-variable (h : ∀ (p : Nat → Nat) (x : Nat), (p x) + 1 = (p (x + 0)) + 1) in
-example (f : Nat → Nat → Nat) : (f x 1) + 1 = (f (x + 0) 1) + 1 := by
-  egg [h]
-
-
-example (p q : Nat → Prop) : ((∀ x, p x) ∧ (∀ x, q x)) ↔ ∀ x, p x ∧ q x := by
-  egg [forall_and]
-
-example (p q : Nat → Nat → Prop) : ((∀ x, p 1 x) ∧ (∀ x, q 1 x)) ↔ ∀ x, p 1 x ∧ q 1 x := by
-  egg [forall_and]
-
-example (p q : Nat → Nat → Prop) : ((∀ x, p x 1) ∧ (∀ x, q x 1)) ↔ ∀ x, p x 1 ∧ q x 1 := by
-  egg [forall_and]
-
-
-
-
 -- CRASH: When turning on proof erasure.
 set_option egg.eraseProofs false in
 theorem Array.get_set_ne (a : Array α) (i : Fin a.size) {j : Nat} (v : α) (hj : j < a.size)

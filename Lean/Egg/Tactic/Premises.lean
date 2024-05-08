@@ -16,7 +16,7 @@ syntax "[" egg_premise,+ ("; " egg_premise,+)? "]": egg_premise_list
 declare_syntax_cat egg_premises
 syntax (egg_premise_list)? : egg_premises
 
-private inductive Premise.Raw where
+inductive Premise.Raw where
   | single (expr : Expr) (type? : Option Expr := none)
   | eqns (exprs : Array Expr)
 
@@ -25,7 +25,7 @@ private inductive Premise.Raw where
 --     tries to synthesize the arguments and fails if it can't (instead of inserting mvars).
 -- (2) global constants which are definitions with equations (cf. `getEqnsFor?`) are supposed to
 --     be replaced by their defining equations.
-private partial def Premise.Raw.elab (prem : Term) : TacticM Premise.Raw := do
+partial def Premise.Raw.elab (prem : Term) : TacticM Premise.Raw := do
   if let some hyp ← optional (getFVarId prem) then
     -- `prem` is a local declaration.
     let decl ← hyp.getDecl

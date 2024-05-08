@@ -88,13 +88,16 @@ info: [egg.rewrites] Rewrites
           class: []
           level: []
   [egg.rewrites] Generated (0)
+  [egg.rewrites] Builtin (0)
+  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
     [egg.rewrites] β-Reduction
     [egg.rewrites] η-Reduction
     [egg.rewrites] Natural Number Literals
-  [egg.rewrites] Hypotheses (0)
 -/
 #guard_msgs(info, drop error) in
+set_option egg.genTcProjRws false in
+set_option egg.builtins false in
 example (l₁ l₂ : List Nat) (h : ∀ (α : Type) (l₁ l₂ : List α), l₁ = l₂) : l₁ = l₂ := by
   set_option trace.egg.rewrites true in egg [h]
 
