@@ -1,14 +1,18 @@
 import Egg
 
-set_option trace.egg true in
-variable (h : ∀ (p : Nat → Nat) (x : Nat), p x = p (x + 0)) in
-example (f : Nat → Nat) : f x = f (x + 0) := by
-  egg [h]
 
-set_option trace.egg true in
-variable (h : ∀ (p : Nat → Nat) (x : Nat), p x = p (x.add .zero)) in
-example (f : Nat → Nat → Nat) : (f 1) x = (f 1) (x + 0) := by
-  egg [h]
+theorem beq_ext {α : Type _} (inst1 : BEq α) (inst2 : BEq α) (h : ∀ x y, @BEq.beq _ inst1 x y = @BEq.beq _ inst2 x y) : inst1 = inst2 := sorry
+open Classical in
+theorem beq_eq_decide {α : Type _} [BEq α] [LawfulBEq α] {a b : α} : (a == b) = decide (a = b) := sorry
+
+-- CRASH: The rewrite `beq_eq_decide` is considered to be conditional with condition `LawfulBEq α`,
+--        which then remains unassigned when substituting after e-matching.
+theorem lawful_beq_subsingleton {α : Type _} (inst1 : BEq α) (inst2 : BEq α)
+    [@LawfulBEq α inst1] [@LawfulBEq α inst2] :
+    inst1 = inst2 := by
+  apply beq_ext
+  intro x y
+  egg (config := { exitPoint := some .beforeEqSat }) [beq_eq_decide]
 
 -- CRASH: When turning on proof erasure.
 set_option egg.eraseProofs false in
