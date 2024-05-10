@@ -20,7 +20,7 @@ class CommRing (α) extends Zero α, One α, Add α, Sub α, Mul α, Div α, Pow
   zero_add  (a : α)     : a + 0 = a
   zero_mul  (a : α)     : a * 0 = 0
   one_mul   (a : α)     : a * 1 = a
-  distrib   (a b c : α) : a * (b + c)  = (a * b) + (a * c)
+  distrib   (a b c : α) : a * (b + c) = (a * b) + (a * c)
   pow_zero  (a : α)     : a ^ 0 = 1
   pow_one   (a : α)     : a ^ 1 = a
   pow_two   (a : α)     : a ^ 2 = (a ^ 1) * a

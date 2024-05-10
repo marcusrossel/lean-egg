@@ -1,32 +1,58 @@
 import Egg
 
-class Inv (α) where inv : α → α
-postfix:max "⁻¹" => Inv.inv
+@[simp]
+def Nat.choose : Nat → Nat → Nat
+  | _,     0     => 1
+  | 0,     _ + 1 => 0
+  | n + 1, k + 1 => choose n k + choose n (k + 1)
 
-class Zero (α) where zero : α
-instance [Zero α] : OfNat α 0 where ofNat := Zero.zero
+theorem Nat.choose_eq_zero_of_lt : ∀ {n k}, n < k → choose n k = 0
+  | _,     0,     h => absurd h (Nat.not_lt_zero _)
+  | 0,     k + 1, _ => rfl
+  | n + 1, k + 1, h => by
+    have h₁ : n < k     := by omega
+    have h₂ : n < k + 1 := by omega
+    simp [choose_eq_zero_of_lt h₁, choose_eq_zero_of_lt h₂]
 
-class One (α) where one : α
-instance [One α] : OfNat α 1 where ofNat := One.one
+theorem Nat.choose_self (n : Nat) : n.choose n = 1 := by
+  induction n
+  case zero   => rfl
+  case succ h => simp [h, choose_eq_zero_of_lt]
 
-class Ring (α) extends Zero α, One α, Add α, Sub α, Mul α, Div α, Pow α Nat, Inv α, Neg α where
-  comm_add  (a b : α)   : a + b = b + a
-  comm_mul  (a b : α)   : a * b = b * a
-  add_assoc (a b c : α) : a + (b + c) = (a + b) + c
-  mul_assoc (a b c : α) : a * (b * c) = (a * b) * c
-  sub_canon (a b : α)   : a - b = a + -b
-  neg_add   (a : α)     : a + -a = 0
-  div_canon (a b : α)   : a / b = a * b⁻¹
-  zero_add  (a : α)     : a + 0 = a
-  zero_mul  (a : α)     : a * 0 = 0
-  one_mul   (a : α)     : a * 1 = a
-  distrib   (a b c : α) : a * (b + c)  = (a * b) + (a * c)
+@[simp]
+def Nat.factorial : Nat → Nat
+  | 0     => 1
+  | n + 1 => (n + 1) * factorial n
 
--- TODO: How can you define factorial?
-notation "(" r ")!" => r
+notation:10000 n "!" => Nat.factorial n
 
-open Ring Egg.Guides Egg.Config.Modifier in
-macro "ring" mod:egg_cfg_mod base:(egg_base)? guides:(egg_guides)? : tactic => `(tactic|
-  egg $mod [comm_add, comm_mul, add_assoc, mul_assoc, sub_canon, neg_add, div_canon, zero_add,
-  zero_mul, one_mul, distrib] $[$base]? $[$guides]?
-)
+theorem proposition_1_14 (n r : Nat) : (n + 1).choose r = n.choose (r - 1) + n.choose r := by sorry
+
+theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! * (n - r)!) := by
+  induction n generalizing r
+  case zero => rw [Nat.le_zero.mp h]; rfl
+  case succ n hi =>
+    by_cases hr : r = 0 <;> try subst hr
+    case pos =>
+      replace h : 0 < (n + 1) * (n !) := by sorry -- by h and factorial always > 0
+      simp [Nat.div_self h]
+    case neg =>
+      by_cases hn : r = n + 1 <;> try subst hn
+      case pos =>
+        replace h : 0 < (n + 1) * (n !) := by sorry -- by hr and factorial always > 0
+        simp [-Nat.choose, Nat.choose_self, Nat.div_self h]
+      case neg =>
+        have h₁ : n ≥ r - 1               := by omega
+        have h₂ : n ≥ r                   := by omega
+        have h₃ : n - (r - 1) = n - r + 1 := by omega
+        calc
+          _ = n.choose (r - 1) + n.choose r                                                  := proposition_1_14 ..
+          _ = (n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!)                   := by rw [hi h₁, hi h₂, h₃]
+
+          _ = (n !) / ((r - 1)! * (n - r)! * (n - r + 1)) + (n !) / (r ! * (n - r)!)         := by egg [Nat.factorial, Nat.mul_assoc, Nat.mul_comm]
+          _ = ((n !) / ((r - 1)! * (n - r)!)) * (1 / (n - r + 1)) + (n !) / (r ! * (n - r)!) := sorry
+
+          _ = (n !) / ((r - 1)! * (n - r)!) * (1 / (n - r + 1) + 1 / r)                      := by sorry
+          _ = (n !) / ((r - 1)! * (n - r)!) * ((r + n - r + 1) / (r * (n - r + 1)))          := by sorry
+          _ = (n !) / ((r - 1)! * (n - r)!) * ((n + 1) / (r * (n - r + 1)))                  := by egg [Nat.add_comm, Nat.add_sub_cancel]
+          _ = (n + 1)! / (r ! * (n + 1 - r)!)                                                := by sorry -- div_mul_div_comm requires that ((r - 1)! * (n - r)!) divides (n !) and (r * (n - r + 1)) divides (n + 1)
