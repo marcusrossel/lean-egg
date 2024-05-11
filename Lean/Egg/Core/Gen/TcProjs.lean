@@ -98,11 +98,6 @@ def Facts.tcProjTargets (facts : Facts) : Array TcProjTarget :=
 
 def Guides.tcProjTargets (guides : Guides) : Array TcProjTarget :=
   guides.map fun guide => { expr := guide.expr, src := guide.src, loc := .root }
-
--- TODO: This still produces many redundant rewrites which differ only by mvars. Is there an
---       efficient way to check if two `TcProj`s are equal up to mvar renaming?
---       Note that for this check to be valid, you also need to know which mvars are "local" and
---       which are ambient.
 --
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
 def genTcProjReductions
