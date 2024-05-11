@@ -15,7 +15,7 @@ structure Modifier where
   builtins            : Option Bool            := none
   genTcProjRws        : Option Bool            := none
   genTcSpecRws        : Option Bool            := none
-  eagerTcSpec         : Option Bool            := none
+  genGoalTcSpec       : Option Bool            := none
   genNatLitRws        : Option Bool            := none
   genEtaRw            : Option Bool            := none
   genBetaRw           : Option Bool            := none
@@ -39,7 +39,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   builtins            := mod.builtins.getD cfg.builtins
   genTcProjRws        := mod.genTcProjRws.getD cfg.genTcProjRws
   genTcSpecRws        := mod.genTcSpecRws.getD cfg.genTcSpecRws
-  eagerTcSpec         := mod.eagerTcSpec.getD cfg.eagerTcSpec
+  genGoalTcSpec       := mod.genGoalTcSpec.getD cfg.genGoalTcSpec
   genNatLitRws        := mod.genNatLitRws.getD cfg.genNatLitRws
   genEtaRw            := mod.genEtaRw.getD cfg.genEtaRw
   genBetaRw           := mod.genBetaRw.getD cfg.genBetaRw

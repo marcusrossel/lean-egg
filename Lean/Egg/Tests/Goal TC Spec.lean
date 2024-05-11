@@ -8,12 +8,10 @@ instance : CommAdd Nat where
 
 /-- error: egg failed to prove goal -/
 #guard_msgs in
-set_option egg.eagerTcSpec false in
+set_option egg.genGoalTcSpec false in
 example (a : Nat) : a + b = b + a := by
-  letI := inferInstanceAs <| CommAdd Nat
   egg [CommAdd.comm]
 
-set_option egg.eagerTcSpec true in
+set_option egg.genGoalTcSpec true in
 example (a : Nat) : a + b = b + a := by
-  letI := inferInstanceAs <| CommAdd Nat
   egg [CommAdd.comm]

@@ -17,20 +17,19 @@ namespace Egg
 
 -- Note: If `base? ≠ none`, the goal is an auxiliary goal and needs to be handled specially after
 --       proof reconstruction.
-private structure Goal where
+private structure Goal extends Congr where
   id    : MVarId
-  type  : Congr
   base? : Option FVarId
 
 private def Goal.tcProjTargets (goal : Goal) : Array TcProjTarget := #[
-  { expr := goal.type.lhs, src := .goal, loc := .left },
-  { expr := goal.type.rhs, src := .goal, loc := .right }
+  { expr := goal.lhs, src := .goal, loc := .left },
+  { expr := goal.rhs, src := .goal, loc := .right }
 ]
 
 private def parseGoal (goal : MVarId) (base? : Option (TSyntax `egg_base)) : MetaM Goal := do
   let base? ← base?.mapM parseBase
   let cgr ← getCongr (← goal.getType') base?
-  return { id := goal, type := cgr, base? }
+  return { cgr with id := goal, base? }
 where
   getCongr (goalType : Expr) (base? : Option FVarId) : MetaM Congr := do
     if let some base := base? then
@@ -43,7 +42,7 @@ where
 -- TODO: We should also consider the level mvars of all `Fact`s.
 private def collectAmbientMVars (goal : Goal) (guides : Guides) : MetaM MVars.Ambient := do
   let expr ← MVars.Ambient.Expr.get
-  let goalLvl := (← MVars.collect (← goal.type.expr)).lvl
+  let goalLvl := (← MVars.collect (← goal.expr)).lvl
   let guidesLvl ← guides.foldlM (init := ∅) fun res g => return res.merge (← MVars.collect g.expr).lvl
   return { expr, lvl := goalLvl.merge guidesLvl }
 
@@ -84,7 +83,8 @@ where
         specTodo := specTodo ++ projRws
         tcRws    := tcRws ++ projRws
       if cfg.genTcSpecRws then
-        let specRws ← genTcSpecializations specTodo cfg cfg.eagerTcSpec
+        let goalType? ← do if cfg.genGoalTcSpec then pure <| some (← goal.type) else pure none
+        let specRws ← genTcSpecializations specTodo cfg goalType?
         specTodo := #[]
         projTodo := specRws.tcProjTargets
         tcRws    := tcRws ++ specRws
@@ -107,7 +107,7 @@ private def processRawExpl
   let some egraph := egraph? | throwError "egg: internal error: e-graph is absent"
   let proof ← expl.proof rws facts egraph ctx
   proof.trace `egg.proof
-  let mut prf ← proof.prove goal.type
+  let mut prf ← proof.prove goal.toCongr
   prf ← instantiateMVars prf
   withTraceNode `egg.proof.term (fun _ => return "Proof Term") do trace[egg.proof.term] prf
   -- When `goal.base? = some base`, then `proof` is a proof of `base = <goal type>`. We turn this
@@ -142,7 +142,7 @@ elab "egg " mod:egg_cfg_mod rws:egg_premises base:(egg_base)? guides:(egg_guides
     -- do-block.
     let proof? ← withNewMCtxDepth do
       let (rws, facts) ← genPremises goal rws guides cfg amb
-      let req ← Request.encoding goal.type rws facts guides cfg amb
+      let req ← Request.encoding goal.toCongr rws facts guides cfg amb
       withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
       if let .beforeEqSat := cfg.exitPoint then return none
       let (rawExpl, egraph?) := req.run

@@ -13,7 +13,7 @@ declare_syntax_cat egg_subexpr_pos
 declare_syntax_cat egg_basic_fwd_rw_src
 declare_syntax_cat egg_tc_proj_loc
 declare_syntax_cat egg_tc_proj
-declare_syntax_cat egg_tc_spec_dir
+declare_syntax_cat egg_tc_spec_src
 declare_syntax_cat egg_tc_spec
 declare_syntax_cat egg_tc_extension
 declare_syntax_cat egg_fwd_rw_src
@@ -39,10 +39,10 @@ syntax "◯" noWs num                      : egg_basic_fwd_rw_src
 
 syntax "[" egg_tc_proj_loc num "]" : egg_tc_proj
 
-syntax "→" : egg_tc_spec_dir
-syntax "←" : egg_tc_spec_dir
-syntax "↔" : egg_tc_spec_dir
-syntax "<" egg_tc_spec_dir ">" : egg_tc_spec
+syntax "→" : egg_tc_spec_src
+syntax "←" : egg_tc_spec_src
+syntax "⊢" : egg_tc_spec_src
+syntax "<" egg_tc_spec_src ">" : egg_tc_spec
 
 syntax egg_tc_proj : egg_tc_extension
 syntax egg_tc_spec : egg_tc_extension
@@ -102,10 +102,10 @@ private def parseRwDir : (TSyntax `egg_rw_dir) → Direction
   | `(egg_rw_dir|<=) => .backward
   | _                => unreachable!
 
-private def parsTcSpecDir : (TSyntax `egg_tc_spec_dir) → Directions
-  | `(egg_tc_spec_dir|→) => .forward
-  | `(egg_tc_spec_dir|←) => .backward
-  | `(egg_tc_spec_dir|↔) => .both
+private def parsTcSpecSrc : (TSyntax `egg_tc_spec_src) → Source.TcSpec
+  | `(egg_tc_spec_src|→) => .dir .forward
+  | `(egg_tc_spec_src|←) => .dir .backward
+  | `(egg_tc_spec_src|⊢) => .goalType
   | _                    => unreachable!
 
 private def parseTcProjLocation : (TSyntax `egg_tc_proj_loc) → Source.TcProjLocation
@@ -124,9 +124,9 @@ private def parseBasicFwdRwSrc : (TSyntax `egg_basic_fwd_rw_src) → Source
   | _                                       => unreachable!
 
 private def parseTcExtension (src : Source) : (TSyntax `egg_tc_extension) → Source
-  | `(egg_tc_extension|[$loc$pos]) => .tcProj src (parseTcProjLocation loc) pos.getNat
-  | `(egg_tc_extension|<$dir>)     => .tcSpec src (parsTcSpecDir dir)
-  | _                              => unreachable!
+  | `(egg_tc_extension|[$loc$pos])   => .tcProj src (parseTcProjLocation loc) pos.getNat
+  | `(egg_tc_extension|<$tcSpecsrc>) => .tcSpec src (parsTcSpecSrc tcSpecsrc)
+  | _                                => unreachable!
 
 private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
   | `(egg_fwd_rw_src|≡maxS)  => .level .maxSucc

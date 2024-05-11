@@ -30,6 +30,10 @@ def expr (cgr : Congr) : MetaM Expr := do
   | .eq  => mkEq cgr.lhs cgr.rhs
   | .iff => return mkAppN (.const `Iff []) #[cgr.lhs, cgr.rhs]
 
+-- Since `=` and `↔` are not heterogeneous, we assume `lhs` and `rhs` to have the same type.
+def type (cgr : Congr) : MetaM Expr :=
+  inferType cgr.lhs
+
 -- Note: We need to instantiate mvars to reduce redundant (level) mvars which are created during
 --       `forallMetaTelescope`.
 --       Cf. https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/MVar.20Inclusion.20Implies.20LMVar.20Inclusion.3F

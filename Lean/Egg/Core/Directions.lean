@@ -24,25 +24,7 @@ inductive Directions where
   | both
   deriving Inhabited, BEq, Hashable
 
-instance : Coe Direction Directions where
-  coe
-    | .forward  => .forward
-    | .backward => .backward
-
 namespace Directions
-
-def description : Directions → String
-  | none     => "∅"
-  | forward  => "→"
-  | backward => "←"
-  | both     => "↔"
-
-instance : ToString Directions where
-  toString
-    | none     => "none"
-    | forward  => "forward"
-    | backward => "backward"
-    | both     => "both"
 
 def contains : Directions → Direction → Bool
   | both, _ | forward, .forward | backward, .backward => true

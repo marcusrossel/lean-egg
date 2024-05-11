@@ -32,7 +32,8 @@ def fresh (mvars : MVars) (init : Subst := {}) : MetaM (MVars × Subst) := do
   let (lvlVars, lvlSubst) ← freshLvls mvars.lvl init.lvl
   let subst := { expr := exprSubst, lvl := lvlSubst }
   assignFreshExprMVarTypes exprVars subst
-  return ({ expr := exprVars, lvl := lvlVars }, subst)
+  let tcVars := mvars.tc.map subst.expr.fwd.find!
+  return ({ expr := exprVars, lvl := lvlVars, tc := tcVars }, subst)
 where
   freshExprs (src : MVarIdSet) (subst : Subst.Expr) : MetaM (MVarIdSet × Subst.Expr) := do
     let mut vars : MVarIdSet := {}

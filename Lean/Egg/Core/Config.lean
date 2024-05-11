@@ -20,14 +20,14 @@ structure Encoding extends Normalization where
   deriving BEq
 
 structure Gen where
-  builtins     := true
-  genTcProjRws := true
-  genTcSpecRws := true
-  eagerTcSpec  := false
-  genNatLitRws := true
-  genEtaRw     := true
-  genBetaRw    := true
-  genLevelRws  := true
+  builtins      := true
+  genTcProjRws  := true
+  genTcSpecRws  := true
+  genGoalTcSpec := false
+  genNatLitRws  := true
+  genEtaRw      := true
+  genBetaRw     := true
+  genLevelRws   := true
   deriving BEq
 
 structure Backend where

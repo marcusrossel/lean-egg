@@ -40,7 +40,7 @@ register_egg_options
   builtins
   genTcProjRws
   genTcSpecRws
-  eagerTcSpec
+  genGoalTcSpec
   genNatLitRws
   genEtaRw
   genBetaRw

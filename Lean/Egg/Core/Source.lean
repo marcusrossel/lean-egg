@@ -24,6 +24,11 @@ inductive Source.Level where
   | imaxSucc
   deriving Inhabited, BEq, Hashable
 
+inductive Source.TcSpec where
+  | dir (dir : Direction)
+  | goalType
+  deriving Inhabited, BEq, Hashable
+
 inductive Source.TcProjLocation where
   | root
   | left
@@ -38,7 +43,7 @@ inductive Source where
   | star (id : FVarId)
   | fact (src : Source)
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos)
-  | tcSpec (src : Source) (dir : Directions)
+  | tcSpec (src : Source) (spec : Source.TcSpec)
   | natLit (src : Source.NatLit)
   | eta
   | beta
@@ -65,6 +70,10 @@ def Level.description : Level → String
   | imaxZero => "≡imax0"
   | imaxSucc => "≡imaxS"
 
+def TcSpec.description : TcSpec → String
+  | dir d    => d.description
+  | goalType => "⊢"
+
 def TcProjLocation.description : TcProjLocation → String
   | root     => "▪"
   | left     => "◂"
@@ -79,7 +88,7 @@ def description : Source → String
   | star id                 => s!"*{id.uniqueIdx!}"
   | fact src                => s!"!{src.description}"
   | tcProj src loc pos      => s!"{src.description}[{loc.description}{pos.asNat}]"
-  | tcSpec src dirs         => s!"{src.description}<{dirs.description}>"
+  | tcSpec src spec         => s!"{src.description}<{spec.description}>"
   | natLit src              => src.description
   | eta                     => "≡η"
   | beta                    => "≡β"
