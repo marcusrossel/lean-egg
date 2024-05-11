@@ -80,11 +80,15 @@ structure TcProjTarget where
   src  : Source
   loc  : Source.TcProjLocation
 
+def Congr.tcProjTargets (cgr : Congr) (src : Source) : Array TcProjTarget := #[
+  { expr := cgr.lhs, src := src, loc := .left },
+  { expr := cgr.rhs, src := src, loc := .right }
+]
+
 def Rewrites.tcProjTargets (rws : Rewrites) : Array TcProjTarget := Id.run do
   let mut sources : Array TcProjTarget := #[]
   for rw in rws do
-    sources := sources.push { expr := rw.lhs, src := rw.src, loc := .left }
-    sources := sources.push { expr := rw.rhs, src := rw.src, loc := .right }
+    sources := sources ++ rw.toCongr.tcProjTargets rw.src
     for cond in rw.conds, idx in [:rw.conds.size] do
       sources := sources.push { expr := cond.type, src := rw.src, loc := .cond idx }
   return sources

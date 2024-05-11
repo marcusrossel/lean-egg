@@ -25,8 +25,9 @@ import Egg.Core.Normalize
 import Egg.Core.Source
 import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Config.Option
+import Egg.Tactic.Premises.Parse
+import Egg.Tactic.Premises.Gen
 import Egg.Tactic.Base
 import Egg.Tactic.Basic
 import Egg.Tactic.Guides
-import Egg.Tactic.Premises
 import Egg.Tactic.Trace

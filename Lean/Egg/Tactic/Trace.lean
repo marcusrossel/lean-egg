@@ -1,7 +1,7 @@
 import Egg.Core.Request.Basic
 import Egg.Core.Explanation.Proof
 import Egg.Core.MVars.Ambient
-import Egg.Tactic.Premises
+import Egg.Tactic.Premises.Parse
 import Lean
 open Lean Meta Elab Tactic Std Format
 
