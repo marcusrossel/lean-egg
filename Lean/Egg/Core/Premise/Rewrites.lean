@@ -19,6 +19,13 @@ structure Rewrite.Condition where
   type  : Expr
   mvars : Egg.MVars
 
+def Rewrite.Condition.instantiateMVars (cond : Condition) : MetaM Condition := do
+  return { cond with
+    expr  := ← Lean.instantiateMVars cond.expr
+    type  := ← Lean.instantiateMVars cond.type
+    mvars := ← cond.mvars.removeAssigned
+  }
+
 -- Note: We don't create `Rewrite`s directly, but use `Rewrite.from` instead.
 structure Rewrite extends Congr where
   private mk ::
@@ -112,7 +119,7 @@ def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
     proof       := ← Lean.instantiateMVars rw.proof
     mvars.lhs   := ← rw.mvars.lhs.removeAssigned
     mvars.rhs   := ← rw.mvars.rhs.removeAssigned
-    -- TODO: Instantiate mvars in conditions and remove their assigned mvars.
+    conds       := ← rw.conds.mapM (·.instantiateMVars)
   }
 
 end Rewrite
