@@ -41,11 +41,13 @@ partial def Premise.Raw.elab (prem : Term) : TacticM Premise.Raw := do
       -- `prem` is an global constant which is not a definition with equations.
       let env ← getEnv
       let some info := env.find? const | throwErrorAt prem m!"unknown constant '{mkConst const}'"
-      unless info.hasValue do throwErrorAt prem "egg requires arguments to be theorems or definitions"
-      let lvlMVars ← List.replicateM info.numLevelParams mkFreshLevelMVar
-      let val := info.instantiateValueLevelParams! lvlMVars
-      let type := info.instantiateTypeLevelParams lvlMVars
-      return .single val type
+      match info with
+      | .defnInfo _ | .axiomInfo _ | .thmInfo _ | .opaqueInfo _ =>
+        let lvlMVars ← List.replicateM info.numLevelParams mkFreshLevelMVar
+        let val := if info.hasValue then info.instantiateValueLevelParams! lvlMVars else .const info.name lvlMVars
+        let type := info.instantiateTypeLevelParams lvlMVars
+        return .single val type
+      | _ => throwErrorAt prem "egg requires arguments to be theorems, definitions or axioms"
   else
     -- `prem` is an invalid identifier or a term which is not an identifier.
     -- We must use `Tactic.elabTerm`, not `Term.elabTerm`. Otherwise elaborating `‹...›` doesn't
