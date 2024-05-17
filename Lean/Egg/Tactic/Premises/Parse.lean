@@ -11,7 +11,7 @@ syntax "*"  : egg_premise
 syntax term : egg_premise
 
 declare_syntax_cat egg_premise_list
-syntax "[" egg_premise,+ ("; " egg_premise,+)? "]": egg_premise_list
+syntax "[" egg_premise,+ ("; " egg_premise,+)? "]" : egg_premise_list
 
 declare_syntax_cat egg_premises
 syntax (egg_premise_list)? : egg_premises
