@@ -14,7 +14,7 @@ pub struct RewriteTemplate {
     pub conds: Vec<Pattern<LeanExpr>>
 }
 
-pub fn templates_to_rewrites(templates: Vec<RewriteTemplate>, facts: Vec<RecExpr<LeanExpr>>, block_invalid_matches: bool, shift_captured_bvars: bool) -> Res<Vec<LeanRewrite>> {
+pub fn templates_to_rewrites(templates: Vec<RewriteTemplate>, facts: HashMap<Id, String>, block_invalid_matches: bool, shift_captured_bvars: bool) -> Res<Vec<LeanRewrite>> {
     let mut result: Vec<LeanRewrite> = vec![];
     for template in templates {
         let applier = LeanApplier { rhs: template.rhs, conds: template.conds, facts: facts.clone(), block_invalid_matches, shift_captured_bvars };
@@ -29,7 +29,7 @@ pub fn templates_to_rewrites(templates: Vec<RewriteTemplate>, facts: Vec<RecExpr
 struct LeanApplier {
     pub rhs: Pattern<LeanExpr>,
     pub conds: Vec<Pattern<LeanExpr>>,
-    pub facts: Vec<RecExpr<LeanExpr>>,
+    pub facts: HashMap<Id, String>,
     pub block_invalid_matches: bool,
     pub shift_captured_bvars: bool,
 }
@@ -47,15 +47,25 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             }
         }
 
-        'cond_loop: for cond in self.conds.clone() {
+        let mut rule = rule;
+        for cond in self.conds.clone() {
             // `add_instantiation` crashes when the pattern contains variables not covered by the subst.
             // This is currently handled in Lean by filtering out rewrites where a condition's variables are not
             // covered by the body's variables.
             let id = graph.add_instantiation(&cond.ast, subst);
-            for fact in self.facts.clone() {
-                if id == graph.add_expr(&fact) { continue 'cond_loop }
-            } 
-            return vec![] // This is only reached if `cond` is not satisfied by any fact.
+            
+            // Note: If we don't find a fact matching `id`, this might just be because the fact id isn't canonical. 
+            //       Thus, in the `else if` branch we also check whether there exists a fact id whose canonicalization
+            //       matches `id`.
+            if let Some(fact_name) = self.facts.get(&id) {
+                let mut r = rule.as_str().to_string(); r.push_str(&fact_name);
+                rule = Symbol::from(r);
+            } else if let Some((_, fact_name)) = self.facts.iter().find(|(&f_id, _)| graph.find(f_id) == id) { 
+                let mut r = rule.as_str().to_string(); r.push_str(&fact_name);
+                rule = Symbol::from(r);
+            } else {
+                return vec![] 
+            }
         }
 
         // A substitution needs no shifting if it does not map any variables to e-classes containing loose bvars.

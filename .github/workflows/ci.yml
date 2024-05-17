@@ -30,4 +30,4 @@ jobs:
 
       - name: Run Tests
         run: |
-          ./Lean/Egg/Tests/run_tests.sh --ci
+          ./Lean/Egg/Tests/run_tests.sh --egg --ci

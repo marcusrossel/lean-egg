@@ -15,7 +15,7 @@ target importTarget pkg : FilePath := do
   let srcJob ← inputFile <| pkg.dir / "C" / "ffi.c"
   buildFileAfterDep oFile srcJob fun srcFile => do
     let flags := #["-I", toString (← getLeanIncludeDir), "-fPIC"]
-    compileO "ffi.c" oFile srcFile flags
+    compileO oFile srcFile flags
 
 extern_lib ffi pkg := do
   let job ← fetch <| pkg.target ``importTarget
@@ -30,5 +30,3 @@ extern_lib egg_for_lean pkg := do
   let tgtPath := pkg.nativeLibDir / name
   IO.FS.writeBinFile tgtPath (← IO.FS.readBinFile srcPath)
   return pure tgtPath
-
-require std from git "https://github.com/leanprover/std4" @ "v4.7.0"

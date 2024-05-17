@@ -1,7 +1,9 @@
 import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Congr
+import Egg.Core.Explanation.Parse
 import Egg.Core.Premise.Rewrites
 import Egg.Core.Premise.Facts
+import Egg.Core.Request.Equiv
 open Lean Meta
 
 namespace Egg.Explanation
@@ -105,6 +107,7 @@ structure Proof.Step where
   proof : Expr
   rw    : Step.Rewrite
   dir   : Direction
+  -- TODO: conds : Array Proof
   deriving Inhabited
 
 abbrev Proof := Array Proof.Step
@@ -123,7 +126,9 @@ where
   fail (msg : String) : MetaM Unit := do
     throwError s!"egg failed to build proof: {msg}"
 
-def Explanation.proof (expl : Explanation) (rws : Rewrites) (facts : Facts) : MetaM Proof := do
+partial def Explanation.proof
+    (expl : Explanation) (rws : Rewrites) (facts : Facts) (egraph : EGraph) (ctx : EncodingCtx) :
+    MetaM Proof := do
   let mut current ← expl.start.toExpr
   let mut proof : Proof := #[]
   for step in expl.steps do
@@ -141,11 +146,14 @@ where
       rw := .defeq rwInfo.src, dir := rwInfo.dir
     }
     let some rw := rws.find? rwInfo.src | fail s!"unknown rewrite {rwInfo.src.description}"
+    -- TODO: Can there be conditional rfl proofs?
     if ← isRflProof rw.proof then return {
       lhs := current, rhs := next, proof := ← mkReflStep current next rwInfo.toDescriptor,
       rw := .rw rw (isRefl := true), dir := rwInfo.dir
     }
-    let prf ← mkCongrStep current next rwInfo.pos (← rw.forDir rwInfo.dir)
+    let facts ← rwInfo.facts.mapM fun src =>
+      facts.find? (·.src == src) |>.getDM <| fail m!"explanation references unknown fact {src}"
+    let prf ← mkCongrStep current next rwInfo.pos?.get! (← rw.forDir rwInfo.dir) facts
     return {
       lhs := current, rhs := next, proof := prf,
       rw := .rw rw (isRefl := false), dir := rwInfo.dir
@@ -156,25 +164,38 @@ where
       fail s!"unification failure for proof by reflexivity with rw {rw.src.description}"
     mkEqRefl next
 
-  mkCongrStep (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) : MetaM Expr := do
+  mkCongrStep (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) (facts : Facts) :
+      MetaM Expr := do
     let mvc := (← getMCtx).mvarCounter
-    let (lhs, rhs) ← placeCHoles current next pos rw
+    let (lhs, rhs) ← placeCHoles current next pos rw facts
     try (← mkCongrOf 0 mvc lhs rhs).eq
     catch err => fail m!"'mkCongrOf' failed with\n  {err.toMessageData}"
 
-  placeCHoles (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) : MetaM (Expr × Expr) := do
+  placeCHoles (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) (facts : Facts) :
+      MetaM (Expr × Expr) := do
     replaceSubexprs (root₁ := current) (root₂ := next) (p := pos) fun lhs rhs => do
       -- It's necessary that we create the fresh rewrite (that is, create the fresh mvars) in *this*
       -- local context as otherwise the mvars can't unify with variables under binders.
       let rw ← rw.fresh
-      unless ← isDefEq lhs rw.lhs do fail m!"unification failure for LHS of rewrite {rw.src.description}"
-      unless ← isDefEq rhs rw.rhs do fail m!"unification failure for RHS of rewrite {rw.src.description}"
-      -- TODO: It would be more efficient to pass the used facts back from egg as part of the src name.
-      for cond in rw.conds do
-        for fact in facts do
-          if ← isDefEq cond.expr fact.proof then break
+      unless ← isDefEq lhs rw.lhs do fail m!"unification failure for LHS of rewrite {rw.src.description}:\n  {lhs}\nvs\n  {rw.lhs}\nin\n{current}\nand\n  {next}"
+      unless ← isDefEq rhs rw.rhs do fail m!"unification failure for RHS of rewrite {rw.src.description}:\n  {rhs}\nvs\n  {rw.rhs}\nin\n{current}\nand\n  {next}"
+      for cond in rw.conds, fact in facts do
+        if ← isDefEq cond.expr fact.proof then
+          continue
+        else
+          if let some condProof ← mkConditionSubproof fact cond.type then
+            if ← isDefEq cond.expr condProof then continue
+          fail m!"condition {cond.type} of rewrite {rw.src.description} could not be proven"
       let proof ← rw.eqProof
       return (
         ← mkCHole (forLhs := true) lhs proof,
         ← mkCHole (forLhs := false) rhs proof
       )
+
+  mkConditionSubproof (fact : Fact) (cond : Expr) : MetaM (Option Expr) := do
+    let rawExpl := egraph.run (← Request.Equiv.encoding fact.type cond ctx)
+    if rawExpl.isEmpty then return none
+    let expl ← rawExpl.parse
+    let proof ← expl.proof rws facts egraph ctx
+    let factEqCond ← proof.prove { lhs := fact.type, rhs := cond, rel := .eq }
+    mkEqMP factEqCond fact.proof

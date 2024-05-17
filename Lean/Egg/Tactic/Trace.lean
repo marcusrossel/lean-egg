@@ -1,7 +1,7 @@
-import Egg.Core.Request
+import Egg.Core.Request.Basic
 import Egg.Core.Explanation.Proof
 import Egg.Core.MVars.Ambient
-import Egg.Tactic.Premises
+import Egg.Tactic.Premises.Parse
 import Lean
 open Lean Meta Elab Tactic Std Format
 
@@ -21,7 +21,7 @@ def Config.Debug.ExitPoint.format : Config.Debug.ExitPoint → Format
   | .beforeEqSat => "Before Equality Saturation"
   | .beforeProof => "Before Proof Reconstruction"
 
-nonrec def MVars.format (mvars : MVars) : MetaM Format := do
+nonrec def MVars.toMessageData (mvars : MVars) : MetaM MessageData := do
   let expr := format <| ← mvars.expr.toList.mapM (ppExpr <| Expr.mvar ·)
   let tc   := format <| ← mvars.tc.toList.mapM   (ppExpr <| Expr.mvar ·)
   let lvl  := format <|   mvars.lvl.toList.map   (Level.mvar ·)
@@ -37,23 +37,25 @@ def Congr.Rel.format : Congr.Rel → Format
   | .eq  => "="
   | .iff => "↔"
 
-def Congr.format (cgr : Congr) : MetaM Format :=
+def Congr.toMessageData (cgr : Congr) : MetaM MessageData :=
   return (← ppExpr cgr.lhs) ++ " " ++ cgr.rel.format ++ " " ++ (← ppExpr cgr.rhs)
 
 def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) : TacticM Unit := do
   let mut header := m!"{rw.src.description}({rw.validDirs.format})"
   if let some stx := stx? then header := m!"{header}: {stx}"
   withTraceNode cls (fun _ => return header) do
-    traceM cls fun _ => return m!"{← rw.toCongr.format}"
+    traceM cls fun _ => rw.toCongr.toMessageData
     if !rw.conds.isEmpty then
       withTraceNode cls (fun _ => return "Conditions") (collapsed := false) do
         for cond in rw.conds do
           traceM cls fun _ => return m!"{cond.type}"
-    traceM cls fun _ => return m!"LHS MVars\n{← rw.mvars.lhs.format}"
-    traceM cls fun _ => return m!"RHS MVars\n{← rw.mvars.rhs.format}"
+    traceM cls fun _ => return m!"LHS MVars\n{← rw.mvars.lhs.toMessageData}"
+    traceM cls fun _ => return m!"RHS MVars\n{← rw.mvars.rhs.toMessageData}"
 
 def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cls : Name) : TacticM Unit := do
-  for rw in rws, idx in [:rws.size] do rw.trace stx[idx]? cls
+  for rw in rws, idx in [:rws.size] do
+    let stx? := stx[idx]? >>= fun s => if s.getAtomVal == "*" then none else s
+    rw.trace stx? cls
 
 nonrec def Fact.trace (f : Fact) (stx : Syntax) (cls : Name) : TacticM Unit := do
   trace cls fun _ => m!"{f.src.description}: {stx} : {f.type}"
@@ -72,6 +74,9 @@ def Rewrite.Encoded.trace (rw : Rewrite.Encoded) (cls : Name) : TacticM Unit := 
       withTraceNode cls (fun _ => return "Conditions") (collapsed := false) do
         for cond in rw.conds do
           Lean.trace cls fun _ => cond
+
+def Fact.Encoded.trace (fact : Fact.Encoded) (cls : Name) : TacticM Unit := do
+  Lean.trace cls fun _ => m!"{fact.name}: {fact.expr}"
 
 nonrec def Config.trace (cfg : Config) (cls : Name) : TacticM Unit := do
   let toEmoji (b : Bool) := if b then "✅" else "❌"
@@ -104,6 +109,10 @@ nonrec def Request.trace (req : Request) (cls : Name) : TacticM Unit := do
   withTraceNode `egg.frontend (fun _ => return rwsHeader) do
     for rw in req.rws do
       rw.trace cls
+  if !req.facts.isEmpty then
+    withTraceNode cls (fun _ => return "Facts") do
+      for fact in req.facts do
+        fact.trace cls
   if !req.guides.isEmpty then
     withTraceNode cls (fun _ => return "Guides") do
       for guide in req.guides do
@@ -121,7 +130,7 @@ nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
       | .rw rw _ =>
         if rw.src.containsTcProj then continue
         withTraceNode cls (fun _ => return step.rhs) do
-          traceM cls fun _ => return m!"{rw.src.description}({dirFormat step.dir}) {← rw.toCongr.format}"
+          traceM cls fun _ => return m!"{rw.src.description}({dirFormat step.dir}) {← rw.toCongr.toMessageData}"
           trace  cls fun _ => step.proof
 where
   dirFormat : Direction → Format

@@ -4,14 +4,26 @@ open Lean
 
 namespace Egg
 
-local macro "register_egg_options" opts:ident* : command => do
-  let regs ← opts.mapM fun (opt : Ident) => do
-    let name := mkIdentFrom opt (`egg ++ opt.getId)
-    `(register_option $name : Bool := { defValue := ({} : Config).$opt})
-  let defIdents := opts.map fun opt => mkIdentFrom opt (`egg ++ opt.getId ++ `get)
+declare_syntax_cat _egg_opt
+syntax ident (" : " term)? : _egg_opt
+
+private def parseOpt : TSyntax `_egg_opt → MacroM (Ident × Term)
+  | `(_egg_opt| $name:ident $[: $ty]?) => return (name, ty.getD <| ← `(Bool))
+  | _                                  => unreachable!
+
+local macro "register_egg_options" opts:_egg_opt* : command => do
+  let mut regs := #[]
+  let mut names := #[]
+  let mut defs := #[]
+  for opt in opts do
+    let (name, ty) ← parseOpt opt
+    let regName  := mkIdentFrom name (`egg ++ name.getId)
+    regs := regs.push <| ← `(register_option $regName : $ty := { defValue := ({} : Config).$name})
+    names := names.push name
+    defs := defs.push <| mkIdentFrom name (`egg ++ name.getId ++ `get)
   let cfgFromOpts ← `(
     def $(mkIdent `Config.fromOptions) : MetaM Config := return {
-      $[$opts:ident := $defIdents (← getOptions)]*
+      $[$names:ident := $defs (← getOptions)]*
       toDebug := {}
     }
   )
@@ -25,11 +37,15 @@ register_egg_options
   betaReduceRws
   etaReduceRws
   natReduceRws
+  builtins
   genTcProjRws
   genTcSpecRws
+  genGoalTcSpec
   genNatLitRws
   genEtaRw
   genBetaRw
+  genLevelRws
   blockInvalidMatches
   shiftCapturedBVars
   optimizeExpl
+  timeLimit : Nat

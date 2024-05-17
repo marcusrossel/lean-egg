@@ -4,15 +4,15 @@ open Lean Meta Core
 
 namespace Egg
 
--- Performs ζ-, converts `Expr.proj`s to `Expr.app`s, and removes `Expr.mdata`s.
+-- Instantiates mvars, performs ζ-, converts `Expr.proj`s to `Expr.app`s, and removes `Expr.mdata`s.
 -- Depending on the `cfg`, also performs β- and η-reduction and reduction of internalized natural
 -- number operations.
-partial def normalize (e : Expr) (cfg : Config.Normalization) : MetaM Expr :=
-  go e
+partial def normalize (e : Expr) (cfg : Config.Normalization) : MetaM Expr := do
+  go (← instantiateMVars e)
 where
   go : Expr → MetaM Expr
-    | .mdata _ e    => go e
-    | .app fn arg   => do
+    | .mdata _ e  => go e
+    | .app fn arg => do
       let mut app := .app (← go fn) (← go arg)
       if cfg.betaReduceRws then app ← betaReduce app
       if cfg.natReduceRws  then app ← natReduce app
@@ -29,7 +29,8 @@ where
     | e               => return e
 
   expandProj (ty : Name) (ctor : Nat) (b : Expr) : MetaM Expr := do
-    let some field := (getStructureFields (← getEnv) ty)[ctor]? | throwError "'Egg.normalize' failed to reduce proj"
+    let some field := (getStructureFields (← getEnv) ty)[ctor]?
+      | throwError "'Egg.normalize' failed to reduce proj"
     mkProjection b field
 
   natReduce (e : Expr) : MetaM Expr := do

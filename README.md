@@ -1,10 +1,10 @@
 # Equality Saturation Tactic for Lean
 
-This repository contains a (work-in-progress) _equality saturation_ tactic for [Lean](https://lean-lang.org) based on [egg](https://egraphs-good.github.io). The tactic is useful for automated equational reasoning based on given equational theorems. Checkout the `Lean/Egg/Tests` directory for examples.
+This repository contains a (work-in-progress) [equality saturation](https://arxiv.org/abs/1012.1802) tactic for [Lean](https://lean-lang.org) based on [egg](https://egraphs-good.github.io). The tactic is useful for automated equational reasoning. Checkout the `Lean/Egg/Tests` directory for examples.
 
 ## Setup
 
-This tactic requires you to have [Rust](https://www.rust-lang.org) and its package manager [Cargo](https://doc.rust-lang.org/cargo/) installed. 
+This tactic requires [Rust](https://www.rust-lang.org) and its package manager [Cargo](https://doc.rust-lang.org/cargo/). 
 They are easily installed following the [official guide](https://doc.rust-lang.org/cargo/getting-started/installation.html).
 
 To use `egg` in your Lean project, add the following line to your `lakefile.lean`:
@@ -20,8 +20,6 @@ Then, add `import Egg` to the files that require `egg`.
 The syntax of `egg` is very similar to that of `simp` or `rw`:
 
 ```lean
-import Egg 
-
 example : 0 = 0 := by
   egg
 
@@ -38,9 +36,6 @@ example (as bs : List α) : reverse (as ++ bs) = (reverse bs) ++ (reverse as) :=
 But you can use it to solve some equations which `simp` cannot:
 
 ```lean
-import Egg
-import Std
-
 variable (a b c d : Int)
 
 example : ((a * b) - (2 * c)) * d - (a * b) = (d - 1) * (a * b) - (2 * c * d) := by
@@ -48,7 +43,7 @@ example : ((a * b) - (2 * c)) * d - (a * b) = (d - 1) * (a * b) - (2 * c * d) :=
 ```
 
 Sometimes, `egg` needs a little help with finding the correct sequence of rewrites.
-You can help out by providing _guide terms_ with nudge `egg` to try certain paths:
+You can help out by providing _guide terms_ which nudge `egg` in the right direction:
 
 ```lean
 -- From Lean/Egg/Tests/Groups.lean
@@ -64,7 +59,16 @@ example (h : p ∧ q ∧ r) : r ∧ r ∧ q ∧ p ∧ q ∧ r ∧ p := by
   egg [and_comm, and_assoc, and_self] from h
 ```
 
+For conditional rewriting, hypotheses can be provided after the rewrites:
+
+```lean
+example {p q r : Prop} (h₁ : p) (h₂ : p ↔ q) (h₃ : q → (p ↔ r)) : p ↔ r := by
+  egg [h₂, h₃; h₁]
+```
+
+Note that rewrites are also applied to hypotheses.
+
 ## Related Work
 
 * [Guided Equality Saturation](https://dl.acm.org/doi/10.1145/3632900) introduces the original prototype of the `egg` tactic.
-* [Bridging Syntax and Semantics of Lean Expressions in E-Graphs](https://github.com/marcusrossel/egraphs-2024/releases/tag/release) contains a high-level description of how the tactic handles binders and definitional equality. 
+* [Bridging Syntax and Semantics of Lean Expressions in E-Graphs](http://arxiv.org/abs/2405.10188) contains a high-level description of how the tactic handles binders and definitional equality. 

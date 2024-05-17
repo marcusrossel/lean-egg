@@ -20,17 +20,21 @@ structure Encoding extends Normalization where
   deriving BEq
 
 structure Gen where
-  genTcProjRws := true
-  genTcSpecRws := true
-  genNatLitRws := true
-  genEtaRw     := true
-  genBetaRw    := true
+  builtins      := true
+  genTcProjRws  := true
+  genTcSpecRws  := true
+  genGoalTcSpec := false
+  genNatLitRws  := true
+  genEtaRw      := true
+  genBetaRw     := true
+  genLevelRws   := true
   deriving BEq
 
 structure Backend where
   blockInvalidMatches := true
   shiftCapturedBVars  := true -- This option implies `blockInvalidMatches`.
   optimizeExpl        := true
+  timeLimit           := 10
   deriving BEq
 
 inductive Debug.ExitPoint

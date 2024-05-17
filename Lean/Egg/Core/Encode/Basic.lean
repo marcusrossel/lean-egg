@@ -26,9 +26,13 @@ private def encodeLevel : Level → EncodeM Expression
     then return s!"(uvar {id.uniqueIdx!})"
     else return s!"?{id.uniqueIdx!}"
 
+structure EncodingCtx where
+  cfg : Config.Encoding
+  amb : MVars.Ambient
+
 -- Note: This function expects its input expression to be normalized (cf. `Egg.normalize`).
-partial def encode (e : Expr) (cfg : Config.Encoding) (amb : MVars.Ambient) : MetaM Expression :=
-  Prod.fst <$> (go e).run { config := cfg, amb }
+partial def encode (e : Expr) (ctx : EncodingCtx) : MetaM Expression :=
+  Prod.fst <$> (go e).run { config := ctx.cfg, amb := ctx.amb }
 where
   go (e : Expr) : EncodeM Expression := do
     if ← needsProofErasure e then return Expression.erased else core e
@@ -42,7 +46,7 @@ where
     | .app fn arg       => return s!"(app {← go fn} {← go arg})"
     | .lam _ ty b _     => encodeLam ty b
     | .forallE _ ty b _ => encodeForall ty b
-    | .lit (.strVal l)  => return s!"(lit \"{l}\")"
+    | .lit (.strVal l)  => return s!"(lit {Json.renderString l})"
     | .lit (.natVal l)  => return s!"(lit {l})"
     | _                 => panic! "'Egg.encode.core' received non-normalized expression"
 

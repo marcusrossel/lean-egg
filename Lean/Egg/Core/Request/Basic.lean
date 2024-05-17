@@ -1,3 +1,4 @@
+import Egg.Core.Request.EGraph
 import Egg.Core.Encode.Rewrites
 import Egg.Core.Encode.Guides
 import Egg.Core.Encode.Facts
@@ -10,9 +11,11 @@ namespace Egg.Request
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 protected structure Config where
   optimizeExpl        : Bool
+  timeLimit           : Nat
   genNatLitRws        : Bool
   genEtaRw            : Bool
   genBetaRw           : Bool
+  genLevelRws         : Bool
   blockInvalidMatches : Bool
   shiftCapturedBVars  : Bool
   traceSubstitutions  : Bool
@@ -21,9 +24,11 @@ protected structure Config where
 instance : Coe Config Request.Config where
   coe cfg := {
     optimizeExpl        := cfg.optimizeExpl
+    timeLimit           := cfg.timeLimit
     genNatLitRws        := cfg.genNatLitRws
     genEtaRw            := cfg.genEtaRw
     genBetaRw           := cfg.genBetaRw
+    genLevelRws         := cfg.genLevelRws
     blockInvalidMatches := cfg.blockInvalidMatches
     shiftCapturedBVars  := cfg.shiftCapturedBVars
     traceSubstitutions  := cfg.traceSubstitutions
@@ -42,17 +47,18 @@ structure _root_.Egg.Request where
   cfg     : Request.Config
 
 def encoding
-    (goal : Congr) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Egg.Config) (amb : MVars.Ambient) :
-    MetaM Request := do
+    (goal : Congr) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Config)
+    (amb : MVars.Ambient) : MetaM Request :=
+  let ctx := { cfg, amb }
   return {
-    lhs     := ← encode goal.lhs cfg amb
-    rhs     := ← encode goal.rhs cfg amb
-    rws     := ← rws.encode cfg amb
-    facts   := ← facts.encode cfg amb
-    guides  := ← guides.encode cfg amb
+    lhs     := ← encode goal.lhs ctx
+    rhs     := ← encode goal.rhs ctx
+    rws     := ← rws.encode ctx
+    facts   := ← do if rws.any (·.isConditional) then facts.encode ctx else return #[]
+    guides  := ← guides.encode ctx
     vizPath := cfg.vizPath.getD ""
     cfg
   }
 
 @[extern "run_egg_request"]
-opaque run (req : Request) : Explanation.Raw
+opaque run (req : Request) : Explanation.Raw × Option EGraph

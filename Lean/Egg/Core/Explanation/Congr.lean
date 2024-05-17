@@ -1,7 +1,5 @@
 /- Copied from https://github.com/leanprover-community/mathlib4/blob/d78efd06e1abe6424756d529cc3942efc4d0ae50/Mathlib/Tactic/TermCongr.lean -/
-
-import Std.Logic
-import Lean.Meta.Tactic.Cleanup
+import Lean
 open Lean Meta
 
 -- NOTE: We currently need to hide this all in the `Egg` namespace as otherwise our Mathlib tests
@@ -109,7 +107,7 @@ we know whether we want an iff, eq, or heq, while also allowing it to choose
 to elaborate as an iff, eq, or heq.
 Later, the congruence generator handles any discrepencies.
 See `Mathlib.Tactic.TermCongr.CongrResult`. -/
-@[reducible, nolint unusedArguments]
+@[reducible]
 def cHole {α : Sort u} (val : α) {p : Prop} (_pf : p) : α := val
 
 /-- For error reporting purposes, make the hole pretty print as its value.

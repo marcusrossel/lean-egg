@@ -17,6 +17,18 @@ inductive Source.NatLit where
   | mod
   deriving Inhabited, BEq, Hashable
 
+inductive Source.Level where
+  | maxSucc
+  | maxComm
+  | imaxZero
+  | imaxSucc
+  deriving Inhabited, BEq, Hashable
+
+inductive Source.TcSpec where
+  | dir (dir : Direction)
+  | goalType
+  deriving Inhabited, BEq, Hashable
+
 inductive Source.TcProjLocation where
   | root
   | left
@@ -29,11 +41,14 @@ inductive Source where
   | guide (idx : Nat)
   | explicit (idx : Nat) (eqn? : Option Nat)
   | star (id : FVarId)
-  | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos)
-  | tcSpec (src : Source) (dir : Direction)
+  | fact (src : Source)
+  | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos) (depth : Nat)
+  | tcSpec (src : Source) (spec : Source.TcSpec)
   | natLit (src : Source.NatLit)
   | eta
   | beta
+  | level (src : Source.Level)
+  | builtin (idx : Nat)
   deriving Inhabited, BEq, Hashable
 
 namespace Source
@@ -49,6 +64,16 @@ def NatLit.description : NatLit → String
   | div    => "≡/"
   | mod    => "≡%"
 
+def Level.description : Level → String
+  | maxSucc  => "≡maxS"
+  | maxComm  => "≡max↔"
+  | imaxZero => "≡imax0"
+  | imaxSucc => "≡imaxS"
+
+def TcSpec.description : TcSpec → String
+  | dir d    => d.description
+  | goalType => "⊢"
+
 def TcProjLocation.description : TcProjLocation → String
   | root     => "▪"
   | left     => "◂"
@@ -61,11 +86,14 @@ def description : Source → String
   | explicit idx none       => s!"#{idx}"
   | explicit idx (some eqn) => s!"#{idx}/{eqn}"
   | star id                 => s!"*{id.uniqueIdx!}"
-  | tcProj src loc pos     => s!"{src.description}[{loc.description}{pos.asNat}]"
-  | tcSpec src dir          => s!"{src.description}<{dir.description}>"
+  | fact src                => s!"!{src.description}"
+  | tcProj src loc pos dep  => s!"{src.description}[{loc.description}{pos.asNat},{dep}]"
+  | tcSpec src spec         => s!"{src.description}<{spec.description}>"
   | natLit src              => src.description
   | eta                     => "≡η"
   | beta                    => "≡β"
+  | level src               => src.description
+  | builtin idx             => s!"◯{idx}"
 
 instance : ToString Source where
   toString := description
@@ -75,8 +103,8 @@ def isRewrite : Source → Bool
   | _              => true
 
 def isDefEq : Source → Bool
-  | natLit _ | eta | beta => true
-  | _                     => false
+  | natLit _ | eta | beta | level _ => true
+  | _                               => false
 
 def containsTcProj : Source → Bool
   | tcProj ..     => true
