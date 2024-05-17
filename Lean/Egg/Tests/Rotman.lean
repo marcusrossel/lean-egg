@@ -54,29 +54,15 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
         have h₁ : n ≥ r - 1                     := by omega
         have h₂ : n ≥ r                         := by omega
         have h₃ : n - (r - 1) = n - r + 1       := by omega
-        have h₄ : ((r - 1)! * (n - r)!) ∣ (n !) := sorry
-        have h₅ : (r * (n - r + 1)) ∣ (n  + 1)  := sorry
-        have h₆ : 0 < r                         := by omega
+        have h₄ : 0 < r                         := by omega
 
         -- These calculations have to be done over the rationals:
-        have h₇ := calc (n !) / ((r - 1)! * (n - r)! * (n - r + 1)) + (n !) / (r ! * (n - r)!)
+        have h₅ := calc (n !) / ((r - 1)! * (n - r)! * (n - r + 1)) + (n !) / (r ! * (n - r)!)
           _ = ((n !) / ((r - 1)! * (n - r)!)) * (1 / (n - r + 1)) + (n !) / (r ! * (n - r)!) := sorry
           _ = (n !) / ((r - 1)! * (n - r)!) * (1 / (n - r + 1) + 1 / r)                      := sorry
           _ = (n !) / ((r - 1)! * (n - r)!) * ((r + n - r + 1) / (r * (n - r + 1)))          := sorry
 
         calc (n + 1).choose r
           _ = (n !) / ((r - 1)! * (n - r)! * (n - r + 1)) + (n !) / (r ! * (n - r)!) := by egg [proposition_1_14, hi, h₃, Nat.factorial, Nat.mul_assoc, Nat.mul_comm; h₁, h₂]
-          _ = (n !) / ((r - 1)! * (n - r)!) * ((r + n - r + 1) / (r * (n - r + 1)))  := h₇
-          _ = (n + 1)! / (r ! * (n + 1 - r)!)                                        := by egg [Nat.add_comm, Nat.add_sub_cancel, Nat.mul_comm, Nat.mul_assoc, Nat.div_mul_div_comm, Nat.factorial, Nat.mul_factorial_pred, todo; h₂, h₄, h₅, h₆]
-
-/- Manual calculation:
-
-calc (n + 1).choose r
-  _ = n.choose (r - 1) + n.choose r                                          := proposition_1_14 ..
-  _ = (n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!)           := by rw [hi h₁, hi h₂, h₃]
-  _ = (n !) / ((r - 1)! * (n - r)! * (n - r + 1)) + (n !) / (r ! * (n - r)!) := by egg [Nat.factorial, Nat.mul_assoc, Nat.mul_comm]
-  _ = (n !) / ((r - 1)! * (n - r)!) * ((r + n - r + 1) / (r * (n - r + 1)))  := h₇
-  _ = (n !) / ((r - 1)! * (n - r)!) * ((n + 1) / (r * (n - r + 1)))          := by egg [Nat.add_comm, Nat.add_sub_cancel]
-  _ = (n ! * (n + 1)) / ((r - 1)! * (n - r)! * r * (n - r + 1))              := by simp [Nat.div_mul_div_comm h₄ h₅, Nat.mul_assoc]
-  _ = (n + 1)! / (r ! * (n + 1 - r)!)                                        := ...
--/
+          _ = (n !) / ((r - 1)! * (n - r)!) * ((r + n - r + 1) / (r * (n - r + 1)))  := h₅
+          _ = (n + 1)! / (r ! * (n + 1 - r)!)                                        := by sorry -- egg [Nat.add_comm, Nat.add_sub_cancel, Nat.mul_comm, Nat.mul_assoc, Nat.div_mul_div_comm, Nat.factorial, Nat.mul_factorial_pred, todo; h₂, h₄, h₅, h₆]

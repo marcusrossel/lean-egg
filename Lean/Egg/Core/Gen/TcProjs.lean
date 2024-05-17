@@ -11,25 +11,33 @@ abbrev TcProj := Expr
 private def TcProj.mk (const : Name) (args : Array Expr) (lvls : List Level) : TcProj :=
   mkAppN (.const const lvls) args
 
--- Note: This function expects `proj` to be normalized (cf. `Egg.normalize`).
-private def TcProj.reductionRewrite?
-    (proj : TcProj) (src : Source) (norm : Config.Normalization) (amb : MVars.Ambient) :
-    MetaM (Option Rewrite) := do
-  -- Sometimes the only reduction performed by `reduceAll` is to replace a application of a type
-  -- class projection with its corresponding `Expr.proj` expression. In that case, no real reduction
-  -- has been performed for our purposes. To catch these cases, we normalize `reduced` (which
-  -- expands `Expr.proj`s) *before* checking for equality with `proj`, and in return *don't*
-  -- normalize again in `Premise.from`.
-  let reduced ← withReducibleAndInstances do reduceAll proj
-  let reducedNorm ← normalize reduced norm
-  if proj == reducedNorm then return none
-  let eq ← mkEq proj reducedNorm
-  let proof ← mkEqRefl proj
-  let some rw ← Rewrite.from? proof eq src { amb }
-    | throwError "egg: internal error in 'TcProj.reductionRewrite?'"
-  return rw
+private structure TcProj.SrcPrefix where
+  src : Source
+  loc : Source.TcProjLocation
+  pos : SubExpr.Pos
 
-abbrev TcProjIndex := HashMap TcProj Source
+-- Note: This function expects `proj` to be normalized (cf. `Egg.normalize`).
+private def TcProj.reductionRewrites
+    (proj : TcProj) (src : TcProj.SrcPrefix) (norm : Config.Normalization) (amb : MVars.Ambient) :
+    MetaM (Array Rewrite) := do
+  let mut rws := #[]
+  let mut proj := proj
+  while true do
+    if let some u ← unfoldProjInst? proj then
+      let uNorm ← normalize u norm
+      let eq ← mkEq proj uNorm
+      let proof ← mkEqRefl proj
+      let some rw ← Rewrite.from? proof eq (.tcProj src.src src.loc src.pos rws.size) { amb }
+        | throwError "egg: internal error in 'TcProj.reductionRewrite?'"
+      rws := rws.push rw
+      -- TODO: If normalization for rewrites is turned off, this entails that we might generate
+      --       fewer type class projection rewrites 😬
+      proj := uNorm
+    else
+      break
+  return rws
+
+private abbrev TcProjIndex := HashMap TcProj TcProj.SrcPrefix
 
 private structure State where
   projs   : TcProjIndex    := ∅
@@ -61,7 +69,7 @@ where
     let proj := TcProj.mk const args lvls
     if s.covers proj
     then return s
-    else return { s with projs := s.projs.insert proj (.tcProj src loc s.pos) }
+    else return { s with projs := s.projs.insert proj { src, loc, pos := s.pos } }
 
   visitBindingBody (b : Expr) (s : State) : MetaM State := do
     let s' ← go b { s with pos := s.pos.pushBindingBody }
@@ -109,5 +117,5 @@ def genTcProjReductions
     let projs ← tcProjs target.expr target.src target.loc covered
     for (proj, src) in projs.toArray do
       covered := covered.insert proj
-      if let some rw ← proj.reductionRewrite? src norm amb then rws := rws.push rw
+      rws := rws ++ (← proj.reductionRewrites src norm amb)
   return (rws, covered)

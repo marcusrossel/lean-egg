@@ -167,7 +167,7 @@ pub extern "C" fn egg_explain_congr(
         return EggResult { expl: res_err_c_str.into_raw(), graph: None }
     }
     let (expl, egraph) = res.unwrap();
-    
+
     let expl_c_str = CString::new(expl).expect("conversion of explanation to C-string failed");
 
     return EggResult {

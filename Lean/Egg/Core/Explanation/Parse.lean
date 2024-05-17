@@ -37,7 +37,7 @@ syntax "⊢"                               : egg_basic_fwd_rw_src
 syntax "↣" noWs num                      : egg_basic_fwd_rw_src
 syntax "◯" noWs num                      : egg_basic_fwd_rw_src
 
-syntax "[" egg_tc_proj_loc num "]" : egg_tc_proj
+syntax "[" egg_tc_proj_loc num "," num "]" : egg_tc_proj
 
 syntax "→" : egg_tc_spec_src
 syntax "←" : egg_tc_spec_src
@@ -124,9 +124,9 @@ private def parseBasicFwdRwSrc : (TSyntax `egg_basic_fwd_rw_src) → Source
   | _                                       => unreachable!
 
 private def parseTcExtension (src : Source) : (TSyntax `egg_tc_extension) → Source
-  | `(egg_tc_extension|[$loc$pos])   => .tcProj src (parseTcProjLocation loc) pos.getNat
-  | `(egg_tc_extension|<$tcSpecsrc>) => .tcSpec src (parsTcSpecSrc tcSpecsrc)
-  | _                                => unreachable!
+  | `(egg_tc_extension|[$loc$pos,$dep]) => .tcProj src (parseTcProjLocation loc) pos.getNat dep.getNat
+  | `(egg_tc_extension|<$tcSpecsrc>)    => .tcSpec src (parsTcSpecSrc tcSpecsrc)
+  | _                                   => unreachable!
 
 private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
   | `(egg_fwd_rw_src|≡maxS)  => .level .maxSucc

@@ -11,8 +11,8 @@ partial def normalize (e : Expr) (cfg : Config.Normalization) : MetaM Expr := do
   go (← instantiateMVars e)
 where
   go : Expr → MetaM Expr
-    | .mdata _ e    => go e
-    | .app fn arg   => do
+    | .mdata _ e  => go e
+    | .app fn arg => do
       let mut app := .app (← go fn) (← go arg)
       if cfg.betaReduceRws then app ← betaReduce app
       if cfg.natReduceRws  then app ← natReduce app

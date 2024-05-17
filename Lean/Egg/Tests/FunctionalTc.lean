@@ -2,8 +2,6 @@ import Egg
 
 -- Tests involving auto-generated rewrite rules for reducing type class projections.
 
-set_option egg.genTcProjRws true
-
 namespace TcProj
 
 inductive List (α) where
