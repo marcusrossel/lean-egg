@@ -7,20 +7,7 @@ theorem foldl_descend {f : α → α → α}
     List.foldl f init (head :: tail) = f init (List.foldl f head tail) := by
   induction tail generalizing init with
   | nil => rfl
-  | cons h₂ tail ih =>
-    calc
-      List.foldl f init (head :: h₂ :: tail)
-        = List.foldl f (f (f init head) h₂) tail  := by egg [List.foldl, f_assoc, f_comm, ih]
-  --  _ = List.foldl f (f init (f head h₂)) tail  := by egg [List.foldl, f_assoc, f_comm, ih; h₂]
-  --  _ = List.foldl f (f init (f h₂ head)) tail  := by egg [List.foldl, f_assoc, f_comm, ih; h₂]
-  --  _ = List.foldl f (f (f init h₂) head) tail  := by egg [List.foldl, f_assoc, f_comm, ih; h₂]
-  --  _ = List.foldl f (f init h₂) (head :: tail) := by egg [List.foldl, f_assoc, f_comm, ih; h₂]
-  --  _ = f (f init h₂) (List.foldl f head tail)  := by egg [List.foldl, f_assoc, f_comm, ih; h₂]
-  --  _ = f init (f h₂ (List.foldl f head tail))  := by egg [List.foldl, f_assoc, f_comm, ih; h₂]
-  --  _ = f init (List.foldl f h₂ (head :: tail)) := by egg [List.foldl, f_assoc, f_comm, ih; h₂]
-  --  _ = f init (List.foldl f (f h₂ head) tail)  := by egg [List.foldl, f_assoc, f_comm, ih; h₂]
-  --  _ = f init (List.foldl f (f head h₂) tail)  := by egg [List.foldl, f_assoc, f_comm, ih; h₂]
-      _ = f init (List.foldl f head (h₂ :: tail)) := by egg [List.foldl, f_assoc, f_comm, ih]
+  | cons h₂ tail ih => egg [List.foldl, f_assoc, f_comm, ih]
 
 theorem foldl_eq_foldr
     {f : α → α → α}
@@ -34,11 +21,4 @@ theorem foldl_eq_foldr
     conv => lhs; unfold List.foldl
     cases l with
     | nil => rfl
-    | cons hb tail =>
-      calc
-        List.foldl f (f init ha) (hb :: tail)
-   --   _ = f (f init ha) (List.foldl f hb tail)  := by egg [@foldl_descend _ _ _ _ _ f_comm f_assoc, f_assoc, f_comm]
-   --   _ = f init (f ha (List.foldl f hb tail))  := by egg [@foldl_descend _ _ _ _ _ f_comm f_assoc, f_assoc, f_comm]
-   --   _ = f init (f (List.foldl f hb tail) ha)  := by egg [@foldl_descend _ _ _ _ _ f_comm f_assoc, f_assoc, f_comm]
-   --   _ = f (f init (List.foldl f hb tail)) ha  := by egg [@foldl_descend _ _ _ _ _ f_comm f_assoc, f_assoc, f_comm]
-        _ = f (List.foldl f init (hb :: tail)) ha := by egg [@foldl_descend _ _ _ _ _ f_comm f_assoc, f_assoc, f_comm]
+    | cons hb tail => egg [@foldl_descend _ _ _ _ _ f_comm f_assoc, f_assoc, f_comm]
