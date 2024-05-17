@@ -71,4 +71,4 @@ Note that rewrites are also applied to hypotheses.
 ## Related Work
 
 * [Guided Equality Saturation](https://dl.acm.org/doi/10.1145/3632900) introduces the original prototype of the `egg` tactic.
-* [Bridging Syntax and Semantics of Lean Expressions in E-Graphs](https://github.com/marcusrossel/egraphs-2024/releases/tag/release) contains a high-level description of how the tactic handles binders and definitional equality. 
+* [Bridging Syntax and Semantics of Lean Expressions in E-Graphs](http://arxiv.org/abs/2405.10188) contains a high-level description of how the tactic handles binders and definitional equality. 
