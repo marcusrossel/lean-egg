@@ -6,7 +6,9 @@ open Lean Meta
 namespace Egg.Rewrites
 
 private def builtinTheorems := #[
-  ``Nat.succ_eq_add_one
+  ``Nat.succ_eq_add_one,
+  ``ge_iff_le,
+  ``gt_iff_lt
 ]
 
 def builtins (cfg : Rewrite.Config) : MetaM Rewrites := do
