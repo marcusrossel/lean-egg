@@ -11,5 +11,5 @@ theorem foldl_descend : (head :: tail).foldl f init = f init (tail.foldl f head)
 
 theorem foldl_eq_foldr (l : List α) : l.foldl f init = l.foldr f init := by
   induction l with
-  | nil => rfl
-  | cons ha l ih => egg [List.foldl, List.foldr, f_comm, ih, foldl_descend; f_comm, f_assoc]
+  | nil         => rfl
+  | cons _ _ ih => egg [List.foldl, List.foldr, f_comm, ih, foldl_descend; f_comm, f_assoc]
