@@ -124,37 +124,40 @@ typedef struct config {
     _Bool  gen_level_rws;
     _Bool  block_invalid_matches;
     _Bool  shift_captured_bvars;
+    _Bool  allow_unsat_conditions;
     _Bool  trace_substitutions;
     _Bool  trace_bvar_correction;
 } config;
 
 /*
 structure Config where
-  optimizeExpl        : Bool
-  timeLimit           : Nat
-  genNatLitRws        : Bool
-  genEtaRw            : Bool
-  genBetaRw           : Bool
-  genLevelRws         : Bool
-  blockInvalidMatches : Bool
-  shiftCapturedBVars  : Bool
-  traceSubstitutions  : Bool
-  traceBVarCorrection : Bool
+  optimizeExpl         : Bool
+  timeLimit            : Nat
+  genNatLitRws         : Bool
+  genEtaRw             : Bool
+  genBetaRw            : Bool
+  genLevelRws          : Bool
+  blockInvalidMatches  : Bool
+  shiftCapturedBVars   : Bool
+  allowUnsatConditions : Bool
+  traceSubstitutions   : Bool
+  traceBVarCorrection  : Bool
 */
 config config_from_lean_obj(lean_obj_arg cfg) {
     unsigned scalar_base_offset = lean_ctor_num_objs(cfg) * sizeof(void*);
     unsigned bool_offset = sizeof(uint8_t);
     return (config) { 
-        .optimize_expl         = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 0),
-        .time_limit            = nat_from_lean_obj(lean_ctor_get(cfg, 0)),  
-        .gen_nat_lit_rws       = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 1),  
-        .gen_eta_rw            = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 2),  
-        .gen_beta_rw           = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 3),  
-        .gen_level_rws         = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 4),  
-        .block_invalid_matches = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 5),  
-        .shift_captured_bvars  = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6),  
-        .trace_substitutions   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7),  
-        .trace_bvar_correction = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 8),  
+        .optimize_expl          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 0),
+        .time_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 0)),  
+        .gen_nat_lit_rws        = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 1),  
+        .gen_eta_rw             = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 2),  
+        .gen_beta_rw            = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 3),  
+        .gen_level_rws          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 4),  
+        .block_invalid_matches  = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 5),  
+        .shift_captured_bvars   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6),  
+        .allow_unsat_conditions = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7),  
+        .trace_substitutions    = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 8),  
+        .trace_bvar_correction  = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 9),  
     };
 }
 

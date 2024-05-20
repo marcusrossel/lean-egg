@@ -66,6 +66,7 @@ syntax "≡/"                                          : egg_fwd_rw_src
 syntax str                                           : egg_fwd_rw_src
 -- syntax "≡%"                                       : egg_fwd_rw_src
 
+syntax "!?"               : egg_fact_src
 syntax "!" egg_fwd_rw_src : egg_fact_src
 
 syntax egg_fwd_rw_src (noWs "-rev")? egg_fact_src* : egg_rw_src
@@ -148,8 +149,9 @@ private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
     tcExts.foldl (init := parseBasicFwdRwSrc src) parseTcExtension
   | _ => unreachable!
 
-private def parseFactSrc : (TSyntax `egg_fact_src) → Source
-  | `(egg_fact_src|!$f:egg_fwd_rw_src) => .fact (parseFwdRwSrc f)
+private def parseFactSrc : (TSyntax `egg_fact_src) → Option Source
+  | `(egg_fact_src|!?)                 => none
+  | `(egg_fact_src|!$f:egg_fwd_rw_src) => some <| .fact (parseFwdRwSrc f)
   | _                                  => unreachable!
 
 private def parseRwSrc : (TSyntax `egg_rw_src) → Rewrite.Descriptor

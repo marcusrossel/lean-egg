@@ -47,5 +47,6 @@ register_egg_options
   genLevelRws
   blockInvalidMatches
   shiftCapturedBVars
+  conditionSubgoals
   optimizeExpl
   timeLimit : Nat

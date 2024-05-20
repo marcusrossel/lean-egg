@@ -120,7 +120,7 @@ nonrec def Request.trace (req : Request) (cls : Name) : TacticM Unit := do
 
 nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Proof") do
-    for step in prf, idx in [:prf.size] do
+    for step in prf.steps, idx in [:prf.steps.size] do
       if idx == 0 then trace cls fun _ => step.lhs
       match step.rw with
       | .defeq src =>

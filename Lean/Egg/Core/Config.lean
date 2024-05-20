@@ -33,6 +33,7 @@ structure Gen where
 structure Backend where
   blockInvalidMatches := true
   shiftCapturedBVars  := true -- This option implies `blockInvalidMatches`.
+  conditionSubgoals   := false
   optimizeExpl        := true
   timeLimit           := 3
   deriving BEq

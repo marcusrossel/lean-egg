@@ -12,7 +12,7 @@ namespace Rewrite
 structure Descriptor where
   src   : Source
   dir   : Direction
-  facts : Array Source
+  facts : Array (Option Source)
   deriving Inhabited
 
 structure Info extends Descriptor where

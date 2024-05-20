@@ -14,10 +14,19 @@ pub struct RewriteTemplate {
     pub conds: Vec<Pattern<LeanExpr>>
 }
 
-pub fn templates_to_rewrites(templates: Vec<RewriteTemplate>, facts: HashMap<Id, String>, block_invalid_matches: bool, shift_captured_bvars: bool) -> Res<Vec<LeanRewrite>> {
+pub fn templates_to_rewrites(
+    templates: Vec<RewriteTemplate>, 
+    facts: HashMap<Id, String>, 
+    block_invalid_matches: bool, 
+    shift_captured_bvars: bool, 
+    allow_unsat_conditions: bool
+) -> Res<Vec<LeanRewrite>> {
     let mut result: Vec<LeanRewrite> = vec![];
     for template in templates {
-        let applier = LeanApplier { rhs: template.rhs, conds: template.conds, facts: facts.clone(), block_invalid_matches, shift_captured_bvars };
+        let applier = LeanApplier { 
+            rhs: template.rhs, conds: template.conds, facts: facts.clone(), 
+            block_invalid_matches, shift_captured_bvars, allow_unsat_conditions 
+        };
         match Rewrite::new(template.name, template.lhs, applier) {
             Ok(rw)   => result.push(rw),
             Err(err) => return Err(Error::Rewrite(err.to_string()))
@@ -32,6 +41,7 @@ struct LeanApplier {
     pub facts: HashMap<Id, String>,
     pub block_invalid_matches: bool,
     pub shift_captured_bvars: bool,
+    pub allow_unsat_conditions: bool
 }
 
 impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
@@ -62,6 +72,9 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
                 rule = Symbol::from(r);
             } else if let Some((_, fact_name)) = self.facts.iter().find(|(&f_id, _)| graph.find(f_id) == id) { 
                 let mut r = rule.as_str().to_string(); r.push_str(&fact_name);
+                rule = Symbol::from(r);
+            } else if self.allow_unsat_conditions {
+                let mut r = rule.as_str().to_string(); r.push_str("!?");
                 rule = Symbol::from(r);
             } else {
                 return vec![] 
