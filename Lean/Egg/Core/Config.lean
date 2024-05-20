@@ -34,7 +34,7 @@ structure Backend where
   blockInvalidMatches := true
   shiftCapturedBVars  := true -- This option implies `blockInvalidMatches`.
   optimizeExpl        := true
-  timeLimit           := 10
+  timeLimit           := 3
   deriving BEq
 
 inductive Debug.ExitPoint
