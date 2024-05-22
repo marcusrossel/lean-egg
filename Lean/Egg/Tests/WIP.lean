@@ -1,5 +1,9 @@
 import Egg
 
+-- BUG: Hangs if you set true to false:
+set_option egg.genTcSpecRws true in
+example (a b : α) [Add α] (h : ∀ x y : α, x + y = y + x) : a + b = b + a := by
+  egg [h]
 
 theorem beq_ext {α : Type _} (inst1 : BEq α) (inst2 : BEq α) (h : ∀ x y, @BEq.beq _ inst1 x y = @BEq.beq _ inst2 x y) : inst1 = inst2 := sorry
 open Classical in
