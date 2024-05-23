@@ -1,4 +1,5 @@
 import Egg.Lean
+import Egg.Core.Normalize
 import Egg.Core.Encode.EncodeM
 import Lean
 open Lean
@@ -36,7 +37,7 @@ partial def encode (e : Expr) (ctx : EncodingCtx) : MetaM Expression :=
 where
   go (e : Expr) : EncodeM Expression := do
     if ← needsProofErasure e then
-      let prop ← Meta.inferType e
+      let prop ← normalize (← Meta.inferType e) .noReduce
       return s!"(proof {← go prop})"
     else
       core e
