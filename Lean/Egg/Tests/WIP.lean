@@ -5,19 +5,6 @@ set_option egg.genTcSpecRws true in
 example (a b : α) [Add α] (h : ∀ x y : α, x + y = y + x) : a + b = b + a := by
   egg [h]
 
-theorem beq_ext {α : Type _} (inst1 : BEq α) (inst2 : BEq α) (h : ∀ x y, @BEq.beq _ inst1 x y = @BEq.beq _ inst2 x y) : inst1 = inst2 := sorry
-open Classical in
-theorem beq_eq_decide {α : Type _} [BEq α] [LawfulBEq α] {a b : α} : (a == b) = decide (a = b) := sorry
-
--- CRASH: The rewrite `beq_eq_decide` is considered to be conditional with condition `LawfulBEq α`,
---        which then remains unassigned when substituting after e-matching.
-theorem lawful_beq_subsingleton {α : Type _} (inst1 : BEq α) (inst2 : BEq α)
-    [@LawfulBEq α inst1] [@LawfulBEq α inst2] :
-    inst1 = inst2 := by
-  apply beq_ext
-  intro x y
-  egg (config := { exitPoint := some .beforeEqSat }) [beq_eq_decide]
-
 -- CRASH: When turning on proof erasure.
 set_option egg.eraseProofs false in
 theorem Array.get_set_ne (a : Array α) (i : Fin a.size) {j : Nat} (v : α) (hj : j < a.size)
@@ -25,7 +12,7 @@ theorem Array.get_set_ne (a : Array α) (i : Fin a.size) {j : Nat} (v : α) (hj 
   sorry -- egg [set, Array.getElem_eq_data_get, List.get_set_ne _ h]
 
 -- The universe mvars (or universe params if you make this a theorem instead of an example) are
--- different for the respective `α`s, so this doesn't hold by reflexivity. But `simp` can somehow
+-- different for the respective `α`s, so this doesn't hold by reflexivity. But `by rfl` can somehow
 -- prove this.
 example : (∀ α (l : List α), l.length = l.length) ↔ (∀ α (l : List α), l.length = l.length) := by
   set_option trace.egg true in egg
