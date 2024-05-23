@@ -57,8 +57,8 @@ where
   go : Expr → State → MetaM State
     | .const c lvls                   => visitConst c lvls
     | .app fn arg                     => (visitFn fn arg) >=> (visitArg arg)
-    | .lam _ _ b _ | .forallE _ _ b _ => visitBindingBody b
-    | .mdata .. | .proj .. | .letE .. => panic! "'Egg.tcProjs.go' received non-normalized expression"
+    | .lam _ d b _ | .forallE _ d b _ => (visitBindingDomain d) >=> (visitBindingBody b)
+    | .mdata .. | .proj .. | .letE .. => fun _ => throwError "egg: internal error: 'Egg.tcProjs.go' received non-normalized expression"
     | _                               => pure
 
   visitConst (const : Name) (lvls : List Level) (s : State) : MetaM State := do
@@ -71,8 +71,12 @@ where
     then return s
     else return { s with projs := s.projs.insert proj { src, loc, pos := s.pos } }
 
+  visitBindingDomain (d : Expr) (s : State) : MetaM State := do
+    let s' ← go d { s with args := #[], pos := s.pos.pushBindingDomain }
+    return { s' with pos := s.pos }
+
   visitBindingBody (b : Expr) (s : State) : MetaM State := do
-    let s' ← go b { s with pos := s.pos.pushBindingBody }
+    let s' ← go b { s with args := #[], pos := s.pos.pushBindingBody }
     return { s' with pos := s.pos }
 
   visitFn (fn : Expr) (arg : Expr) (s : State) : MetaM State := do
