@@ -32,6 +32,7 @@ inductive Expression where
   | forall (ty body : Expression)
   | lit (l : Literal)
   | erased
+  | proof (prop : Expression)
   deriving Inhabited
 
 structure Step extends Rewrite.Info where

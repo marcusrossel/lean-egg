@@ -89,6 +89,7 @@ def Expression.toExpr : Expression → MetaM Expr
   | .forall ty body => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
   | lit l           => return .lit l
   | erased          => mkFreshExprMVar none
+  | proof prop      => do mkFreshExprMVar (← toExpr prop)
 
 end Explanation
 
