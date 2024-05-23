@@ -53,10 +53,11 @@ def from? (proof : Expr) (type : Expr) (src : Source) (cfg : Config) : MetaM (Op
 where
   collectConds (args : Array Expr) (mLhs mRhs : Egg.MVars) : MetaM (Array Rewrite.Condition) := do
     let mut conds := #[]
+    let mut ms : MVarIdSet := mLhs.expr.merge mRhs.expr
+    ms ← ms.foldM (init := ms) fun acc m => return acc.merge (← MVars.collect <| ← m.getType).expr
     for arg in args do
-      if mLhs.expr.contains arg.mvarId! || mRhs.expr.contains arg.mvarId! then continue
+      if ms.contains arg.mvarId! then continue
       let ty ← arg.mvarId!.getType
-      unless ← isProp (← whnf ty) do continue
       conds := conds.push { expr := arg, type := ty, mvars := (← MVars.collect ty).remove cfg.amb }
     return conds
 

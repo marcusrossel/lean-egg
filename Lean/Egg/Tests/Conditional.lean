@@ -65,6 +65,14 @@ example (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
 example (h₁ : Prop) (h₂ : ∀ p : Prop, p → 1 = id 1) : 1 = id 1 := by
   egg [h₂; h₁]
 
+class Fix (α : Type) where
+  fix : ∀ (f : α → α) (a : α), f a = a
+
+/-- error: egg does not currently support rewrites with unbound conditions (expression) -/
+#guard_msgs in
+example [inst : Fix Nat] (f : Nat → Nat) (a : Nat) : f a = a := by
+  egg [Fix.fix]
+
 -- This test checks that rewriting of facts is handled correctly.
 example {p q r : Prop} (h₁ : p) (h₂ : p ↔ q) (h₃ : q → (p ↔ r)) : p ↔ r := by
   egg [h₂, h₃; h₁]
