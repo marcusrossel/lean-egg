@@ -21,6 +21,7 @@ structure Encoding extends Normalization where
 
 structure Gen where
   builtins      := true
+  tagged?       := some `egg
   genTcProjRws  := true
   genTcSpecRws  := true
   genGoalTcSpec := false

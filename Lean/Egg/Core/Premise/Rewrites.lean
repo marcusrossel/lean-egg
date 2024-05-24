@@ -39,7 +39,6 @@ namespace Rewrite
 
 structure Config where
   norm? : Option Config.Normalization := none
-  tagged? : Option Name := `egg
   amb   : MVars.Ambient
 
 def from? (proof : Expr) (type : Expr) (src : Source) (cfg : Config) : MetaM (Option Rewrite) := do

@@ -30,14 +30,15 @@ private def tracePremises
 partial def gen
     (goal : Congr) (ps : TSyntax `egg_premises) (guides : Guides) (cfg : Config)
     (amb : MVars.Ambient) : TacticM (Rewrites × Facts) := do
+  let tagged ← Premises.buildTagged cfg amb
   let ⟨⟨basic, basicStxs⟩, facts⟩ ← Premises.elab { norm? := cfg, amb } ps
-  let (basic, basicStxs, pruned₁) ← prune basic basicStxs (remove := #[])
+  let (basic, basicStxs, pruned₁) ← prune basic basicStxs (remove := tagged)
   let builtins ← if cfg.builtins then Rewrites.builtins { norm? := cfg, amb } else pure #[]
-  let (builtins, _, pruned₂) ← prune builtins (remove := basic)
+  let (builtins, _, pruned₂) ← prune builtins (remove := tagged ++ basic)
   let tc ← genTcRws (basic ++ builtins) facts.elems
-  let (tc, _, pruned₃) ← prune tc (remove := basic ++ builtins)
+  let (tc, _, pruned₃) ← prune tc (remove := tagged ++ basic ++ builtins)
   tracePremises ⟨basic, basicStxs⟩ builtins tc (pruned₁ ++ pruned₂ ++ pruned₃) facts cfg
-  let rws := basic ++ builtins ++ tc
+  let rws := tagged ++ basic ++ builtins ++ tc
   catchInvalidConditionals rws
   return (rws, facts.elems)
 where

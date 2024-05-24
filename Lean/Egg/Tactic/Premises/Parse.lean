@@ -120,12 +120,12 @@ private def Premises.elabTagged (prems : Array Name) (cfg : Rewrite.Config) : Ta
     rws := rws ++ (← taggedRw prem idx cfg)
   return rws
 
-def Premises.buildTagged (cfg : Rewrite.Config) : TacticM Rewrites :=
+def Premises.buildTagged (cfg : Config) (amb : MVars.Ambient ): TacticM Rewrites :=
   match cfg.tagged? with
     | none => return {}
     | some _ => do -- This should later use this `Name` to find the proper extension
       let prems := eggXtension.getState (← getEnv)
-      elabTagged prems cfg
+      elabTagged prems { norm? := cfg, amb}
 
 -- Note: This function is expected to be called with the lctx which contains the desired premises.
 --
