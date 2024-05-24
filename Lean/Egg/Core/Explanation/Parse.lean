@@ -66,6 +66,7 @@ syntax "≡/"                                          : egg_fwd_rw_src
 syntax str                                           : egg_fwd_rw_src
 -- syntax "≡%"                                       : egg_fwd_rw_src
 
+syntax "!?"               : egg_fact_src
 syntax "!" egg_fwd_rw_src : egg_fact_src
 
 syntax egg_fwd_rw_src (noWs "-rev")? egg_fact_src* : egg_rw_src
@@ -88,6 +89,7 @@ syntax "(" &"app" egg_rw_expr egg_rw_expr ")"                    : egg_rw_expr
 syntax "(" &"λ" egg_rw_expr egg_rw_expr ")"                      : egg_rw_expr
 syntax "(" &"∀" egg_rw_expr egg_rw_expr ")"                      : egg_rw_expr
 syntax "(" &"lit" egg_lit ")"                                    : egg_rw_expr
+syntax "(" &"proof" egg_rw_expr ")"                              : egg_rw_expr
 syntax "(" &"Rewrite" noWs egg_rw_dir egg_rw_src egg_rw_expr ")" : egg_rw_expr
 
 syntax egg_rw_expr+ : egg_expl
@@ -148,8 +150,9 @@ private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
     tcExts.foldl (init := parseBasicFwdRwSrc src) parseTcExtension
   | _ => unreachable!
 
-private def parseFactSrc : (TSyntax `egg_fact_src) → Source
-  | `(egg_fact_src|!$f:egg_fwd_rw_src) => .fact (parseFwdRwSrc f)
+private def parseFactSrc : (TSyntax `egg_fact_src) → Option Source
+  | `(egg_fact_src|!?)                 => none
+  | `(egg_fact_src|!$f:egg_fwd_rw_src) => some <| .fact (parseFwdRwSrc f)
   | _                                  => unreachable!
 
 private def parseRwSrc : (TSyntax `egg_rw_src) → Rewrite.Descriptor
@@ -165,6 +168,7 @@ inductive ParseError where
   | startContainsRw
   | missingRw
   | multipleRws
+  | proofRw
   deriving Inhabited
 
 private def ParseError.msgPrefix :=
@@ -177,6 +181,7 @@ instance : Coe ParseError MessageData where
     | startContainsRw => s!"{msgPrefix} start contains a rewrite"
     | missingRw       => s!"{msgPrefix} (non-start) step does not contain a rewrite"
     | multipleRws     => s!"{msgPrefix} step contains multiple rewrites"
+    | proofRw         => s!"{msgPrefix} step contains type-level rewrite in proof"
 
 private abbrev ParseStepResult := Except ParseError <| Expression × (Option Rewrite.Info)
 private abbrev ParseStepM := ExceptT ParseError <| StateM (Option Rewrite.Info)
@@ -214,8 +219,16 @@ where
     | `(egg_rw_expr|(λ $ty $body))            => return .lam (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(egg_rw_expr|(∀ $ty $body))            => return .forall (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(egg_rw_expr|(lit $l))                 => return .lit (parseLit l)
+    | `(egg_rw_expr|(proof $p))               => return .proof (← parseProof p pos)
     | `(egg_rw_expr|(Rewrite$dir $src $body)) => parseRw dir src body pos
-    | _                                         => unreachable!
+    | _                                       => unreachable!
+
+  parseProof (p : TSyntax `egg_rw_expr) (pos : SubExpr.Pos) : ParseStepM Expression := do
+    let hadRw := (← get).isSome
+    let e ← go pos p
+    let hasRw := (← get).isSome
+    if !hadRw && hasRw then throw .proofRw
+    return e
 
   parseRw (dir : TSyntax `egg_rw_dir) (src : TSyntax `egg_rw_src) (body : TSyntax `egg_rw_expr)
       (pos : SubExpr.Pos) : ParseStepM Expression := do

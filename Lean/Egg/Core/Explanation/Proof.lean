@@ -9,62 +9,62 @@ open Lean Meta
 namespace Egg.Explanation
 
 private partial def replaceSubexprs
-    (replace : (sub₁ sub₂ : Expr) → MetaM (Expr × Expr)) (p : SubExpr.Pos) (root₁ root₂ : Expr) :
-    MetaM (Expr × Expr) :=
+    (replace : (sub₁ sub₂ : Expr) → MetaM (Expr × Expr × ζ)) (p : SubExpr.Pos) (root₁ root₂ : Expr) :
+    MetaM (Expr × Expr × ζ) :=
   go replace p.toArray.toList root₁ root₂
 where
-  go (g : Expr → Expr → MetaM (Expr × Expr)) : List Nat → Expr → Expr → MetaM (Expr × Expr)
+  go (g : Expr → Expr → MetaM (Expr × Expr × ζ)) : List Nat → Expr → Expr → MetaM (Expr × Expr × ζ)
     | [],       e₁, e₂ => g e₁ e₂
     | hd :: tl, e₁, e₂ => coord (go g tl) hd e₁ e₂
 
-  coord (g : Expr → Expr → MetaM (Expr × Expr)) (c : Nat) (e₁ e₂ : Expr) : MetaM (Expr × Expr) := do
+  coord (g : Expr → Expr → MetaM (Expr × Expr × ζ)) (c : Nat) (e₁ e₂ : Expr) : MetaM (Expr × Expr × ζ) := do
     match c, e₁, e₂ with
     | 0, .app f₁ a₁, .app f₂ a₂ => do
       unless ← isDefEq a₁ a₂ do throwDifferent e₁ e₂
-      let (f₁', f₂') ← g f₁ f₂
-      return (.app f₁' a₁, .app f₂' a₂)
+      let (f₁', f₂', z) ← g f₁ f₂
+      return (.app f₁' a₁, .app f₂' a₂, z)
     | 1, .app f₁ a₁, .app f₂ a₂ => do
       unless ← isDefEq f₁ f₂ do throwDifferent e₁ e₂
-      let (a₁', a₂') ← g a₁ a₂
-      return (.app f₁ a₁', .app f₂ a₂')
+      let (a₁', a₂', z) ← g a₁ a₂
+      return (.app f₁ a₁', .app f₂ a₂', z)
     | 0, .lam n₁ t₁ b₁ i₁, .lam n₂ t₂ b₂ i₂ => do
       unless ← isDefEq b₁ b₂ do throwDifferent e₁ e₂
-      let (t₁', t₂') ← g t₁ t₂
-      return (.lam n₁ t₁' b₁ i₁, .lam n₂ t₂' b₂ i₂)
+      let (t₁', t₂', z) ← g t₁ t₂
+      return (.lam n₁ t₁' b₁ i₁, .lam n₂ t₂' b₂ i₂, z)
     | 1, .lam n₁ t₁ b₁ i₁, .lam _ t₂ b₂ _ => do
       unless ← isDefEq t₁ t₂ do throwDifferent e₁ e₂
       withLocalDecl n₁ i₁ t₁ fun fvar => do
-        let (b₁', b₂') ← g (b₁.instantiateRev #[fvar]) (b₂.instantiateRev #[fvar])
-        return (← mkLambdaFVars #[fvar] b₁', ← mkLambdaFVars #[fvar] b₂')
+        let (b₁', b₂', z) ← g (b₁.instantiateRev #[fvar]) (b₂.instantiateRev #[fvar])
+        return (← mkLambdaFVars #[fvar] b₁', ← mkLambdaFVars #[fvar] b₂', z)
     | 0, .forallE n₁ t₁ b₁ i₁, .forallE n₂ t₂ b₂ i₂ => do
       unless ← isDefEq b₁ b₂ do throwDifferent e₁ e₂
-      let (t₁', t₂') ← g t₁ t₂
-      return (.forallE n₁ t₁' b₁ i₁, .forallE n₂ t₂' b₂ i₂)
+      let (t₁', t₂', z) ← g t₁ t₂
+      return (.forallE n₁ t₁' b₁ i₁, .forallE n₂ t₂' b₂ i₂, z)
     | 1, .forallE n₁ t₁ b₁ i₁, .forallE _ t₂ b₂ _ => do
       unless ← isDefEq t₁ t₂ do throwDifferent e₁ e₂
       withLocalDecl n₁ i₁ t₁ fun fvar => do
-        let (b₁', b₂') ← g (b₁.instantiateRev #[fvar]) (b₂.instantiateRev #[fvar])
-        return (← mkForallFVars #[fvar] b₁', ← mkForallFVars #[fvar] b₂')
+        let (b₁', b₂', z) ← g (b₁.instantiateRev #[fvar]) (b₂.instantiateRev #[fvar])
+        return (← mkForallFVars #[fvar] b₁', ← mkForallFVars #[fvar] b₂', z)
     | 0, .letE n₁ t₁ v₁ b₁ f₁, .letE n₂ t₂ v₂ b₂ f₂ => do
       unless ← isDefEq v₁ v₂ <&&> isDefEq b₁ b₂ do throwDifferent e₁ e₂
-      let (t₁', t₂') ← g t₁ t₂
-      return (.letE n₁ t₁' v₁ b₁ f₁, .letE n₂ t₂' v₂ b₂ f₂)
+      let (t₁', t₂', z) ← g t₁ t₂
+      return (.letE n₁ t₁' v₁ b₁ f₁, .letE n₂ t₂' v₂ b₂ f₂, z)
     | 1, .letE n₁ t₁ v₁ b₁ f₁, .letE n₂ t₂ v₂ b₂ f₂ => do
       unless ← isDefEq t₁ t₂ <&&> isDefEq b₁ b₂ do throwDifferent e₁ e₂
-      let (v₁', v₂') ← g v₁ v₂
-      return (.letE n₁ t₁ v₁' b₁ f₁, .letE n₂ t₂ v₂' b₂ f₂)
+      let (v₁', v₂', z) ← g v₁ v₂
+      return (.letE n₁ t₁ v₁' b₁ f₁, .letE n₂ t₂ v₂' b₂ f₂, z)
     | 2, .letE n₁ t₁ v₁ b₁ _, .letE _ t₂ v₂ b₂ _ => do
       unless ← isDefEq t₁ t₂ <&&> isDefEq v₁ v₂ do throwDifferent e₁ e₂
       withLetDecl n₁ t₁ v₁ fun fvar => do
-        let (b₁', b₂') ← g (b₁.instantiateRev #[fvar]) (b₂.instantiateRev #[fvar])
-        return (← mkLetFVars #[fvar] b₁', ← mkLetFVars #[fvar] b₂')
+        let (b₁', b₂', z) ← g (b₁.instantiateRev #[fvar]) (b₂.instantiateRev #[fvar])
+        return (← mkLetFVars #[fvar] b₁', ← mkLetFVars #[fvar] b₂', z)
     | 0, .proj t₁ i₁ s₁, .proj t₂ i₂ s₂ => do
       unless t₁ == t₂ && i₁ == i₂ do throwDifferent e₁ e₂
-      let (s₁', s₂') ← g s₁ s₂
-      return (.proj t₁ i₁ s₁', .proj t₂ i₂ s₂')
+      let (s₁', s₂', z) ← g s₁ s₂
+      return (.proj t₁ i₁ s₁', .proj t₂ i₂ s₂', z)
     | n, .mdata d₁ e₁, .mdata d₂ e₂ => do
-      let (e₁', e₂') ← coord g n e₁ e₂
-      return (.mdata d₁ e₁', .mdata d₂ e₂')
+      let (e₁', e₂', z) ← coord g n e₁ e₂
+      return (.mdata d₁ e₁', .mdata d₂ e₂', z)
     | 3, _, _ =>
       throwError "'Egg.Explanation.replaceSubexprs' tried to lens on types (this is not supported)"
     | n, e₁@(.mvar _), e₂ => do
@@ -89,19 +89,24 @@ def Expression.toExpr : Expression → MetaM Expr
   | .forall ty body => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
   | lit l           => return .lit l
   | erased          => mkFreshExprMVar none
+  | proof prop      => do mkFreshExprMVar (← toExpr prop)
 
 end Explanation
 
-inductive Proof.Step.Rewrite where
+namespace Proof
+
+abbrev Subgoals := List MVarId
+
+inductive Step.Rewrite where
   | rw    (rw : Egg.Rewrite) (isRefl : Bool)
   | defeq (src : Source)
   deriving Inhabited
 
-def Proof.Step.Rewrite.isRefl : Rewrite → Bool
+def Step.Rewrite.isRefl : Rewrite → Bool
   | rw _ isRefl => isRefl
   | defeq _     => true
 
-structure Proof.Step where
+structure Step where
   lhs   : Expr
   rhs   : Expr
   proof : Expr
@@ -110,15 +115,19 @@ structure Proof.Step where
   -- TODO: conds : Array Proof
   deriving Inhabited
 
-abbrev Proof := Array Proof.Step
+end Proof
+
+structure Proof where
+  steps    : Array Proof.Step
+  subgoals : Proof.Subgoals
 
 def Proof.prove (prf : Proof) (cgr : Congr) : MetaM Expr := do
-  let some first := prf[0]? | return (← cgr.rel.mkRefl cgr.lhs)
+  let some first := prf.steps[0]? | return (← cgr.rel.mkRefl cgr.lhs)
   unless ← isDefEq first.lhs cgr.lhs do fail "initial expression is not defeq to lhs of proof goal"
   let mut proof := first.proof
-  for step in prf[1:] do
+  for step in prf.steps[1:] do
     if !step.rw.isRefl then proof ← mkEqTrans proof step.proof
-  unless ← isDefEq prf.back.rhs cgr.rhs do fail "final expression is not defeq to rhs of proof goal"
+  unless ← isDefEq prf.steps.back.rhs cgr.rhs do fail "final expression is not defeq to rhs of proof goal"
   match cgr.rel with
   | .eq  => return proof
   | .iff => mkIffOfEq proof
@@ -130,66 +139,80 @@ partial def Explanation.proof
     (expl : Explanation) (rws : Rewrites) (facts : Facts) (egraph : EGraph) (ctx : EncodingCtx) :
     MetaM Proof := do
   let mut current ← expl.start.toExpr
-  let mut proof : Proof := #[]
+  let mut steps    : Array Proof.Step := #[]
+  let mut subgoals : Proof.Subgoals := []
   for step in expl.steps do
     let next ← step.dst.toExpr
-    proof := proof.push (← proofStep current next step.toInfo)
-    current := next
-  return proof
+    let (prf, sub) ← proofStep current next step.toInfo
+    steps    := steps.push prf
+    subgoals := subgoals ++ sub
+    current  := next
+  return { steps, subgoals }
 where
   fail {α} (msg : MessageData) : MetaM α := do
     throwError m!"egg failed to build proof: {msg}"
 
-  proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Proof.Step := do
-    if rwInfo.src.isDefEq then return {
-      lhs := current, rhs := next, proof := ← mkReflStep current next rwInfo.toDescriptor,
-      rw := .defeq rwInfo.src, dir := rwInfo.dir
-    }
+  proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM (Proof.Step × Proof.Subgoals) := do
+    if rwInfo.src.isDefEq then
+      let step := {
+        lhs := current, rhs := next, proof := ← mkReflStep current next rwInfo.toDescriptor,
+        rw := .defeq rwInfo.src, dir := rwInfo.dir
+      }
+      return (step, [])
     let some rw := rws.find? rwInfo.src | fail s!"unknown rewrite {rwInfo.src.description}"
     -- TODO: Can there be conditional rfl proofs?
-    if ← isRflProof rw.proof then return {
-      lhs := current, rhs := next, proof := ← mkReflStep current next rwInfo.toDescriptor,
-      rw := .rw rw (isRefl := true), dir := rwInfo.dir
-    }
-    let facts ← rwInfo.facts.mapM fun src =>
+    if ← isRflProof rw.proof then
+      let step := {
+        lhs := current, rhs := next, proof := ← mkReflStep current next rwInfo.toDescriptor,
+        rw := .rw rw (isRefl := true), dir := rwInfo.dir
+      }
+      return (step, [])
+    let facts ← rwInfo.facts.mapM fun src? => do
+      let some src := src? | pure none
       facts.find? (·.src == src) |>.getDM <| fail m!"explanation references unknown fact {src}"
-    let prf ← mkCongrStep current next rwInfo.pos?.get! (← rw.forDir rwInfo.dir) facts
-    return {
+    let (prf, subgoals) ← mkCongrStep current next rwInfo.pos?.get! (← rw.forDir rwInfo.dir) facts
+    let step := {
       lhs := current, rhs := next, proof := prf,
       rw := .rw rw (isRefl := false), dir := rwInfo.dir
     }
+    return (step, subgoals)
 
   mkReflStep (current next : Expr) (rw : Rewrite.Descriptor) : MetaM Expr := do
     unless ← isDefEq current next do
       fail s!"unification failure for proof by reflexivity with rw {rw.src.description}"
     mkEqRefl next
 
-  mkCongrStep (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) (facts : Facts) :
-      MetaM Expr := do
+  mkCongrStep (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) (facts : Array (Option Fact)) :
+      MetaM (Expr × Proof.Subgoals) := do
     let mvc := (← getMCtx).mvarCounter
-    let (lhs, rhs) ← placeCHoles current next pos rw facts
-    try (← mkCongrOf 0 mvc lhs rhs).eq
+    let (lhs, rhs, subgoals) ← placeCHoles current next pos rw facts
+    try return (← (← mkCongrOf 0 mvc lhs rhs).eq, subgoals)
     catch err => fail m!"'mkCongrOf' failed with\n  {err.toMessageData}"
 
-  placeCHoles (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) (facts : Facts) :
-      MetaM (Expr × Expr) := do
+  placeCHoles (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) (facts : Array (Option Fact)) :
+      MetaM (Expr × Expr × Proof.Subgoals) := do
     replaceSubexprs (root₁ := current) (root₂ := next) (p := pos) fun lhs rhs => do
       -- It's necessary that we create the fresh rewrite (that is, create the fresh mvars) in *this*
       -- local context as otherwise the mvars can't unify with variables under binders.
       let rw ← rw.fresh
       unless ← isDefEq lhs rw.lhs do fail m!"unification failure for LHS of rewrite {rw.src.description}:\n  {lhs}\nvs\n  {rw.lhs}\nin\n{current}\nand\n  {next}"
       unless ← isDefEq rhs rw.rhs do fail m!"unification failure for RHS of rewrite {rw.src.description}:\n  {rhs}\nvs\n  {rw.rhs}\nin\n{current}\nand\n  {next}"
-      for cond in rw.conds, fact in facts do
-        if ← isDefEq cond.expr fact.proof then
-          continue
+      let mut subgoals := []
+      for cond in rw.conds, fact? in facts do
+        if let some fact := fact? then
+          if ← isDefEq cond.expr fact.proof then
+            continue
+          else
+            if let some condProof ← mkConditionSubproof fact cond.type then
+              if ← isDefEq cond.expr condProof then continue
+            fail m!"condition {cond.type} of rewrite {rw.src.description} could not be proven"
         else
-          if let some condProof ← mkConditionSubproof fact cond.type then
-            if ← isDefEq cond.expr condProof then continue
-          fail m!"condition {cond.type} of rewrite {rw.src.description} could not be proven"
+          subgoals := subgoals.concat cond.expr.mvarId!
       let proof ← rw.eqProof
       return (
         ← mkCHole (forLhs := true) lhs proof,
-        ← mkCHole (forLhs := false) rhs proof
+        ← mkCHole (forLhs := false) rhs proof,
+        subgoals
       )
 
   mkConditionSubproof (fact : Fact) (cond : Expr) : MetaM (Option Expr) := do

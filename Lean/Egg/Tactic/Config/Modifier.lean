@@ -22,6 +22,7 @@ structure Modifier where
   genLevelRws         : Option Bool            := none
   shiftCapturedBVars  : Option Bool            := none
   blockInvalidMatches : Option Bool            := none
+  conditionSubgoals   : Option Bool            := none
   optimizeExpl        : Option Bool            := none
   timeLimit           : Option Nat             := none
   traceSubstitutions  : Option Bool            := none
@@ -46,6 +47,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   genLevelRws         := mod.genLevelRws.getD cfg.genLevelRws
   shiftCapturedBVars  := mod.shiftCapturedBVars.getD cfg.shiftCapturedBVars
   blockInvalidMatches := mod.blockInvalidMatches.getD cfg.blockInvalidMatches
+  conditionSubgoals   := mod.conditionSubgoals.getD cfg.conditionSubgoals
   optimizeExpl        := mod.optimizeExpl.getD cfg.optimizeExpl
   timeLimit           := mod.timeLimit.getD cfg.timeLimit
   traceSubstitutions  := mod.traceSubstitutions.getD cfg.traceSubstitutions

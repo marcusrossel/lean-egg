@@ -28,8 +28,9 @@ define_language! {
         "∀"     = Forall([Id; 2]),  // (<expr>, <expr>)
         "lit"   = Lit(Id),          // (Nat | Str)
 
-        // Constant for erased expressions:
+        // Constants for erased expressions:
         "_" = Erased,
+        "proof" = Proof(Id),
     }
 }
 

@@ -12,7 +12,7 @@ namespace Rewrite
 structure Descriptor where
   src   : Source
   dir   : Direction
-  facts : Array Source
+  facts : Array (Option Source)
   deriving Inhabited
 
 structure Info extends Descriptor where
@@ -32,6 +32,7 @@ inductive Expression where
   | forall (ty body : Expression)
   | lit (l : Literal)
   | erased
+  | proof (prop : Expression)
   deriving Inhabited
 
 structure Step extends Rewrite.Info where

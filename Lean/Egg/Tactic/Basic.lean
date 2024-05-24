@@ -51,13 +51,15 @@ private def processRawExpl
   -- When `goal.base? = some base`, then `proof` is a proof of `base = <goal type>`. We turn this
   -- into a proof of `<goal type>` here.
   if let some base := goal.base? then prf ← mkEqMP prf (.fvar base)
-  catchLooseMVars prf ctx.amb
+  catchLooseMVars prf ctx.amb proof.subgoals
+  -- TODO: These mvars have the wrong depth.
+  appendGoals proof.subgoals
   return prf
 where
-  catchLooseMVars (prf : Expr) (amb : MVars.Ambient) : MetaM Unit := do
+  catchLooseMVars (prf : Expr) (amb : MVars.Ambient) (subgoals : List MVarId) : MetaM Unit := do
     let mvars ← MVars.collect prf
     for mvar in mvars.expr do
-      unless amb.expr.contains mvar do
+      unless subgoals.contains mvar || amb.expr.contains mvar do
         throwError m!"egg: final proof contains expression mvar {Expr.mvar mvar}"
     for lmvar in mvars.lvl do
       unless amb.lvl.contains lmvar do

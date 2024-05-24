@@ -11,7 +11,7 @@ syntax "*"  : egg_premise
 syntax term : egg_premise
 
 declare_syntax_cat egg_premise_list
-syntax "[" egg_premise,+ ("; " egg_premise,+)? "]": egg_premise_list
+syntax "[" egg_premise,+ ("; " egg_premise,+)? "]" : egg_premise_list
 
 declare_syntax_cat egg_premises
 syntax (egg_premise_list)? : egg_premises
@@ -91,7 +91,8 @@ private def Premise.Mk.fact : Premise.Mk Fact :=
 private def Premise.Mk?.fact : Premise.Mk? Fact :=
   fun proof type src => Fact.from proof type (.fact src)
 
-private def Premises.explicit (prem : Term) (idx : Nat) (mk : Premise.Mk α) :
+private def Premises.explicit
+    (prem : Term) (idx : Nat) (mk : Premise.Mk α) (mkSrc : Nat → Option Nat → Source := .explicit) :
     TacticM <| WithSyntax (Array α) := do
   match ← Premise.Raw.elab prem with
   | .single e type? => return { elems := #[(← make e type? none)], stxs := #[prem] }
@@ -102,9 +103,15 @@ private def Premises.explicit (prem : Term) (idx : Nat) (mk : Premise.Mk α) :
     return result
 where
   make (e : Expr) (ty? : Option Expr) (eqnIdx? : Option Nat) : TacticM α := do
-    let src := .explicit idx eqnIdx?
+    let src := mkSrc idx eqnIdx?
     let ty := ty?.getD (← inferType e)
     mk e ty src
+
+private def Premises.taggedRw (prem : Name) (idx : Nat) (cfg : Rewrite.Config) : TacticM Rewrites := do
+  let ident := mkIdent prem
+  let mk := Premise.Mk.rewrite ident cfg
+  let rws ← Premises.explicit ident idx mk .tagged
+  return rws.elems
 
 -- Note: This function is expected to be called with the lctx which contains the desired premises.
 --

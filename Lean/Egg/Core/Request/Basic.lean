@@ -10,29 +10,31 @@ namespace Egg.Request
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 protected structure Config where
-  optimizeExpl        : Bool
-  timeLimit           : Nat
-  genNatLitRws        : Bool
-  genEtaRw            : Bool
-  genBetaRw           : Bool
-  genLevelRws         : Bool
-  blockInvalidMatches : Bool
-  shiftCapturedBVars  : Bool
-  traceSubstitutions  : Bool
-  traceBVarCorrection : Bool
+  optimizeExpl         : Bool
+  timeLimit            : Nat
+  genNatLitRws         : Bool
+  genEtaRw             : Bool
+  genBetaRw            : Bool
+  genLevelRws          : Bool
+  blockInvalidMatches  : Bool
+  shiftCapturedBVars   : Bool
+  allowUnsatConditions : Bool
+  traceSubstitutions   : Bool
+  traceBVarCorrection  : Bool
 
 instance : Coe Config Request.Config where
   coe cfg := {
-    optimizeExpl        := cfg.optimizeExpl
-    timeLimit           := cfg.timeLimit
-    genNatLitRws        := cfg.genNatLitRws
-    genEtaRw            := cfg.genEtaRw
-    genBetaRw           := cfg.genBetaRw
-    genLevelRws         := cfg.genLevelRws
-    blockInvalidMatches := cfg.blockInvalidMatches
-    shiftCapturedBVars  := cfg.shiftCapturedBVars
-    traceSubstitutions  := cfg.traceSubstitutions
-    traceBVarCorrection := cfg.traceBVarCorrection
+    optimizeExpl         := cfg.optimizeExpl
+    timeLimit            := cfg.timeLimit
+    genNatLitRws         := cfg.genNatLitRws
+    genEtaRw             := cfg.genEtaRw
+    genBetaRw            := cfg.genBetaRw
+    genLevelRws          := cfg.genLevelRws
+    blockInvalidMatches  := cfg.blockInvalidMatches
+    shiftCapturedBVars   := cfg.shiftCapturedBVars
+    allowUnsatConditions := cfg.conditionSubgoals
+    traceSubstitutions   := cfg.traceSubstitutions
+    traceBVarCorrection  := cfg.traceBVarCorrection
   }
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
