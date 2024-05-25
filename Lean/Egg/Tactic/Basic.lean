@@ -67,7 +67,7 @@ where
 
 open Config.Modifier (egg_cfg_mod)
 
-def eval
+protected def eval
     (mod : TSyntax ``egg_cfg_mod) (prems : TSyntax `egg_premises)
     (base : Option (TSyntax `egg_base)) (guides : Option (TSyntax `egg_guides)) : TacticM Unit := do
   let goal ← getMainGoal
@@ -96,8 +96,9 @@ def eval
     then goal.id.assignIfDefeq' proof
     else goal.id.admit
 
-syntax "egg" egg_cfg_mod egg_premises (egg_base)? (egg_guides)? : tactic
-elab_rules : tactic | `(tactic| egg $mod $prems $[$base]? $[$guides]?) => eval mod prems base guides
+syntax &"egg" egg_cfg_mod egg_premises (egg_base)? (egg_guides)? : tactic
+elab_rules : tactic
+  | `(tactic| egg $mod $prems $[$base]? $[$guides]?) => Egg.eval mod prems base guides
 
 -- WORKAROUND: This fixes `Tests/EndOfInput *`.
 macro "egg" mod:egg_cfg_mod : tactic => `(tactic| egg $mod)
