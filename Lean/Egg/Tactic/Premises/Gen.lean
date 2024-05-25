@@ -12,11 +12,12 @@ namespace Egg.Premises
 -- TODO: Perform pruning during generation, not after.
 
 private def tracePremises
-    (basic : WithSyntax Rewrites) (builtins tc pruned : Rewrites) (facts : WithSyntax Facts)
+    (basic : WithSyntax Rewrites) (tagged builtins tc pruned : Rewrites) (facts : WithSyntax Facts)
     (cfg : Config.Gen) : TacticM Unit := do
   let cls := `egg.rewrites
   withTraceNode cls (fun _ => return "Rewrites") do
     withTraceNode cls (fun _ => return m!"Basic ({basic.elems.size})") do basic.elems.trace basic.stxs cls
+    withTraceNode cls (fun _ => return m!"Tagged ({tagged.size})") do tagged.trace #[] cls
     withTraceNode cls (fun _ => return m!"Generated ({tc.size})") do tc.trace #[] cls
     withTraceNode cls (fun _ => return m!"Builtin ({builtins.size})") do builtins.trace #[] cls
     withTraceNode cls (fun _ => return m!"Hypotheses ({facts.elems.size})") do
@@ -37,7 +38,7 @@ partial def gen
   let (builtins, _, pruned₂) ← prune builtins (remove := tagged ++ basic)
   let tc ← genTcRws (basic ++ builtins) facts.elems
   let (tc, _, pruned₃) ← prune tc (remove := tagged ++ basic ++ builtins)
-  tracePremises ⟨basic, basicStxs⟩ builtins tc (pruned₁ ++ pruned₂ ++ pruned₃) facts cfg
+  tracePremises ⟨basic, basicStxs⟩ tagged builtins tc (pruned₁ ++ pruned₂ ++ pruned₃) facts cfg
   let rws := tagged ++ basic ++ builtins ++ tc
   catchInvalidConditionals rws
   return (rws, facts.elems)

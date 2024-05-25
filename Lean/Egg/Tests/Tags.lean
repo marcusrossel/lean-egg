@@ -37,14 +37,13 @@ theorem inv_mul_cancel_left : a⁻¹ * (a * b) = b := by
 theorem mul_inv_cancel_left : a * (a⁻¹ * b) = b :=  by
   egg
 
+-- TODO: should egg (or a version of egg) do the intros automatically to get an eq goal?
 @[egg]
-theorem group_cancel : (∀ a : α, a * b = a) → a = 1 := by
-  intros h
-  egg [h]
+theorem mul_eq_de_eq_inv_mul : x = a⁻¹ * y → a * x = y := by
+ intros h
+ egg [h]
 
-@[egg]
-lemma mul_eq_de_eq_inv_mul : x = a⁻¹ * y → a * x = y := by
- egg
+-- Here come some tests for egg accepting/rejecting tagged lemmas
 
 def hPow : α → Nat → α
     | _, 0 => 1
@@ -73,3 +72,7 @@ def commutator := a*b*a⁻¹*b⁻¹
 -- Ideally, egg can see through this prop that there's an equality?
 @[egg]
 theorem all_commutators_trivial_abelian : (∀ a b : α, commutator a b = 1) → Abelian α := by sorry
+
+/-- We should not break egg after adding these lemmas -/
+example : a * b = b * a := by
+  egg
