@@ -6,8 +6,6 @@ open Lean
 
 namespace Egg
 
-abbrev Expression := String
-
 private def Expression.erased : Expression :=
   "_"
 
@@ -32,15 +30,17 @@ structure EncodingCtx where
   amb : MVars.Ambient
 
 -- Note: This function expects its input expression to be normalized (cf. `Egg.normalize`).
-partial def encode (e : Expr) (ctx : EncodingCtx) : MetaM Expression :=
-  Prod.fst <$> (go e).run { config := ctx.cfg, amb := ctx.amb }
+partial def encode (e : Expr) (ctx : EncodingCtx) (dbg := 0) : MetaM Expression :=
+  dbg_trace "calling encode"
+  Prod.fst <$> (go e).run { config := ctx.cfg, amb := ctx.amb, dbg }
 where
-  go (e : Expr) : EncodeM Expression := do
-    if ← needsProofErasure e then
-      let prop ← normalize (← Meta.inferType e) .noReduce
-      return s!"(proof {← go prop})"
-    else
-      core e
+  go (e : Expr) : EncodeM Expression :=
+    withCache e do
+      if ← needsProofErasure e then
+        let prop ← normalize (← Meta.inferType e) .noReduce
+        return s!"(proof {← go prop})"
+      else
+        core e
 
   core : Expr → EncodeM Expression
     | .bvar idx         => return s!"(bvar {idx})"
