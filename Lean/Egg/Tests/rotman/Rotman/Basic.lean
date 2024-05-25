@@ -50,14 +50,15 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
     -- TODO: Some of these egg calls generate an insane number of rewrites.
     calc (n + 1).choose r
       _ = (n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!) := by egg [proposition_1_14, hi h₁, hi h₂, h₃]
-      _ = _ := Nat.cast_inj.mp <|
-        calc ↑((n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!))
-          _ = (n¡ / ((r - 1)¡ * (n - r + 1)¡) + n¡ / (r ¡ * (n - r)¡))             := toReal
-          _ = n¡ / ((r - 1)¡ * (n - r)¡) * (1 / (n - r + 1) + 1 / r)               := by egg [mul_comm, mul_assoc, sub_add_cancel, Real.Gamma_add_one, div_mul_eq_div_mul_one_div, left_distrib (R := Real); h₄, h₅]
-          _ = n¡ / ((r - 1)¡ * (n - r)¡) * ((r + (n - r + 1)) / (r * (n - r + 1))) := by egg [_root_.add_div, mul_div_mul_left, mul_one, mul_comm; h₄, h₅]
-          _ = n¡ / ((r - 1)¡ * (n - r)¡) * ((n + 1) / (r * (n - r + 1)))           := by egg [add_comm, sub_add_cancel, sub_add_eq_add_sub]
-          _ = (n + 1)¡ / (r¡ * (n + 1 - r)¡)                                       := by egg [mul_comm, mul_assoc, sub_add_cancel, sub_add_eq_add_sub, Real.Gamma_add_one, _root_.div_mul_div_comm; h₄, h₅, h₆]
-          _ = ↑((n + 1)! / (r ! * (n + 1 - r)!))                                   := fromReal
+      _ = _ := Nat.cast_inj.mp <| by
+        egg calc [toReal, fromReal, add_comm, sub_add_cancel, mul_comm, mul_assoc, Real.Gamma_add_one; h₄, h₅, h₆]
+          ↑((n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!))
+          _ = (n¡ / ((r - 1)¡ * (n - r + 1)¡) + n¡ / (r ¡ * (n - r)¡))
+          _ = n¡ / ((r - 1)¡ * (n - r)¡) * (1 / (n - r + 1) + 1 / r)               with [div_mul_eq_div_mul_one_div, left_distrib (R := Real)]
+          _ = n¡ / ((r - 1)¡ * (n - r)¡) * ((r + (n - r + 1)) / (r * (n - r + 1))) with [_root_.add_div, mul_div_mul_left, mul_one]
+          _ = n¡ / ((r - 1)¡ * (n - r)¡) * ((n + 1) / (r * (n - r + 1)))           with [sub_add_eq_add_sub]
+          _ = (n + 1)¡ / (r¡ * (n + 1 - r)¡)                                       with [sub_add_eq_add_sub, _root_.div_mul_div_comm]
+          _ = ↑((n + 1)! / (r ! * (n + 1 - r)!))
 
 -- TODO: Could egg be a good tactic for converting between representations, assuming we can get the
 --       required condition subgoals as output? Problem is that this doesn't even work:

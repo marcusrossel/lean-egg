@@ -7,6 +7,10 @@ example : 0 = 0 := by
   egg calc _ = 0
 
 example : 0 = 0 := by
+  egg calc 0
+    _ = 0
+
+example : 0 = 0 := by
   egg calc _ = _
 
 example (h : a = b) : a = b := by

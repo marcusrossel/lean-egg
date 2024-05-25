@@ -4,7 +4,7 @@ open Egg.Config.Modifier (egg_cfg_mod)
 
 namespace Egg
 
-private def appendPremises : (TSyntax `egg_premises) → (TSyntax `egg_premises) → MacroM (TSyntax `egg_premises)
+private def appendPremises : (TSyntax `egg_premises) → (TSyntax `egg_premises) → TacticM (TSyntax `egg_premises)
   | `(egg_premises|$[$ps₁]?), `(egg_premises|$[$ps₂]?) =>
     match ps₁, ps₂ with
     | ps, none | none, ps => `(egg_premises|$[$ps]?)
@@ -16,8 +16,8 @@ private def appendPremises : (TSyntax `egg_premises) → (TSyntax `egg_premises)
           | fs, none | none, fs => fs
           | some fs₁, some fs₂ => fs₁.getElems ++ fs₂.getElems
         `(egg_premises| [$rws,* $[; $fs,*]?])
-      | _, _ => Macro.throwUnsupported
-  | _, _ => Macro.throwUnsupported
+      | _, _ => throwUnsupportedSyntax
+  | _, _ => throwUnsupportedSyntax
 
 namespace Calc
 
@@ -30,12 +30,12 @@ private structure Step where
   guides : Option (TSyntax `egg_guides)
   deriving Inhabited
 
-private def parseStep : (TSyntax ``egg_calc_step) → MacroM Step
+private def parseStep : (TSyntax ``egg_calc_step) → TacticM Step
   | `(egg_calc_step| $goal $[with $mod $prems]? $[$guides]?) => do
     let mod ← mod.getDM `(egg_cfg_mod|)
     let prems ← prems.getDM `(egg_premises|)
     return { goal, mod, prems, guides }
-  | _ => Macro.throwUnsupported
+  | _ => throwUnsupportedSyntax
 
 syntax egg_calc_steps := ppLine withPosition(egg_calc_step) withPosition((ppLine linebreak egg_calc_step)*)
 
@@ -44,22 +44,25 @@ private structure Steps where
   tail : Array Step
   deriving Inhabited
 
-private def parseSteps : (TSyntax ``egg_calc_steps) → MacroM Steps
+private def parseSteps : (TSyntax ``egg_calc_steps) → TacticM Steps
   | `(egg_calc_steps| $head $[
       $tail]*) => return { head := ← parseStep head, tail := ← tail.mapM parseStep }
-  | _ => Macro.throwUnsupported
+  | _ => throwUnsupportedSyntax
 
 syntax &"egg " &"calc " egg_premises egg_calc_steps : tactic
 
-macro_rules
+elab_rules : tactic
   | `(tactic| egg calc $prems $steps) => do
     let steps ← parseSteps steps
     let goals := steps.tail.map (·.goal)
-    let stepToEgg (step : Step) : MacroM (TSyntax `tactic) := do
+    let stepToEgg (step : Step) : TacticM (TSyntax `tactic) := do
       let allPrems ← appendPremises step.prems prems
       `(tactic| egg $step.mod $allPrems $[$(Option.none)]? $[$step.guides]?)
-    let headEgg ← stepToEgg steps.head
     let tailEggs ← steps.tail.mapM stepToEgg
-    -- TODO: Handle the head step properly.
-    `(tactic| calc $steps.head.goal:term := by $headEgg:tactic $[
-                                                                $goals := by $tailEggs:tactic]*)
+    let headEgg : Option (TSyntax `tactic) ← do
+      if (← elabTerm steps.head.goal none).eqOrIff?.isSome
+      then pure <| some (← stepToEgg steps.head)
+      else pure none
+    evalTactic <| ← `(tactic| calc $steps.head.goal:term $[:= by $headEgg:tactic]?
+                      $[
+                        $goals := by $tailEggs:tactic]*)
