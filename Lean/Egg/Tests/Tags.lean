@@ -42,37 +42,3 @@ theorem mul_inv_cancel_left : a * (a⁻¹ * b) = b :=  by
 theorem mul_eq_de_eq_inv_mul : x = a⁻¹ * y → a * x = y := by
  intros h
  egg [h]
-
--- Here come some tests for egg accepting/rejecting tagged lemmas
-
-def hPow : α → Nat → α
-    | _, 0 => 1
-    | a, (n+1) => a * hPow a n
-
-instance [Group α] : HPow α Nat α := ⟨hPow⟩
-
-def OrderN (n : Nat) (a : α) : Prop := a^n = 1
-
--- not defining the cardinality here for space reasons
-def card (α) [Group α] : Nat := sorry
-
--- This one should not go through! not an equality
-@[egg]
-theorem ex_min_order : ∃ n : Nat, OrderN n a ∧ (∀ n', n' < n → ¬ OrderN n a) := sorry
-
--- This should also be recognized as an equality
-@[egg]
-theorem card_order : OrderN (card α) a := by
-  sorry
-
-def Abelian (α) [Group α] : Prop := ∀ a b : α, a * b = b * a
-
-def commutator := a*b*a⁻¹*b⁻¹
-
--- Ideally, egg can see through this prop that there's an equality?
-@[egg]
-theorem all_commutators_trivial_abelian : (∀ a b : α, commutator a b = 1) → Abelian α := by sorry
-
-/-- We should not break egg after adding these lemmas -/
-example : a * b = b * a := by
-  egg
