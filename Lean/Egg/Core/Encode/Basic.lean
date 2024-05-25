@@ -30,9 +30,8 @@ structure EncodingCtx where
   amb : MVars.Ambient
 
 -- Note: This function expects its input expression to be normalized (cf. `Egg.normalize`).
-partial def encode (e : Expr) (ctx : EncodingCtx) (dbg := 0) : MetaM Expression :=
-  dbg_trace "calling encode"
-  Prod.fst <$> (go e).run { config := ctx.cfg, amb := ctx.amb, dbg }
+partial def encode (e : Expr) (ctx : EncodingCtx) : MetaM Expression :=
+  Prod.fst <$> (go e).run { config := ctx.cfg, amb := ctx.amb }
 where
   go (e : Expr) : EncodeM Expression :=
     withCache e do
