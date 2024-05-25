@@ -1,6 +1,7 @@
+import Egg.Tactic.Premises.Validate
 import Lean
 
-open Lean
+open Lean Elab Tactic Term
 
 namespace Egg
 
@@ -9,7 +10,9 @@ This validates that a theorem can be used by the `egg` tactic (it ultimately boi
 
 Unimplemented: Currently, this is a noop.
 -/
-def validateEggTheorem : Name → AttrM Unit := fun _ => pure ()
+private def validateEggTheorem (thm : Term) : MetaM Unit := do
+  let _ ← Premise.Raw.validate thm
+  return ()
 
 -- Ideally this should be at some point a discrimination tree
 abbrev EggTheorems := Array Name
@@ -39,6 +42,7 @@ private def mkEggTheoremsFromConst (declName : Name) : MetaM EggTheorems :=
   pure #[declName]
 
 def addEggTheorem (ext : EggXtension) (declName : Name) (attrKind : AttributeKind) : MetaM Unit := do
+  let _ ← validateEggTheorem { raw := Syntax.ident default default declName []} -- ugly!
   let eggThms ← mkEggTheoremsFromConst declName
   for eggThm in eggThms do
     ext.add eggThm attrKind
