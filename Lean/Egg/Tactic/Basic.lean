@@ -67,7 +67,9 @@ where
 
 open Config.Modifier (egg_cfg_mod)
 
-elab "egg " mod:egg_cfg_mod rws:egg_premises base:(egg_base)? guides:(egg_guides)? : tactic => do
+def eval
+    (mod : TSyntax ``egg_cfg_mod) (prems : TSyntax `egg_premises)
+    (base : Option (TSyntax `egg_base)) (guides : Option (TSyntax `egg_guides)) : TacticM Unit := do
   let goal ← getMainGoal
   let mod  ← Config.Modifier.parse mod
   let cfg := (← Config.fromOptions).modify mod
@@ -81,7 +83,7 @@ elab "egg " mod:egg_cfg_mod rws:egg_premises base:(egg_base)? guides:(egg_guides
     -- reconstruction. Note that this also means that we can't assign the `goal` mvar within this
     -- do-block.
     let proof? ← withNewMCtxDepth do
-      let (rws, facts) ← Premises.gen goal.toCongr rws guides cfg amb
+      let (rws, facts) ← Premises.gen goal.toCongr prems guides cfg amb
       let req ← Request.encoding goal.toCongr rws facts guides cfg amb
       withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
       if let .beforeEqSat := cfg.exitPoint then return none
@@ -93,6 +95,9 @@ elab "egg " mod:egg_cfg_mod rws:egg_premises base:(egg_base)? guides:(egg_guides
     if let some proof := proof?
     then goal.id.assignIfDefeq' proof
     else goal.id.admit
+
+syntax "egg" egg_cfg_mod egg_premises (egg_base)? (egg_guides)? : tactic
+elab_rules : tactic | `(tactic| egg $mod $prems $[$base]? $[$guides]?) => eval mod prems base guides
 
 -- WORKAROUND: This fixes `Tests/EndOfInput *`.
 macro "egg" mod:egg_cfg_mod : tactic => `(tactic| egg $mod)
