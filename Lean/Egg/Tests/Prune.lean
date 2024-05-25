@@ -21,6 +21,7 @@ info: [egg.rewrites] Rewrites
           expr:  []
           class: []
           level: []
+  [egg.rewrites] Tagged (0)
   [egg.rewrites] Generated (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Hypotheses (0)
@@ -55,6 +56,7 @@ info: [egg.rewrites] Rewrites
           expr:  [?n, ?m]
           class: []
           level: []
+  [egg.rewrites] Tagged (0)
   [egg.rewrites] Generated (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Hypotheses (0)
