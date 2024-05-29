@@ -7,8 +7,6 @@ namespace Egg.Config
 
 structure Modifier where
   eraseProofs         : Option Bool            := none
-  eraseLambdaDomains  : Option Bool            := none
-  eraseForallDomains  : Option Bool            := none
   betaReduceRws       : Option Bool            := none
   etaReduceRws        : Option Bool            := none
   natReduceRws        : Option Bool            := none
@@ -32,8 +30,6 @@ structure Modifier where
 
 def modify (cfg : Config) (mod : Modifier) : Config where
   eraseProofs         := mod.eraseProofs.getD cfg.eraseProofs
-  eraseLambdaDomains  := mod.eraseLambdaDomains.getD cfg.eraseLambdaDomains
-  eraseForallDomains  := mod.eraseForallDomains.getD cfg.eraseForallDomains
   betaReduceRws       := mod.betaReduceRws.getD cfg.betaReduceRws
   etaReduceRws        := mod.etaReduceRws.getD cfg.etaReduceRws
   natReduceRws        := mod.natReduceRws.getD cfg.natReduceRws

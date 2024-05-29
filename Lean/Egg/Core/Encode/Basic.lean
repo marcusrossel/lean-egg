@@ -48,8 +48,8 @@ where
     | .sort lvl         => return s!"(sort {← encodeLevel lvl})"
     | .const name lvls  => return s!"(const {name}{← encodeConstLvls lvls})"
     | .app fn arg       => return s!"(app {← go fn} {← go arg})"
-    | .lam _ ty b _     => encodeLam ty b
-    | .forallE _ ty b _ => encodeForall ty b
+    | .lam _ ty b _     => withInstantiatedBVar ty b fun body => return s!"(λ {← go ty} {← go body})"
+    | .forallE _ ty b _ => withInstantiatedBVar ty b fun body => return s!"(∀ {← go ty} {← go body})"
     | .lit (.strVal l)  => return s!"(lit {Json.renderString l})"
     | .lit (.natVal l)  => return s!"(lit {l})"
     | _                 => panic! "'Egg.encode.core' received non-normalized expression"
@@ -66,11 +66,3 @@ where
 
   encodeConstLvls (lvls : List Level) : EncodeM Expression :=
     lvls.foldlM (init := "") (return s!"{·} {← encodeLevel ·}")
-
-  encodeLam (ty b : Expr) : EncodeM Expression := do
-    let dom ← if (← config).eraseLambdaDomains then pure Expression.erased else go ty
-    withInstantiatedBVar ty b fun body => return s!"(λ {dom} {← go body})"
-
-  encodeForall (ty b : Expr) : EncodeM Expression := do
-    let dom ← if (← config).eraseForallDomains then pure Expression.erased else go ty
-    withInstantiatedBVar ty b fun body => return s!"(∀ {dom} {← go body})"

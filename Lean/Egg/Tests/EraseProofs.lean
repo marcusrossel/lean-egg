@@ -4,6 +4,15 @@ import Egg
 
 set_option egg.eraseProofs true
 
+/-- error: egg failed to prove goal -/
+#guard_msgs in
+set_option egg.eraseProofs false in
+example (arr : Array α) (i : Nat) (h₁ h₂ : i < arr.size) : arr[i]'h₁ = arr[i]'h₂ := by
+  egg
+
+example (arr : Array α) (i : Nat) (h₁ h₂ : i < arr.size) : arr[i]'h₁ = arr[i]'h₂ := by
+  egg
+
 set_option egg.eraseProofs false in
 example (i : Nat) (h : i < 10) : (Fin.mk i h).val = i := by
   have : ∀ n m (g : n < m), (Fin.mk n g).val = n := by simp

@@ -12,11 +12,7 @@ def Normalization.noReduce : Normalization where
   natReduceRws  := false
 
 structure Encoding extends Normalization where
-  eraseProofs   := true
-  -- TODO: Erasure of types might not work as `isDefEq` expects expressions to be well-typed:
-  --       https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Unify.20level.20mvars/near/416858547
-  eraseLambdaDomains := false
-  eraseForallDomains := false
+  eraseProofs := true
   deriving BEq
 
 structure Gen where

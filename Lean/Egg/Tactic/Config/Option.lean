@@ -32,8 +32,6 @@ local macro "register_egg_options" opts:_egg_opt* : command => do
 
 register_egg_options
   eraseProofs
-  eraseLambdaDomains
-  eraseForallDomains
   betaReduceRws
   etaReduceRws
   natReduceRws

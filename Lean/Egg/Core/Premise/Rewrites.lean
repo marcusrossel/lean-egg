@@ -51,6 +51,7 @@ def from? (proof : Expr) (type : Expr) (src : Source) (cfg : Config) : MetaM (Op
   let conds ← collectConds args mLhs mRhs
   return some { cgr with proof, src, conds, mvars.lhs := mLhs, mvars.rhs := mRhs }
 where
+  -- TODO: Do a fixed point approach where you gather the set of non-condition mvars.
   collectConds (args : Array Expr) (mLhs mRhs : Egg.MVars) : MetaM (Array Rewrite.Condition) := do
     let mut conds := #[]
     let mut ms : MVarIdSet := mLhs.expr.merge mRhs.expr
