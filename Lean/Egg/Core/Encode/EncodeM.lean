@@ -6,10 +6,13 @@ open Lean
 
 namespace Egg
 
+abbrev Expression := String
+
 structure EncodeM.State where
-  config  : Config.Encoding
-  bvars   : List FVarId := []
-  amb     : MVars.Ambient
+  config : Config.Encoding
+  bvars  : List FVarId := []
+  amb    : MVars.Ambient
+  cache  : HashMap Expr Expression := ∅
 
 abbrev EncodeM := StateT EncodeM.State MetaM
 
@@ -38,3 +41,12 @@ def bvarIdx? (id : FVarId) : EncodeM (Option Nat) := do
 
 def needsProofErasure (e : Expr) : EncodeM Bool := do
   (return (← config).eraseProofs) <&&> Meta.isProof e
+
+def withCache (e : Expr) (m : EncodeM Expression) : EncodeM Expression := do
+  let s ← get
+  if let some enc := s.cache.find? e then
+    return enc
+  else
+    let enc ← m
+    set { s with cache := s.cache.insert e enc }
+    return enc

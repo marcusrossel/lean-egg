@@ -93,8 +93,6 @@ nonrec def Config.trace (cfg : Config) (cls : Name) : TacticM Unit := do
       trace cls fun _ => m!"{toEmoji cfg.betaReduceRws} β-Reduce Rewrites"
       trace cls fun _ => m!"{toEmoji cfg.etaReduceRws} η-Reduces Rewrites"
       trace cls fun _ => m!"{toEmoji cfg.eraseProofs} Erase Proofs"
-      trace cls fun _ => m!"{toEmoji cfg.eraseLambdaDomains} Erase λ's Domains"
-      trace cls fun _ => m!"{toEmoji cfg.eraseForallDomains} Erase ∀'s Domains"
     withTraceNode cls (fun _ => return "Debug") (collapsed := false) do
       trace cls fun _ => m!"Exit Point: {cfg.exitPoint.format}"
       trace cls fun _ => m!"E-Graph Visualization Export Path: {cfg.vizPath.getD "None"}"
