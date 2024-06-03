@@ -29,44 +29,33 @@ class CommRing (α) extends Zero α, One α, Add α, Sub α, Mul α, Div α, Pow
 class CharTwoRing (α) extends CommRing α where
   char_two (a : α) : a + a = 0
 
-attribute [egg] CommRing.comm_add
-attribute [egg] CommRing.comm_mul
-attribute [egg] CommRing.add_assoc
-attribute [egg] CommRing.mul_assoc
-attribute [egg] CommRing.sub_canon
-attribute [egg] CommRing.neg_add
-attribute [egg] CommRing.div_canon
-attribute [egg] CommRing.zero_add
-attribute [egg] CommRing.zero_mul
-attribute [egg] CommRing.one_mul
-attribute [egg] CommRing.distrib
-attribute [egg] CommRing.pow_zero
-attribute [egg] CommRing.pow_one
-attribute [egg] CommRing.pow_two
-attribute [egg] CommRing.pow_three
-attribute [egg] CharTwoRing.char_two
+open CommRing CharTwoRing Egg.Guides Egg.Config.Modifier in
+macro "char_two_ring" mod:egg_cfg_mod base:(egg_base)? guides:(egg_guides)? : tactic => `(tactic|
+  egg $mod [comm_add, comm_mul, add_assoc, mul_assoc, sub_canon, neg_add, div_canon, zero_add,
+  zero_mul, one_mul, distrib, pow_zero, pow_one, pow_two, pow_three, char_two] $[$base]? $[$guides]?
+)
 
 variable [CharTwoRing α] (x y : α)
 
 theorem freshmans_dream₂ : (x + y) ^ 2 = (x ^ 2) + (y ^ 2) := by
   calc (x + y) ^ 2
-   _ = (x + y) * (x + y)             := by egg
-   _ = x * (x + y) + y * (x + y)     := by egg
-   _ = x ^ 2 + x * y + y * x + y ^ 2 := by egg
-   _ = x ^ 2 + y ^ 2                 := by egg
+   _ = (x + y) * (x + y)             := by char_two_ring
+   _ = x * (x + y) + y * (x + y)     := by char_two_ring
+   _ = x ^ 2 + x * y + y * x + y ^ 2 := by char_two_ring
+   _ = x ^ 2 + y ^ 2                 := by char_two_ring
 
 theorem freshmans_dream₂' : (x + y) ^ 2 = (x ^ 2) + (y ^ 2) := by
-  egg
+  char_two_ring
 
 theorem freshmans_dream₃ : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
   calc (x + y) ^ 3
-   _ = (x + y) * (x + y) * (x + y)                     := by egg
-   _ = (x + y) * (x * (x + y) + y * (x + y))           := by egg
-   _ = (x + y) * (x ^ 2 + x * y + y * x + y ^ 2)       := by egg
-   _ = (x + y) * (x ^ 2 + y ^ 2)                       := by egg
-   _ = x * (x ^ 2 + y ^ 2) + y * (x ^ 2 + y ^ 2)       := by egg
-   _ = (x * x ^ 2) + x * y ^ 2 + y * x ^ 2 + y * y ^ 2 := by egg
-   _ = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3           := by egg
+   _ = (x + y) * (x + y) * (x + y)                     := by char_two_ring
+   _ = (x + y) * (x * (x + y) + y * (x + y))           := by char_two_ring
+   _ = (x + y) * (x ^ 2 + x * y + y * x + y ^ 2)       := by char_two_ring
+   _ = (x + y) * (x ^ 2 + y ^ 2)                       := by char_two_ring
+   _ = x * (x ^ 2 + y ^ 2) + y * (x ^ 2 + y ^ 2)       := by char_two_ring
+   _ = (x * x ^ 2) + x * y ^ 2 + y * x ^ 2 + y * y ^ 2 := by char_two_ring
+   _ = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3           := by char_two_ring
 
 theorem freshmans_dream₃' : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
-  egg
+  char_two_ring

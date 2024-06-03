@@ -20,8 +20,6 @@ Then, add `import Egg` to the files that require `egg`.
 The syntax of `egg` is very similar to that of `simp` or `rw`:
 
 ```lean
-import Egg
-
 example : 0 = 0 := by
   egg
 
@@ -38,8 +36,6 @@ example (as bs : List α) : reverse (as ++ bs) = (reverse bs) ++ (reverse as) :=
 But you can use it to solve some equations which `simp` cannot:
 
 ```lean
-import Egg
-
 variable (a b c d : Int)
 
 example : ((a * b) - (2 * c)) * d - (a * b) = (d - 1) * (a * b) - (2 * c * d) := by
