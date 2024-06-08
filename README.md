@@ -51,6 +51,7 @@ You can help out by providing _guide terms_ which nudge `egg` in the right direc
 
 ```lean
 -- From Lean/Egg/Tests/Groups.lean
+import Egg
 
 example [Group G] (a : G) : a⁻¹⁻¹ = a := by
   egg [/- group axioms -/] using a⁻¹ * a
@@ -59,6 +60,8 @@ example [Group G] (a : G) : a⁻¹⁻¹ = a := by
 And if you want to prove your goal based on an equivalent hypothesis, you can use the `from` syntax:
 
 ```lean
+import Egg
+
 example (h : p ∧ q ∧ r) : r ∧ r ∧ q ∧ p ∧ q ∧ r ∧ p := by
   egg [and_comm, and_assoc, and_self] from h
 ```
@@ -66,6 +69,8 @@ example (h : p ∧ q ∧ r) : r ∧ r ∧ q ∧ p ∧ q ∧ r ∧ p := by
 For conditional rewriting, hypotheses can be provided after the rewrites:
 
 ```lean
+import Egg
+
 example {p q r : Prop} (h₁ : p) (h₂ : p ↔ q) (h₃ : q → (p ↔ r)) : p ↔ r := by
   egg [h₂, h₃; h₁]
 ```
