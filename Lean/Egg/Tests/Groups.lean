@@ -47,7 +47,7 @@ theorem inv_mul'' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
 
 /-- error: egg failed to prove goal -/
 #guard_msgs in
-set_option egg.timeLimit 20 in
+set_option egg.timeLimit 10 in
 theorem inv_mul''' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using (a * b) * (a * b)⁻¹
 

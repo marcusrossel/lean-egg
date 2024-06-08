@@ -53,8 +53,8 @@ impl LeanExpr {
     // Note that this is a result of the semantics of each constructor, not of its syntactic form.
     pub fn is_rec(&self) -> bool {
         match self {
-            LeanExpr::App(_) | LeanExpr::Lam(_) | LeanExpr::Forall(_) => true,
-            _                                                         => false
+            LeanExpr::App(_) | LeanExpr::Lam(_) | LeanExpr::Forall(_) | LeanExpr::Proof(_) => true,
+            _                                                                              => false
         }
     }
 

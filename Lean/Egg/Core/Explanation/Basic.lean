@@ -21,6 +21,7 @@ structure Info extends Descriptor where
 
 end Rewrite
 
+-- TODO: We can omit this type and directly parse to an `Expr`.
 inductive Expression where
   | bvar (idx : Nat)
   | fvar (id : FVarId)
@@ -31,7 +32,6 @@ inductive Expression where
   | lam (ty body : Expression)
   | forall (ty body : Expression)
   | lit (l : Literal)
-  | erased
   | proof (prop : Expression)
   deriving Inhabited
 

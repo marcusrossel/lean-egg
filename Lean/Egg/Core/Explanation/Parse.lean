@@ -79,7 +79,6 @@ syntax "(" &"max" egg_rw_lvl egg_rw_lvl ")"                     : egg_rw_lvl
 syntax "(" &"imax" egg_rw_lvl egg_rw_lvl ")"                    : egg_rw_lvl
 syntax "(" &"Rewrite" noWs egg_rw_dir egg_rw_src egg_rw_lvl ")" : egg_rw_lvl
 
-syntax "_"                                                       : egg_rw_expr
 syntax "(" &"bvar" num ")"                                       : egg_rw_expr
 syntax "(" &"fvar" num ")"                                       : egg_rw_expr
 syntax "(" &"mvar" num ")"                                       : egg_rw_expr
@@ -209,7 +208,6 @@ private partial def parseExpr (stx : TSyntax `egg_rw_expr) : ParseStepResult :=
   return (← e, info?)
 where
   go (pos : SubExpr.Pos) : (TSyntax `egg_rw_expr) → ParseStepM Expression
-    | `(egg_rw_expr|_)                        => return .erased
     | `(egg_rw_expr|(bvar $idx))              => return .bvar idx.getNat
     | `(egg_rw_expr|(fvar $id))               => return .fvar (.fromUniqueIdx id.getNat)
     | `(egg_rw_expr|(mvar $id))               => return .mvar (.fromUniqueIdx id.getNat)
