@@ -35,12 +35,12 @@ if [[ "$test_egg" == true ]]; then
                     continue
                 fi
 
-                if [[ "$ci_mode" == true ]]; then 
-                    : 
+                if [[ "$ci_mode" == true ]]; then
+                    :
                 else
                     echo -n "Testing $file_name ..."
                 fi
-                
+
                 left_quote='«'
                 right_quote='»'
                 module_name="$module_prefix$left_quote$file_name$right_quote"
@@ -56,7 +56,7 @@ if [[ "$test_egg" == true ]]; then
                     exit_code=1
                     echo -e "\r❌ $file_name           "
 
-                    if [[ "$ci_mode" == true ]]; then 
+                    if [[ "$ci_mode" == true ]]; then
                         echo "$output" | while IFS= read -r line; do
                             echo "  ${line}"
                         done
@@ -78,7 +78,7 @@ test_lib () {
 
     lake clean
     # TODO: Figure out how to keep the printed lines on a single line.
-    lake build | tee "$output" | egrep '^\[[0-9]+/[0-9]+\]' # | tr '\n' '\r'
+    lake build | tee "$output" | egrep '^. \[[0-9]+/[0-9]+\]' # | tr '\n' '\r'
 
     local success_count="$(cat "$output" | grep 'egg succeeded' | wc -l | awk '{$1=$1};1')"
     local failures="$(cat "$output" | grep 'egg failed' | cut -c ${#info_prefix}-)"
