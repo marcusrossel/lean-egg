@@ -71,19 +71,11 @@ if [[ "$exit_code" -ne 0 ]]; then
     exit $exit_code
 fi
 
-test_lib () {
-    cd "$tests_dir/$test_lib_name"
-    local output=$(mktemp)
-    local info_prefix="warning: ./././."
-
-    lake clean
-    # TODO: Figure out how to keep the printed lines on a single line.
-    lake build | tee "$output" | egrep '^. \[[0-9]+/[0-9]+\]' # | tr '\n' '\r'
-
-    local success_count="$(cat "$output" | grep 'egg succeeded' | wc -l | awk '{$1=$1};1')"
-    local failures="$(cat "$output" | grep 'egg failed' | cut -c ${#info_prefix}-)"
+summarize_lib_tests() {
+    local success_count="$(cat "$test_lib_output" | grep 'egg succeeded' | wc -l | awk '{$1=$1};1')"
+    local failures="$(cat "$test_lib_output" | grep 'egg failed' | cut -c ${#test_lib_info_prefix}-)"
     local fail_count="$(echo "$failures" | wc -l | awk '{$1=$1};1')"
-    local unsupported="$(cat "$output" | grep "declaration uses 'sorry'" | cut -c ${#info_prefix}-)"
+    local unsupported="$(cat "$test_lib_output" | grep "declaration uses 'sorry'" | cut -c ${#test_lib_info_prefix}-)"
     local unsupported_count="$(echo "$unsupported" | wc -l | awk '{$1=$1};1')"
 
     echo "✅ $success_count    🟡 $unsupported_count    ❌ $fail_count"
@@ -92,12 +84,24 @@ test_lib () {
     echo "$unsupported" | while read unsupp; do echo "🟡 $unsupp"; done
 }
 
+test_lib() {
+    cd "$tests_dir/$test_lib_name"
+    test_lib_output=$(mktemp)
+    test_lib_info_prefix="warning: ./././."
+
+    lake clean
+    # TODO: Figure out how to keep the printed lines on a single line.
+    lake build | tee "$test_lib_output" | egrep '^. \[[0-9]+/[0-9]+\]' # | tr '\n' '\r'   
+}
+
 if [[ "$test_batteries" == true ]]; then
     test_lib_name="batteries"
+    trap summarize_lib_tests EXIT
     test_lib
 fi
 
 if [[ "$test_mathlib" == true ]]; then
     test_lib_name="mathlib4"
+    trap summarize_lib_tests EXIT
     test_lib
 fi
