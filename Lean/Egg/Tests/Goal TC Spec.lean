@@ -6,7 +6,7 @@ class CommAdd (α) extends Add α where
 instance : CommAdd Nat where
   comm := Nat.add_comm
 
-/-- error: egg failed to prove goal -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 set_option egg.genGoalTcSpec false in
 example (a : Nat) : a + b = b + a := by

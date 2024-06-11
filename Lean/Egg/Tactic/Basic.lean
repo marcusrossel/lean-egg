@@ -38,10 +38,9 @@ private def collectAmbientMVars (goal : Goal) (guides : Guides) : MetaM MVars.Am
   let guidesLvl ← guides.foldlM (init := ∅) fun res g => return res.merge (← MVars.collect g.expr).lvl
   return { expr, lvl := goalLvl.merge guidesLvl }
 
-private def processRawExpl
-    (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (facts : Facts) (ctx : EncodingCtx)
+private def processExpl
+    (expl : Explanation) (goal : Goal) (rws : Rewrites) (facts : Facts) (ctx : EncodingCtx)
     (egraph? : Option EGraph) : TacticM Expr := do
-  let expl ← rawExpl.parse
   let some egraph := egraph? | throwError "egg: internal error: e-graph is absent"
   let proof ← expl.proof rws facts egraph ctx
   proof.trace `egg.proof
@@ -88,10 +87,10 @@ protected def eval
       withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
       if let .beforeEqSat := cfg.exitPoint then return none
       let (rawExpl, egraph?) := req.run
-      if rawExpl.isEmpty then throwError "egg failed to prove goal"
       withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] rawExpl
+      let expl ← rawExpl.parse
       if let .beforeProof := cfg.exitPoint then return none
-      return some (← processRawExpl rawExpl goal rws facts {amb, cfg} egraph?)
+      return some (← processExpl expl goal rws facts {amb, cfg} egraph?)
     if let some proof := proof?
     then goal.id.assignIfDefeq' proof
     else goal.id.admit

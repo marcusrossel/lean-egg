@@ -17,7 +17,7 @@ example : False := by
   contradiction
 
 -- This test covers Condition (2) of valid matches.
-/-- error: egg failed to prove goal -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 set_option egg.blockInvalidMatches true in
 example : (fun x => (fun a => (fun a => a) a) 0) = (fun x => x) := by
@@ -29,7 +29,7 @@ theorem thm₂ : ∀ x y : Nat, x = (fun _ => x) y :=
 
 -- This test covers Condition (1) of valid matches.
 set_option egg.blockInvalidMatches true in
-/-- error: egg failed to prove goal -/
+/-- error: egg failed to prove the goal (reached time limit) -/
 #guard_msgs in
 example : (fun x => x) = (fun _ : Nat => (fun x => x) 1) := by
   egg [thm₂]

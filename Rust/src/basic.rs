@@ -83,6 +83,6 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
         let expl_str = expl.get_flat_string();
         Ok((expl_str, runner.egraph))
     } else {
-        Err(Error::Failed)
+        Err(Error::Stopped(runner.stop_reason.unwrap()))
     }
 }

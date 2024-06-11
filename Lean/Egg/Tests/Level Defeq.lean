@@ -13,7 +13,7 @@ example (f : α → γ) (g : β → δ) : List.map (Prod.map f g) [] = [] := by
 
 variable {α : Type _} {β : Type _} {γ : Type _} {δ : Type _}
 
-/-- error: egg failed to prove goal -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 set_option egg.genLevelRws false in
 example (f : α → γ) (g : β → δ) : List.map (Prod.map f g) [] = [] := by
