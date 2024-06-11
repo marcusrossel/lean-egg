@@ -45,7 +45,7 @@ example
 
 -- TODO: We don't currently support rewriting the types of proof terms. I think this shouldn't be
 --       too difficult to support though.
-/-- error: egg failed to parse explanation: step contains type-level rewrite in proof -/
+/-- error: egg received invalid explanation: step contains type-level rewrite in proof -/
 #guard_msgs in
 set_option egg.eraseProofs true in
 example

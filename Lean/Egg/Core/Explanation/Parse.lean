@@ -48,6 +48,7 @@ syntax egg_tc_proj : egg_tc_extension
 syntax egg_tc_spec : egg_tc_extension
 
 syntax egg_basic_fwd_rw_src (noWs egg_tc_extension)* : egg_fwd_rw_src
+syntax "λ↕"                                          : egg_fwd_rw_src
 syntax "≡maxS"                                       : egg_fwd_rw_src
 syntax "≡max↔"                                       : egg_fwd_rw_src
 syntax "≡imax0"                                      : egg_fwd_rw_src
@@ -129,49 +130,17 @@ private def parseTcExtension (src : Source) : (TSyntax `egg_tc_extension) → So
   | `(egg_tc_extension|<$tcSpecsrc>)    => .tcSpec src (parsTcSpecSrc tcSpecsrc)
   | _                                   => unreachable!
 
-private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
-  | `(egg_fwd_rw_src|≡maxS)  => .level .maxSucc
-  | `(egg_fwd_rw_src|≡max↔)  => .level .maxComm
-  | `(egg_fwd_rw_src|≡imax0) => .level .imaxZero
-  | `(egg_fwd_rw_src|≡imaxS) => .level .imaxSucc
-  | `(egg_fwd_rw_src|≡η)     => .eta
-  | `(egg_fwd_rw_src|≡β)     => .beta
-  | `(egg_fwd_rw_src|≡0)     => .natLit .zero
-  | `(egg_fwd_rw_src|≡→S)    => .natLit .toSucc
-  | `(egg_fwd_rw_src|≡S→)    => .natLit .ofSucc
-  | `(egg_fwd_rw_src|≡+)     => .natLit .add
-  | `(egg_fwd_rw_src|≡-)     => .natLit .sub
-  | `(egg_fwd_rw_src|≡*)     => .natLit .mul
-  | `(egg_fwd_rw_src|≡^)     => .natLit .pow
-  | `(egg_fwd_rw_src|≡/)     => .natLit .div
-  | `(egg_fwd_rw_src|"≡%")   => .natLit .mod
-  | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src$tcExts:egg_tc_extension*) =>
-    tcExts.foldl (init := parseBasicFwdRwSrc src) parseTcExtension
-  | _ => unreachable!
-
-private def parseFactSrc : (TSyntax `egg_fact_src) → Option Source
-  | `(egg_fact_src|!?)                 => none
-  | `(egg_fact_src|!$f:egg_fwd_rw_src) => some <| .fact (parseFwdRwSrc f)
-  | _                                  => unreachable!
-
-private def parseRwSrc : (TSyntax `egg_rw_src) → Rewrite.Descriptor
-  | `(egg_rw_src|$fwdSrc:egg_fwd_rw_src$[-rev%$rev]?$[$facts]*) =>
-    let src   := parseFwdRwSrc fwdSrc
-    let dir   := if rev.isSome then .backward else .forward
-    let facts := facts.map parseFactSrc
-    { src, dir, facts }
-  | _ => unreachable!
-
 inductive ParseError where
   | noSteps
   | startContainsRw
   | missingRw
   | multipleRws
   | proofRw
+  | bvarCorrection
   deriving Inhabited
 
 private def ParseError.msgPrefix :=
-  "egg failed to parse explanation:"
+  "egg received invalid explanation:"
 
 open ParseError in
 instance : Coe ParseError MessageData where
@@ -181,6 +150,41 @@ instance : Coe ParseError MessageData where
     | missingRw       => s!"{msgPrefix} (non-start) step does not contain a rewrite"
     | multipleRws     => s!"{msgPrefix} step contains multiple rewrites"
     | proofRw         => s!"{msgPrefix} step contains type-level rewrite in proof"
+    | bvarCorrection  => s!"{msgPrefix} step leaks bvar correction"
+
+private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Except ParseError Source
+  | `(egg_fwd_rw_src|λ↕)     => throw .bvarCorrection
+  | `(egg_fwd_rw_src|≡maxS)  => return .level .maxSucc
+  | `(egg_fwd_rw_src|≡max↔)  => return .level .maxComm
+  | `(egg_fwd_rw_src|≡imax0) => return .level .imaxZero
+  | `(egg_fwd_rw_src|≡imaxS) => return .level .imaxSucc
+  | `(egg_fwd_rw_src|≡η)     => return .eta
+  | `(egg_fwd_rw_src|≡β)     => return .beta
+  | `(egg_fwd_rw_src|≡0)     => return .natLit .zero
+  | `(egg_fwd_rw_src|≡→S)    => return .natLit .toSucc
+  | `(egg_fwd_rw_src|≡S→)    => return .natLit .ofSucc
+  | `(egg_fwd_rw_src|≡+)     => return .natLit .add
+  | `(egg_fwd_rw_src|≡-)     => return .natLit .sub
+  | `(egg_fwd_rw_src|≡*)     => return .natLit .mul
+  | `(egg_fwd_rw_src|≡^)     => return .natLit .pow
+  | `(egg_fwd_rw_src|≡/)     => return .natLit .div
+  | `(egg_fwd_rw_src|"≡%")   => return .natLit .mod
+  | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src$tcExts:egg_tc_extension*) =>
+    return tcExts.foldl (init := parseBasicFwdRwSrc src) parseTcExtension
+  | _ => unreachable!
+
+private def parseFactSrc : (TSyntax `egg_fact_src) → Except ParseError (Option Source)
+  | `(egg_fact_src|!?)                 => return none
+  | `(egg_fact_src|!$f:egg_fwd_rw_src) => return some (.fact <| ← parseFwdRwSrc f)
+  | _                                  => unreachable!
+
+private def parseRwSrc : (TSyntax `egg_rw_src) → Except ParseError Rewrite.Descriptor
+  | `(egg_rw_src|$fwdSrc:egg_fwd_rw_src$[-rev%$rev]?$[$facts]*) => do
+    let src   ← parseFwdRwSrc fwdSrc
+    let dir  := if rev.isSome then .backward else .forward
+    let facts ← facts.mapM parseFactSrc
+    return { src, dir, facts }
+  | _ => unreachable!
 
 private abbrev ParseStepResult := Except ParseError <| Expression × (Option Rewrite.Info)
 private abbrev ParseStepM := ExceptT ParseError <| StateM (Option Rewrite.Info)
@@ -198,7 +202,7 @@ where
   parseRw (dir : TSyntax `egg_rw_dir) (src : TSyntax `egg_rw_src) (body : TSyntax `egg_rw_lvl) :
       ParseStepM Level := do
     unless (← get).isNone do throw .multipleRws
-    let info := parseRwSrc src
+    let info ← parseRwSrc src
     let dir := info.dir.merge (parseRwDir dir)
     set <| some { info with dir, pos? := none : Rewrite.Info }
     parseLevel body
@@ -231,7 +235,7 @@ where
   parseRw (dir : TSyntax `egg_rw_dir) (src : TSyntax `egg_rw_src) (body : TSyntax `egg_rw_expr)
       (pos : SubExpr.Pos) : ParseStepM Expression := do
     unless (← get).isNone do throw .multipleRws
-    let info := parseRwSrc src
+    let info ← parseRwSrc src
     let dir := info.dir.merge (parseRwDir dir)
     set <| some { info with dir, pos? := pos : Rewrite.Info }
     go pos body
