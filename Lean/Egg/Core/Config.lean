@@ -32,6 +32,8 @@ structure Backend where
   conditionSubgoals   := false
   optimizeExpl        := true
   timeLimit           := 3
+  nodeLimit           := 1000000000000000000
+  iterLimit           := 1000000000000000000
   deriving BEq
 
 inductive Debug.ExitPoint

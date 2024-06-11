@@ -118,6 +118,8 @@ facts_array facts_from_lean_obj(lean_obj_arg facts) {
 typedef struct config {
     _Bool  optimize_expl;
     size_t time_limit;
+    size_t node_limit;
+    size_t iter_limit;
     _Bool  gen_nat_lit_rws;
     _Bool  gen_eta_rw;
     _Bool  gen_beta_rw;
@@ -133,6 +135,8 @@ typedef struct config {
 structure Config where
   optimizeExpl         : Bool
   timeLimit            : Nat
+  nodeLimit            : Nat
+  iterLimit            : Nat
   genNatLitRws         : Bool
   genEtaRw             : Bool
   genBetaRw            : Bool
@@ -148,7 +152,9 @@ config config_from_lean_obj(lean_obj_arg cfg) {
     unsigned bool_offset = sizeof(uint8_t);
     return (config) { 
         .optimize_expl          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 0),
-        .time_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 0)),  
+        .time_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 0)),
+        .node_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 1)),
+        .iter_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 2)),  
         .gen_nat_lit_rws        = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 1),  
         .gen_eta_rw             = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 2),  
         .gen_beta_rw            = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 3),  

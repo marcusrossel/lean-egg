@@ -12,6 +12,8 @@ namespace Egg.Request
 protected structure Config where
   optimizeExpl         : Bool
   timeLimit            : Nat
+  nodeLimit            : Nat
+  iterLimit            : Nat
   genNatLitRws         : Bool
   genEtaRw             : Bool
   genBetaRw            : Bool
@@ -26,6 +28,8 @@ instance : Coe Config Request.Config where
   coe cfg := {
     optimizeExpl         := cfg.optimizeExpl
     timeLimit            := cfg.timeLimit
+    nodeLimit            := cfg.nodeLimit
+    iterLimit            := cfg.iterLimit
     genNatLitRws         := cfg.genNatLitRws
     genEtaRw             := cfg.genEtaRw
     genBetaRw            := cfg.genBetaRw

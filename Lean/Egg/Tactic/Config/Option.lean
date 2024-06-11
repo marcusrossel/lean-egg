@@ -5,7 +5,7 @@ open Lean
 namespace Egg
 
 declare_syntax_cat _egg_opt
-syntax ident (" : " term)? : _egg_opt
+syntax ident (" : " term:max)? : _egg_opt
 
 private def parseOpt : TSyntax `_egg_opt → MacroM (Ident × Term)
   | `(_egg_opt| $name:ident $[: $ty]?) => return (name, ty.getD <| ← `(Bool))
@@ -48,3 +48,5 @@ register_egg_options
   conditionSubgoals
   optimizeExpl
   timeLimit : Nat
+  nodeLimit : Nat
+  iterLimit : Nat
