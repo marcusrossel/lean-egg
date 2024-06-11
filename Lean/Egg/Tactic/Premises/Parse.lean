@@ -18,7 +18,7 @@ syntax (egg_premise_list)? : egg_premises
 
 inductive Premise.Raw where
   | single (expr : Expr) (type? : Option Expr := none)
-  | eqns (exprs : Array Expr)
+  | eqns (exprs : Array (Expr × Expr))
 
 -- We don't just elaborate premises directly as:
 -- (1) this can cause problems for global constants with typeclass arguments, as Lean sometimes
@@ -36,23 +36,27 @@ partial def Premise.Raw.elab (prem : Term) : TacticM Premise.Raw := do
   else if let some const ← optional (resolveGlobalConstNoOverload prem) then
     if let some eqs ← getEqnsFor? const (nonRec := true) then
       -- `prem` is a global definition.
-      return .eqns <| ← eqs.mapM fun eqn => Tactic.elabTerm (mkIdent eqn) none
+      return .eqns <| ← eqs.mapM (elabGlobalConstNoEqns ·)
     else
       -- `prem` is an global constant which is not a definition with equations.
-      let env ← getEnv
-      let some info := env.find? const | throwErrorAt prem m!"unknown constant '{mkConst const}'"
-      match info with
-      | .defnInfo _ | .axiomInfo _ | .thmInfo _ | .opaqueInfo _ =>
-        let lvlMVars ← List.replicateM info.numLevelParams mkFreshLevelMVar
-        let val := if info.hasValue then info.instantiateValueLevelParams! lvlMVars else .const info.name lvlMVars
-        let type := info.instantiateTypeLevelParams lvlMVars
-        return .single val type
-      | _ => throwErrorAt prem "egg requires arguments to be theorems, definitions or axioms"
+      let (val, type) ← elabGlobalConstNoEqns const
+      return .single val type
   else
     -- `prem` is an invalid identifier or a term which is not an identifier.
     -- We must use `Tactic.elabTerm`, not `Term.elabTerm`. Otherwise elaborating `‹...›` doesn't
     -- work correctly. See https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Elaborate.20.E2.80.B9.2E.2E.2E.E2.80.BA
     return .single (← Tactic.elabTerm prem none)
+where
+  elabGlobalConstNoEqns (const : Name) : MetaM (Expr × Expr) := do
+    let env ← getEnv
+    let some info := env.find? const | throwErrorAt prem m!"unknown constant '{mkConst const}'"
+    match info with
+    | .defnInfo _ | .axiomInfo _ | .thmInfo _ | .opaqueInfo _ =>
+      let lvlMVars ← List.replicateM info.numLevelParams mkFreshLevelMVar
+      let val := if info.hasValue then info.instantiateValueLevelParams! lvlMVars else .const info.name lvlMVars
+      let type := info.instantiateTypeLevelParams lvlMVars
+      return (val, type)
+    | _ => throwErrorAt prem "egg requires arguments to be theorems, definitions or axioms"
 
 structure WithSyntax (α) where
   elems : α
@@ -98,8 +102,8 @@ private def Premises.explicit
   | .single e type? => return { elems := #[(← make e type? none)], stxs := #[prem] }
   | .eqns eqs =>
     let mut result : WithSyntax (Array α) := ∅
-    for eqn in eqs, eqnIdx in [:eqs.size] do
-      result := result.push (← make eqn none eqnIdx) prem
+    for (val, ty) in eqs, eqnIdx in [:eqs.size] do
+      result := result.push (← make val ty eqnIdx) prem
     return result
 where
   make (e : Expr) (ty? : Option Expr) (eqnIdx? : Option Nat) : TacticM α := do
