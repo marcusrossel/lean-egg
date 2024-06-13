@@ -72,22 +72,33 @@ if [[ "$exit_code" -ne 0 ]]; then
 fi
 
 summarize_lib_tests() {
-    local success_count="$(cat "$test_lib_output" | grep 'egg succeeded' | wc -l | awk '{$1=$1};1')"
-    local failures="$(cat "$test_lib_output" | grep 'egg failed' | cut -c ${#test_lib_info_prefix}-)"
-    local fail_count="$(echo "$failures" | wc -l | awk '{$1=$1};1')"
-    local unsupported="$(cat "$test_lib_output" | grep "declaration uses 'sorry'" | cut -c ${#test_lib_info_prefix}-)"
+    local warning_prefix="warning: ./././."
+    local success_prefix="egg succeeded "
+    local plain_fail_prefix="egg failed: egg failed to prove the goal "
+
+    local successes="$(cat "$test_lib_output" | grep -o 'egg succeeded (.*)' | cut -c ${#success_prefix}-)"
+    local success_count="$(echo "$successes" | wc -l | awk '{$1=$1};1')"
+    
+    local plain_failures="$(cat "$test_lib_output" | grep -o 'egg failed: egg failed to prove the goal (.*) (.*)' | cut -c ${#plain_fail_prefix}-)"
+    local plain_fail_count="$(echo "$plain_failures" | wc -l | awk '{$1=$1};1')"
+
+    local errors="$(cat "$test_lib_output" | grep 'egg failed:' | grep -v 'egg failed: egg failed to prove the goal' | cut -c ${#warning_prefix}-)"
+    local errors_count="$(echo "$errors" | wc -l | awk '{$1=$1};1')"
+    
+    local unsupported="$(cat "$test_lib_output" | grep "declaration uses 'sorry'" | cut -c ${#warning_prefix}-)"
     local unsupported_count="$(echo "$unsupported" | wc -l | awk '{$1=$1};1')"
 
-    echo "✅ $success_count    🟡 $unsupported_count    ❌ $fail_count"
+    echo "✅ $success_count    ❌ $plain_fail_count    🟪 $errors_count    🟡 $unsupported_count"
 
-    echo "$failures"    | while read fail; do echo "❌ $fail"; done
-    echo "$unsupported" | while read unsupp; do echo "🟡 $unsupp"; done
+    echo "$successes"      | while read success; do echo "✅ $success"; done
+    echo "$plain_failures" | while read fail; do echo "❌ $fail"; done
+    echo "$errors"         | while read error; do echo "🟪 $error"; done
+    echo "$unsupported"    | while read unsupp; do echo "🟡 $unsupp"; done
 }
 
 test_lib() {
     cd "$tests_dir/$test_lib_name"
     test_lib_output=$(mktemp)
-    test_lib_info_prefix="warning: ./././."
 
     lake clean
     # TODO: Figure out how to keep the printed lines on a single line.
