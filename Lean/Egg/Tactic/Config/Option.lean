@@ -50,3 +50,4 @@ register_egg_options
   timeLimit : Nat
   nodeLimit : Nat
   iterLimit : Nat
+  reporting

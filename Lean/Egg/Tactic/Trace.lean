@@ -21,6 +21,13 @@ def Config.Debug.ExitPoint.format : Config.Debug.ExitPoint → Format
   | .beforeEqSat => "Before Equality Saturation"
   | .beforeProof => "Before Proof Reconstruction"
 
+nonrec def Request.Result.Report.toMessageData (rep : Report) : MessageData :=
+  "time:    " ++ (format rep.time)        ++ "s\n" ++
+  "iters:   " ++ (format rep.iterations)  ++ "\n" ++
+  "mem:     " ++ (format rep.memoryUsage) ++ "\n" ++
+  "nodes:   " ++ (format rep.nodeCount)   ++ "\n" ++
+  "classes: " ++ (format rep.classCount)
+
 nonrec def MVars.toMessageData (mvars : MVars) : MetaM MessageData := do
   let expr := format <| ← mvars.expr.toList.mapM (ppExpr <| Expr.mvar ·)
   let tc   := format <| ← mvars.tc.toList.mapM   (ppExpr <| Expr.mvar ·)

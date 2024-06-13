@@ -34,6 +34,7 @@ structure Backend where
   timeLimit           := 3
   nodeLimit           := 1000000000000000000
   iterLimit           := 1000000000000000000
+  reporting           := false
   deriving BEq
 
 inductive Debug.ExitPoint

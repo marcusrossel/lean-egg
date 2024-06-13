@@ -253,14 +253,9 @@ private def parseExpl : (TSyntax `egg_expl) → Except ParseError Explanation
 
 -- Note: This could be generalized to any monad with an environment and exceptions.
 def Raw.parse (raw : Explanation.Raw) : CoreM Explanation := do
-  if "⚡️".isPrefixOf raw then
-    throwError s!"egg backend failed:\n  {raw}"
-  else if "☹".isPrefixOf raw then
-    throwError s!"egg failed to prove the goal ({raw.drop 2})"
-  else
-    match Parser.runParserCategory (← getEnv) `egg_expl raw with
-    | .ok stx    =>
-      match parseExpl ⟨stx⟩ with
-      | .ok expl => return expl
-      | .error err => throwError err
-    | .error err => throwError s!"{ParseError.msgPrefix}\n{err}"
+  match Parser.runParserCategory (← getEnv) `egg_expl raw with
+  | .ok stx    =>
+    match parseExpl ⟨stx⟩ with
+    | .ok expl => return expl
+    | .error err => throwError err
+  | .error err => throwError s!"{ParseError.msgPrefix}\n{err}"
