@@ -68,6 +68,7 @@ open Config.Modifier (egg_cfg_mod)
 protected def eval
     (mod : TSyntax ``egg_cfg_mod) (prems : TSyntax `egg_premises)
     (base : Option (TSyntax `egg_base)) (guides : Option (TSyntax `egg_guides)) : TacticM Unit := do
+  let startTime ← IO.monoMsNow
   let goal ← getMainGoal
   let mod  ← Config.Modifier.parse mod
   let cfg := (← Config.fromOptions).modify mod
@@ -88,10 +89,12 @@ protected def eval
       let result ← req.run fun failReport => do
         let msg := s!"egg failed to prove the goal ({failReport.stopReason.description}) "
         unless cfg.reporting do throwError msg
-        throwError msg ++ failReport.format cfg.flattenReports
+        throwError msg ++ formatReport cfg.flattenReports failReport
       if let .beforeProof := cfg.exitPoint then return none
       let prf ← resultToProof result goal rws facts {amb, cfg}
-      if cfg.reporting then logInfo (s!"egg succeeded " ++ result.report.format cfg.flattenReports)
+      if cfg.reporting then
+        let duration := (← IO.monoMsNow) - startTime
+        logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report duration result.expl)
       return some prf
     if let some proof := proof?
     then goal.id.assignIfDefeq' proof

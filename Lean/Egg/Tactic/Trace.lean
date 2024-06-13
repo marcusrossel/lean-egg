@@ -21,16 +21,22 @@ def Config.Debug.ExitPoint.format : Config.Debug.ExitPoint → Format
   | .beforeEqSat => "Before Equality Saturation"
   | .beforeProof => "Before Proof Reconstruction"
 
-nonrec def Request.Result.Report.format (rep : Report) (flat : Bool) : Format :=
+nonrec def formatReport
+    (flat : Bool) (rep : Request.Result.Report) (duration? : Option Nat := none)
+    (expl? : Option Explanation := none) : Format :=
   if flat then
-    "(" ++ (format rep.time) ++ "," ++ (format rep.iterations) ++ "," ++ (format rep.memoryUsage) ++
-    "," ++ (format rep.nodeCount) ++ "," ++ (format rep.classCount) ++ ")"
+    "(" ++ (if let some d := duration? then format d ++ "," else "") ++
+    (format <| (1000 * rep.time).toUInt64.toNat) ++ "," ++ (format rep.iterations) ++ "," ++
+    (format rep.memoryUsage) ++ "," ++ (format rep.nodeCount) ++ "," ++ (format rep.classCount) ++
+    (if let some e := expl? then format e.steps.size ++ "," else "") ++ ")"
   else
-    "\ntime:    " ++ (format rep.time)      ++ "s\n" ++
-    "iters:   " ++ (format rep.iterations)  ++ "\n" ++
-    "mem:     " ++ (format rep.memoryUsage) ++ "\n" ++
-    "nodes:   " ++ (format rep.nodeCount)   ++ "\n" ++
-    "classes: " ++ (format rep.classCount)
+    (if let some d := duration? then "\ntotal time: " ++ format d ++ "ms\n" else "\n") ++
+    "eqsat time: " ++ (format <| (1000 * rep.time).toUInt64.toNat) ++ "ms\n" ++
+    "iters:      " ++ (format rep.iterations)  ++ "\n" ++
+    "mem:        " ++ (format rep.memoryUsage) ++ "\n" ++
+    "nodes:      " ++ (format rep.nodeCount)   ++ "\n" ++
+    "classes:    " ++ (format rep.classCount)  ++
+    (if let some e := expl? then "\nsteps:      " ++ format e.steps.size else "")
 
 nonrec def MVars.toMessageData (mvars : MVars) : MetaM MessageData := do
   let expr := format <| ← mvars.expr.toList.mapM (ppExpr <| Expr.mvar ·)

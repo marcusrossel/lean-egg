@@ -44,6 +44,8 @@ theorem freshmans_dream₂ : (x + y) ^ 2 = x ^ 2 + y ^ 2 := by
     -- _ = x ^ 2 + x * y + y * x + y ^ 2 := by char_two_ring
     _ = x ^ 2 + y ^ 2                 := by char_two_ring
 
+set_option egg.flattenReports false
+
 theorem freshmans_dream₂' : (x + y) ^ 2 = x ^ 2 + y ^ 2 := by
   char_two_ring
 
