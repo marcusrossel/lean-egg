@@ -88,10 +88,10 @@ protected def eval
       let result ← req.run fun failReport => do
         let msg := s!"egg failed to prove the goal ({failReport.stopReason.description}) "
         unless cfg.reporting do throwError msg
-        throwError msg ++ failReport.format
+        throwError msg ++ failReport.format cfg.flattenReports
       if let .beforeProof := cfg.exitPoint then return none
       let prf ← resultToProof result goal rws facts {amb, cfg}
-      if cfg.reporting then logInfo (s!"egg succeeded " ++ result.report.format)
+      if cfg.reporting then logInfo (s!"egg succeeded " ++ result.report.format cfg.flattenReports)
       return some prf
     if let some proof := proof?
     then goal.id.assignIfDefeq' proof

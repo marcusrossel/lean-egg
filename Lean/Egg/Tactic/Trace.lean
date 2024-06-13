@@ -21,7 +21,7 @@ def Config.Debug.ExitPoint.format : Config.Debug.ExitPoint → Format
   | .beforeEqSat => "Before Equality Saturation"
   | .beforeProof => "Before Proof Reconstruction"
 
-nonrec def Request.Result.Report.format (rep : Report) (flat := false) : Format :=
+nonrec def Request.Result.Report.format (rep : Report) (flat : Bool) : Format :=
   if flat then
     "(" ++ (format rep.time) ++ "," ++ (format rep.iterations) ++ "," ++ (format rep.memoryUsage) ++
     "," ++ (format rep.nodeCount) ++ "," ++ (format rep.classCount) ++ ")"

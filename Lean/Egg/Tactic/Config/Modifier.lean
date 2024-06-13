@@ -26,6 +26,7 @@ structure Modifier where
   nodeLimit           : Option Nat             := none
   iterLimit           : Option Nat             := none
   reporting           : Option Bool            := none
+  flattenReports      : Option Bool            := none
   traceSubstitutions  : Option Bool            := none
   traceBVarCorrection : Option Bool            := none
   exitPoint           : Option Debug.ExitPoint := none
@@ -52,6 +53,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   nodeLimit           := mod.nodeLimit.getD cfg.nodeLimit
   iterLimit           := mod.iterLimit.getD cfg.iterLimit
   reporting           := mod.reporting.getD cfg.reporting
+  flattenReports      := mod.flattenReports.getD cfg.flattenReports
   traceSubstitutions  := mod.traceSubstitutions.getD cfg.traceSubstitutions
   traceBVarCorrection := mod.traceBVarCorrection.getD cfg.traceBVarCorrection
   exitPoint           := mod.exitPoint.getD cfg.exitPoint

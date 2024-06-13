@@ -51,3 +51,4 @@ register_egg_options
   nodeLimit : Nat
   iterLimit : Nat
   reporting
+  flattenReports
