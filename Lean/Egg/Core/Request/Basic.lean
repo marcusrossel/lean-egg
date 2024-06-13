@@ -106,7 +106,7 @@ structure Result where
   egraph : EGraph
   report : Result.Report
 
-def run (req : Request) : MetaM Result := do
+def run (req : Request) (onFail : Result.Report → MetaM Result) : MetaM Result := do
   let raw := runRaw req
   withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] raw.expl
   if "⚡️".isPrefixOf raw.expl then
@@ -114,7 +114,7 @@ def run (req : Request) : MetaM Result := do
   else
     let some report := raw.report? | throwError "egg: internal error: report is absent"
     if raw.expl.isEmpty then
-      throwError s!"egg failed to prove the goal ({report.stopReason.description})"
+      onFail report
     else
       let some egraph := raw.egraph? | throwError "egg: internal error: e-graph is absent"
       return { expl := ← raw.expl.parse, egraph, report }

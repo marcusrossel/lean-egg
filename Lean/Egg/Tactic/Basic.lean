@@ -85,10 +85,14 @@ protected def eval
       let req ← Request.encoding goal.toCongr rws facts guides cfg amb
       withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
       if let .beforeEqSat := cfg.exitPoint then return none
-      let result ← req.run
-      if cfg.reporting then logInfo result.report.toMessageData
+      let result ← req.run fun failReport => do
+        let msg := s!"egg failed to prove the goal ({failReport.stopReason.description}) "
+        unless cfg.reporting do throwError msg
+        throwError msg ++ failReport.format
       if let .beforeProof := cfg.exitPoint then return none
-      return some (← resultToProof result goal rws facts {amb, cfg})
+      let prf ← resultToProof result goal rws facts {amb, cfg}
+      if cfg.reporting then logInfo (s!"egg succeeded " ++ result.report.format)
+      return some prf
     if let some proof := proof?
     then goal.id.assignIfDefeq' proof
     else goal.id.admit
