@@ -19,7 +19,7 @@ structure Gen where
   builtins      := true
   genTcProjRws  := true
   genTcSpecRws  := true
-  genGoalTcSpec := false
+  genGoalTcSpec := true
   genNatLitRws  := true
   genEtaRw      := true
   genBetaRw     := true

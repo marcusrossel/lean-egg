@@ -35,6 +35,8 @@ macro "char_two_ring" mod:egg_cfg_mod base:(egg_base)? guides:(egg_guides)? : ta
 
 variable [CharTwoRing α] (x y : α)
 
+set_option egg.genGoalTcSpec false
+
 theorem freshmans_dream₂ : (x + y) ^ 2 = x ^ 2 + y ^ 2 := by
   calc (x + y) ^ 2
     _ = (x + y) * (x + y)             := by char_two_ring
