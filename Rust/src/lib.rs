@@ -155,7 +155,6 @@ pub struct CReport {
     stop_reason:    CStopReason,
     egraph_nodes:   usize,
     egraph_classes: usize,
-    memo_size:      usize,
     total_time:     c_double,
 }
 
@@ -167,7 +166,6 @@ impl CReport {
             stop_reason:    CStopReason::from_stop_reason(r.stop_reason),
             egraph_nodes:   r.egraph_nodes,
             egraph_classes: r.egraph_classes,
-            memo_size:      r.memo_size,
             total_time:     r.total_time,
         }
     }
@@ -178,7 +176,6 @@ impl CReport {
             stop_reason:    CStopReason::Other,
             egraph_nodes:   0,
             egraph_classes: 0,
-            memo_size:      0,
             total_time:     0.0,
         }
     }

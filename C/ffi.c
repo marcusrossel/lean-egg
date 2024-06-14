@@ -204,7 +204,6 @@ structure Report where
   stopReason:  StopReason
   nodeCount:   Nat
   classCount:  Nat
-  memoryUsage: Nat
   time:        Float
 */
 
@@ -213,18 +212,16 @@ typedef struct report {
     stop_reason reason;
     size_t      node_count;
     size_t      class_count;
-    size_t      memory_usage;
     double      time;
 } report;
 
 lean_obj_res report_to_lean(report rep) {
-    lean_object* r = lean_alloc_ctor(0, 4, sizeof(double) + sizeof(uint8_t));
-    size_t obj_offset = 4 * sizeof(void*);
+    lean_object* r = lean_alloc_ctor(0, 3, sizeof(double) + sizeof(uint8_t));
+    size_t obj_offset = 3 * sizeof(void*);
 
     lean_ctor_set(r, 0, lean_box(rep.iterations));
     lean_ctor_set(r, 1, lean_box(rep.node_count));
     lean_ctor_set(r, 2, lean_box(rep.class_count));
-    lean_ctor_set(r, 3, lean_box(rep.memory_usage));
     lean_ctor_set_float(r, obj_offset, rep.time);
     lean_ctor_set_uint8(r, obj_offset + sizeof(double), stop_reason_to_lean(rep.reason));
 

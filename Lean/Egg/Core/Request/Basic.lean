@@ -88,7 +88,6 @@ structure Result.Report where
   stopReason:  StopReason
   nodeCount:   Nat
   classCount:  Nat
-  memoryUsage: Nat
   time:        Float
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.

@@ -91,10 +91,12 @@ protected def eval
         unless cfg.reporting do throwError msg
         throwError msg ++ formatReport cfg.flattenReports failReport
       if let .beforeProof := cfg.exitPoint then return none
+      let beforeProof ← IO.monoMsNow
       let prf ← resultToProof result goal rws facts {amb, cfg}
+      let proofTime := (← IO.monoMsNow) - beforeProof
       if cfg.reporting then
-        let duration := (← IO.monoMsNow) - startTime
-        logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report duration result.expl)
+        let totalTime := (← IO.monoMsNow) - startTime
+        logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl)
       return some prf
     if let some proof := proof?
     then goal.id.assignIfDefeq' proof
