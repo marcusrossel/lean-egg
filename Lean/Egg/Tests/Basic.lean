@@ -1,6 +1,6 @@
 import Egg
 
-/-- error: egg failed to prove goal -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 example : true = false := by
   egg

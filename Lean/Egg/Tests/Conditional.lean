@@ -1,6 +1,6 @@
 import Egg
 
-/-- error: egg failed to prove goal -/
+/-- error: egg failed to prove the goal (reached time limit) -/
 #guard_msgs in
 example (h : x ∧ y → 1 = 2) : 1 = 2 := by
   egg [h]
@@ -36,7 +36,7 @@ example (h₁ : ∀ n, n > 2 → n > 3 → n = x) (h₃ : 4 > 3) (h₂ : 4 > 2) 
 example {a : Nat} (h : a < b) : a % b = a := by
   egg [Nat.mod_eq_of_lt; h]
 
-/-- error: egg failed to prove goal -/
+/-- error: egg failed to prove the goal (reached time limit) -/
 #guard_msgs in
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂]

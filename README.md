@@ -20,6 +20,8 @@ Then, add `import Egg` to the files that require `egg`.
 The syntax of `egg` is very similar to that of `simp` or `rw`:
 
 ```lean
+import Egg
+
 example : 0 = 0 := by
   egg
 
@@ -36,6 +38,8 @@ example (as bs : List α) : reverse (as ++ bs) = (reverse bs) ++ (reverse as) :=
 But you can use it to solve some equations which `simp` cannot:
 
 ```lean
+import Egg
+
 variable (a b c d : Int)
 
 example : ((a * b) - (2 * c)) * d - (a * b) = (d - 1) * (a * b) - (2 * c * d) := by
@@ -47,6 +51,7 @@ You can help out by providing _guide terms_ which nudge `egg` in the right direc
 
 ```lean
 -- From Lean/Egg/Tests/Groups.lean
+import Egg
 
 example [Group G] (a : G) : a⁻¹⁻¹ = a := by
   egg [/- group axioms -/] using a⁻¹ * a
@@ -55,6 +60,8 @@ example [Group G] (a : G) : a⁻¹⁻¹ = a := by
 And if you want to prove your goal based on an equivalent hypothesis, you can use the `from` syntax:
 
 ```lean
+import Egg
+
 example (h : p ∧ q ∧ r) : r ∧ r ∧ q ∧ p ∧ q ∧ r ∧ p := by
   egg [and_comm, and_assoc, and_self] from h
 ```
@@ -62,6 +69,8 @@ example (h : p ∧ q ∧ r) : r ∧ r ∧ q ∧ p ∧ q ∧ r ∧ p := by
 For conditional rewriting, hypotheses can be provided after the rewrites:
 
 ```lean
+import Egg
+
 example {p q r : Prop} (h₁ : p) (h₂ : p ↔ q) (h₃ : q → (p ↔ r)) : p ↔ r := by
   egg [h₂, h₃; h₁]
 ```

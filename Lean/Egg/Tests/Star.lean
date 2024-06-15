@@ -2,12 +2,12 @@ import Egg
 
 -- Tests for the `*` argument.
 
-/-- error: egg failed to prove goal -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 example : true = false := by
   egg [*]
 
-/-- error: egg failed to prove goal -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 example (_ : true = true) : [true] ++ [] = [true] := by
   egg [*]

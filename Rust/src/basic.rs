@@ -13,7 +13,9 @@ use crate::trace::*;
 #[repr(C)]
 pub struct Config {
     optimize_expl:          bool,
-    time_limit:             usize, 
+    time_limit:             usize,
+    node_limit:             usize,
+    iter_limit:             usize, 
     gen_nat_lit_rws:        bool, 
     gen_eta_rw:             bool,
     gen_beta_rw:            bool,
@@ -25,7 +27,7 @@ pub struct Config {
     trace_bvar_correction:  bool,
 }
 
-pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Res<(String, LeanEGraph)> {
+pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Result<(String, LeanEGraph, Report), Error> {
     init_enabled_trace_groups(cfg.trace_substitutions, cfg.trace_bvar_correction);
 
     let mut egraph: LeanEGraph = Default::default();
@@ -62,6 +64,8 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
     let mut runner = Runner::default()
         .with_egraph(egraph)
         .with_time_limit(Duration::from_secs(cfg.time_limit.try_into().unwrap()))
+        .with_node_limit(cfg.node_limit)
+        .with_iter_limit(cfg.iter_limit)
         .with_hook(move |runner| {
             if let Some(path) = &viz_path {
                 runner.egraph.dot().to_dot(format!("{}/{}.dot", path, runner.iterations.len())).unwrap();
@@ -74,11 +78,13 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
         })
         .run(&rws);
 
+    let report = runner.report();
+
     if runner.egraph.find(init_id) == runner.egraph.find(goal_id) {
         let mut expl = runner.explain_equivalence(&init_expr, &goal_expr);
         let expl_str = expl.get_flat_string();
-        Ok((expl_str, runner.egraph))
+        Ok((expl_str, runner.egraph, report))
     } else {
-        Err(Error::Failed)
+        Ok(("".to_string(), runner.egraph, report))
     }
 }

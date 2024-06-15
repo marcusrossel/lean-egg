@@ -42,16 +42,16 @@ where
         core e
 
   core : Expr → EncodeM Expression
-    | .bvar idx         => return s!"(bvar {idx})"
     | .fvar id          => encodeFVar id
     | .mvar id          => encodeMVar id
     | .sort lvl         => return s!"(sort {← encodeLevel lvl})"
     | .const name lvls  => return s!"(const {name}{← encodeConstLvls lvls})"
     | .app fn arg       => return s!"(app {← go fn} {← go arg})"
-    | .lam _ ty b _     => withInstantiatedBVar ty b fun body => return s!"(λ {← go ty} {← go body})"
-    | .forallE _ ty b _ => withInstantiatedBVar ty b fun body => return s!"(∀ {← go ty} {← go body})"
+    | .lam _ ty b _     => encodeLambda ty b
+    | .forallE _ ty b _ => encodeForall ty b
     | .lit (.strVal l)  => return s!"(lit {Json.renderString l})"
     | .lit (.natVal l)  => return s!"(lit {l})"
+    | .bvar _           => panic! "'Egg.encode.core' found loose bvar"
     | _                 => panic! "'Egg.encode.core' received non-normalized expression"
 
   encodeFVar (id : FVarId) : EncodeM Expression := do
@@ -66,3 +66,15 @@ where
 
   encodeConstLvls (lvls : List Level) : EncodeM Expression :=
     lvls.foldlM (init := "") (return s!"{·} {← encodeLevel ·}")
+
+  encodeLambda (ty b : Expr) : EncodeM Expression := do
+    -- It's critical that we encode `ty` outside of the `withInstantiatedBVar` block, as otherwise
+    -- the bvars in `encTy` are incorrectly shifted by 1.
+    let encTy ← go ty
+    withInstantiatedBVar ty b fun body => return s!"(λ {encTy} {← go body})"
+
+  encodeForall (ty b : Expr) : EncodeM Expression := do
+    -- It's critical that we encode `ty` outside of the `withInstantiatedBVar` block, as otherwise
+    -- the bvars in `encTy` are incorrectly shifted by 1.
+    let encTy ← go ty
+    withInstantiatedBVar ty b fun body => return s!"(∀ {encTy} {← go body})"

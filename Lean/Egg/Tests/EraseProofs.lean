@@ -4,7 +4,7 @@ import Egg
 
 set_option egg.eraseProofs true
 
-/-- error: egg failed to prove goal -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 set_option egg.eraseProofs false in
 example (arr : Array α) (i : Nat) (h₁ h₂ : i < arr.size) : arr[i]'h₁ = arr[i]'h₂ := by
@@ -34,7 +34,7 @@ example (i : Nat) (h : ∀ i : Nat, i < 10) : (Fin.mk i (h i)).val = i := by
 example (h : ∀ x : Nat, x = Exists.choose (Exists.intro x x.zero_le)) : True = True := by
   egg [h]
 
-/-- error: egg failed to prove goal -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 set_option egg.eraseProofs false in
 example
@@ -45,7 +45,7 @@ example
 
 -- TODO: We don't currently support rewriting the types of proof terms. I think this shouldn't be
 --       too difficult to support though.
-/-- error: egg failed to parse explanation: step contains type-level rewrite in proof -/
+/-- error: egg received invalid explanation: step contains type-level rewrite in proof -/
 #guard_msgs in
 set_option egg.eraseProofs true in
 example

@@ -3,6 +3,7 @@ use egg::*;
 use core::ffi::c_char;
 use core::ffi::CStr;
 use std::ffi::CString;
+use libc::c_double;
 use std::str::FromStr;
 use basic::*;
 use result::*;
@@ -127,9 +128,64 @@ impl CFactsArray {
 }
 
 #[repr(C)]
+pub enum CStopReason {
+    Saturated,
+    TimeLimit,
+    IterationLimit,
+    NodeLimit,
+    Other,
+}
+
+impl CStopReason {
+
+    fn from_stop_reason(r: StopReason) -> CStopReason {
+        match r {
+            StopReason::Saturated         => CStopReason::Saturated,
+            StopReason::IterationLimit(_) => CStopReason::IterationLimit,
+            StopReason::NodeLimit(_)      => CStopReason::NodeLimit,
+            StopReason::TimeLimit(_)      => CStopReason::TimeLimit,
+            StopReason::Other(_)          => CStopReason::Other,
+        }
+    }
+}
+
+#[repr(C)]
+pub struct CReport {
+    iterations:     usize,
+    stop_reason:    CStopReason,
+    egraph_nodes:   usize,
+    egraph_classes: usize,
+    total_time:     c_double,
+}
+
+impl CReport {
+
+    fn from_report(r: Report) -> CReport {
+        CReport {
+            iterations:     r.iterations,
+            stop_reason:    CStopReason::from_stop_reason(r.stop_reason),
+            egraph_nodes:   r.egraph_nodes,
+            egraph_classes: r.egraph_classes,
+            total_time:     r.total_time,
+        }
+    }
+
+    fn none() -> CReport {
+        CReport {
+            iterations:     0,
+            stop_reason:    CStopReason::Other,
+            egraph_nodes:   0,
+            egraph_classes: 0,
+            total_time:     0.0,
+        }
+    }
+}
+
+#[repr(C)]
 pub struct EggResult {
     expl: *const c_char,
     graph: Option<Box<LeanEGraph>>,
+    report: CReport
 }
 
 #[no_mangle]
@@ -153,7 +209,7 @@ pub extern "C" fn egg_explain_congr(
     let rw_templates = rws.to_templates();
     if let Err(rws_err) = rw_templates { 
         let rws_err_c_str = CString::new(rws_err.to_string()).expect("conversion of error message to C-string failed");
-        return EggResult { expl: rws_err_c_str.into_raw(), graph: None }
+        return EggResult { expl: rws_err_c_str.into_raw(), graph: None, report: CReport::none() }
     }
     let rw_templates = rw_templates.unwrap();
 
@@ -164,15 +220,16 @@ pub extern "C" fn egg_explain_congr(
     let res = explain_congr(init, goal, rw_templates, facts, guides, cfg, viz_path);
     if let Err(res_err) = res {
         let res_err_c_str = CString::new(res_err.to_string()).expect("conversion of error message to C-string failed");
-        return EggResult { expl: res_err_c_str.into_raw(), graph: None }
+        return EggResult { expl: res_err_c_str.into_raw(), graph: None, report: CReport::none() }
     }
-    let (expl, egraph) = res.unwrap();
+    let (expl, egraph, report) = res.unwrap();
 
     let expl_c_str = CString::new(expl).expect("conversion of explanation to C-string failed");
 
     return EggResult {
         expl: expl_c_str.into_raw(),
-        graph: Some(Box::new(egraph))
+        graph: Some(Box::new(egraph)),
+        report: CReport::from_report(report) 
     }
 }
 

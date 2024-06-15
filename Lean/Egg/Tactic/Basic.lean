@@ -38,12 +38,10 @@ private def collectAmbientMVars (goal : Goal) (guides : Guides) : MetaM MVars.Am
   let guidesLvl ← guides.foldlM (init := ∅) fun res g => return res.merge (← MVars.collect g.expr).lvl
   return { expr, lvl := goalLvl.merge guidesLvl }
 
-private def processRawExpl
-    (rawExpl : Explanation.Raw) (goal : Goal) (rws : Rewrites) (facts : Facts) (ctx : EncodingCtx)
-    (egraph? : Option EGraph) : TacticM Expr := do
-  let expl ← rawExpl.parse
-  let some egraph := egraph? | throwError "egg: internal error: e-graph is absent"
-  let proof ← expl.proof rws facts egraph ctx
+private def resultToProof
+    (result : Request.Result) (goal : Goal) (rws : Rewrites) (facts : Facts) (ctx : EncodingCtx)
+    : TacticM Expr := do
+  let proof ← result.expl.proof rws facts result.egraph ctx
   proof.trace `egg.proof
   let mut prf ← proof.prove goal.toCongr
   prf ← instantiateMVars prf
@@ -70,6 +68,7 @@ open Config.Modifier (egg_cfg_mod)
 protected def eval
     (mod : TSyntax ``egg_cfg_mod) (prems : TSyntax `egg_premises)
     (base : Option (TSyntax `egg_base)) (guides : Option (TSyntax `egg_guides)) : TacticM Unit := do
+  let startTime ← IO.monoMsNow
   let goal ← getMainGoal
   let mod  ← Config.Modifier.parse mod
   let cfg := (← Config.fromOptions).modify mod
@@ -87,11 +86,18 @@ protected def eval
       let req ← Request.encoding goal.toCongr rws facts guides cfg amb
       withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
       if let .beforeEqSat := cfg.exitPoint then return none
-      let (rawExpl, egraph?) := req.run
-      if rawExpl.isEmpty then throwError "egg failed to prove goal"
-      withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] rawExpl
+      let result ← req.run fun failReport => do
+        let msg := s!"egg failed to prove the goal ({failReport.stopReason.description}) "
+        unless cfg.reporting do throwError msg
+        throwError msg ++ formatReport cfg.flattenReports failReport
       if let .beforeProof := cfg.exitPoint then return none
-      return some (← processRawExpl rawExpl goal rws facts {amb, cfg} egraph?)
+      let beforeProof ← IO.monoMsNow
+      let prf ← resultToProof result goal rws facts {amb, cfg}
+      let proofTime := (← IO.monoMsNow) - beforeProof
+      if cfg.reporting then
+        let totalTime := (← IO.monoMsNow) - startTime
+        logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl)
+      return some prf
     if let some proof := proof?
     then goal.id.assignIfDefeq' proof
     else goal.id.admit

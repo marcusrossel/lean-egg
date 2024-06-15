@@ -35,12 +35,12 @@ if [[ "$test_egg" == true ]]; then
                     continue
                 fi
 
-                if [[ "$ci_mode" == true ]]; then 
-                    : 
+                if [[ "$ci_mode" == true ]]; then
+                    :
                 else
                     echo -n "Testing $file_name ..."
                 fi
-                
+
                 left_quote='«'
                 right_quote='»'
                 module_name="$module_prefix$left_quote$file_name$right_quote"
@@ -56,7 +56,7 @@ if [[ "$test_egg" == true ]]; then
                     exit_code=1
                     echo -e "\r❌ $file_name           "
 
-                    if [[ "$ci_mode" == true ]]; then 
+                    if [[ "$ci_mode" == true ]]; then
                         echo "$output" | while IFS= read -r line; do
                             echo "  ${line}"
                         done
@@ -71,33 +71,48 @@ if [[ "$exit_code" -ne 0 ]]; then
     exit $exit_code
 fi
 
-test_lib () {
+summarize_lib_tests() {
+    local warning_prefix="warning: ./././."
+    local success_prefix="egg succeeded "
+    local plain_fail_prefix="egg failed: egg failed to prove the goal "
+
+    local successes="$(cat "$test_lib_output" | grep -o 'egg succeeded (.*)' | cut -c ${#success_prefix}-)"
+    local success_count="$(echo "$successes" | wc -l | awk '{$1=$1};1')"
+    
+    local plain_failures="$(cat "$test_lib_output" | grep -o 'egg failed: egg failed to prove the goal (.*) (.*)' | cut -c ${#plain_fail_prefix}-)"
+    local plain_fail_count="$(echo "$plain_failures" | wc -l | awk '{$1=$1};1')"
+
+    local errors="$(cat "$test_lib_output" | grep 'egg failed:' | grep -v 'egg failed: egg failed to prove the goal' | cut -c ${#warning_prefix}-)"
+    local errors_count="$(echo "$errors" | wc -l | awk '{$1=$1};1')"
+    
+    local unsupported="$(cat "$test_lib_output" | grep "declaration uses 'sorry'" | cut -c ${#warning_prefix}-)"
+    local unsupported_count="$(echo "$unsupported" | wc -l | awk '{$1=$1};1')"
+
+    echo "✅ $success_count    ❌ $plain_fail_count    🟪 $errors_count    🟡 $unsupported_count"
+
+    echo "$successes"      | while read success; do echo "✅ $success"; done
+    echo "$plain_failures" | while read fail; do echo "❌ $fail"; done
+    echo "$errors"         | while read error; do echo "🟪 $error"; done
+    echo "$unsupported"    | while read unsupp; do echo "🟡 $unsupp"; done
+}
+
+test_lib() {
     cd "$tests_dir/$test_lib_name"
-    local output=$(mktemp)
-    local info_prefix="warning: ./././."
+    test_lib_output=$(mktemp)
 
     lake clean
     # TODO: Figure out how to keep the printed lines on a single line.
-    lake build | tee "$output" | egrep '^\[[0-9]+/[0-9]+\]' # | tr '\n' '\r'
-
-    local success_count="$(cat "$output" | grep 'egg succeeded' | wc -l | awk '{$1=$1};1')"
-    local failures="$(cat "$output" | grep 'egg failed' | cut -c ${#info_prefix}-)"
-    local fail_count="$(echo "$failures" | wc -l | awk '{$1=$1};1')"
-    local unsupported="$(cat "$output" | grep "declaration uses 'sorry'" | cut -c ${#info_prefix}-)"
-    local unsupported_count="$(echo "$unsupported" | wc -l | awk '{$1=$1};1')"
-
-    echo "✅ $success_count    🟡 $unsupported_count    ❌ $fail_count"
-
-    echo "$failures"    | while read fail; do echo "❌ $fail"; done
-    echo "$unsupported" | while read unsupp; do echo "🟡 $unsupp"; done
+    lake build | tee "$test_lib_output" | egrep '^. \[[0-9]+/[0-9]+\]' # | tr '\n' '\r'   
 }
 
 if [[ "$test_batteries" == true ]]; then
     test_lib_name="batteries"
+    trap summarize_lib_tests EXIT
     test_lib
 fi
 
 if [[ "$test_mathlib" == true ]]; then
     test_lib_name="mathlib4"
+    trap summarize_lib_tests EXIT
     test_lib
 fi

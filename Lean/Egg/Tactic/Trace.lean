@@ -21,6 +21,24 @@ def Config.Debug.ExitPoint.format : Config.Debug.ExitPoint → Format
   | .beforeEqSat => "Before Equality Saturation"
   | .beforeProof => "Before Proof Reconstruction"
 
+nonrec def formatReport
+    (flat : Bool) (rep : Request.Result.Report) (totalDuration? proofDuration? : Option Nat := none)
+    (expl? : Option Explanation := none) : Format :=
+  if flat then
+    "(" ++ (if let some d := totalDuration? then format d else "-") ++ "," ++
+    (format <| (1000 * rep.time).toUInt64.toNat) ++ "," ++
+    (if let some d := proofDuration? then format d else "-") ++ "," ++ (format rep.iterations) ++
+    "," ++ (format rep.nodeCount) ++ "," ++ (format rep.classCount) ++ "," ++
+    (if let some e := expl? then format e.steps.size else "-") ++ ")"
+  else
+    (if let some d := totalDuration? then "\ntotal time: " ++ format d ++ "ms" else "-") ++ "\n" ++
+    "eqsat time: " ++ (format <| (1000 * rep.time).toUInt64.toNat) ++ "ms\n" ++
+    (if let some d := proofDuration? then "proof time: " ++ format d ++ "ms" else "-") ++ "\n" ++
+    "iters:      " ++ (format rep.iterations)  ++ "\n" ++
+    "nodes:      " ++ (format rep.nodeCount)   ++ "\n" ++
+    "classes:    " ++ (format rep.classCount)  ++ "\n" ++
+    (if let some e := expl? then "steps:      " ++ format e.steps.size else "-")
+
 nonrec def MVars.toMessageData (mvars : MVars) : MetaM MessageData := do
   let expr := format <| ← mvars.expr.toList.mapM (ppExpr <| Expr.mvar ·)
   let tc   := format <| ← mvars.tc.toList.mapM   (ppExpr <| Expr.mvar ·)

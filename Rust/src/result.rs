@@ -5,7 +5,6 @@ pub enum Error {
     Guide(String),
     Fact(String),
     Rewrite(String),
-    Failed,
 }
 
 impl ToString for Error {
@@ -17,7 +16,6 @@ impl ToString for Error {
             Error::Guide(s)   => format!("⚡️ {s}"),
             Error::Fact(s)    => format!("⚡️ {s}"),
             Error::Rewrite(s) => format!("⚡️ {s}"),
-            Error::Failed     => "".to_string(),
         }
     }
 }

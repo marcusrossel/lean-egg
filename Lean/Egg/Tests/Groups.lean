@@ -45,9 +45,9 @@ set_option egg.timeLimit 5 in
 theorem inv_mul'' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using a⁻¹ * (a * b) * (a * b)⁻¹
 
-/-- error: egg failed to prove goal -/
+/-- error: egg failed to prove the goal (reached time limit) -/
 #guard_msgs in
-set_option egg.timeLimit 20 in
+set_option egg.timeLimit 10 in
 theorem inv_mul''' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using (a * b) * (a * b)⁻¹
 

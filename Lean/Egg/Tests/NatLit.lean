@@ -69,7 +69,7 @@ example : 12345 % 0 = 12345 := by
 
 set_option egg.genNatLitRws false in
 set_option egg.natReduceRws false in
-/-- error: egg failed to prove goal -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 example (h : ∀ f : Nat → Nat, f (1 + 1) = x) : id 2 = x := by
   egg [h]

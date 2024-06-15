@@ -5,12 +5,6 @@ set_option egg.genTcSpecRws true in
 example (a b : α) [Add α] (h : ∀ x y : α, x + y = y + x) : a + b = b + a := by
   egg [h]
 
--- CRASH: When turning on proof erasure.
-set_option egg.eraseProofs false in
-theorem Array.get_set_ne (a : Array α) (i : Fin a.size) {j : Nat} (v : α) (hj : j < a.size)
-    (h : i.1 ≠ j) : (a.set i v)[j]'(by simp [*]) = a[j] := by
-  sorry -- egg [set, Array.getElem_eq_data_get, List.get_set_ne _ h]
-
 -- The universe mvars (or universe params if you make this a theorem instead of an example) are
 -- different for the respective `α`s, so this doesn't hold by reflexivity. But `by rfl` can somehow
 -- prove this.
@@ -18,7 +12,7 @@ example : (∀ α (l : List α), l.length = l.length) ↔ (∀ α (l : List α),
   set_option trace.egg true in egg
 
 -- For rewrites involving dependent arguments, we can easily get an incorrect motive. E.g. when
--- rewriting the condition in ite without chaning the type class instance:
+-- rewriting the condition in ite without changing the type class instance:
 set_option trace.egg true in
 example : (if 0 = 0 then 0 else 1) = 0 := by
   have h1 : (0 = 0) = True := eq_self 0

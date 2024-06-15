@@ -7,9 +7,9 @@ structure Normalization where
   deriving BEq
 
 def Normalization.noReduce : Normalization where
-  betaReduceRws := false
-  etaReduceRws  := false
-  natReduceRws  := false
+  betaReduceRws := true
+  etaReduceRws  := true
+  natReduceRws  := true
 
 structure Encoding extends Normalization where
   eraseProofs := true
@@ -20,7 +20,7 @@ structure Gen where
   tagged?       := some `egg
   genTcProjRws  := true
   genTcSpecRws  := true
-  genGoalTcSpec := false
+  genGoalTcSpec := true
   genNatLitRws  := true
   genEtaRw      := true
   genBetaRw     := true
@@ -33,6 +33,10 @@ structure Backend where
   conditionSubgoals   := false
   optimizeExpl        := true
   timeLimit           := 3
+  nodeLimit           := 1000000000000000000
+  iterLimit           := 1000000000000000000
+  reporting           := false
+  flattenReports      := false
   deriving BEq
 
 inductive Debug.ExitPoint
