@@ -7,9 +7,9 @@ structure Normalization where
   deriving BEq
 
 def Normalization.noReduce : Normalization where
-  betaReduceRws := false
-  etaReduceRws  := false
-  natReduceRws  := false
+  betaReduceRws := true
+  etaReduceRws  := true
+  natReduceRws  := true
 
 structure Encoding extends Normalization where
   eraseProofs := true
@@ -34,8 +34,8 @@ structure Backend where
   timeLimit           := 3
   nodeLimit           := 1000000000000000000
   iterLimit           := 1000000000000000000
-  reporting           := true
-  flattenReports      := true
+  reporting           := false
+  flattenReports      := false
   deriving BEq
 
 inductive Debug.ExitPoint
