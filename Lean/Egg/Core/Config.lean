@@ -7,9 +7,9 @@ structure Normalization where
   deriving BEq
 
 def Normalization.noReduce : Normalization where
-  betaReduceRws := true
-  etaReduceRws  := true
-  natReduceRws  := true
+  betaReduceRws := false
+  etaReduceRws  := false
+  natReduceRws  := false
 
 structure Encoding extends Normalization where
   eraseProofs := true

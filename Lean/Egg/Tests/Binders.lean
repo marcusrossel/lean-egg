@@ -6,6 +6,7 @@ example : (fun x : Nat => 0) = (fun x => 0 + 0) := by
 example : (fun x => x) = (fun x => x + 0) := by
   egg [Nat.add_zero]
 
+set_option trace.egg true in
 example : (fun x => x) = (fun x => 0 + 0 + x) := by
   egg [Nat.zero_add]
 

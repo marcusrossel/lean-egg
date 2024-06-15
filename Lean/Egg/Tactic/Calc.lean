@@ -51,18 +51,27 @@ private def parseSteps : (TSyntax ``egg_calc_steps) → TacticM Steps
 
 syntax &"egg " &"calc " egg_premises egg_calc_steps : tactic
 
-elab_rules : tactic
-  | `(tactic| egg calc $prems $steps) => do
-    let steps ← parseSteps steps
-    let goals := steps.tail.map (·.goal)
-    let stepToEgg (step : Step) : TacticM (TSyntax `tactic) := do
-      let allPrems ← appendPremises step.prems prems
-      `(tactic| egg $step.mod $allPrems $[$(Option.none)]? $[$step.guides]?)
-    let tailEggs ← steps.tail.mapM stepToEgg
-    let headEgg : Option (TSyntax `tactic) ← do
-      if (← elabTerm steps.head.goal none).eqOrIff?.isSome
-      then pure <| some (← stepToEgg steps.head)
-      else pure none
-    evalTactic <| ← `(tactic| calc $steps.head.goal:term $[:= by $headEgg:tactic]?
-                      $[
-                        $goals := by $tailEggs:tactic]*)
+private def eval
+    (prems : TSyntax `egg_premises) (steps : TSyntax ``egg_calc_steps) (bang : Bool := false) :
+    TacticM Unit := do
+  let steps ← parseSteps steps
+  let goals := steps.tail.map (·.goal)
+  let stepToEgg (step : Step) : TacticM (TSyntax `tactic) := do
+    let allPrems ← appendPremises step.prems prems
+    if bang
+    then `(tactic| egg! $step.mod $allPrems $[$(Option.none)]? $[$step.guides]?)
+    else `(tactic| egg  $step.mod $allPrems $[$(Option.none)]? $[$step.guides]?)
+  let tailEggs ← steps.tail.mapM stepToEgg
+  let headEgg : Option (TSyntax `tactic) ← do
+    if (← elabTerm steps.head.goal none).eqOrIff?.isSome
+    then pure <| some (← stepToEgg steps.head)
+    else pure none
+  evalTactic <| ← `(tactic| calc $steps.head.goal:term $[:= by $headEgg:tactic]?
+                    $[
+                      $goals := by $tailEggs:tactic]*)
+
+elab "egg" "calc" prems:egg_premises steps:egg_calc_steps : tactic =>
+  eval prems steps
+
+elab "egg!" "calc" prems:egg_premises steps:egg_calc_steps : tactic =>
+  eval prems steps (bang := true)

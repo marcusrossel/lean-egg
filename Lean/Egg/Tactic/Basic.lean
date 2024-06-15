@@ -112,5 +112,5 @@ macro "egg" mod:egg_cfg_mod : tactic => `(tactic| egg $mod)
 elab "egg!" mod:egg_cfg_mod prems:egg_premises base:(egg_base)? guides:(egg_guides)? : tactic =>
   Egg.eval mod prems base guides `egg
 
--- WORKAROUND: This fixes analogous problem `Tests/EndOfInput *` for `egg!`.
+-- WORKAROUND: This fixes a problem analogous to `Tests/EndOfInput *` for `egg!`.
 macro "egg!" mod:egg_cfg_mod : tactic => `(tactic| egg! $mod)

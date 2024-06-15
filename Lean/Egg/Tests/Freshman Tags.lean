@@ -48,17 +48,17 @@ class CharTwoRing (α) extends CommRing α where
 variable [CharTwoRing α] (x y : α)
 
 theorem freshmans_dream₂ : (x + y) ^ 2 = (x ^ 2) + (y ^ 2) := by
-  egg calc (x + y) ^ 2
+  egg! calc (x + y) ^ 2
    _ = (x + y) * (x + y)
    _ = x * (x + y) + y * (x + y)
    _ = x ^ 2 + x * y + y * x + y ^ 2
    _ = x ^ 2 + y ^ 2  with [CharTwoRing.char_two]
 
 theorem freshmans_dream₂' : (x + y) ^ 2 = (x ^ 2) + (y ^ 2) := by
-  egg [CharTwoRing.char_two]
+  egg! [CharTwoRing.char_two]
 
 theorem freshmans_dream₃ : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
-  egg calc [CharTwoRing.char_two] (x + y) ^ 3
+  egg! calc [CharTwoRing.char_two] (x + y) ^ 3
    _ = (x + y) * (x + y) * (x + y)
    _ = (x + y) * (x * (x + y) + y * (x + y))
    _ = (x + y) * (x ^ 2 + x * y + y * x + y ^ 2)
@@ -68,4 +68,4 @@ theorem freshmans_dream₃ : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3
    _ = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3
 
 theorem freshmans_dream₃' : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
-  egg [CharTwoRing.char_two]
+  egg! [CharTwoRing.char_two]
