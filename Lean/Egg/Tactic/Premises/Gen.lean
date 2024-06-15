@@ -12,11 +12,12 @@ namespace Egg.Premises
 -- TODO: Perform pruning during generation, not after.
 
 private def tracePremises
-    (basic : WithSyntax Rewrites) (builtins tc pruned : Rewrites) (facts : WithSyntax Facts)
+    (basic : WithSyntax Rewrites) (tagged builtins tc pruned : Rewrites) (facts : WithSyntax Facts)
     (cfg : Config.Gen) : TacticM Unit := do
   let cls := `egg.rewrites
   withTraceNode cls (fun _ => return "Rewrites") do
     withTraceNode cls (fun _ => return m!"Basic ({basic.elems.size})") do basic.elems.trace basic.stxs cls
+    withTraceNode cls (fun _ => return m!"Tagged ({tagged.size})") do tagged.trace #[] cls
     withTraceNode cls (fun _ => return m!"Generated ({tc.size})") do tc.trace #[] cls
     withTraceNode cls (fun _ => return m!"Builtin ({builtins.size})") do builtins.trace #[] cls
     withTraceNode cls (fun _ => return m!"Hypotheses ({facts.elems.size})") do
@@ -30,14 +31,15 @@ private def tracePremises
 partial def gen
     (goal : Congr) (ps : TSyntax `egg_premises) (guides : Guides) (cfg : Config)
     (amb : MVars.Ambient) : TacticM (Rewrites × Facts) := do
+  let tagged ← Premises.buildTagged cfg amb
   let ⟨⟨basic, basicStxs⟩, facts⟩ ← Premises.elab { norm? := cfg, amb } ps
-  let (basic, basicStxs, pruned₁) ← prune basic basicStxs (remove := #[])
+  let (basic, basicStxs, pruned₁) ← prune basic basicStxs (remove := tagged)
   let builtins ← if cfg.builtins then Rewrites.builtins { norm? := cfg, amb } else pure #[]
-  let (builtins, _, pruned₂) ← prune builtins (remove := basic)
+  let (builtins, _, pruned₂) ← prune builtins (remove := tagged ++ basic)
   let tc ← genTcRws (basic ++ builtins) facts.elems
-  let (tc, _, pruned₃) ← prune tc (remove := basic ++ builtins)
-  tracePremises ⟨basic, basicStxs⟩ builtins tc (pruned₁ ++ pruned₂ ++ pruned₃) facts cfg
-  let rws := basic ++ builtins ++ tc
+  let (tc, _, pruned₃) ← prune tc (remove := tagged ++ basic ++ builtins)
+  tracePremises ⟨basic, basicStxs⟩ tagged builtins tc (pruned₁ ++ pruned₂ ++ pruned₃) facts cfg
+  let rws := tagged ++ basic ++ builtins ++ tc
   catchInvalidConditionals rws
   return (rws, facts.elems)
 where

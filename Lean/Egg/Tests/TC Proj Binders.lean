@@ -25,6 +25,7 @@ info: [egg.rewrites] Rewrites
           expr:  []
           class: []
           level: []
+  [egg.rewrites] Tagged (0)
   [egg.rewrites] Generated (2)
     [egg.rewrites] #0[0?69632,0](⇔)
       [egg.rewrites] HMul.hMul = Mul.mul

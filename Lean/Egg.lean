@@ -32,3 +32,4 @@ import Egg.Tactic.Basic
 import Egg.Tactic.Calc
 import Egg.Tactic.Guides
 import Egg.Tactic.Trace
+import Egg.Tactic.Tags
