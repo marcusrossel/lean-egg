@@ -66,12 +66,12 @@ where
 open Config.Modifier (egg_cfg_mod)
 
 protected def eval
-    (mod : TSyntax ``egg_cfg_mod) (prems : TSyntax `egg_premises)
-    (base : Option (TSyntax `egg_base)) (guides : Option (TSyntax `egg_guides)) : TacticM Unit := do
+    (mod : TSyntax ``egg_cfg_mod) (prems : TSyntax `egg_premises) (base : Option (TSyntax `egg_base))
+    (guides : Option (TSyntax `egg_guides)) (basket? : Option Name := none) : TacticM Unit := do
   let startTime ← IO.monoMsNow
   let goal ← getMainGoal
   let mod  ← Config.Modifier.parse mod
-  let cfg := (← Config.fromOptions).modify mod
+  let cfg := { (← Config.fromOptions).modify mod with basket? }
   cfg.trace `egg.config
   goal.withContext do
     let goal ← parseGoal goal base
@@ -108,3 +108,9 @@ elab_rules : tactic
 
 -- WORKAROUND: This fixes `Tests/EndOfInput *`.
 macro "egg" mod:egg_cfg_mod : tactic => `(tactic| egg $mod)
+
+elab "egg!" mod:egg_cfg_mod prems:egg_premises base:(egg_base)? guides:(egg_guides)? : tactic =>
+  Egg.eval mod prems base guides `egg
+
+-- WORKAROUND: This fixes analogous problem `Tests/EndOfInput *` for `egg!`.
+macro "egg!" mod:egg_cfg_mod : tactic => `(tactic| egg! $mod)

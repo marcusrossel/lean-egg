@@ -1,7 +1,5 @@
 import Egg.Core.Premise.Rewrites
 import Egg.Core.Premise.Facts
-import Egg.Tactic.Premises.Validate
-import Egg.Tactic.Tags
 import Lean
 
 open Lean Meta Elab Tactic
@@ -113,25 +111,6 @@ where
     let ty := ty?.getD (← inferType e)
     mk e ty src
 
-private def Premises.taggedRw (prem : Name) (idx : Nat) (cfg : Rewrite.Config) : TacticM Rewrites := do
-  let ident := mkIdent prem
-  let mk := Premise.Mk.rewrite ident cfg
-  let rws ← Premises.explicit ident idx mk .tagged
-  return rws.elems
-
-private def Premises.elabTagged (prems : Array Name) (cfg : Rewrite.Config) : TacticM Rewrites := do
-  let mut rws : Rewrites := #[]
-  for prem in prems, idx in [:prems.size] do
-    rws := rws ++ (← taggedRw prem idx cfg)
-  return rws
-
-def Premises.buildTagged (cfg : Config) (amb : MVars.Ambient ): TacticM Rewrites :=
-  match cfg.tagged? with
-    | none => return {}
-    | some _ => do -- This should later use this `Name` to find the proper extension
-      let prems := eggXtension.getState (← getEnv)
-      elabTagged prems { norm? := cfg, amb}
-
 -- Note: This function is expected to be called with the lctx which contains the desired premises.
 --
 -- Note: We need to filter out auxiliary declaration and implementation details, as they are not
@@ -172,3 +151,15 @@ where
         result := result ++ (← star tk mk?)
       | _ => throwUnsupportedSyntax
     return result
+
+def Premises.elabTagged (prems : Array Name) (cfg : Rewrite.Config) : TacticM Rewrites := do
+  let mut rws : Rewrites := #[]
+  for prem in prems, idx in [:prems.size] do
+    rws := rws ++ (← taggedRw prem idx)
+  return rws
+where
+  taggedRw (prem : Name) (idx : Nat) : TacticM Rewrites := do
+    let ident := mkIdent prem
+    let mk := Premise.Mk.rewrite ident cfg
+    let rws ← Premises.explicit ident idx mk .tagged
+    return rws.elems

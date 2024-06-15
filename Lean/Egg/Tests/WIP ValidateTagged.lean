@@ -51,4 +51,4 @@ theorem all_commutators_trivial_abelian : (∀ a b : α, commutator a b = 1) →
 
 /-- We should not break egg after adding these lemmas -/
 example : a * b = b * a := by
-  egg
+  egg!
