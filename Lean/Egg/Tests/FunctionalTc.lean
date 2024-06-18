@@ -8,7 +8,7 @@ inductive List (α) where
   | nil : List α
   | cons : α → List α → List α
 
-notation "[]" => List.nil
+notation "[]"    => List.nil
 infixr:50 " :: " => List.cons
 
 def append : List α → List α → List α
@@ -50,3 +50,45 @@ theorem reverse_append (as bs : List α) : reverse (as ++ bs) = (reverse bs) ++ 
   induction as generalizing bs with
   | nil          => egg [reverse_nil, append_nil, append]
   | cons a as ih => egg [ih, append_assoc, reverse_cons, append]
+
+-- EGRAPHS Example:
+
+example (as bs : List α) : reverse (as ++ bs) = (reverse bs) ++ (reverse as) := by
+  induction as generalizing bs with
+  | nil =>
+    calc reverse ([] ++ bs)
+      _ = reverse bs               := by simp only [(· ++ ·), Append.append, append]
+      _ = reverse bs ++ []         := by rw [append_nil]
+      _ = reverse bs ++ reverse [] := by rw [reverse_nil]
+  | cons a as ih =>
+    calc reverse ((a :: as) ++ bs)
+      _ = reverse (a :: (as ++ bs))               := by simp only [(· ++ ·), Append.append, append]
+      _ = reverse (as ++ bs) ++ (a :: [])         := by rw [reverse_cons]
+      _ = reverse bs ++ reverse as ++ (a :: [])   := by rw [ih]
+      _ = reverse bs ++ (reverse as ++ (a :: [])) := by rw [append_assoc]
+      _ = reverse bs ++ reverse (a :: as)         := by rw [reverse_cons]
+
+example (as bs : List α) : reverse (as ++ bs) = (reverse bs) ++ (reverse as) := by
+  induction as generalizing bs with
+  | nil =>
+    calc reverse ([] ++ bs)
+      _ = reverse bs               := by simp only [(· ++ ·), Append.append, append]
+      _ = reverse bs ++ []         := by rw [append_nil]
+      _ = reverse bs ++ reverse [] := by rw [reverse_nil]
+  | cons a as ih =>
+    calc reverse ((a :: as) ++ bs)
+      _ = reverse (as ++ bs) ++ (a :: []) := by simp only [(· ++ ·), Append.append, append, reverse_cons]
+      _ = reverse bs ++ reverse (a :: as) := by rw [ih, append_assoc, reverse_cons]
+
+syntax "lists" egg_premises : tactic
+macro_rules
+  | `(tactic| lists $[[ $rws?,* ]]?) => open List in
+    `(tactic| egg [reverse_nil, reverse_cons, append, append_nil, append_assoc, $(rws?.getD ⟨#[]⟩),*])
+
+example (as bs : List α) : reverse (as ++ bs) = (reverse bs) ++ (reverse as) := by
+  induction as generalizing bs with
+  | nil         => lists
+  | cons _ _ ih => lists [ih]
+
+example (as bs : List α) : reverse (as ++ bs) = (reverse bs) ++ (reverse as) := by
+  induction as generalizing bs <;> lists [*]
