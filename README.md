@@ -1,4 +1,4 @@
-# <img src="Docs/icon.png" alt="lean-egg logo" height="35" align="left"> Equality Saturation Tactic for Lean
+# <img src="Docs/icon.png" alt="lean-egg logo" height="40" align="left"> Equality Saturation Tactic for Lean
 
 This repository contains a (work-in-progress) [equality saturation](https://arxiv.org/abs/1012.1802) tactic for [Lean](https://lean-lang.org) based on [egg](https://egraphs-good.github.io). The tactic is useful for automated equational reasoning. Checkout the `Lean/Egg/Tests` directory for examples.
 
