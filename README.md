@@ -31,8 +31,8 @@ example (a b c : Nat) (h₁ : a = b) (h₂ : b = c) : a = c := by
 open List in
 example (as bs : List α) : reverse (as ++ bs) = (reverse bs) ++ (reverse as) := by
   induction as generalizing bs with
-  | nil          => egg [reverse_nil, append_nil, append]
-  | cons a as ih => egg [ih, append_assoc, reverse_cons, append]
+  | nil         => egg [reverse_nil, append_nil, append]
+  | cons _ _ ih => egg [ih, append_assoc, reverse_cons, append]
 ```
 
 But you can use it to solve some equations which `simp` cannot:
@@ -79,5 +79,6 @@ Note that rewrites are also applied to hypotheses.
 
 ## Related Work
 
+* [An Equality Saturation Tactic for Lean](https://cfaed.tu-dresden.de/files/Images/people/chair-cc/theses/2407_Rossel_MA.pdf) contains a detailed description of the tactic's inner workings as of June 2024.
 * [Guided Equality Saturation](https://dl.acm.org/doi/10.1145/3632900) introduces the original prototype of the `egg` tactic.
 * [Bridging Syntax and Semantics of Lean Expressions in E-Graphs](http://arxiv.org/abs/2405.10188) contains a high-level description of how the tactic handles binders and definitional equality. 
