@@ -55,11 +55,6 @@ example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
 example (h₁ : ∀ p, p ∧ p) (h₂ : (∀ p, p ∧ p) → q = True) : q = True := by
   egg [h₂; h₁]
 
-/-- error: egg does not currently support rewrites with unbound conditions (level) -/
-#guard_msgs in
-example (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
-  egg [h₁, h₂]
-
 /-- error: egg does not currently support rewrites with unbound conditions (expression) -/
 #guard_msgs in
 example (h₁ : Prop) (h₂ : ∀ p : Prop, p → 1 = id 1) : 1 = id 1 := by

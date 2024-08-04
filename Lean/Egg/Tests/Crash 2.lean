@@ -4,6 +4,6 @@ import Egg
 
 /-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
-theorem Array.get_set_ne (a : Array α) (i : Fin a.size) {j : Nat} (v : α) (hj : j < a.size)
+example (a : Array α) (i : Fin a.size) {j : Nat} (v : α) (hj : j < a.size)
     (h : i.1 ≠ j) : (a.set i v)[j]'(by simp [*]) = a[j] := by
-  egg [set, Array.getElem_eq_data_get, List.get_set_ne _ h]
+  egg [set, Array.getElem_eq_data_get, List.getElem_set_ne h]
