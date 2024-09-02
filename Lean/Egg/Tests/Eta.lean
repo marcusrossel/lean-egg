@@ -41,7 +41,7 @@ example : (eta 2 Nat.succ Nat) x = Nat.succ x := by
 example : id (eta 2 Nat.succ Nat) = id Nat.succ := by
   egg
 
-example : (eta 10 Nat.succ Nat) = Nat.succ := by
+example : (eta 50 Nat.succ Nat) = Nat.succ := by
   egg
 
 set_option egg.genEtaRw false in
@@ -53,22 +53,12 @@ example (a : Nat) (h : ∀ b : Nat, b.succ.add a = 0) : (10 |> fun x => Nat.succ
 example (a : Nat) (h : ∀ b : Nat, b.succ.add a = 0) : (10 |> fun x => Nat.succ x).add a = 0 := by
   egg [h]
 
--- BUG: We're not handling justifications in `subst` correctly, yet. Thus, explanations break.
+-- Note: This used to break when we were using direct e-class substitution instead of small-step
+--       substitution.
 example : (fun x => x) = Add.add 0 := by
-  sorry -- egg [Nat.zero_add]
+  egg [Nat.zero_add]
 
-/- TODO: Why is proof reconstruction failing here? The explanation seems totally fine:
-
-  (app (app (λ (const Nat) (app f (bvar 0))) y) y)
-  (app (app (Rewrite=> ≡η f) y) y)
-  (app (Rewrite=> #0 g) y)
-  (Rewrite<= #1-rev (app (app i y) (lit 0)))
-  (app (app (Rewrite<= ≡η (λ (const Nat) (app i (bvar 0)))) y) (lit 0))
-
-Even stranger, if you flip the LHS and RHS of the goal, it suddenly works. The produced explanation
-in that case is the same just backwards. So a hacky fix would be to always obtain explanations from
-egg in both directions and if one fails try the other.
--/
-example (f i : Nat → Nat → Nat) (h₁ : f y = g) (h₂ : g y = i y (nat_lit 0)) :
-    (f ·) y y = (i ·) y (nat_lit 0) := by
-  sorry -- egg [h₁, h₂]
+-- This tests that we correctly handle explanations which explicitly contain the small-step
+-- substitition constructor.
+example (f : α → α → α → α) : (fun a b => (fun x => (f a b) x)) = (fun a b => f a b) := by
+  egg

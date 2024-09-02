@@ -28,8 +28,11 @@ define_language! {
         "∀"     = Forall([Id; 2]),  // (<expr>, <expr>)
         "lit"   = Lit(Id),          // (Nat | Str)
 
-        // Constant for proof erasure:
-        "proof" = Proof(Id),
+        // Construct for proof erasure:
+        "proof" = Proof(Id),        // (<expr>)
+
+        // Construct for substitution:
+        "↦" = Subst([Id; 3]),       // (Nat, <expr>, <expr>)
     }
 }
 

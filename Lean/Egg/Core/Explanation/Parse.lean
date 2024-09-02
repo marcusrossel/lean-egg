@@ -49,7 +49,11 @@ syntax egg_tc_proj : egg_tc_extension
 syntax egg_tc_spec : egg_tc_extension
 
 syntax egg_basic_fwd_rw_src (noWs egg_tc_extension)* : egg_fwd_rw_src
-syntax "λ↕"                                          : egg_fwd_rw_src
+syntax "λ↕"                                          : egg_fwd_rw_src -- TODO: Remove this
+syntax "↦bvar"                                       : egg_fwd_rw_src
+syntax "↦app"                                        : egg_fwd_rw_src
+syntax "↦λ"                                          : egg_fwd_rw_src
+syntax "↦∀"                                          : egg_fwd_rw_src
 syntax "≡maxS"                                       : egg_fwd_rw_src
 syntax "≡max↔"                                       : egg_fwd_rw_src
 syntax "≡imax0"                                      : egg_fwd_rw_src
@@ -91,6 +95,7 @@ syntax "(" &"λ" egg_rw_expr egg_rw_expr ")"                      : egg_rw_expr
 syntax "(" &"∀" egg_rw_expr egg_rw_expr ")"                      : egg_rw_expr
 syntax "(" &"lit" egg_lit ")"                                    : egg_rw_expr
 syntax "(" &"proof" egg_rw_expr ")"                              : egg_rw_expr
+syntax "(" &"↦" num num egg_rw_expr ")"                          : egg_rw_expr
 syntax "(" &"Rewrite" noWs egg_rw_dir egg_rw_src egg_rw_expr ")" : egg_rw_expr
 
 syntax egg_rw_expr+ : egg_expl
@@ -156,6 +161,10 @@ instance : Coe ParseError MessageData where
 
 private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Except ParseError Source
   | `(egg_fwd_rw_src|λ↕)     => throw .bvarCorrection
+  | `(egg_fwd_rw_src|↦bvar)  => return .subst .bvar
+  | `(egg_fwd_rw_src|↦app)   => return .subst .app
+  | `(egg_fwd_rw_src|↦λ)     => return .subst .lam
+  | `(egg_fwd_rw_src|↦∀)     => return .subst .forall
   | `(egg_fwd_rw_src|≡maxS)  => return .level .maxSucc
   | `(egg_fwd_rw_src|≡max↔)  => return .level .maxComm
   | `(egg_fwd_rw_src|≡imax0) => return .level .imaxZero
@@ -224,6 +233,7 @@ where
     | `(egg_rw_expr|(∀ $ty $body))            => return .forall (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(egg_rw_expr|(lit $l))                 => return .lit (parseLit l)
     | `(egg_rw_expr|(proof $p))               => return .proof (← parseProof p pos)
+    | `(egg_rw_expr|(↦ $idx₁ $idx₂ $e))       => return .subst idx₁.getNat idx₂.getNat (← go pos e)
     | `(egg_rw_expr|(Rewrite$dir $src $body)) => parseRw dir src body pos
     | _                                       => unreachable!
 

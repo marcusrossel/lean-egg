@@ -26,12 +26,6 @@ impl Offset {
     }
 }
 
-pub fn shift_loose_bvars(offset: Offset, target_class: Id, panic_on_bvar_0: bool, reason: Symbol, graph: &mut LeanEGraph) -> Id {
-    let (s, u) = shift_loose_bvars_without_unions(offset, target_class, panic_on_bvar_0, graph);
-    perform_unions(u, reason, graph);
-    s
-}
-
 pub fn shift_loose_bvars_without_unions(offset: Offset, target_class: Id, panic_on_bvar_0: bool, graph: &mut LeanEGraph) -> (Id, Unions) {
     subst_without_unions(target_class, graph, &shift_loose_bvar(offset, panic_on_bvar_0))
 }

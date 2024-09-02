@@ -140,7 +140,7 @@ nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
       if idx == 0 then trace cls fun _ => step.lhs
       match step.rw with
       | .defeq src =>
-        if src.isNatLitConversion then continue
+        if src.isNatLitConversion || src.isSubst then continue
         withTraceNode cls (fun _ => return step.rhs) do
           trace cls fun _ => m!"{src.description}({dirFormat step.dir})"
       | .rw rw _ =>

@@ -79,16 +79,24 @@ where
     throwError "Egg.Explanation.replaceSubexprs' tried to lens on different expressions:\n  {e₁}\nvs\n {e₂}"
 
 def Expression.toExpr : Expression → MetaM Expr
-  | bvar idx        => return .bvar idx
-  | fvar id         => return .fvar id
-  | mvar id         => return .mvar id
-  | sort lvl        => return .sort lvl
-  | const name lvls => return .const name lvls
-  | app fn arg      => return .app (← toExpr fn) (← toExpr arg)
-  | lam ty body     => return .lam .anonymous (← toExpr ty) (← toExpr body) .default
-  | .forall ty body => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
-  | lit l           => return .lit l
-  | proof prop      => do mkFreshExprMVar (← toExpr prop)
+  | bvar idx          => return .bvar idx
+  | fvar id           => return .fvar id
+  | mvar id           => return .mvar id
+  | sort lvl          => return .sort lvl
+  | const name lvls   => return .const name lvls
+  | app fn arg        => return .app (← toExpr fn) (← toExpr arg)
+  | lam ty body       => return .lam .anonymous (← toExpr ty) (← toExpr body) .default
+  | .forall ty body   => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
+  | lit l             => return .lit l
+  | proof prop        => do mkFreshExprMVar (← toExpr prop)
+  | subst idx₁ idx₂ e => return applySubst idx₁ idx₂ (← e.toExpr)
+where
+  applySubst (idx₁ idx₂ : Nat) : Expr → Expr
+    | .bvar idx        => if idx = idx₁ then .bvar idx₂ else .bvar idx
+    | .app fn arg      => .app (applySubst idx₁ idx₂ fn) (applySubst idx₁ idx₂ arg)
+    | .lam n d b i     => .lam n (applySubst idx₁ idx₂ d) (applySubst (idx₁ + 1) (idx₂ + 1) b) i
+    | .forallE n d b i => .forallE n (applySubst idx₁ idx₂ d) (applySubst (idx₁ + 1) (idx₂ + 1) b) i
+    | e                => e
 
 end Explanation
 

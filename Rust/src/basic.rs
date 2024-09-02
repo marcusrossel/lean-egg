@@ -8,6 +8,7 @@ use crate::eta::*;
 use crate::levels::*;
 use crate::nat_lit::*;
 use crate::rewrite::*;
+use crate::new_subst::*;
 use crate::trace::*;
 
 #[repr(C)]
@@ -60,6 +61,8 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
     if cfg.gen_eta_rw      { rws.push(eta_reduction_rw()) }
     if cfg.gen_beta_rw     { rws.push(beta_reduction_rw()) }
     if cfg.gen_level_rws   { rws.append(&mut level_rws()) }
+    // TODO: Only add these rws if on of the following is active: beta, eta, bvar index correction. Anything else?
+    rws.append(&mut subst_rws());
 
     let mut runner = Runner::default()
         .with_egraph(egraph)

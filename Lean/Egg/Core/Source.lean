@@ -36,6 +36,13 @@ inductive Source.TcProjLocation where
   | cond (idx : Nat)
   deriving Inhabited, BEq, Hashable
 
+inductive Source.Subst where
+  | bvar
+  | app
+  | lam
+  | forall
+  deriving Inhabited, BEq, Hashable
+
 inductive Source where
   | goal
   | guide (idx : Nat)
@@ -45,6 +52,7 @@ inductive Source where
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos) (depth : Nat)
   | tcSpec (src : Source) (spec : Source.TcSpec)
   | natLit (src : Source.NatLit)
+  | subst (src : Source.Subst)
   | eta
   | beta
   | level (src : Source.Level)
@@ -81,6 +89,12 @@ def TcProjLocation.description : TcProjLocation → String
   | right    => "▸"
   | cond idx => s!"{idx}?"
 
+def Subst.description : Subst → String
+  | bvar    => "↦bvar"
+  | app     => "↦app"
+  | lam     => "↦λ"
+  | .forall => "↦∀"
+
 def description : Source → String
   | goal                    => "⊢"
   | guide idx               => s!"↣{idx}"
@@ -91,6 +105,7 @@ def description : Source → String
   | tcProj src loc pos dep  => s!"{src.description}[{loc.description}{pos.asNat},{dep}]"
   | tcSpec src spec         => s!"{src.description}<{spec.description}>"
   | natLit src              => src.description
+  | subst src               => src.description
   | eta                     => "≡η"
   | beta                    => "≡β"
   | level src               => src.description
@@ -106,8 +121,8 @@ def isRewrite : Source → Bool
   | _              => true
 
 def isDefEq : Source → Bool
-  | natLit _ | eta | beta | level _ => true
-  | _                               => false
+  | natLit _ | eta | beta | level _ | subst _ => true
+  | _                                         => false
 
 def containsTcProj : Source → Bool
   | tcProj ..     => true
@@ -117,3 +132,7 @@ def containsTcProj : Source → Bool
 def isNatLitConversion : Source → Bool
   | .natLit .zero | .natLit .toSucc | .natLit .ofSucc => true
   | _                                                 => false
+
+def isSubst : Source → Bool
+  | .subst _ => true
+  | _        => false
