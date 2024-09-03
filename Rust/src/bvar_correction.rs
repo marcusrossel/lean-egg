@@ -1,11 +1,7 @@
 use std::collections::HashMap;
-use std::str::FromStr;
 use egg::*;
 use crate::lean_expr::*;
 use crate::analysis::*;
-use crate::shift_loose::*;
-use crate::subst::*;
-use crate::trace::*;
 
 struct Context<'a> {
     // A map of the binder depths for each variable (which maps to loose bound variables) 
@@ -17,24 +13,17 @@ struct Context<'a> {
     // are replaced with fresh variables, which are assigned according to `shifted_subst`.
     src_pat: &'a PatternAst<LeanExpr>,
     // The (partial) pattern being constructed from `pat` by switching variables for 
-    // fresh variables where necessary.
+    // variables under substitution where necessary.
     shifted_pat: PatternAst<LeanExpr>,
-    // The substitution which originally maps variables in `src_pat` to their matched
-    // e-classes, and subsequently also maps the fresh variables in `shifted_pat` to 
-    // their corresponding shifted e-classes.
-    shifted_subst: Subst,
-    // A map from nodes (or variables) appearing in `shited_pat` to their index in 
+    // A map from nodes (or variables) appearing in `shifted_pat` to their index in 
     // `shifted_pat`. This is used to avoid adding the same node/variable to the pattern
     // twice by reusing the existing index.
     shifted_pat_indices: HashMap<ENodeOrVar<LeanExpr>, Id>,
-    // A cache for shifted e-classes. If a shifted e-class has already been created for a 
-    // given binder depth, then its corresponding variable is cached in this map.
-    cache: HashMap<(u64, Id), Var>,
-    // When a variable maps to a class that requires shifting, we use `subst` under the hood
-    // to perform that shift. This may add new e-nodes to existing classes, which could cause
-    // problems if they too are considered by `correct_bvar_indices`. Thus, we delay all unions
-    // produced by `subst` and run them at the end of `correct_bvar_indices`.
-    delayed_unions: Unions
+    // A cache for indices of shifted variables. If a shifted variable has already been created 
+    // for a given offset, then its rec-expr index is cached in this map.
+    cache: HashMap<(i64, Var), Id>,
+    // The substitution which originally maps variables in `src_pat` to their matched e-classes.
+    subst: &'a Subst
 }
 
 // Given a pattern and a substitution, returns an extended substitution and adjusted pattern, such that
@@ -51,110 +40,98 @@ struct Context<'a> {
 // (lam _ (lam _ (bvar 5)) 0) 0
 // needs to become
 // (lam _ (bvar 4)) 0
-pub fn correct_bvar_indices(subst: &Subst, pat: &Pattern<LeanExpr>, var_depths: HashMap<Var, u64>, graph: &mut LeanEGraph) -> (Subst, PatternAst<LeanExpr>) {    
+pub fn correct_bvar_indices(subst: &Subst, pat: &Pattern<LeanExpr>, var_depths: HashMap<Var, u64>, graph: &mut LeanEGraph) -> PatternAst<LeanExpr> {    
     let root_idx = pat.ast.as_ref().len() - 1;
     let mut ctx = Context { 
         var_depths, 
         src_pat: &pat.ast, 
         shifted_pat: Default::default(), 
-        shifted_subst: subst.clone(), 
         shifted_pat_indices: HashMap::new(), 
         cache: HashMap::new(),
-        delayed_unions: Default::default()
+        subst: subst
     };
     correct_bvar_indices_core(root_idx, 0, &mut ctx, graph);
-    perform_unions(ctx.delayed_unions, Symbol::from("λ↕"), graph);
-    (ctx.shifted_subst, ctx.shifted_pat)
+    ctx.shifted_pat
 }
 
-// Traverses the given pattern while constructing an analogous one which contains fresh variables for 
-// all variable occurrences which would otherwise result in invalid bound variable capture of invalid loose 
-// bound variable creation. Thus, if a variable maps to an e-class which does not contain loose bvars, it 
-// remains as is. Otherwise, we create a fresh variable for every occurrence of a variable at different binder 
-// depths. Thus, the original substitution only grows and never overwrites existing entries.
+// Traverses the given pattern while constructing an analogous one which adds substitutions for all variables
+// which would otherwise result in invalid bound variable capture of invalid loose bound variable creation. 
 //
 // Returns the index of the current node in `shifted_pat`.
 fn correct_bvar_indices_core(idx: usize, binder_depth: u64, ctx: &mut Context, graph: &mut LeanEGraph) -> Id {
-    dbg_trace("", TraceGroup::BVarCorrection);
-    dbg_trace(format!("idx: {}", idx), TraceGroup::BVarCorrection);
-    dbg_trace(format!("binder_depth: {}", binder_depth), TraceGroup::BVarCorrection);
-    dbg_trace(format!("RHS: {}", ctx.shifted_pat), TraceGroup::BVarCorrection);
-    dbg_trace(format!("subst: {:?}", ctx.shifted_subst), TraceGroup::BVarCorrection);
-    dbg_trace(format!("pat_node_indices: {:?}", ctx.shifted_pat_indices), TraceGroup::BVarCorrection);
-    dbg_trace(format!("cache: {:?}", ctx.cache), TraceGroup::BVarCorrection);
-
     match &ctx.src_pat.as_ref()[idx] {
         var_node@ENodeOrVar::Var(var) => {
-            dbg_trace(format!("node: {}", var), TraceGroup::BVarCorrection);
+            let offset = if let Some(var_depth) = ctx.var_depths.get(var) {
+                (binder_depth as i64) - (*var_depth as i64)
+            } else {
+                0
+            };
             
-            let target_class = ctx.shifted_subst[*var];
-            // Only call this when `target_class` is known to contain loose bound variables. Otherwise,
-            // `ctx.var_depths` will not contain an entry for `var`.
-            let offset = || Offset::diff(binder_depth, *ctx.var_depths.get(var).unwrap());
-
-            if graph[target_class].data.loose_bvars.is_empty() || offset().is_zero() {
+            // Note that a value of `0` indicates either an absence of loose bvars in the class of `var`, 
+            // or an actual offset of `0`.
+            if offset == 0 {
                 // If the given variable maps to an expression that does not contain loose bvars,
                 // or if the binder depth of that variable has not changed, then we can keep it as is. 
-                // But we must add it to the `shifted_pat` if it does not appear there yet.
-                if let Some(shifted_pat_idx) = ctx.shifted_pat_indices.get(var_node) {
-                    dbg_trace("var is needs no capture avoidance and is already contained in new RHS", TraceGroup::BVarCorrection);
-                    return *shifted_pat_idx
-                } else {
-                    dbg_trace("var is needs no capture avoidance and is already and is being added to the new RHS", TraceGroup::BVarCorrection);
-                    let new_idx = ctx.shifted_pat.add(var_node.clone());
-                    ctx.shifted_pat_indices.insert(var_node.clone(), new_idx);
-                    return new_idx
-                }
-            } else if let Some(shifted_var) = ctx.cache.get(&(binder_depth, target_class)) {
-                // If there already exists a variable `shifted_var` which maps the target class 
-                // to a shifted class with the correct binder depth, then simply replace the 
-                // current occurrence of `var` with that variable. Since that variable must be fresh,
-                // we expect it to already appear in `shift_pat` and thus in `pat_node_indices`.
-                dbg_trace("shifted version is already in cache", TraceGroup::BVarCorrection);
-                return *ctx.shifted_pat_indices.get(&ENodeOrVar::Var(*shifted_var)).unwrap()
+                add_node(ctx, var_node.clone())
+            } else if let Some(shifted_var) = ctx.cache.get(&(offset, *var)) {
+                // If there already exists a variable `shifted_var` which maps the variable 
+                // to a shifted variable with the correct offset, then simply replace the 
+                // current occurrence of `var` with that variable.
+                return *shifted_var
             } else {
-                // If the given target has not yet been shifted, create a fresh variable, replace 
-                // the current occurrence of `var` with the fresh variable, and assign the shifted
-                // class in the substitution.
-                let fresh_var = make_fresh_var();
-                let new_idx = ctx.shifted_pat.add(ENodeOrVar::Var(fresh_var));
-                ctx.shifted_pat_indices.insert(ENodeOrVar::Var(fresh_var), new_idx);
-                let (sub, unions) = shift_loose_bvars_without_unions(offset(), target_class, false, graph);
-                ctx.delayed_unions.extend(unions);
-                dbg_trace(format!("var is being replaced by fresh var {} with shifted class {}", fresh_var, sub), TraceGroup::BVarCorrection);
-                ctx.shifted_subst.insert(fresh_var, sub);
-                ctx.cache.insert((binder_depth, target_class), fresh_var);
-                return new_idx
+                // If the given variable has not yet been shifted for the current offset, then
+                // create a new pattern with the correct substitutions for it.
+                add_shifted(var, offset, ctx, graph)
             }
         },
         ENodeOrVar::ENode(e) => {
-            dbg_trace(format!("node: {}", e), TraceGroup::BVarCorrection);
-
             let mut expr = e.clone();
             for (i, child) in expr.children_mut().iter_mut().enumerate() {
                 // If `expr` is a binder, increase the binder depth for its body.
                 let child_binder_depth = if e.is_binder() && i == 1 { binder_depth + 1 } else { binder_depth };
                 let child_idx = usize::from(*child);
-                dbg_trace(format!("\nvisiting child number {} of pattern node {}", child_idx, idx), TraceGroup::BVarCorrection);
                 *child = correct_bvar_indices_core(child_idx, child_binder_depth, ctx, graph);
             }
 
-            let expr_node = ENodeOrVar::ENode(expr);
-            if let Some(shifted_pat_idx) = ctx.shifted_pat_indices.get(&expr_node) {
-                return *shifted_pat_idx
-            } else {
-                let new_idx = ctx.shifted_pat.add(expr_node.clone());
-                ctx.shifted_pat_indices.insert(expr_node, new_idx);
-                return new_idx
-            }
+            add_node(ctx, ENodeOrVar::ENode(expr))
         }
     }
 }
 
-fn make_fresh_var() -> Var {
-    use std::sync::atomic::*;
-    static COUNTER: AtomicUsize = AtomicUsize::new(0);
-    let next_idx = COUNTER.fetch_add(1, Ordering::SeqCst);
-    let name = format!("?fresh{}", next_idx);
-    Var::from_str(&name).unwrap()
+fn add_node(ctx: &mut Context, node: ENodeOrVar<LeanExpr>) -> Id {
+    if let Some(shifted_pat_idx) = ctx.shifted_pat_indices.get(&node) {
+        *shifted_pat_idx
+    } else {
+        let idx = ctx.shifted_pat.add(node.clone());
+        ctx.shifted_pat_indices.insert(node, idx);
+        idx
+    }
+}
+
+fn add_shifted(var: &Var, offset: i64, ctx: &mut Context, graph: &LeanEGraph) -> Id {
+    let mut shifted = add_node(ctx, ENodeOrVar::Var(*var));
+
+    // As substitution does not occurr "all at once", it is important that we apply the 
+    // substitutions ordered from smaller to larger indices when the offset is negative
+    // and larger to smaller indices when the offset is positive. Otherwise, indices might 
+    // be  shifted multiple times as in `(↦ 1 0 (↦ 2 1 e))`, which ends up shifting 2 to 0, 
+    // whereas `(↦ 2 1 (↦ 1 0 e))` does not.
+    //
+    // I guess we might still be able to run into this problem if some other rewrite introduces
+    // a substitution on `e` which maps an index to `1` or `2`. The difference then is that 
+    // the order of rewrites could be swapped, so the substitutions can also be applied in the
+    // "correct" order. Thus, we may generate some junk in the e-graph, but we don't block any
+    // successful paths. As such, I think should be able to ignore this issue if it does not 
+    // cause too many problems in practice (kind of like bvar aliasing). 
+    let mut sorted_bvars = graph[ctx.subst[*var]].data.loose_bvars.iter().collect::<Vec<_>>();
+    sorted_bvars.sort_by(|lhs, rhs| if offset <= 0 { lhs.cmp(rhs) } else { rhs.cmp(lhs) });
+
+    for &bvar in sorted_bvars {
+        let from = add_node(ctx, ENodeOrVar::ENode(LeanExpr::Nat(bvar)));
+        let to   = add_node(ctx, ENodeOrVar::ENode(LeanExpr::Nat(((bvar as i64) + offset) as u64)));
+        shifted  = add_node(ctx, ENodeOrVar::ENode(LeanExpr::Subst([from, to, shifted])));
+    }
+
+    ctx.cache.insert((offset, *var), shifted);
+    shifted
 }

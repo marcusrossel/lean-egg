@@ -49,7 +49,6 @@ impl Applier<LeanExpr, LeanAnalysis> for AppSubst {
         } else { 
             format!("{}", self.arg).parse().unwrap()
         };
-
         
         let new_app = format!("(app {} {})", new_fun, new_arg).parse().unwrap();
         let (id, _) = egraph.union_instantiations(ast.unwrap(), &new_app, subst, rule);

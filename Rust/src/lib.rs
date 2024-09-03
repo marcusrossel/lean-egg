@@ -19,7 +19,6 @@ mod levels;
 mod nat_lit;
 mod result;
 mod rewrite;
-mod shift_loose;
 mod subst;
 mod new_subst;
 mod trace;

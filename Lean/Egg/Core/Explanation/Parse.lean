@@ -49,7 +49,6 @@ syntax egg_tc_proj : egg_tc_extension
 syntax egg_tc_spec : egg_tc_extension
 
 syntax egg_basic_fwd_rw_src (noWs egg_tc_extension)* : egg_fwd_rw_src
-syntax "λ↕"                                          : egg_fwd_rw_src -- TODO: Remove this
 syntax "↦bvar"                                       : egg_fwd_rw_src
 syntax "↦app"                                        : egg_fwd_rw_src
 syntax "↦λ"                                          : egg_fwd_rw_src
@@ -143,7 +142,6 @@ inductive ParseError where
   | missingRw
   | multipleRws
   | proofRw
-  | bvarCorrection
   deriving Inhabited
 
 private def ParseError.msgPrefix :=
@@ -157,10 +155,8 @@ instance : Coe ParseError MessageData where
     | missingRw       => s!"{msgPrefix} (non-start) step does not contain a rewrite"
     | multipleRws     => s!"{msgPrefix} step contains multiple rewrites"
     | proofRw         => s!"{msgPrefix} step contains type-level rewrite in proof"
-    | bvarCorrection  => s!"{msgPrefix} step leaks bvar correction"
 
 private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Except ParseError Source
-  | `(egg_fwd_rw_src|λ↕)     => throw .bvarCorrection
   | `(egg_fwd_rw_src|↦bvar)  => return .subst .bvar
   | `(egg_fwd_rw_src|↦app)   => return .subst .app
   | `(egg_fwd_rw_src|↦λ)     => return .subst .lam

@@ -3,7 +3,34 @@ use std::cmp::Ordering;
 use crate::analysis::*;
 use crate::lean_expr::*;
 use crate::subst::*;
-use crate::shift_loose::*;
+
+pub enum Offset {
+    Up(u64),
+    Down(u64)
+}
+
+pub fn shift_loose_bvars_without_unions(offset: Offset, target_class: Id, panic_on_bvar_0: bool, graph: &mut LeanEGraph) -> (Id, Unions) {
+    subst_without_unions(target_class, graph, &shift_loose_bvar(offset, panic_on_bvar_0))
+}
+
+fn shift_loose_bvar(offset: Offset, panic_on_bvar_0: bool) -> impl Fn(u64, u64, &mut LeanEGraph) -> BVarSub {
+    move |idx, binder_depth, graph| {
+        match (idx.cmp(&binder_depth), panic_on_bvar_0) {
+            (Ordering::Greater, _) | (Ordering::Equal, false) => {
+                let shifted_idx = match offset {
+                    Offset::Up(o)   => idx + o,
+                    Offset::Down(o) => idx - o
+                };
+                let idx_class = graph.add(LeanExpr::Nat(shifted_idx));
+                let bvar_class = graph.add(LeanExpr::BVar(idx_class));
+                BVarSub { class: bvar_class, unions: Default::default() }
+            },
+            (Ordering::Equal, true) => panic!(),
+            // `subst` provides the invariant that `idx >= binder_depth`.
+            (Ordering::Less, _) => unreachable!(), 
+        }
+    }
+}
 
 struct Beta {
     body: Var,
