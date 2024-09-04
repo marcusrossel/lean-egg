@@ -23,6 +23,6 @@ example : id ((fun x => x + 1) 2) = id (2 + 1) := by
 example (h : y + 1 = z) : (fun x => y + 1) 0 = z := by
   egg [h]
 
--- BUG: We're not handling justifications in `subst` correctly, yet. Thus, explanations break.
+-- Note: This used to break when using explicit e-class substitution.
 example (h : y + 1 = z) : (fun x => x + 1) y = z := by
-  sorry -- egg [h]
+  egg [h]

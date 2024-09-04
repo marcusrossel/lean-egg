@@ -36,7 +36,7 @@ inductive Source.TcProjLocation where
   | cond (idx : Nat)
   deriving Inhabited, BEq, Hashable
 
-inductive Source.Subst where
+inductive Source.SubstShift where
   | bvar
   | app
   | lam
@@ -52,7 +52,8 @@ inductive Source where
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos) (depth : Nat)
   | tcSpec (src : Source) (spec : Source.TcSpec)
   | natLit (src : Source.NatLit)
-  | subst (src : Source.Subst)
+  | subst (src : Source.SubstShift)
+  | shift (src : Source.SubstShift)
   | eta
   | beta
   | level (src : Source.Level)
@@ -89,11 +90,11 @@ def TcProjLocation.description : TcProjLocation → String
   | right    => "▸"
   | cond idx => s!"{idx}?"
 
-def Subst.description : Subst → String
-  | bvar    => "↦bvar"
-  | app     => "↦app"
-  | lam     => "↦λ"
-  | .forall => "↦∀"
+def SubstShift.description : SubstShift → String
+  | bvar    => "bvar"
+  | app     => "app"
+  | lam     => "λ"
+  | .forall => "∀"
 
 def description : Source → String
   | goal                    => "⊢"
@@ -105,7 +106,8 @@ def description : Source → String
   | tcProj src loc pos dep  => s!"{src.description}[{loc.description}{pos.asNat},{dep}]"
   | tcSpec src spec         => s!"{src.description}<{spec.description}>"
   | natLit src              => src.description
-  | subst src               => src.description
+  | subst src               => s!"↦{src.description}"
+  | shift src               => s!"↑{src.description}"
   | eta                     => "≡η"
   | beta                    => "≡β"
   | level src               => src.description
@@ -121,8 +123,8 @@ def isRewrite : Source → Bool
   | _              => true
 
 def isDefEq : Source → Bool
-  | natLit _ | eta | beta | level _ | subst _ => true
-  | _                                         => false
+  | natLit _ | eta | beta | level _ | subst _ | shift _ => true
+  | _                                                   => false
 
 def containsTcProj : Source → Bool
   | tcProj ..     => true

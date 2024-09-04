@@ -6,6 +6,7 @@ use crate::util::*;
 #[derive(Debug, Default)]
 pub struct LeanAnalysisData {
     pub nat_val:     Option<u64>,
+    pub dir_val:     Option<bool>,
     pub loose_bvars: HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
 }
 
@@ -16,8 +17,10 @@ impl Analysis<LeanExpr> for LeanAnalysis {
 
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
         // `merge_max` prefers `Some` value over `None`. Note that if `to` and `from` both have nat values,
-        // then they should have the *same* value as otherwise merging their e-classes indicates an invalid rewrite.
+        // then they should have the *same* value as otherwise merging their e-classes indicates an invalid 
+        // rewrite. The same applies for the `dir_val`s.
         egg::merge_max(&mut to.nat_val, from.nat_val) | 
+        egg::merge_max(&mut to.dir_val, from.dir_val) | 
         union_sets(&mut to.loose_bvars, from.loose_bvars)
     }
 
@@ -26,6 +29,18 @@ impl Analysis<LeanExpr> for LeanAnalysis {
             LeanExpr::Nat(n) => 
                 Self::Data { 
                     nat_val: Some(*n), 
+                    ..Default::default() 
+                },
+            
+            LeanExpr::Str(shift_up) if shift_up == "+" => 
+                Self::Data { 
+                    dir_val: Some(true), 
+                    ..Default::default() 
+                },
+            
+                LeanExpr::Str(shift_down) if shift_down == "-" => 
+                Self::Data { 
+                    dir_val: Some(false), 
                     ..Default::default() 
                 },
             

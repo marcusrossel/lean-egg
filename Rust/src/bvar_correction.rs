@@ -5,15 +5,12 @@ use crate::analysis::*;
 
 struct Context<'a> {
     // A map of the binder depths for each variable (which maps to loose bound variables) 
-    // as it appeared in the LHS of a given rewrite. This is necessary to correctly interpret
-    // the meaning of bound variables in `shifted_subst`.
+    // as it appeared in the LHS of a given rewrite. 
     var_depths: HashMap<Var, u64>,
     // The original RHS of a rewrite which might suffer from invalid capture. 
-    // In `shifted_pat` we construct an equivalent pattern, where some variables
-    // are replaced with fresh variables, which are assigned according to `shifted_subst`.
     src_pat: &'a PatternAst<LeanExpr>,
     // The (partial) pattern being constructed from `pat` by switching variables for 
-    // variables under substitution where necessary.
+    // shifted variables where necessary.
     shifted_pat: PatternAst<LeanExpr>,
     // A map from nodes (or variables) appearing in `shifted_pat` to their index in 
     // `shifted_pat`. This is used to avoid adding the same node/variable to the pattern
@@ -21,9 +18,7 @@ struct Context<'a> {
     shifted_pat_indices: HashMap<ENodeOrVar<LeanExpr>, Id>,
     // A cache for indices of shifted variables. If a shifted variable has already been created 
     // for a given offset, then its rec-expr index is cached in this map.
-    cache: HashMap<(i64, Var), Id>,
-    // The substitution which originally maps variables in `src_pat` to their matched e-classes.
-    subst: &'a Subst
+    cache: HashMap<(i64, Var), Id>
 }
 
 // Given a pattern and a substitution, returns an extended substitution and adjusted pattern, such that
@@ -40,21 +35,20 @@ struct Context<'a> {
 // (lam _ (lam _ (bvar 5)) 0) 0
 // needs to become
 // (lam _ (bvar 4)) 0
-pub fn correct_bvar_indices(subst: &Subst, pat: &Pattern<LeanExpr>, var_depths: HashMap<Var, u64>, graph: &mut LeanEGraph) -> PatternAst<LeanExpr> {    
+pub fn correct_bvar_indices(pat: &Pattern<LeanExpr>, var_depths: HashMap<Var, u64>, graph: &mut LeanEGraph) -> PatternAst<LeanExpr> {    
     let root_idx = pat.ast.as_ref().len() - 1;
     let mut ctx = Context { 
         var_depths, 
         src_pat: &pat.ast, 
         shifted_pat: Default::default(), 
         shifted_pat_indices: HashMap::new(), 
-        cache: HashMap::new(),
-        subst: subst
+        cache: HashMap::new()
     };
     correct_bvar_indices_core(root_idx, 0, &mut ctx, graph);
     ctx.shifted_pat
 }
 
-// Traverses the given pattern while constructing an analogous one which adds substitutions for all variables
+// Traverses the given pattern while constructing an analogous one which adds shifting for all variables
 // which would otherwise result in invalid bound variable capture of invalid loose bound variable creation. 
 //
 // Returns the index of the current node in `shifted_pat`.
@@ -80,8 +74,13 @@ fn correct_bvar_indices_core(idx: usize, binder_depth: u64, ctx: &mut Context, g
                 return *shifted_var
             } else {
                 // If the given variable has not yet been shifted for the current offset, then
-                // create a new pattern with the correct substitutions for it.
-                add_shifted(var, offset, ctx, graph)
+                // create a new pattern with the correct shift for it.
+                let dir = if offset >= 0 { LeanExpr::Str("+".to_string()) } else { LeanExpr::Str("-".to_string()) };
+                let dir_idx     = add_node(ctx, ENodeOrVar::ENode(dir));
+                let offset_idx  = add_node(ctx, ENodeOrVar::ENode(LeanExpr::Nat(offset.unsigned_abs())));
+                let cutoff_zero = add_node(ctx, ENodeOrVar::ENode(LeanExpr::Nat(0)));
+                let var_idx     = add_node(ctx, var_node.clone());
+                add_node(ctx, ENodeOrVar::ENode(LeanExpr::Shift([dir_idx, offset_idx, cutoff_zero, var_idx])))
             }
         },
         ENodeOrVar::ENode(e) => {
@@ -106,32 +105,4 @@ fn add_node(ctx: &mut Context, node: ENodeOrVar<LeanExpr>) -> Id {
         ctx.shifted_pat_indices.insert(node, idx);
         idx
     }
-}
-
-fn add_shifted(var: &Var, offset: i64, ctx: &mut Context, graph: &LeanEGraph) -> Id {
-    let mut shifted = add_node(ctx, ENodeOrVar::Var(*var));
-
-    // As substitution does not occurr "all at once", it is important that we apply the 
-    // substitutions ordered from smaller to larger indices when the offset is negative
-    // and larger to smaller indices when the offset is positive. Otherwise, indices might 
-    // be  shifted multiple times as in `(↦ 1 0 (↦ 2 1 e))`, which ends up shifting 2 to 0, 
-    // whereas `(↦ 2 1 (↦ 1 0 e))` does not.
-    //
-    // I guess we might still be able to run into this problem if some other rewrite introduces
-    // a substitution on `e` which maps an index to `1` or `2`. The difference then is that 
-    // the order of rewrites could be swapped, so the substitutions can also be applied in the
-    // "correct" order. Thus, we may generate some junk in the e-graph, but we don't block any
-    // successful paths. As such, I think should be able to ignore this issue if it does not 
-    // cause too many problems in practice (kind of like bvar aliasing). 
-    let mut sorted_bvars = graph[ctx.subst[*var]].data.loose_bvars.iter().collect::<Vec<_>>();
-    sorted_bvars.sort_by(|lhs, rhs| if offset <= 0 { lhs.cmp(rhs) } else { rhs.cmp(lhs) });
-
-    for &bvar in sorted_bvars {
-        let from = add_node(ctx, ENodeOrVar::ENode(LeanExpr::Nat(bvar)));
-        let to   = add_node(ctx, ENodeOrVar::ENode(LeanExpr::Nat(((bvar as i64) + offset) as u64)));
-        shifted  = add_node(ctx, ENodeOrVar::ENode(LeanExpr::Subst([from, to, shifted])));
-    }
-
-    ctx.cache.insert((offset, *var), shifted);
-    shifted
 }

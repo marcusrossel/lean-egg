@@ -33,7 +33,8 @@ inductive Expression where
   | forall (ty body : Expression)
   | lit (l : Literal)
   | proof (prop : Expression)
-  | subst (idx₁ idx₂ : Nat) (e : Expression)
+  | subst (idx : Nat) (to e : Expression)
+  | shift (offset : Int) (cutoff : Nat) (e : Expression)
   deriving Inhabited
 
 structure Step extends Rewrite.Info where

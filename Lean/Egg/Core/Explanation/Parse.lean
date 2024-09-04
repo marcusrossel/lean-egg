@@ -8,6 +8,7 @@ declare_syntax_cat egg_expl
 declare_syntax_cat egg_rw_expr
 declare_syntax_cat egg_rw_lvl
 declare_syntax_cat egg_lit
+declare_syntax_cat egg_shift_offset
 declare_syntax_cat egg_rw_dir
 declare_syntax_cat egg_subexpr_pos
 declare_syntax_cat egg_basic_fwd_rw_src
@@ -53,6 +54,10 @@ syntax "↦bvar"                                       : egg_fwd_rw_src
 syntax "↦app"                                        : egg_fwd_rw_src
 syntax "↦λ"                                          : egg_fwd_rw_src
 syntax "↦∀"                                          : egg_fwd_rw_src
+syntax "↑bvar"                                       : egg_fwd_rw_src
+syntax "↑app"                                        : egg_fwd_rw_src
+syntax "↑λ"                                          : egg_fwd_rw_src
+syntax "↑∀"                                          : egg_fwd_rw_src
 syntax "≡maxS"                                       : egg_fwd_rw_src
 syntax "≡max↔"                                       : egg_fwd_rw_src
 syntax "≡imax0"                                      : egg_fwd_rw_src
@@ -76,6 +81,9 @@ syntax "!" egg_fwd_rw_src : egg_fact_src
 
 syntax egg_fwd_rw_src (noWs "-rev")? egg_fact_src* : egg_rw_src
 
+syntax "+" num : egg_shift_offset
+syntax "-" num : egg_shift_offset
+
 syntax num                                                      : egg_rw_lvl
 syntax "(" &"uvar" num ")"                                      : egg_rw_lvl
 syntax "(" &"param" ident ")"                                   : egg_rw_lvl
@@ -94,7 +102,8 @@ syntax "(" &"λ" egg_rw_expr egg_rw_expr ")"                      : egg_rw_expr
 syntax "(" &"∀" egg_rw_expr egg_rw_expr ")"                      : egg_rw_expr
 syntax "(" &"lit" egg_lit ")"                                    : egg_rw_expr
 syntax "(" &"proof" egg_rw_expr ")"                              : egg_rw_expr
-syntax "(" &"↦" num num egg_rw_expr ")"                          : egg_rw_expr
+syntax "(" &"↦" num egg_rw_expr egg_rw_expr ")"                  : egg_rw_expr
+syntax "(" &"↑" egg_shift_offset num egg_rw_expr ")"             : egg_rw_expr
 syntax "(" &"Rewrite" noWs egg_rw_dir egg_rw_src egg_rw_expr ")" : egg_rw_expr
 
 syntax egg_rw_expr+ : egg_expl
@@ -103,6 +112,11 @@ private def parseLit : (TSyntax `egg_lit) → Literal
   | `(egg_lit|$n:num) => .natVal n.getNat
   | `(egg_lit|$s:str) => .strVal s.getString
   | _                 => unreachable!
+
+private def parseShiftOffset : (TSyntax `egg_shift_offset) → Int
+  | `(egg_shift_offset|+ $n:num) => n.getNat
+  | `(egg_shift_offset|- $n:num) => -n.getNat
+  | _                            => unreachable!
 
 private def parseRwDir : (TSyntax `egg_rw_dir) → Direction
   | `(egg_rw_dir|=>) => .forward
@@ -161,6 +175,10 @@ private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Except ParseError Sour
   | `(egg_fwd_rw_src|↦app)   => return .subst .app
   | `(egg_fwd_rw_src|↦λ)     => return .subst .lam
   | `(egg_fwd_rw_src|↦∀)     => return .subst .forall
+  | `(egg_fwd_rw_src|↑bvar)  => return .shift .bvar
+  | `(egg_fwd_rw_src|↑app)   => return .shift .app
+  | `(egg_fwd_rw_src|↑λ)     => return .shift .lam
+  | `(egg_fwd_rw_src|↑∀)     => return .shift .forall
   | `(egg_fwd_rw_src|≡maxS)  => return .level .maxSucc
   | `(egg_fwd_rw_src|≡max↔)  => return .level .maxComm
   | `(egg_fwd_rw_src|≡imax0) => return .level .imaxZero
@@ -229,7 +247,8 @@ where
     | `(egg_rw_expr|(∀ $ty $body))            => return .forall (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(egg_rw_expr|(lit $l))                 => return .lit (parseLit l)
     | `(egg_rw_expr|(proof $p))               => return .proof (← parseProof p pos)
-    | `(egg_rw_expr|(↦ $idx₁ $idx₂ $e))       => return .subst idx₁.getNat idx₂.getNat (← go pos e)
+    | `(egg_rw_expr|(↦ $idx $to $e))          => return .subst idx.getNat (← go pos to) (← go pos e)
+    | `(egg_rw_expr|(↑ $off $cut $e))         => return .shift (parseShiftOffset off) cut.getNat (← go pos e)
     | `(egg_rw_expr|(Rewrite$dir $src $body)) => parseRw dir src body pos
     | _                                       => unreachable!
 

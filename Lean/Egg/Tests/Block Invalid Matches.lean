@@ -20,11 +20,12 @@ example : False := by
 /-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 set_option egg.blockInvalidMatches true in
--- TODO: Why do we need to disable η here in order to achieve saturation (instead of timeout)?
+-- TODO: Why do we need to disable η and β here in order to achieve saturation (instead of timeout)?
 --       Note, this started once we moved η to small-step substitution.
 --       Even stranger: If you look at the e-graph (using the `vizPath` option), it never changes
 --       after the third iteration, but iterations keep occurring.
 set_option egg.genEtaRw false in
+set_option egg.genBetaRw false in
 example : (fun x => (fun a => (fun a => a) a) 0) = (fun x => x) := by
   egg (config := { exitPoint := some .beforeProof }) [thm₁]
 

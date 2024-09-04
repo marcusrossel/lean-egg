@@ -1,5 +1,4 @@
 use egg::*;
-use std::cmp::Ordering;
 
 // TODO: If type ascriptions become the norm, you can remove the τ constructor and instead add the types as the first arguments of all other constructors.
 //       This would be similar (though not equivalent) to the λ_x approach shown in Kœhler's dissertation.
@@ -31,44 +30,18 @@ define_language! {
         // Construct for proof erasure:
         "proof" = Proof(Id),        // (<expr>)
 
-        // Construct for substitution:
+        // Constructs for small-step substitution:
         "↦" = Subst([Id; 3]),       // (Nat, <expr>, <expr>)
+        "↑" = Shift([Id; 4]),       // (Str, Nat, Nat, <expr>)
     }
 }
 
 impl LeanExpr {
 
-    pub fn bvar_idx(&self) -> Option<&Id> {
-        match self {
-            LeanExpr::BVar(idx) => Some(idx),
-            _                   => None
-        }    
-    }
-
     pub fn is_binder(&self) -> bool {
         match self {
             LeanExpr::Lam(_) | LeanExpr::Forall(_) => true,
             _                                      => false
-        }
-    }
-
-    // An expression is considered recursive if it can be part of a loop in an e-graph.
-    // Note that this is a result of the semantics of each constructor, not of its syntactic form.
-    pub fn is_rec(&self) -> bool {
-        match self {
-            LeanExpr::App(_) | LeanExpr::Lam(_) | LeanExpr::Forall(_) | LeanExpr::Proof(_) => true,
-            _                                                                              => false
-        }
-    }
-
-    // An expression `lhs` is smaller than another `rhs` wrt. recursiveness if `lhs` is not 
-    // recursive but `rhs` is. If both are either recursive or non-recursive, the total order
-    // derived by `define_language!` applies.
-    pub fn rec_cmp(&self, rhs: &LeanExpr) -> Ordering {
-        match (&self.is_rec(), rhs.is_rec()) {
-            (false, true) => Ordering::Less,
-            (true, false) => Ordering::Greater,
-            _             => self.cmp(rhs),
         }
     }
 }
