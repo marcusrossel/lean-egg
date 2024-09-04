@@ -1,6 +1,8 @@
 import Egg.Core.MVars.Basic
 import Lean
-open Lean Meta
+open Lean hiding HashMap
+open Meta
+open Std (HashMap)
 
 namespace Egg.MVars
 
@@ -18,13 +20,13 @@ def Subst.apply (subst : Subst) (e : Expr) : Expr :=
   e.replace replaceExpr
 where
   replaceExpr : Expr → Option Expr
-  | .mvar id         => subst.expr.fwd.find? id >>= (Expr.mvar ·)
+  | .mvar id         => subst.expr.fwd[id]? >>= (Expr.mvar ·)
   | .sort lvl        => Expr.sort <| lvl.replace replaceLvl
   | .const name lvls => Expr.const name <| lvls.map (·.replace replaceLvl)
   | _                => none
 
   replaceLvl : Level → Option Level
-  | .mvar id => subst.lvl.find? id >>= (Level.mvar ·)
+  | .mvar id => subst.lvl[id]? >>= (Level.mvar ·)
   | _        => none
 
 def fresh (mvars : MVars) (init : Subst := {}) : MetaM (MVars × Subst) := do
@@ -32,14 +34,14 @@ def fresh (mvars : MVars) (init : Subst := {}) : MetaM (MVars × Subst) := do
   let (lvlVars, lvlSubst) ← freshLvls mvars.lvl init.lvl
   let subst := { expr := exprSubst, lvl := lvlSubst }
   assignFreshExprMVarTypes exprVars subst
-  let tcVars := mvars.tc.map subst.expr.fwd.find!
+  let tcVars := mvars.tc.map subst.expr.fwd.get!
   return ({ expr := exprVars, lvl := lvlVars, tc := tcVars }, subst)
 where
   freshExprs (src : MVarIdSet) (subst : Subst.Expr) : MetaM (MVarIdSet × Subst.Expr) := do
     let mut vars : MVarIdSet := {}
     let mut subst := subst
     for var in src do
-      if let some f := subst.fwd.find? var then
+      if let some f := subst.fwd[var]? then
         vars := vars.insert f
       else
         -- Note: As the type of an mvar may also contain mvars, we also have to replace mvars with
@@ -57,7 +59,7 @@ where
     let mut vars : LMVarIdSet := {}
     let mut subst := subst
     for var in src do
-      if let some f := subst.find? var then
+      if let some f := subst[var]? then
         vars := vars.insert f
       else
         let f ← mkFreshLevelMVar
@@ -67,7 +69,7 @@ where
 
   assignFreshExprMVarTypes (vars : MVarIdSet) (subst : Subst) : MetaM Unit := do
     for var in vars do
-      let srcType ← (subst.expr.bwd.find! var).getType
+      let srcType ← (subst.expr.bwd[var]!).getType
       let freshType := subst.apply srcType
       var.setType freshType
 

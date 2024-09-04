@@ -41,7 +41,7 @@ where
   genDir (dir : Direction) (missing : MVarIdSet) : MetaM (Option Rewrite) := do
     unless !missing.isEmpty do return none
     let (freshRw, subst) ← rw.freshWithSubst (src := .tcSpec rw.src <| .dir dir)
-    let freshMissing := missing.map subst.expr.fwd.find!
+    let freshMissing := missing.map subst.expr.fwd.get!
     let (spec, _) ← genSpecialization freshRw freshMissing norm
     return if spec.validDirs.contains dir then spec else none
 

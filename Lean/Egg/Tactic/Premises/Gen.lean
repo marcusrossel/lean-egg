@@ -6,7 +6,9 @@ import Egg.Tactic.Trace
 import Egg.Tactic.Tags
 import Lean
 
-open Lean Meta Elab Tactic
+open Lean hiding HashSet
+open Meta Elab Tactic
+open Std (HashSet)
 
 namespace Egg.Premises
 

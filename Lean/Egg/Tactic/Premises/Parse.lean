@@ -34,7 +34,7 @@ partial def Premise.Raw.elab (prem : Term) : TacticM Premise.Raw := do
     else
       return .single (.fvar hyp) (← hyp.getType)
   else if let some const ← optional (resolveGlobalConstNoOverload prem) then
-    if let some eqs ← getEqnsFor? const (nonRec := true) then
+    if let some eqs ← getEqnsFor? const then
       -- `prem` is a global definition.
       return .eqns <| ← eqs.mapM (elabGlobalConstNoEqns ·)
     else

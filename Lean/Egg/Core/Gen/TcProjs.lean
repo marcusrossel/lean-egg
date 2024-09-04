@@ -2,7 +2,9 @@ import Egg.Core.Premise.Rewrites
 import Egg.Core.Premise.Facts
 import Egg.Core.Guides
 import Lean
-open Lean Meta
+open Lean hiding HashMap HashSet
+open Meta
+open Std (HashMap HashSet)
 
 namespace Egg
 

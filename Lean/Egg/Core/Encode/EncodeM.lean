@@ -1,8 +1,8 @@
 import Egg.Core.Config
 import Egg.Core.Source
 import Egg.Core.MVars.Ambient
-
-open Lean
+open Lean hiding HashMap
+open Std (HashMap)
 
 namespace Egg
 
@@ -44,7 +44,7 @@ def needsProofErasure (e : Expr) : EncodeM Bool := do
 
 def withCache (e : Expr) (m : EncodeM Expression) : EncodeM Expression := do
   let s ← get
-  if let some enc := s.cache.find? e then
+  if let some enc := s.cache[e]? then
     return enc
   else
     let enc ← m

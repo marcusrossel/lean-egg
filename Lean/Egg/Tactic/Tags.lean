@@ -1,5 +1,6 @@
 import Lean
-open Lean
+open Lean hiding HashMap
+open Std (HashMap)
 
 namespace Egg
 
@@ -20,7 +21,7 @@ def addEntry (ext : Extension) (entry : Basket.Entry) (kind : AttributeKind) : M
   -- TODO: Validate the entry.
   ext.add entry kind
 
-abbrev Map := HashMap Name Extension
+abbrev Map := Std.HashMap Name Extension
 
 initialize mapRef : IO.Ref Map ← IO.mkRef {}
 
