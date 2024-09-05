@@ -11,4 +11,4 @@ set_option egg.genTcProjRws true in
 set_option egg.builtins true in
 set_option trace.egg true in
 example (a : Array α) {i j : Fin a.size} : a[i] = a[j] := by
-  sorry -- egg (config := { traceSubstitutions := true }) [getElem_fin]
+  sorry -- egg [getElem_fin]
