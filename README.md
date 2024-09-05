@@ -10,7 +10,7 @@ They are easily installed following the [official guide](https://doc.rust-lang.o
 To use `egg` in your Lean project, add the following line to your `lakefile.lean`:
 
 ```lean
-require egg from git "https://github.com/marcusrossel/lean-egg" @ "main"
+require "marcusrossel" / "egg" @ git "main"
 ```
 
 Then, add `import Egg` to the files that require `egg`.
