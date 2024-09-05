@@ -8,6 +8,7 @@ set_option egg.eraseProofs true
 #guard_msgs in
 set_option egg.eraseProofs false in
 set_option egg.genBetaRw false in
+set_option egg.genEtaRw false in
 example (arr : Array α) (i : Nat) (h₁ h₂ : i < arr.size) : arr[i]'h₁ = arr[i]'h₂ := by
   egg
 

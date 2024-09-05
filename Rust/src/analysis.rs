@@ -68,6 +68,30 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                     ..Default::default() 
                 },
 
+            LeanExpr::Subst([idx, to, e]) => {
+                let mut loose_bvars = egraph[*e].data.loose_bvars.clone();
+                loose_bvars.remove(&egraph[*idx].data.nat_val.unwrap());
+                loose_bvars.extend(&egraph[*to].data.loose_bvars);
+                Self::Data { loose_bvars, ..Default::default() }
+            },
+            
+            LeanExpr::Shift([dir, off, cut, e]) => {
+                let &dir_is_up = &egraph[*dir].data.dir_val.unwrap();
+                let &off = &egraph[*off].data.nat_val.unwrap();
+                let &cut = &egraph[*cut].data.nat_val.unwrap();
+                let mut loose_bvars: HashSet<u64> = Default::default();
+                for &b in egraph[*e].data.loose_bvars.iter() {
+                    if b < cut {
+                        loose_bvars.insert(b);
+                    } else if dir_is_up {
+                        loose_bvars.insert(b + off);
+                    } else {
+                        loose_bvars.insert(b - off);
+                    }
+                }
+                Self::Data { loose_bvars, ..Default::default() }
+            },
+
             _ => Default::default()
         }
     }
