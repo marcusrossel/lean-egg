@@ -21,8 +21,6 @@ protected structure Config where
   blockInvalidMatches  : Bool
   shiftCapturedBVars   : Bool
   allowUnsatConditions : Bool
-  traceSubstitutions   : Bool
-  traceBVarCorrection  : Bool
 
 instance : Coe Config Request.Config where
   coe cfg := {
@@ -37,8 +35,6 @@ instance : Coe Config Request.Config where
     blockInvalidMatches  := cfg.blockInvalidMatches
     shiftCapturedBVars   := cfg.shiftCapturedBVars
     allowUnsatConditions := cfg.conditionSubgoals
-    traceSubstitutions   := cfg.traceSubstitutions
-    traceBVarCorrection  := cfg.traceBVarCorrection
   }
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.

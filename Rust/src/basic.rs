@@ -10,7 +10,6 @@ use crate::nat_lit::*;
 use crate::rewrite::*;
 use crate::shift::*;
 use crate::subst::*;
-use crate::trace::*;
 
 #[repr(C)]
 pub struct Config {
@@ -24,14 +23,10 @@ pub struct Config {
     gen_level_rws:          bool,
     block_invalid_matches:  bool,
     shift_captured_bvars:   bool,
-    allow_unsat_conditions: bool,
-    trace_substitutions:    bool,
-    trace_bvar_correction:  bool,
+    allow_unsat_conditions: bool
 }
 
 pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Result<(String, LeanEGraph, Report), Error> {
-    init_enabled_trace_groups(cfg.trace_substitutions, cfg.trace_bvar_correction);
-
     let mut egraph: LeanEGraph = Default::default();
     egraph = egraph.with_explanations_enabled();
     if !cfg.optimize_expl { egraph = egraph.without_explanation_length_optimization() }

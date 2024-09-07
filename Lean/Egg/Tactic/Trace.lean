@@ -114,8 +114,6 @@ nonrec def Config.trace (cfg : Config) (cls : Name) : TacticM Unit := do
     withTraceNode cls (fun _ => return "Debug") (collapsed := false) do
       trace cls fun _ => m!"Exit Point: {cfg.exitPoint.format}"
       trace cls fun _ => m!"E-Graph Visualization Export Path: {cfg.vizPath.getD "None"}"
-      trace cls fun _ => m!"{toEmoji cfg.traceSubstitutions} Trace Substitutions"
-      trace cls fun _ => m!"{toEmoji cfg.traceBVarCorrection} Trace BVar Index Correction"
 
 nonrec def Request.trace (req : Request) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Goal") do

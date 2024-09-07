@@ -21,7 +21,6 @@ mod result;
 mod rewrite;
 mod shift;
 mod subst;
-mod trace;
 mod util;
 mod valid_match;
 

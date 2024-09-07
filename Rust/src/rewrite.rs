@@ -5,7 +5,6 @@ use crate::lean_expr::*;
 use crate::analysis::*;
 use crate::bvar_correction::*;
 use crate::valid_match::*;
-use crate::trace::*;
 
 pub struct RewriteTemplate {
     pub name:  String,
@@ -62,6 +61,12 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             // `add_instantiation` crashes when the pattern contains variables not covered by the subst.
             // This is currently handled in Lean by filtering out rewrites where a condition's variables are not
             // covered by the body's variables.
+            //
+            // TODO: Our filtering does not working perfectly yet.
+            //      Let's use these crashes as a means of detecting when our filtering condition is insuffient,
+            //      until we run into cases where it's unreasonable to be able to filter them. At that point
+            //      add a check here which ensures that subst contains all variables in cond.ast before calling
+            //      add_instantiation.
             let id = graph.add_instantiation(&cond.ast, subst);
             
             // Note: If we don't find a fact matching `id`, this might just be because the fact id isn't canonical. 
@@ -84,9 +89,7 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
         // A substitution needs no shifting if it does not map any variables to e-classes containing loose bvars.
         // This is the case exactly when `var_depths` is empty.
         if self.shift_captured_bvars && !var_depths.clone().unwrap().is_empty() {
-            dbg_trace(format!("Start capture avoidance for\n  LHS: {}\n  RHS: {}\n  RHS Raw: {:?}\n  subst: {:?}", searcher_ast, self.rhs, self.rhs.ast.as_ref(), subst), TraceGroup::BVarCorrection);
             let shifted_rhs = correct_bvar_indices(&self.rhs, var_depths.unwrap(), graph);
-            dbg_trace("End capture avoidance\n", TraceGroup::BVarCorrection);
             let (from, did_union) = graph.union_instantiations(searcher_ast, &shifted_rhs, subst, rule);
             if did_union { vec![from] } else { vec![] }
         } else {
