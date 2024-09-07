@@ -41,7 +41,8 @@ structure Config where
   norm? : Option Config.Normalization := none
   amb   : MVars.Ambient
 
-def from? (proof : Expr) (type : Expr) (src : Source) (cfg : Config) : MetaM (Option Rewrite) := do
+-- TODO: We're not taking proof erasure into account when determining mvars.
+partial def from? (proof type : Expr) (src : Source) (cfg : Config) : MetaM (Option Rewrite) := do
   let type ← if let some norm := cfg.norm? then normalize type norm else pure type
   let mut (args, _, eqOrIff?) ← forallMetaTelescope type
   let some cgr ← Congr.from? eqOrIff? | return none
@@ -51,16 +52,25 @@ def from? (proof : Expr) (type : Expr) (src : Source) (cfg : Config) : MetaM (Op
   let conds ← collectConds args mLhs mRhs
   return some { cgr with proof, src, conds, mvars.lhs := mLhs, mvars.rhs := mRhs }
 where
-  -- TODO: Do a fixed point approach where you gather the set of non-condition mvars.
   collectConds (args : Array Expr) (mLhs mRhs : Egg.MVars) : MetaM (Array Rewrite.Condition) := do
     let mut conds := #[]
-    let mut ms : MVarIdSet := mLhs.expr.merge mRhs.expr
-    ms ← ms.foldM (init := ms) fun acc m => return acc.merge (← MVars.collect <| ← m.getType).expr
+    let noCond ← typeMVarClosure (mLhs.expr.merge mRhs.expr)
     for arg in args do
-      if ms.contains arg.mvarId! then continue
+      if noCond.contains arg.mvarId! then continue
       let ty ← arg.mvarId!.getType
       conds := conds.push { expr := arg, type := ty, mvars := (← MVars.collect ty).remove cfg.amb }
     return conds
+  typeMVarClosure (init : MVarIdSet) : MetaM MVarIdSet := do
+    let mut closure : MVarIdSet := ∅
+    let mut todos := init
+    let mut nextTodo? := todos.min
+    while h : nextTodo?.isSome do
+      let m := nextTodo?.get h
+      todos := todos.erase m
+      closure := closure.insert m
+      todos := todos.merge (← MVars.collect <| ← m.getType).expr
+      nextTodo? := todos.min
+    return closure
 
 def isConditional (rw : Rewrite) : Bool :=
   !rw.conds.isEmpty
