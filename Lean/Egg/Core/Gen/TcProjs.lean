@@ -20,16 +20,16 @@ private structure TcProj.SrcPrefix where
 
 -- Note: This function expects `proj` to be normalized (cf. `Egg.normalize`).
 private def TcProj.reductionRewrites
-    (proj : TcProj) (src : TcProj.SrcPrefix) (norm : Config.Normalization) (amb : MVars.Ambient) :
+    (proj : TcProj) (src : TcProj.SrcPrefix) (cfg : Rewrite.Config) :
     MetaM (Array Rewrite) := do
   let mut rws := #[]
   let mut proj := proj
   while true do
     if let some u ← unfoldProjInst? proj then
-      let uNorm ← normalize u norm
+      let uNorm ← normalize u cfg
       let eq ← mkEq proj uNorm
       let proof ← mkEqRefl proj
-      let some rw ← Rewrite.from? proof eq (.tcProj src.src src.loc src.pos rws.size) { amb }
+      let some rw ← Rewrite.from? proof eq (.tcProj src.src src.loc src.pos rws.size) cfg (normalize := false)
         | throwError "egg: internal error in 'TcProj.reductionRewrite?'"
       rws := rws.push rw
       -- TODO: If normalization for rewrites is turned off, this entails that we might generate
@@ -115,13 +115,13 @@ def Guides.tcProjTargets (guides : Guides) : Array TcProjTarget :=
 --
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
 def genTcProjReductions
-    (targets : Array TcProjTarget) (covered : HashSet TcProj) (norm : Config.Normalization)
-    (amb : MVars.Ambient) : MetaM (Rewrites × HashSet TcProj) := do
+    (targets : Array TcProjTarget) (covered : HashSet TcProj) (cfg : Rewrite.Config) :
+    MetaM (Rewrites × HashSet TcProj) := do
   let mut covered := covered
   let mut rws := #[]
   for target in targets do
     let projs ← tcProjs target.expr target.src target.loc covered
     for (proj, src) in projs.toArray do
       covered := covered.insert proj
-      rws := rws ++ (← proj.reductionRewrites src norm amb)
+      rws := rws ++ (← proj.reductionRewrites src cfg)
   return (rws, covered)

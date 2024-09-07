@@ -35,9 +35,9 @@ partial def gen
     (goal : Congr) (ps : TSyntax `egg_premises) (guides : Guides) (cfg : Config)
     (amb : MVars.Ambient) : TacticM (Rewrites × Facts) := do
   let tagged ← genTagged cfg amb
-  let ⟨⟨basic, basicStxs⟩, facts⟩ ← Premises.elab { norm? := cfg, amb } ps
+  let ⟨⟨basic, basicStxs⟩, facts⟩ ← Premises.elab { cfg with amb } ps
   let (basic, basicStxs, pruned₁) ← prune basic basicStxs (remove := tagged)
-  let builtins ← if cfg.builtins then Rewrites.builtins { norm? := cfg, amb } else pure #[]
+  let builtins ← if cfg.builtins then Rewrites.builtins { cfg with amb } else pure #[]
   let (builtins, _, pruned₂) ← prune builtins (remove := tagged ++ basic)
   let tc ← genTcRws (basic ++ builtins) facts.elems
   let (tc, _, pruned₃) ← prune tc (remove := tagged ++ basic ++ builtins)
@@ -50,7 +50,7 @@ where
     let some _ := cfg.basket? | return #[]
     -- TODO: This should use the basket name to find the proper extension.
     let prems := extension.getState (← getEnv)
-    Premises.elabTagged prems { norm? := cfg, amb }
+    Premises.elabTagged prems { cfg with amb }
 
   genTcRws (rws : Rewrites) (facts : Facts) : TacticM Rewrites := do
     let mut projTodo := #[]
@@ -61,7 +61,7 @@ where
     if cfg.genTcSpecRws then specTodo := rws
     while (cfg.genTcProjRws && !projTodo.isEmpty) || (cfg.genTcSpecRws && !specTodo.isEmpty) do
       if cfg.genTcProjRws then
-        let (projRws, cov) ← genTcProjReductions projTodo covered cfg amb
+        let (projRws, cov) ← genTcProjReductions projTodo covered { cfg with amb }
         covered  := cov
         specTodo := specTodo ++ projRws
         tcRws    := tcRws ++ projRws

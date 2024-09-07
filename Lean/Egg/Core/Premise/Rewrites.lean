@@ -37,13 +37,17 @@ structure Rewrite extends Congr where
 
 namespace Rewrite
 
-structure Config where
-  norm? : Option Config.Normalization := none
-  amb   : MVars.Ambient
+structure Config extends Config.Normalization where
+  amb         : MVars.Ambient
+  eraseProofs : Bool
+
+instance : Coe Config Config.Normalization where
+  coe := Config.toNormalization
 
 -- TODO: We're not taking proof erasure into account when determining mvars.
-partial def from? (proof type : Expr) (src : Source) (cfg : Config) : MetaM (Option Rewrite) := do
-  let type ← if let some norm := cfg.norm? then normalize type norm else pure type
+partial def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
+    MetaM (Option Rewrite) := do
+  let type ← if normalize then Egg.normalize type cfg else pure type
   let mut (args, _, eqOrIff?) ← forallMetaTelescope type
   let some cgr ← Congr.from? eqOrIff? | return none
   let proof := mkAppN proof args
