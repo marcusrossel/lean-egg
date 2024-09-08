@@ -58,15 +58,6 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
 
         let mut rule = rule;
         for cond in self.conds.clone() {
-            // `add_instantiation` crashes when the pattern contains variables not covered by the subst.
-            // This is currently handled in Lean by filtering out rewrites where a condition's variables are not
-            // covered by the body's variables.
-            //
-            // TODO: Our filtering does not working perfectly yet.
-            //      Let's use these crashes as a means of detecting when our filtering condition is insuffient,
-            //      until we run into cases where it's unreasonable to be able to filter them. At that point
-            //      add a check here which ensures that subst contains all variables in cond.ast before calling
-            //      add_instantiation.
             let id = graph.add_instantiation(&cond.ast, subst);
             
             // Note: If we don't find a fact matching `id`, this might just be because the fact id isn't canonical. 

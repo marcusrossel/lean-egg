@@ -20,10 +20,16 @@ example (i : Nat) (h : i < 10) : (Fin.mk i h).val = i := by
   have : ∀ n m (g : n < m), (Fin.mk n g).val = n := by simp
   egg [this]
 
+-- Note: This and the next test case also demonstrate an interaction between proof erasure and
+--       conditional rewrites. Without proof erasure, the argument `g` of the rewrite is not
+--       considered a precondition, as it appears in the LHS of the equality. Naively, proof erasure
+--       implies that `g` does not appear in the equation (as it is erased), and thus becomes a pre-
+--       condition. Thus, we need to handle proof terms specially when determining preconditions.
 example (i : Nat) (h : i < 10) : (Fin.mk i h).val = i := by
   have : ∀ n m (g : n < m), (Fin.mk n g).val = n := by simp
   egg [this]
 
+set_option egg.eraseProofs true in
 example (i : Nat) (h : ∀ i : Nat, i < 10) : (Fin.mk i (h i)).val = i := by
   have : ∀ n m (g : n < m), (Fin.mk n g).val = n := by simp
   egg [this]

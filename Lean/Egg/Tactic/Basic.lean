@@ -32,10 +32,12 @@ where
       throwError "expected goal to be of type '=' or '↔', but found:\n{← ppExpr goalType}"
 
 -- TODO: We should also consider the level mvars of all `Fact`s.
-private def collectAmbientMVars (goal : Goal) (guides : Guides) : MetaM MVars.Ambient := do
+private def collectAmbientMVars (goal : Goal) (guides : Guides) (proofErasure : Bool) :
+    MetaM MVars.Ambient := do
   let expr ← MVars.Ambient.Expr.get
-  let goalLvl := (← MVars.collect (← goal.expr)).lvl
-  let guidesLvl ← guides.foldlM (init := ∅) fun res g => return res.merge (← MVars.collect g.expr).lvl
+  let goalLvl := (← MVars.collect (← goal.expr) proofErasure).lvl
+  let guidesLvl ← guides.foldlM (init := ∅) fun res g =>
+    return res.merge (← MVars.collect g.expr proofErasure).lvl
   return { expr, lvl := goalLvl.merge guidesLvl }
 
 private def resultToProof
@@ -55,7 +57,7 @@ private def resultToProof
   return prf
 where
   catchLooseMVars (prf : Expr) (amb : MVars.Ambient) (subgoals : List MVarId) : MetaM Unit := do
-    let mvars ← MVars.collect prf
+    let mvars ← MVars.collect prf (proofErasure := false)
     for mvar in mvars.expr do
       unless subgoals.contains mvar || amb.expr.contains mvar do
         throwError m!"egg: final proof contains expression mvar {Expr.mvar mvar}"
@@ -76,7 +78,7 @@ protected def eval
   goal.withContext do
     let goal ← parseGoal goal base
     let guides := (← guides.mapM Guides.parseGuides).getD #[]
-    let amb ← collectAmbientMVars goal guides
+    let amb ← collectAmbientMVars goal guides cfg.eraseProofs
     amb.trace `egg.ambient
     -- We increase the mvar context depth, so that ambient mvars aren't unified during proof
     -- reconstruction. Note that this also means that we can't assign the `goal` mvar within this

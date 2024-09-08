@@ -44,25 +44,33 @@ structure Config extends Config.Normalization where
 instance : Coe Config Config.Normalization where
   coe := Config.toNormalization
 
--- TODO: We're not taking proof erasure into account when determining mvars.
 partial def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
     MetaM (Option Rewrite) := do
   let type ← if normalize then Egg.normalize type cfg else pure type
   let mut (args, _, eqOrIff?) ← forallMetaTelescope type
   let some cgr ← Congr.from? eqOrIff? | return none
   let proof := mkAppN proof args
-  let mLhs := (← MVars.collect cgr.lhs).remove cfg.amb
-  let mRhs := (← MVars.collect cgr.rhs).remove cfg.amb
+  let mLhs := (← MVars.collect cgr.lhs cfg.eraseProofs).remove cfg.amb
+  let mRhs := (← MVars.collect cgr.rhs cfg.eraseProofs).remove cfg.amb
   let conds ← collectConds args mLhs mRhs
   return some { cgr with proof, src, conds, mvars.lhs := mLhs, mvars.rhs := mRhs }
 where
+  -- The interaction between proof erasure and conditional rewrites is somewhat finicky. Without
+  -- proof erasure, a hypothesis `h` of a rewrite is not considered a precondition if it appears in
+  -- the rewrite's equation. Naively, proof erasure breaks this as it erases `h` from the equation
+  -- (which thus becomes a precondition, even when it is completely determined by the equation).
+  -- Thus, we handle proof terms specially in `MVars.collect` by collecting both the proof term
+  -- mvars and the corresponding proposition mvars. We then make sure to add the proof term mvars to
+  -- the `noCond` set, even when proof erasure is active.
   collectConds (args : Array Expr) (mLhs mRhs : Egg.MVars) : MetaM (Array Rewrite.Condition) := do
     let mut conds := #[]
-    let noCond ← typeMVarClosure (mLhs.expr.merge mRhs.expr)
+    let mut noCond ← typeMVarClosure (mLhs.expr.merge mRhs.expr)
+    if cfg.eraseProofs then noCond := noCond.merge mLhs.proof |>.merge mRhs.proof
     for arg in args do
       if noCond.contains arg.mvarId! then continue
       let ty ← arg.mvarId!.getType
-      conds := conds.push { expr := arg, type := ty, mvars := (← MVars.collect ty).remove cfg.amb }
+      let mvars := (← MVars.collect ty cfg.eraseProofs).remove cfg.amb
+      conds := conds.push { expr := arg, type := ty, mvars }
     return conds
   typeMVarClosure (init : MVarIdSet) : MetaM MVarIdSet := do
     let mut closure : MVarIdSet := ∅
@@ -72,7 +80,7 @@ where
       let m := nextTodo?.get h
       todos := todos.erase m
       closure := closure.insert m
-      todos := todos.merge (← MVars.collect <| ← m.getType).expr
+      todos := todos.merge (← MVars.collect (← m.getType) cfg.eraseProofs).expr
       nextTodo? := todos.min
     return closure
 

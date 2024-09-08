@@ -26,6 +26,7 @@ def unassigned (amb : Ambient) : MetaM (MVarIdSet × LMVarIdSet) := do
 end Ambient
 
 def remove (mvars : MVars) (amb : Ambient) : MVars where
-  expr := mvars.expr.filter (!amb.expr.contains ·)
-  lvl  := mvars.lvl.filter (!amb.lvl.contains ·)
-  tc   := mvars.tc.filter (!amb.expr.contains ·)
+  expr  := mvars.expr.filter (!amb.expr.contains ·)
+  lvl   := mvars.lvl.filter (!amb.lvl.contains ·)
+  tc    := mvars.tc.filter (!amb.expr.contains ·)
+  proof := mvars.proof.filter (!amb.expr.contains ·)
