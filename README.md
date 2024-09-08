@@ -1,13 +1,22 @@
 # <img src="Docs/icon.png" alt="lean-egg logo" height="40" align="left"> Equality Saturation Tactic for Lean
 
-This repository contains a (work-in-progress) [equality saturation](https://arxiv.org/abs/1012.1802) tactic for [Lean](https://lean-lang.org) based on [egg](https://egraphs-good.github.io). The tactic is useful for automated equational reasoning. Checkout the `Lean/Egg/Tests` directory for examples.
+This repository contains a (work-in-progress) [equality saturation](https://arxiv.org/abs/1012.1802) tactic for [Lean](https://lean-lang.org) based on [egg](https://egraphs-good.github.io). This `egg` tactic is useful for automated equational reasoning based on given equational theorems. 
 
 ## Setup
 
-This tactic requires [Rust](https://www.rust-lang.org) and its package manager [Cargo](https://doc.rust-lang.org/cargo/). 
+The `egg` tactic requires [Rust](https://www.rust-lang.org) and its package manager [Cargo](https://doc.rust-lang.org/cargo/). 
 They are easily installed following the [official guide](https://doc.rust-lang.org/cargo/getting-started/installation.html).
 
-To use `egg` in your Lean project, add the following line to your `lakefile.lean`:
+To use `egg` in your Lean project, add the following line to your `lakefile.toml`:
+
+```toml
+[[require]]
+name = "egg"
+git = "https://github.com/marcusrossel/lean-egg"
+rev = "main"
+```
+
+... or the following line to your `lakefile.lean`:
 
 ```lean
 require "marcusrossel" / "egg" @ git "main"
