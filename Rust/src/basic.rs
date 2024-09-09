@@ -26,7 +26,7 @@ pub struct Config {
     allow_unsat_conditions: bool
 }
 
-pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Result<(String, LeanEGraph, Report), Error> {
+pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Result<(String, LeanEGraph, Report), Error> {    
     let mut egraph: LeanEGraph = Default::default();
     egraph = egraph.with_explanations_enabled();
     if !cfg.optimize_expl { egraph = egraph.without_explanation_length_optimization() }

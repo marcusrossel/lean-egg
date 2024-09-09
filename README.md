@@ -12,8 +12,8 @@ To use `egg` in your Lean project, add the following line to your `lakefile.toml
 ```toml
 [[require]]
 name = "egg"
-git = "https://github.com/marcusrossel/lean-egg"
-rev = "main"
+git  = "https://github.com/marcusrossel/lean-egg"
+rev  = "main"
 ```
 
 ... or the following line to your `lakefile.lean`:

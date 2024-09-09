@@ -62,6 +62,7 @@ where
     while (cfg.genTcProjRws && !projTodo.isEmpty) || (cfg.genTcSpecRws && !specTodo.isEmpty) do
       if cfg.genTcProjRws then
         let (projRws, cov) ← genTcProjReductions projTodo covered { cfg with amb }
+        projTodo := #[]
         covered  := cov
         specTodo := specTodo ++ projRws
         tcRws    := tcRws ++ projRws
