@@ -155,7 +155,7 @@ inductive ParseError where
   | startContainsRw
   | missingRw
   | multipleRws
-  | proofRw
+  | nonDefeqProofRw
   deriving Inhabited
 
 private def ParseError.msgPrefix :=
@@ -168,7 +168,7 @@ instance : Coe ParseError MessageData where
     | startContainsRw => s!"{msgPrefix} start contains a rewrite"
     | missingRw       => s!"{msgPrefix} (non-start) step does not contain a rewrite"
     | multipleRws     => s!"{msgPrefix} step contains multiple rewrites"
-    | proofRw         => s!"{msgPrefix} step contains type-level rewrite in proof"
+    | nonDefeqProofRw => s!"{msgPrefix} step contains non-defeq type-level rewrite in proof"
 
 private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Except ParseError Source
   | `(egg_fwd_rw_src|↦bvar)  => return .subst .bvar
@@ -253,10 +253,13 @@ where
     | _                                       => unreachable!
 
   parseProof (p : TSyntax `egg_rw_expr) (pos : SubExpr.Pos) : ParseStepM Expression := do
-    let hadRw := (← get).isSome
+    -- If `p` did not contain a rewrite, all is well and we return `e`. Otherwise, obtain the
+    -- `rwInfo` and make sure it is a defeq rewrite. If not, we have a non-defeq type-level rewrite,
+    -- which we cannot handle, yet.
+    let rwIsOutsideProof := (← get).isSome
     let e ← go pos p
-    let hasRw := (← get).isSome
-    if !hadRw && hasRw then throw .proofRw
+    if let some rwInfo ← get then
+      unless rwIsOutsideProof || rwInfo.src.isDefEq do throw .nonDefeqProofRw
     return e
 
   parseRw (dir : TSyntax `egg_rw_dir) (src : TSyntax `egg_rw_src) (body : TSyntax `egg_rw_expr)
