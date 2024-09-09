@@ -3,7 +3,7 @@ import Egg
 -- This test case ensures that we allow type-level defeq rewrite in erased proof terms.
 
 variable
-  {m n : Nat} {p q : Nat → Prop} [inst : DecidablePred p]
+  {n : Nat} {p : Nat → Prop} [inst : DecidablePred p]
   {find : (∃ n, p n) → Nat}
   {find_lt_iff : ∀ (h : ∃ n, p n) n, find h < n ↔ ∃ m < n, p m}
 

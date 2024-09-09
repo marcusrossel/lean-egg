@@ -136,14 +136,15 @@ where
 def fresh (rw : Rewrite) (src : Source := rw.src) : MetaM Rewrite :=
   Prod.fst <$> rw.freshWithSubst src
 
+-- TODO: When proof erasure is active, this should also instantiate mvars for the types of proof terms.
 def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
   return { rw with
-    lhs         := ← Lean.instantiateMVars rw.lhs
-    rhs         := ← Lean.instantiateMVars rw.rhs
-    proof       := ← Lean.instantiateMVars rw.proof
-    mvars.lhs   := ← rw.mvars.lhs.removeAssigned
-    mvars.rhs   := ← rw.mvars.rhs.removeAssigned
-    conds       := ← rw.conds.mapM (·.instantiateMVars)
+    lhs       := ← Lean.instantiateMVars rw.lhs
+    rhs       := ← Lean.instantiateMVars rw.rhs
+    proof     := ← Lean.instantiateMVars rw.proof
+    mvars.lhs := ← rw.mvars.lhs.removeAssigned
+    mvars.rhs := ← rw.mvars.rhs.removeAssigned
+    conds     := ← rw.conds.mapM (·.instantiateMVars)
   }
 
 end Rewrite

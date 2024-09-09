@@ -32,10 +32,12 @@ where
 def fresh (mvars : MVars) (init : Subst := {}) : MetaM (MVars × Subst) := do
   let (exprVars, exprSubst) ← freshExprs mvars.expr init.expr
   let (lvlVars, lvlSubst) ← freshLvls mvars.lvl init.lvl
+  let tcVars := mvars.tc.map exprSubst.fwd.get!
+  let (proofVars, exprSubst) ← freshExprs mvars.proof exprSubst
   let subst := { expr := exprSubst, lvl := lvlSubst }
   assignFreshExprMVarTypes exprVars subst
-  let tcVars := mvars.tc.map subst.expr.fwd.get!
-  return ({ expr := exprVars, lvl := lvlVars, tc := tcVars }, subst)
+  assignFreshExprMVarTypes proofVars subst
+  return ({ expr := exprVars, lvl := lvlVars, tc := tcVars, proof := proofVars }, subst)
 where
   freshExprs (src : MVarIdSet) (subst : Subst.Expr) : MetaM (MVarIdSet × Subst.Expr) := do
     let mut vars : MVarIdSet := {}

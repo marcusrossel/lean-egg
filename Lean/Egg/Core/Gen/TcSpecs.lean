@@ -14,7 +14,7 @@ private partial def genSpecialization
     lastIterChanged := false
     for var in missing do
       if let some inst ← instanceForType? (← var.getType) then
-        var.assign inst
+        unless ← isDefEq (.mvar var) inst do throwError "egg: internal error in 'Egg.genSpecialization'"
         missing := missing.erase var
         lastIterChanged := true
         everChanged := true
