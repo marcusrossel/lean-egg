@@ -214,7 +214,8 @@ where
       unless ← isDefEq lhs rw.lhs do fail m!"unification failure for LHS of rewrite {rw.src.description}:\n  {lhs}\nvs\n  {rw.lhs}\nin\n  {current}\nand\n  {next}"
       unless ← isDefEq rhs rw.rhs do fail m!"unification failure for RHS of rewrite {rw.src.description}:\n  {rhs}\nvs\n  {rw.rhs}\nin\n  {current}\nand\n  {next}"
       let mut subgoals := []
-      for cond in rw.conds, fact? in facts do
+      let conds := rw.conds.filter (!·.isProven)
+      for cond in conds, fact? in facts do
         if let some fact := fact? then
           if ← isDefEq cond.expr fact.proof then
             continue

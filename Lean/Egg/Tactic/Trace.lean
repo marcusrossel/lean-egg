@@ -65,8 +65,12 @@ def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) : TacticM U
     traceM cls fun _ => rw.toCongr.toMessageData
     if !rw.conds.isEmpty then
       withTraceNode cls (fun _ => return "Conditions") (collapsed := false) do
-        for cond in rw.conds do
+        for cond in rw.conds.filter (!·.isProven) do
           traceM cls fun _ => return m!"{cond.type}"
+        if !(rw.conds.filter (·.isProven)).isEmpty then
+          withTraceNode cls (fun _ => return "Proven") (collapsed := true) do
+            for cond in rw.conds.filter (·.isProven) do
+              traceM cls fun _ => return m!"{cond.type}"
     traceM cls fun _ => return m!"LHS MVars\n{← rw.mvars.lhs.toMessageData}"
     traceM cls fun _ => return m!"RHS MVars\n{← rw.mvars.rhs.toMessageData}"
 

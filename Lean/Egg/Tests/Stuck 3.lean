@@ -12,4 +12,4 @@ variable
 set_option egg.genTcSpecRws false
 include find_lt_iff in
 theorem find_le_iff (h : ∃ z : Nat, p z) (n : Nat) : find h ≤ n ↔ ∃ m ≤ n, p m := by
-  egg [exists_prop, Nat.lt_succ_iff, find_lt_iff; inst]
+  egg [exists_prop, Nat.lt_succ_iff, find_lt_iff]

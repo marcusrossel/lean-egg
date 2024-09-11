@@ -26,6 +26,7 @@ inductive Source.Level where
 
 inductive Source.TcSpec where
   | dir (dir : Direction)
+  | cond
   | goalType
   deriving Inhabited, BEq, Hashable
 
@@ -82,6 +83,7 @@ def Level.description : Level → String
 
 def TcSpec.description : TcSpec → String
   | dir d    => d.description
+  | cond     => "?"
   | goalType => "⊢"
 
 def TcProjLocation.description : TcProjLocation → String

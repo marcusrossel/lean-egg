@@ -7,19 +7,28 @@ import Egg.Core.Source
 import Egg.Lean
 open Lean Meta
 
-namespace Egg
+namespace Egg.Rewrite
 
-structure Rewrite.MVars where
+protected structure MVars where
   lhs : MVars
   rhs : MVars
   deriving Inhabited
 
-structure Rewrite.Condition where
-  expr  : Expr -- Without instantiation, this is an mvar.
+structure Condition where
+  -- Without instantiation, this `expr` is an mvar. When instantiated, the condition is considered
+  -- proven.
+  expr  : Expr
   type  : Expr
-  mvars : Egg.MVars
+  -- These are the mvars of `type`.
+  mvars : MVars
 
-def Rewrite.Condition.instantiateMVars (cond : Condition) : MetaM Condition := do
+-- Condition can become proven during type class specialization. We still need to keep these
+-- conditions in order to use their `expr` during proof reconstruction. Proven conditions are not
+-- encoded and thus transparent to the backend though.
+def Condition.isProven (cond : Condition) : Bool :=
+  !cond.expr.isMVar
+
+def Condition.instantiateMVars (cond : Condition) : MetaM Condition := do
   return { cond with
     expr  := ← Lean.instantiateMVars cond.expr
     type  := ← Lean.instantiateMVars cond.type
@@ -27,15 +36,13 @@ def Rewrite.Condition.instantiateMVars (cond : Condition) : MetaM Condition := d
   }
 
 -- Note: We don't create `Rewrite`s directly, but use `Rewrite.from` instead.
-structure Rewrite extends Congr where
+structure _root_.Egg.Rewrite extends Congr where
   private mk ::
   proof : Expr
   src   : Source
-  conds : Array Rewrite.Condition
+  conds : Array Condition
   mvars : Rewrite.MVars
   deriving Inhabited
-
-namespace Rewrite
 
 structure Config extends Config.Normalization where
   amb         : MVars.Ambient
@@ -123,9 +130,9 @@ where
     let mut subst := init
     let mut conds := #[]
     for cond in rw.conds do
-      let (m, s) ← MVars.freshExpr cond.expr.mvarId! (init := subst)
+      let (_, s) ← (← MVars.collect cond.expr (proofErasure := false)).fresh (init := subst)
       let (mvars, s) ← cond.mvars.fresh (init := s)
-      conds := conds.push { expr := .mvar m, type := s.apply cond.type, mvars }
+      conds := conds.push { expr := s.apply cond.expr, type := s.apply cond.type, mvars }
       subst := s
     return (conds, subst)
 
@@ -136,7 +143,6 @@ where
 def fresh (rw : Rewrite) (src : Source := rw.src) : MetaM Rewrite :=
   Prod.fst <$> rw.freshWithSubst src
 
--- TODO: When proof erasure is active, this should also instantiate mvars for the types of proof terms.
 def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
   return { rw with
     lhs       := ← Lean.instantiateMVars rw.lhs

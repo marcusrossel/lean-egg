@@ -40,12 +40,12 @@ example (a : Nat) (h : ∀ x : Nat, x + 1 = 1 + x) : a + 1 = 1 + a := by
   egg [h]
 
 def f : Nat → Nat
-  | .zero => .zero
-  | n + 1 => f n
+  | .zero   => .zero
+  | .succ n => f n
 
 def g : Nat → Nat
-  | .zero => .zero
-  | n + 1 => g n
+  | .zero   => .zero
+  | .succ n => g n
 
 example : f (g Nat.zero.succ.succ) = .zero := by
   egg [f, g]

@@ -74,22 +74,23 @@ where
         tcRws    := tcRws ++ specRws
     return tcRws
 
-  -- TODO: Don't use `mkTableKey` for this.
-  -- See: https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Expr.20equal.20up.20to.20mvars
   prune (rws : Rewrites) (stx? : Option (Array Syntax) := none) (remove : Rewrites) :
       MetaM (Rewrites × Array Syntax × Rewrites) := open SynthInstance in do
     let mut keep := #[]
     let mut keepStx := #[]
     let mut pruned := #[]
-    let contains (tgts : Rewrites) (lhsKey rhsKey : Expr) : MetaM Bool :=
-      tgts.anyM fun t =>
-        (return lhsKey == (← mkTableKey t.lhs)) <&&>
-        (return rhsKey == (← mkTableKey t.rhs))
+    let contains (tgts : Rewrites) (rw : Rewrite) : MetaM Bool := do
+      let lhsAbs ← abstractMVars rw.lhs
+      let rhsAbs ← abstractMVars rw.rhs
+      let conds  ← rw.conds.mapM (AbstractMVarsResult.expr <$> abstractMVars ·.expr)
+      tgts.anyM fun t => do
+        unless lhsAbs.expr == (← abstractMVars t.lhs).expr do return false
+        unless rhsAbs.expr == (← abstractMVars t.rhs).expr do return false
+        let tConds ← t.conds.mapM (AbstractMVarsResult.expr <$> abstractMVars ·.expr)
+        return conds == tConds
     for rw in rws, idx in [:rws.size] do
-      let rwLhs ← mkTableKey rw.lhs
-      let rwRhs ← mkTableKey rw.rhs
-      if ← contains keep   rwLhs rwRhs then pruned := pruned.push rw; continue
-      if ← contains remove rwLhs rwRhs then pruned := pruned.push rw; continue
+      if ← contains keep   rw then pruned := pruned.push rw; continue
+      if ← contains remove rw then pruned := pruned.push rw; continue
       keep := keep.push rw
       if let some stx := stx? then keepStx := keepStx.push stx[idx]!
     return (keep, keepStx, pruned)

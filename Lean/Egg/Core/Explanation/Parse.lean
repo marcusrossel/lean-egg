@@ -43,6 +43,7 @@ syntax "[" egg_tc_proj_loc num "," num "]" : egg_tc_proj
 
 syntax "→" : egg_tc_spec_src
 syntax "←" : egg_tc_spec_src
+syntax "?" : egg_tc_spec_src
 syntax "⊢" : egg_tc_spec_src
 syntax "<" egg_tc_spec_src ">" : egg_tc_spec
 
@@ -126,6 +127,7 @@ private def parseRwDir : (TSyntax `egg_rw_dir) → Direction
 private def parsTcSpecSrc : (TSyntax `egg_tc_spec_src) → Source.TcSpec
   | `(egg_tc_spec_src|→) => .dir .forward
   | `(egg_tc_spec_src|←) => .dir .backward
+  | `(egg_tc_spec_src|?) => .cond
   | `(egg_tc_spec_src|⊢) => .goalType
   | _                    => unreachable!
 
