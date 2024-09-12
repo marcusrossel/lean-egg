@@ -22,7 +22,7 @@ impl Applier<LeanExpr, LeanAnalysis> for BVarShift {
         } else if dir_is_up {
             bvar_idx + offset
         } else {
-            bvar_idx - offset
+            bvar_idx.saturating_sub(offset)
         };
         let new = format!("(bvar {})", new_idx).parse().unwrap();
         

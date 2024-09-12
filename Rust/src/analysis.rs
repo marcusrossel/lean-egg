@@ -15,7 +15,7 @@ pub struct LeanAnalysis;
 impl Analysis<LeanExpr> for LeanAnalysis {
     type Data = LeanAnalysisData;
 
-    fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
+    fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {       
         // `merge_max` prefers `Some` value over `None`. Note that if `to` and `from` both have nat values,
         // then they should have the *same* value as otherwise merging their e-classes indicates an invalid 
         // rewrite. The same applies for the `dir_val`s.
@@ -24,7 +24,7 @@ impl Analysis<LeanExpr> for LeanAnalysis {
         union_sets(&mut to.loose_bvars, from.loose_bvars)
     }
 
-    fn make(egraph: &EGraph<LeanExpr, Self>, enode: &LeanExpr) -> Self::Data {
+    fn make(egraph: &EGraph<LeanExpr, Self>, enode: &LeanExpr) -> Self::Data {      
         match enode {
             LeanExpr::Nat(n) => 
                 Self::Data { 
@@ -86,7 +86,7 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                     } else if dir_is_up {
                         loose_bvars.insert(b + off);
                     } else {
-                        loose_bvars.insert(b - off);
+                        loose_bvars.insert(b.saturating_sub(off));
                     }
                 }
                 Self::Data { loose_bvars, ..Default::default() }
