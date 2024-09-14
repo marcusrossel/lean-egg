@@ -76,6 +76,19 @@ impl Analysis<LeanExpr> for LeanAnalysis {
             },
             
             LeanExpr::Shift([dir, off, cut, e]) => {
+                // Determine if we have a self-loop for the shift-node. If so, 
+                // the shift-node must be in an e-class where some node contains 
+                // no loose bvars. Thus, all other loose bvars which appear under 
+                // the given e-class must be redundant. Our current handling of 
+                // this situation is then to not add any shift-nodes to `e` in 
+                // `shift.rs`, so we also opt to not change the set of loose bvars 
+                // here. This might not be the correct approach.
+                if let Some(enode_class) = egraph.lookup(enode.clone()) {
+                    if egraph.find(enode_class) == egraph.find(*e) { 
+                        return Self::Data { loose_bvars: egraph[*e].data.loose_bvars.clone(), ..Default::default() }
+                    }
+                }
+
                 let &dir_is_up = &egraph[*dir].data.dir_val.unwrap();
                 let &off = &egraph[*off].data.nat_val.unwrap();
                 let &cut = &egraph[*cut].data.nat_val.unwrap();
@@ -85,8 +98,9 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                         loose_bvars.insert(b);
                     } else if dir_is_up {
                         loose_bvars.insert(b + off);
-                    } else {
-                        loose_bvars.insert(b.saturating_sub(off));
+                    } else if off <= b {
+                        // If `off > b`, this shift was "not intended", so we just don't do it. 
+                        loose_bvars.insert(b - off);
                     }
                 }
                 Self::Data { loose_bvars, ..Default::default() }
