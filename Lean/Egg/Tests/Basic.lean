@@ -6,7 +6,7 @@ example : true = false := by
   egg
 
 /--
-error: expected goal to be of type '=' or '↔', but found:
+error: expected goal to be of type '=', '↔', '∀ ..., _ = _', or '∀ ..., _ ↔ _', but found:
 True
 -/
 #guard_msgs in

@@ -49,11 +49,11 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): Nat.add_comm
       [egg.rewrites] ?n + ?m = ?m + ?n
       [egg.rewrites] LHS MVars
-          expr:  [?m, ?n]
+          expr:  [?n, ?m]
           class: []
           level: []
       [egg.rewrites] RHS MVars
-          expr:  [?m, ?n]
+          expr:  [?n, ?m]
           class: []
           level: []
   [egg.rewrites] Tagged (0)

@@ -18,18 +18,24 @@ private structure Goal extends Congr where
   id    : MVarId
   base? : Option FVarId
 
-private def parseGoal (goal : MVarId) (base? : Option (TSyntax `egg_base)) : MetaM Goal := do
-  let base? ← base?.mapM parseBase
-  let cgr ← getCongr (← goal.getType') base?
-  return { cgr with id := goal, base? }
+private def parseGoal (goal : MVarId) (base? : Option (TSyntax `egg_base)) : TacticM Goal := do
+  goal.withContext do
+    let base? ← base?.mapM parseBase
+    let (cgr, id) ← getCongr base?
+    return { cgr with id, base? }
 where
-  getCongr (goalType : Expr) (base? : Option FVarId) : MetaM Congr := do
+  getCongr (base? : Option FVarId) : TacticM (Congr × MVarId) := do
     if let some base := base? then
-      Congr.from! (← mkEq (← base.getType) goalType)
-    else if let some c ← Congr.from? goalType then
-      return c
+      let cgr ← Congr.from! (← mkEq (← base.getType) (← goal.getType'))
+      return (cgr, goal)
     else
-      throwError "expected goal to be of type '=' or '↔', but found:\n{← ppExpr goalType}"
+      evalTactic <| ← `(tactic| repeat intro)
+      let goal ← getMainGoal
+      goal.withContext do
+        let goalType ← goal.getType'
+        let some cgr ← Congr.from? goalType
+          | throwError "expected goal to be of type '=', '↔', '∀ ..., _ = _', or '∀ ..., _ ↔ _', but found:\n{← ppExpr goalType}"
+        return (cgr, goal)
 
 -- TODO: We should also consider the level mvars of all `Fact`s.
 private def collectAmbientMVars (goal : Goal) (guides : Guides) (proofErasure : Bool) :
@@ -75,8 +81,8 @@ protected def eval
   let mod  ← Config.Modifier.parse mod
   let cfg := { (← Config.fromOptions).modify mod with basket? }
   cfg.trace `egg.config
-  goal.withContext do
-    let goal ← parseGoal goal base
+  let goal ← parseGoal goal base
+  goal.id.withContext do
     let guides := (← guides.mapM Guides.parseGuides).getD #[]
     let amb ← collectAmbientMVars goal guides cfg.eraseProofs
     amb.trace `egg.ambient

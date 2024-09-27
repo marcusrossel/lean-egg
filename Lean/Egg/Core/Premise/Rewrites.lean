@@ -54,8 +54,14 @@ instance : Coe Config Config.Normalization where
 partial def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
     MetaM (Option Rewrite) := do
   let type ← if normalize then Egg.normalize type cfg else pure type
-  let mut (args, _, eqOrIff?) ← forallMetaTelescope type
-  let some cgr ← Congr.from? eqOrIff? | return none
+  let mut (args, _, eqOrIff?) ← forallMetaTelescopeReducing type
+  let cgr ←
+    if let some cgr ← Congr.from? eqOrIff? then
+      pure cgr
+    else if let some cgr ← Congr.from? (← reduce (skipTypes := false) eqOrIff?) then
+      pure cgr
+    else
+      return none
   let proof := mkAppN proof args
   let mLhs := (← MVars.collect cgr.lhs cfg.eraseProofs).remove cfg.amb
   let mRhs := (← MVars.collect cgr.rhs cfg.eraseProofs).remove cfg.amb
