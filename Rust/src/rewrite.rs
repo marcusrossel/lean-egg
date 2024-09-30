@@ -45,7 +45,10 @@ struct LeanApplier {
 
 impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
 
-    fn apply_one(&self, graph: &mut LeanEGraph, _: Id, subst: &Subst, searcher_ast: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
+    fn apply_one(&self, graph: &mut LeanEGraph, lhs: Id, subst: &Subst, searcher_ast: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
+        // Disallows rewriting on primitive e-nodes.
+        if graph[lhs].data.is_primitive { return vec![] }
+        
         let searcher_ast = searcher_ast.unwrap();
         let mut var_depths: Option<HashMap<Var, u64>> = None;
 

@@ -5,9 +5,10 @@ use crate::util::*;
 
 #[derive(Debug, Default)]
 pub struct LeanAnalysisData {
-    pub nat_val:     Option<u64>,
-    pub dir_val:     Option<bool>,
-    pub loose_bvars: HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
+    pub nat_val:      Option<u64>,
+    pub dir_val:      Option<bool>,
+    pub loose_bvars:  HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
+    pub is_primitive: bool          // A class is primitive if it represents a `Nat` or `Str` e-node.
 }
 
 #[derive(Default)]
@@ -21,7 +22,8 @@ impl Analysis<LeanExpr> for LeanAnalysis {
         // rewrite. The same applies for the `dir_val`s.
         egg::merge_max(&mut to.nat_val, from.nat_val) | 
         egg::merge_max(&mut to.dir_val, from.dir_val) | 
-        union_sets(&mut to.loose_bvars, from.loose_bvars)
+        union_sets(&mut to.loose_bvars, from.loose_bvars) |
+        egg::merge_max(&mut to.is_primitive, from.is_primitive)
     }
 
     fn make(egraph: &EGraph<LeanExpr, Self>, enode: &LeanExpr) -> Self::Data {      
@@ -29,18 +31,27 @@ impl Analysis<LeanExpr> for LeanAnalysis {
             LeanExpr::Nat(n) => 
                 Self::Data { 
                     nat_val: Some(*n), 
+                    is_primitive: true,
                     ..Default::default() 
                 },
             
             LeanExpr::Str(shift_up) if shift_up == "+" => 
                 Self::Data { 
                     dir_val: Some(true), 
+                    is_primitive: true,
                     ..Default::default() 
                 },
             
-                LeanExpr::Str(shift_down) if shift_down == "-" => 
+            LeanExpr::Str(shift_down) if shift_down == "-" => 
                 Self::Data { 
                     dir_val: Some(false), 
+                    is_primitive: true,
+                    ..Default::default() 
+                },
+
+            LeanExpr::Str(_) => 
+                Self::Data { 
+                    is_primitive: true,
                     ..Default::default() 
                 },
             
