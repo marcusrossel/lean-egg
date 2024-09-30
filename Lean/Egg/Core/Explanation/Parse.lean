@@ -26,9 +26,6 @@ declare_syntax_cat egg_rw_src
 syntax num : egg_lit
 syntax str : egg_lit
 
-syntax "→" : egg_dir
-syntax "←" : egg_dir
-
 syntax "=>" : egg_rw_dir
 syntax "<=" : egg_rw_dir
 
@@ -55,7 +52,10 @@ syntax "<" egg_tc_spec_src ">" : egg_tc_spec
 syntax egg_tc_proj : egg_tc_extension
 syntax egg_tc_spec : egg_tc_extension
 
-syntax "‹" egg_dir "[" num,* "]›" : egg_explosion
+-- TODO: For some reason separating out the `←` and `→` into their own syntax category caused
+--       problems.
+syntax "💥→[" num,* "]" : egg_explosion
+syntax "💥←[" num,* "]" : egg_explosion
 
 syntax egg_basic_fwd_rw_src (noWs egg_tc_extension)* : egg_fwd_rw_src
 syntax egg_basic_fwd_rw_src noWs egg_explosion       : egg_fwd_rw_src
@@ -126,11 +126,6 @@ private def parseShiftOffset : (TSyntax `egg_shift_offset) → Int
   | `(egg_shift_offset|+ $n:num) => n.getNat
   | `(egg_shift_offset|- $n:num) => -n.getNat
   | _                            => unreachable!
-
-private def parseDir : (TSyntax `egg_dir) → Direction
-  | `(egg_dir|→) => .forward
-  | `(egg_dir|←) => .backward
-  | _            => unreachable!
 
 private def parseRwDir : (TSyntax `egg_rw_dir) → Direction
   | `(egg_rw_dir|=>) => .forward
@@ -211,8 +206,10 @@ private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Except ParseError Sour
   | `(egg_fwd_rw_src|"≡%")   => return .natLit .mod
   | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src$tcExts:egg_tc_extension*) =>
     return tcExts.foldl (init := parseBasicFwdRwSrc src) parseTcExtension
-  | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src‹$dir:egg_dir[$idxs:num,*]›) =>
-    return .explosion (parseBasicFwdRwSrc src) (parseDir dir) (idxs.getElems.map (·.getNat)).toList
+  | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src💥→[$idxs:num,*]) =>
+    return .explosion (parseBasicFwdRwSrc src) .forward (idxs.getElems.map (·.getNat)).toList
+  | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src💥←[$idxs:num,*]) =>
+    return .explosion (parseBasicFwdRwSrc src) .backward (idxs.getElems.map (·.getNat)).toList
   | _ => unreachable!
 
 private def parseFactSrc : (TSyntax `egg_fact_src) → Except ParseError (Option Source)
@@ -305,4 +302,4 @@ def Raw.parse (raw : Explanation.Raw) : CoreM Explanation := do
     match parseExpl ⟨stx⟩ with
     | .ok expl => return expl
     | .error err => throwError err
-  | .error err => throwError s!"{ParseError.msgPrefix}\n{err}"
+  | .error err => throwError s!"{ParseError.msgPrefix}\n{err}\n\n{raw}"

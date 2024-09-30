@@ -126,7 +126,7 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Generated (0)
   [egg.rewrites] Exploded (2)
-    [egg.rewrites] #0‹→[3]›(⇔)
+    [egg.rewrites] #0💥→[3](⇔)
       [egg.rewrites] f ?m.272 ?m.272 = f a ?m.272
       [egg.rewrites] LHS MVars
           expr:  [?m.272]
@@ -136,7 +136,7 @@ info: [egg.rewrites] Rewrites
           expr:  [?m.272]
           class: []
           level: []
-    [egg.rewrites] #0‹→[4]›(⇔)
+    [egg.rewrites] #0💥→[4](⇔)
       [egg.rewrites] f ?m.281 ?m.281 = f b ?m.281
       [egg.rewrites] LHS MVars
           expr:  [?m.281]
@@ -164,6 +164,9 @@ example (a : Nat) (h₁ : ∀ x : Nat, f x x = 0) (h₂ : ∀ x : Nat, f x x = 1
 
 example (a : Nat) (h₁ : ∀ x : Nat, f x x = 0) (h₂ : ∀ x : Nat, f x x = 1) : 0 = 1 := by
   egg [h₁, h₂]
+
+example (a : Nat) (h₁ : ∀ x : Nat, 0 = f x x) (h₂ : ∀ x : Nat, 1 = f x x) : 0 = 1 := by
+  egg [*]
 
 -- TODO: Should we add an exploded rewrite for `Inhabited.default` when the local context doesn't
 --       contain a term of the required type?
