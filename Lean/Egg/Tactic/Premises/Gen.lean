@@ -1,6 +1,7 @@
 import Egg.Core.Gen.Builtins
 import Egg.Core.Gen.TcProjs
 import Egg.Core.Gen.TcSpecs
+import Egg.Core.Gen.Explosion
 import Egg.Tactic.Premises.Parse
 import Egg.Tactic.Trace
 import Egg.Tactic.Tags
@@ -15,13 +16,14 @@ namespace Egg.Premises
 -- TODO: Perform pruning during generation, not after.
 
 private def tracePremises
-    (basic : WithSyntax Rewrites) (tagged builtins tc pruned : Rewrites) (facts : WithSyntax Facts)
-    (cfg : Config.Gen) : TacticM Unit := do
+    (basic : WithSyntax Rewrites) (tagged builtins tc ex pruned : Rewrites)
+    (facts : WithSyntax Facts) (cfg : Config.Gen) : TacticM Unit := do
   let cls := `egg.rewrites
   withTraceNode cls (fun _ => return "Rewrites") do
     withTraceNode cls (fun _ => return m!"Basic ({basic.elems.size})") do basic.elems.trace basic.stxs cls
     withTraceNode cls (fun _ => return m!"Tagged ({tagged.size})") do tagged.trace #[] cls
     withTraceNode cls (fun _ => return m!"Generated ({tc.size})") do tc.trace #[] cls
+    withTraceNode cls (fun _ => return m!"Exploded ({ex.size})") do ex.trace #[] cls
     withTraceNode cls (fun _ => return m!"Builtin ({builtins.size})") do builtins.trace #[] cls
     withTraceNode cls (fun _ => return m!"Hypotheses ({facts.elems.size})") do
       facts.elems.trace facts.stxs cls
@@ -39,10 +41,12 @@ partial def gen
   let (basic, basicStxs, pruned₁) ← prune basic basicStxs (remove := tagged)
   let builtins ← if cfg.builtins then Rewrites.builtins { cfg with amb } else pure #[]
   let (builtins, _, pruned₂) ← prune builtins (remove := tagged ++ basic)
-  let tc ← genTcRws (basic ++ builtins) facts.elems
+  let tc ← genTcRws (basic ++ builtins) facts.elems -- Note: We check the config in `genTcRws`.
   let (tc, _, pruned₃) ← prune tc (remove := tagged ++ basic ++ builtins)
-  tracePremises ⟨basic, basicStxs⟩ tagged builtins tc (pruned₁ ++ pruned₂ ++ pruned₃) facts cfg
-  let rws := tagged ++ basic ++ builtins ++ tc
+  let ex ← if cfg.explosion then genExplosions basic else pure #[]
+  let (ex, _, pruned₄) ← prune ex (remove := tagged ++ basic ++ builtins ++ tc)
+  tracePremises ⟨basic, basicStxs⟩ tagged builtins tc ex (pruned₁ ++ pruned₂ ++ pruned₃ ++ pruned₄) facts cfg
+  let rws := tagged ++ basic ++ builtins ++ tc ++ ex
   catchInvalidConditionals rws
   return (rws, facts.elems)
 where

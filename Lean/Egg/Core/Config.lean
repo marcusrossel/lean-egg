@@ -25,6 +25,7 @@ structure Gen where
   genEtaRw      := true
   genBetaRw     := true
   genLevelRws   := true
+  explosion     := false
   deriving BEq
 
 structure Backend where

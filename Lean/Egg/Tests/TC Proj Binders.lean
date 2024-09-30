@@ -48,6 +48,7 @@ info: [egg.rewrites] Rewrites
           expr:  []
           class: []
           level: []
+  [egg.rewrites] Exploded (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional

@@ -43,6 +43,7 @@ register_egg_options
   genEtaRw
   genBetaRw
   genLevelRws
+  explosion
   blockInvalidMatches
   shiftCapturedBVars
   conditionSubgoals

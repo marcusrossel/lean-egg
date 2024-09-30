@@ -52,6 +52,7 @@ inductive Source where
   | fact (src : Source)
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos) (depth : Nat)
   | tcSpec (src : Source) (spec : Source.TcSpec)
+  | explosion (src : Source) (dir : Direction) (loc : List Nat)
   | natLit (src : Source.NatLit)
   | subst (src : Source.SubstShift)
   | shift (src : Source.SubstShift)
@@ -107,6 +108,7 @@ def description : Source → String
   | fact src                => s!"!{src.description}"
   | tcProj src loc pos dep  => s!"{src.description}[{loc.description}{pos.asNat},{dep}]"
   | tcSpec src spec         => s!"{src.description}<{spec.description}>"
+  | explosion src dir loc   => s!"{src.description}‹{dir.description}{loc}›"
   | natLit src              => src.description
   | subst src               => s!"↦{src.description}"
   | shift src               => s!"↑{src.description}"

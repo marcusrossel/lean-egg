@@ -9,6 +9,7 @@ declare_syntax_cat egg_rw_expr
 declare_syntax_cat egg_rw_lvl
 declare_syntax_cat egg_lit
 declare_syntax_cat egg_shift_offset
+declare_syntax_cat egg_dir
 declare_syntax_cat egg_rw_dir
 declare_syntax_cat egg_subexpr_pos
 declare_syntax_cat egg_basic_fwd_rw_src
@@ -17,12 +18,16 @@ declare_syntax_cat egg_tc_proj
 declare_syntax_cat egg_tc_spec_src
 declare_syntax_cat egg_tc_spec
 declare_syntax_cat egg_tc_extension
+declare_syntax_cat egg_explosion
 declare_syntax_cat egg_fwd_rw_src
 declare_syntax_cat egg_fact_src
 declare_syntax_cat egg_rw_src
 
 syntax num : egg_lit
 syntax str : egg_lit
+
+syntax "→" : egg_dir
+syntax "←" : egg_dir
 
 syntax "=>" : egg_rw_dir
 syntax "<=" : egg_rw_dir
@@ -50,7 +55,10 @@ syntax "<" egg_tc_spec_src ">" : egg_tc_spec
 syntax egg_tc_proj : egg_tc_extension
 syntax egg_tc_spec : egg_tc_extension
 
+syntax "‹" egg_dir "[" num,* "]›" : egg_explosion
+
 syntax egg_basic_fwd_rw_src (noWs egg_tc_extension)* : egg_fwd_rw_src
+syntax egg_basic_fwd_rw_src noWs egg_explosion       : egg_fwd_rw_src
 syntax "↦bvar"                                       : egg_fwd_rw_src
 syntax "↦app"                                        : egg_fwd_rw_src
 syntax "↦λ"                                          : egg_fwd_rw_src
@@ -118,6 +126,11 @@ private def parseShiftOffset : (TSyntax `egg_shift_offset) → Int
   | `(egg_shift_offset|+ $n:num) => n.getNat
   | `(egg_shift_offset|- $n:num) => -n.getNat
   | _                            => unreachable!
+
+private def parseDir : (TSyntax `egg_dir) → Direction
+  | `(egg_dir|→) => .forward
+  | `(egg_dir|←) => .backward
+  | _            => unreachable!
 
 private def parseRwDir : (TSyntax `egg_rw_dir) → Direction
   | `(egg_rw_dir|=>) => .forward
@@ -198,6 +211,8 @@ private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Except ParseError Sour
   | `(egg_fwd_rw_src|"≡%")   => return .natLit .mod
   | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src$tcExts:egg_tc_extension*) =>
     return tcExts.foldl (init := parseBasicFwdRwSrc src) parseTcExtension
+  | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src‹$dir:egg_dir[$idxs:num,*]›) =>
+    return .explosion (parseBasicFwdRwSrc src) (parseDir dir) (idxs.getElems.map (·.getNat)).toList
   | _ => unreachable!
 
 private def parseFactSrc : (TSyntax `egg_fact_src) → Except ParseError (Option Source)
