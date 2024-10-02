@@ -53,9 +53,8 @@ where
       unless ← isDefEq (.mvar m) (.fvar fvar) do throwError "egg: internal error in explosion gen"
       let fresh ← fresh.instantiateMVars
       let miss := miss.filterMap fun i =>
-        if fresh.mvars.lhs.expr.contains i || fresh.mvars.rhs.expr.contains i
-        then subst.expr.fwd[i]!
-        else none
+        let i' := subst.expr.fwd[i]!
+        if fresh.mvars.lhs.expr.contains i' || fresh.mvars.rhs.expr.contains i' then i' else none
       explosions := explosions ++ (← core fresh dir miss <| loc ++ [minIdx])
     return explosions
 

@@ -99,6 +99,8 @@ def SubstShift.description : SubstShift → String
   | lam     => "λ"
   | .forall => "∀"
 
+-- Note: It's important that we remove the whitespace from the list in the `.explosion` case,
+--       because otherwise egg adds quotes around the rule name.
 def description : Source → String
   | goal                    => "⊢"
   | guide idx               => s!"↣{idx}"
@@ -108,7 +110,7 @@ def description : Source → String
   | fact src                => s!"!{src.description}"
   | tcProj src loc pos dep  => s!"{src.description}[{loc.description}{pos.asNat},{dep}]"
   | tcSpec src spec         => s!"{src.description}<{spec.description}>"
-  | explosion src dir loc   => s!"{src.description}💥{dir.description}{loc}"
+  | explosion src dir loc   => s!"{src.description}💥{dir.description}{(toString loc).replace " " ""}"
   | natLit src              => src.description
   | subst src               => s!"↦{src.description}"
   | shift src               => s!"↑{src.description}"
