@@ -30,3 +30,5 @@ extern_lib egg_for_lean pkg := do
   let tgtPath := pkg.nativeLibDir / name
   IO.FS.writeBinFile tgtPath (← IO.FS.readBinFile srcPath)
   return pure tgtPath
+
+require "nomeata" / "calcify" @ git "master"

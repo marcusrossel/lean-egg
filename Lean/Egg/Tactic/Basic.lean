@@ -6,6 +6,7 @@ import Egg.Tactic.Base
 import Egg.Tactic.Guides
 import Egg.Tactic.Premises.Gen
 import Egg.Tactic.Trace
+import Calcify
 import Lean
 
 open Lean Meta Elab Tactic
@@ -117,8 +118,13 @@ elab_rules : tactic
 -- WORKAROUND: This fixes `Tests/EndOfInput *`.
 macro "egg" mod:egg_cfg_mod : tactic => `(tactic| egg $mod)
 
+-- The syntax `egg!` calls egg with the global egg basket.
 elab "egg!" mod:egg_cfg_mod prems:egg_premises base:(egg_base)? guides:(egg_guides)? : tactic =>
-  Egg.eval mod prems base guides `egg
+  Egg.eval mod prems base guides (basket? := `egg)
 
 -- WORKAROUND: This fixes a problem analogous to `Tests/EndOfInput *` for `egg!`.
 macro "egg!" mod:egg_cfg_mod : tactic => `(tactic| egg! $mod)
+
+-- The syntax `egg?` calls calcify after running egg.
+macro "egg?" mod:egg_cfg_mod prems:egg_premises base:(egg_base)? guides:(egg_guides)? : tactic =>
+  `(tactic|calcify egg $mod $prems $[$base]? $[$guides]?)
