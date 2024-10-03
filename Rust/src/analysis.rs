@@ -8,7 +8,7 @@ pub struct LeanAnalysisData {
     pub nat_val:      Option<u64>,
     pub dir_val:      Option<bool>,
     pub loose_bvars:  HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
-    pub is_primitive: bool          // A class is primitive if it represents a `Nat` or `Str` e-node.
+    pub is_primitive: bool          // A class is primitive if it represents a `Nat`, `Str` or universe level e-node.
 }
 
 #[derive(Default)]
@@ -50,6 +50,20 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                 },
 
             LeanExpr::Str(_) => 
+                Self::Data { 
+                    is_primitive: true,
+                    ..Default::default() 
+                },
+
+            /*
+            LeanExpr::Fun(_) => 
+                Self::Data { 
+                    is_primitive: true,
+                    ..Default::default() 
+                },
+            */
+
+            LeanExpr::UVar(_) | LeanExpr::Param(_) | LeanExpr::Succ(_) | LeanExpr::Max(_) | LeanExpr::IMax(_) => 
                 Self::Data { 
                     is_primitive: true,
                     ..Default::default() 
