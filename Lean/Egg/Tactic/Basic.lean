@@ -19,24 +19,32 @@ private structure Goal extends Congr where
   id    : MVarId
   base? : Option FVarId
 
-private def parseGoal (goal : MVarId) (base? : Option (TSyntax `egg_base)) : TacticM Goal := do
+private def parseGoal (goal : MVarId) (base? : Option (TSyntax `egg_base)) :
+    TacticM (Goal × Array Name) := do
   goal.withContext do
     let base? ← base?.mapM parseBase
-    let (cgr, id) ← getCongr base?
-    return { cgr with id, base? }
+    let (cgr, id, newFVars) ← getCongr base?
+    return ({ cgr with id, base? }, newFVars)
 where
-  getCongr (base? : Option FVarId) : TacticM (Congr × MVarId) := do
+  getCongr (base? : Option FVarId) : TacticM (Congr × MVarId × Array Name) := do
     if let some base := base? then
       let cgr ← Congr.from! (← mkEq (← base.getType) (← goal.getType'))
-      return (cgr, goal)
+      return (cgr, goal, #[])
     else
+      let fvars := (← getLCtx).getFVarIds
       evalTactic <| ← `(tactic| repeat intro)
       let goal ← getMainGoal
       goal.withContext do
+        let mut goal := goal
+        let mut newFVars := #[]
+        for fvar in (← getLCtx).getFVarIds.filter (!fvars.contains ·) do
+          let name := (← fvar.getUserName).eraseMacroScopes
+          newFVars := newFVars.push name
+          goal ← goal.rename fvar name
         let goalType ← goal.getType'
         let some cgr ← Congr.from? goalType
           | throwError "expected goal to be of type '=', '↔', '∀ ..., _ = _', or '∀ ..., _ ↔ _', but found:\n{← ppExpr goalType}"
-        return (cgr, goal)
+        return (cgr, goal, newFVars)
 
 -- TODO: We should also consider the level mvars of all `Fact`s.
 private def collectAmbientMVars (goal : Goal) (guides : Guides) (proofErasure : Bool) :
@@ -48,8 +56,8 @@ private def collectAmbientMVars (goal : Goal) (guides : Guides) (proofErasure : 
   return { expr, lvl := goalLvl.merge guidesLvl }
 
 private def resultToProof
-    (result : Request.Result) (goal : Goal) (rws : Rewrites) (facts : Facts) (ctx : EncodingCtx)
-    : TacticM Expr := do
+    (result : Request.Result) (goal : Goal) (rws : Rewrites) (facts : Facts) (ctx : EncodingCtx) :
+    TacticM Expr := do
   let proof ← result.expl.proof rws facts result.egraph ctx
   proof.trace `egg.proof
   let mut prf ← proof.prove goal.toCongr
@@ -74,15 +82,23 @@ where
 
 open Config.Modifier (egg_cfg_mod)
 
+-- From https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Extending.20tacticSeqs/near/474553725
+open Parser Tactic in
+def mkTacticSeqPrepend (t : TSyntax `tactic) : TSyntax ``tacticSeq → TermElabM (TSyntax ``tacticSeq)
+  | `(tacticSeq|{ $[$tacs:tactic]* }) => `(tacticSeq|{ $[$(#[t] ++ tacs)]* })
+  | `(tacticSeq|$[$tacs:tactic]*)     => `(tacticSeq|$[$(#[t] ++ tacs)]*)
+  | _ => throwError "unknown syntax"
+
 protected def eval
     (mod : TSyntax ``egg_cfg_mod) (prems : TSyntax `egg_premises) (base : Option (TSyntax `egg_base))
-    (guides : Option (TSyntax `egg_guides)) (basket? : Option Name := none) : TacticM Unit := do
+    (guides : Option (TSyntax `egg_guides)) (basket? : Option Name := none)
+    (calcifyTk? : Option Syntax := none) : TacticM Unit := do
   let startTime ← IO.monoMsNow
   let goal ← getMainGoal
   let mod  ← Config.Modifier.parse mod
   let cfg := { (← Config.fromOptions).modify mod with basket? }
   cfg.trace `egg.config
-  let goal ← parseGoal goal base
+  let (goal, newFVars) ← parseGoal goal base
   goal.id.withContext do
     let guides := (← guides.mapM Guides.parseGuides).getD #[]
     let amb ← collectAmbientMVars goal guides cfg.eraseProofs
@@ -107,9 +123,19 @@ protected def eval
         let totalTime := (← IO.monoMsNow) - startTime
         logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl)
       return some prf
-    if let some proof := proof?
-    then goal.id.assignIfDefeq' proof
-    else goal.id.admit
+    let some proof := proof? | goal.id.admit; return
+    goal.id.assignIfDefeq' proof
+    -- Calcification:
+    let some calcifyTk := calcifyTk? | return
+    let proof ← simplify proof
+    check proof
+    let calcBlock ← delabProof proof
+    let tactic ← if newFVars.isEmpty then
+      pure calcBlock
+    else
+      let intros ← `(tactic|intro $[$(newFVars.map mkIdent)]*)
+      mkTacticSeqPrepend intros calcBlock
+    TryThis.addSuggestion calcifyTk tactic (origSpan? := ← getRef)
 
 syntax &"egg" egg_cfg_mod egg_premises (egg_base)? (egg_guides)? : tactic
 elab_rules : tactic
@@ -126,5 +152,8 @@ elab "egg!" mod:egg_cfg_mod prems:egg_premises base:(egg_base)? guides:(egg_guid
 macro "egg!" mod:egg_cfg_mod : tactic => `(tactic| egg! $mod)
 
 -- The syntax `egg?` calls calcify after running egg.
-macro "egg?" mod:egg_cfg_mod prems:egg_premises base:(egg_base)? guides:(egg_guides)? : tactic =>
-  `(tactic|calcify egg $mod $prems $[$base]? $[$guides]?)
+elab tk:"egg?" mod:egg_cfg_mod prems:egg_premises base:(egg_base)? guides:(egg_guides)? : tactic =>
+  Egg.eval mod prems base guides (basket? := none) (calcifyTk? := tk)
+
+-- WORKAROUND: This fixes a problem analogous to `Tests/EndOfInput *` for `egg?`.
+macro "egg?" mod:egg_cfg_mod : tactic => `(tactic| egg? $mod)

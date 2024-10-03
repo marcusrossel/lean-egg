@@ -38,3 +38,30 @@ info: Try this: calc
 #guard_msgs in
 example (a b : Nat) (h : ∀ x y : Nat, f x x = f y x) : f a a = f b a := by
   egg? [h]
+
+-- This used to fail because we didn't correctly reduce and introduce variables before calling
+-- calcify.
+/--
+info: Try this: ⏎
+  intro a b
+  calc
+    f a a
+    _ = f b a := h a b
+-/
+#guard_msgs in
+example (h : ∀ x y : Nat, f x x = f y x) : ∀ a b : Nat, f a a = f b a := by
+  egg? [h]
+
+
+def E := ∀ a b : Nat, f a a = f b a
+
+/--
+info: Try this: ⏎
+  intro a b
+  calc
+    f a a
+    _ = f b a := h a b
+-/
+#guard_msgs in
+example (h : ∀ x y : Nat, f x x = f y x) : E f := by
+  egg? [h]
