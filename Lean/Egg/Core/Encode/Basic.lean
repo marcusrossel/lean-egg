@@ -1,16 +1,11 @@
 import Egg.Lean
 import Egg.Core.Normalize
 import Egg.Core.Encode.EncodeM
+import Egg.Core.Encode.Shapes
 import Lean
 open Lean
 
 namespace Egg
-
-private def Expression.erased : Expression :=
-  "_"
-
--- Note: The encoding of expression mvars and universe level mvars in rewrites relies on the fact
---       that their indices are also unique between eachother.
 
 open EncodeM
 
@@ -35,11 +30,18 @@ partial def encode (e : Expr) (ctx : EncodingCtx) : MetaM Expression :=
 where
   go (e : Expr) : EncodeM Expression :=
     withCache e do
-      if ← needsProofErasure e then
-        let prop ← normalize (← Meta.inferType e) .noReduce
-        return s!"(proof {← go prop})"
+      let basic ←
+        if ← needsProofErasure e then
+          let prop ← normalize (← Meta.inferType e) .noReduce
+          let enc ← withoutShapes do go prop
+          pure s!"(proof {enc})"
+        else
+          core e
+      if (← config).shapes then
+        let shape := shape (← Meta.inferType e)
+        return s!"(◇ {shape} {basic})"
       else
-        core e
+        return basic
 
   core : Expr → EncodeM Expression
     | .fvar id          => encodeFVar id

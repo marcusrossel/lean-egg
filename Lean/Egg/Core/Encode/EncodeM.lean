@@ -37,7 +37,7 @@ def withInstantiatedBVar (ty body : Expr) (m : Expr → EncodeM α) : EncodeM α
     return a
 
 def bvarIdx? (id : FVarId) : EncodeM (Option Nat) := do
-  return (← get).bvars.idxOf? id
+  return (← get).bvars.indexOf? id
 
 def needsProofErasure (e : Expr) : EncodeM Bool := do
   (return (← config).eraseProofs) <&&> Meta.isProof e
@@ -50,3 +50,11 @@ def withCache (e : Expr) (m : EncodeM Expression) : EncodeM Expression := do
     let enc ← m
     set { s with cache := s.cache.insert e enc }
     return enc
+
+def withoutShapes (m : EncodeM Expression) : EncodeM Expression := do
+  let s ← get
+  let shapes := s.config.shapes
+  set { s with config.shapes := false }
+  let enc ← m
+  set { s with config.shapes := shapes }
+  return enc

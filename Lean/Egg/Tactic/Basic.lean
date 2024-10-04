@@ -6,7 +6,7 @@ import Egg.Tactic.Base
 import Egg.Tactic.Guides
 import Egg.Tactic.Premises.Gen
 import Egg.Tactic.Trace
-import Calcify
+import Egg.Tactic.Calcify
 import Lean
 
 open Lean Meta Elab Tactic
@@ -82,13 +82,6 @@ where
 
 open Config.Modifier (egg_cfg_mod)
 
--- From https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Extending.20tacticSeqs/near/474553725
-open Parser Tactic in
-def mkTacticSeqPrepend (t : TSyntax `tactic) : TSyntax ``tacticSeq → TermElabM (TSyntax ``tacticSeq)
-  | `(tacticSeq|{ $[$tacs:tactic]* }) => `(tacticSeq|{ $[$(#[t] ++ tacs)]* })
-  | `(tacticSeq|$[$tacs:tactic]*)     => `(tacticSeq|$[$(#[t] ++ tacs)]*)
-  | _ => throwError "unknown syntax"
-
 protected def eval
     (mod : TSyntax ``egg_cfg_mod) (prems : TSyntax `egg_premises) (base : Option (TSyntax `egg_base))
     (guides : Option (TSyntax `egg_guides)) (basket? : Option Name := none)
@@ -123,19 +116,11 @@ protected def eval
         let totalTime := (← IO.monoMsNow) - startTime
         logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl)
       return some prf
-    let some proof := proof? | goal.id.admit; return
-    goal.id.assignIfDefeq' proof
-    -- Calcification:
-    let some calcifyTk := calcifyTk? | return
-    let proof ← simplify proof
-    check proof
-    let calcBlock ← delabProof proof
-    let tactic ← if newFVars.isEmpty then
-      pure calcBlock
+    if let some proof := proof? then
+      goal.id.assignIfDefeq' proof
+      if let some tk := calcifyTk? then calcify tk proof newFVars
     else
-      let intros ← `(tactic|intro $[$(newFVars.map mkIdent)]*)
-      mkTacticSeqPrepend intros calcBlock
-    TryThis.addSuggestion calcifyTk tactic (origSpan? := ← getRef)
+      goal.id.admit
 
 syntax &"egg" egg_cfg_mod egg_premises (egg_base)? (egg_guides)? : tactic
 elab_rules : tactic

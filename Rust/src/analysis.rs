@@ -55,13 +55,11 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                     ..Default::default() 
                 },
 
-            /*
             LeanExpr::Fun(_) => 
                 Self::Data { 
                     is_primitive: true,
                     ..Default::default() 
                 },
-            */
 
             LeanExpr::UVar(_) | LeanExpr::Param(_) | LeanExpr::Succ(_) | LeanExpr::Max(_) | LeanExpr::IMax(_) => 
                 Self::Data { 

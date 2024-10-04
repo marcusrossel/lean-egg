@@ -6,16 +6,21 @@ def List.replicateM [Monad m] (count : Nat) (f : m α) : m (List α) := do
     result := result.concat (← f)
   return result
 
--- From Batteries: `List.indexOf?`
-@[inline] def List.idxOf? [BEq α] (a : α) : List α → Option Nat :=
-  findIdx? (· == a)
-where
-  findIdx? (p : α → Bool) : List α → (start : Nat := 0) → Option Nat
-  | [], _ => none
-  | a :: l, i => if p a then some i else findIdx? p l (i + 1)
-
+-- From https://leanprover.zulipchat.com/#narrow/stream/217875-Is-there-code-for-X.3F/topic/sorting.20in.20monad/near/473162379
+partial def List.qsortM [Monad m] (comp : α → α → m Bool) [BEq α] : List α → m (List α )
+  | [] => return []
+  | x :: xs => do
+    let (fst, lst) ← xs.partitionM fun t => comp t x
+    return (← fst.qsortM comp) ++ [x] ++ (← lst.qsortM comp)
 
 namespace Lean
+
+-- From https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Extending.20tacticSeqs/near/474553725
+open Elab Parser Tactic in
+def mkTacticSeqPrepend (t : TSyntax `tactic) : TSyntax ``tacticSeq → TermElabM (TSyntax ``tacticSeq)
+  | `(tacticSeq|{ $[$tacs:tactic]* }) => `(tacticSeq|{ $[$(#[t] ++ tacs)]* })
+  | `(tacticSeq|$[$tacs:tactic]*)     => `(tacticSeq|$[$(#[t] ++ tacs)]*)
+  | _ => throwError "unknown syntax"
 
 -- From Batteries: `MVarId.assignIfDefeq`
 open Meta in

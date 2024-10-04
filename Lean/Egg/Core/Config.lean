@@ -13,6 +13,8 @@ def Normalization.noReduce : Normalization where
 
 structure Encoding extends Normalization where
   eraseProofs := true
+  -- Currently, this option implicitly disables defeq rewrites as they can not handle shapes, yet.
+  shapes      := false
   deriving BEq
 
 structure Gen where

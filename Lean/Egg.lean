@@ -3,10 +3,13 @@ import Egg.Core.Encode.EncodeM
 import Egg.Core.Encode.Facts
 import Egg.Core.Encode.Guides
 import Egg.Core.Encode.Rewrites
+import Egg.Core.Encode.Shapes
 import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Congr
 import Egg.Core.Explanation.Parse
 import Egg.Core.Explanation.Proof
+import Egg.Core.Gen.Builtins
+import Egg.Core.Gen.Explosion
 import Egg.Core.Gen.TcProjs
 import Egg.Core.Gen.TcSpecs
 import Egg.Core.MVars.Ambient
@@ -30,6 +33,7 @@ import Egg.Tactic.Premises.Gen
 import Egg.Tactic.Base
 import Egg.Tactic.Basic
 import Egg.Tactic.Calc
+import Egg.Tactic.Calcify
 import Egg.Tactic.Guides
 import Egg.Tactic.Tags
 import Egg.Tactic.Trace

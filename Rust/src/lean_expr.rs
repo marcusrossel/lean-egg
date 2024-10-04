@@ -1,7 +1,5 @@
 use egg::*;
 
-// TODO: If type ascriptions become the norm, you can remove the τ constructor and instead add the types as the first arguments of all other constructors.
-//       This would be similar (though not equivalent) to the λ_x approach shown in Kœhler's dissertation.
 define_language! {
     pub enum LeanExpr {
         // Primitives:
@@ -9,7 +7,7 @@ define_language! {
         Str(String),
 
         // Encoding of universe levels:
-        // Note, we don't encode `zero` explicitly, and use `Nat(0)` for that instead.
+        // Note, we don't encode `zero` explicitly and use `Nat(0)` for that instead.
         "uvar"  = UVar(Id),         // (Nat)
         "param" = Param(Id),        // (Str)
         "succ"  = Succ(Id),         // (<level>)
@@ -33,6 +31,11 @@ define_language! {
         // Constructs for small-step substitution:
         "↦" = Subst([Id; 3]),       // (Nat, <expr>, <expr>)
         "↑" = Shift([Id; 4]),       // (Str, Nat, Nat, <expr>)
+
+        // Constructs for shape annotations:
+        // Note, we don't encode the shape of non-function types explicitly and use `Str("*")`) for that instead.
+        "→" = Fun([Id; 2]),         // (<shape>, <shape>)
+        "◇" = Shaped([Id; 2]),      // (<shape>, <expr>)
     }
 }
 

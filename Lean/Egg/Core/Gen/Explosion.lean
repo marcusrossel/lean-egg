@@ -2,13 +2,6 @@ import Egg.Core.Premise.Rewrites
 import Lean
 open Lean Meta
 
--- From https://leanprover.zulipchat.com/#narrow/stream/217875-Is-there-code-for-X.3F/topic/sorting.20in.20monad/near/473162379
-private partial def List.qsortM [Monad m] (comp : α → α → m Bool) [BEq α] : List α → m (List α )
-  | [] => return []
-  | x :: xs => do
-    let (fst, lst) ← xs.partitionM fun t => comp t x
-    return (← fst.qsortM comp) ++ [x] ++ (← lst.qsortM comp)
-
 private def Lean.Meta.findLocalDeclWithTypeMinIdx? (type : Expr) (minIdx : Nat) :
     MetaM <| Option (FVarId × Nat) := do
   let decls := (← getLCtx).decls

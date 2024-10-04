@@ -8,6 +8,7 @@ declare_syntax_cat egg_expl
 declare_syntax_cat egg_rw_expr
 declare_syntax_cat egg_rw_lvl
 declare_syntax_cat egg_lit
+declare_syntax_cat egg_shape
 declare_syntax_cat egg_shift_offset
 declare_syntax_cat egg_dir
 declare_syntax_cat egg_rw_dir
@@ -25,6 +26,9 @@ declare_syntax_cat egg_rw_src
 
 syntax num : egg_lit
 syntax str : egg_lit
+
+syntax "*"                          : egg_shape
+syntax "(→" egg_shape egg_shape ")" : egg_shape
 
 syntax "=>" : egg_rw_dir
 syntax "<=" : egg_rw_dir
@@ -113,6 +117,7 @@ syntax "(" &"lit" egg_lit ")"                                    : egg_rw_expr
 syntax "(" &"proof" egg_rw_expr ")"                              : egg_rw_expr
 syntax "(" &"↦" num egg_rw_expr egg_rw_expr ")"                  : egg_rw_expr
 syntax "(" &"↑" egg_shift_offset num egg_rw_expr ")"             : egg_rw_expr
+syntax "(" "◇" egg_shape egg_rw_expr ")"                         : egg_rw_expr
 syntax "(" &"Rewrite" noWs egg_rw_dir egg_rw_src egg_rw_expr ")" : egg_rw_expr
 
 syntax egg_rw_expr+ : egg_expl
@@ -263,6 +268,7 @@ where
     | `(egg_rw_expr|(proof $p))               => return .proof (← parseProof p pos)
     | `(egg_rw_expr|(↦ $idx $to $e))          => return .subst idx.getNat (← go pos to) (← go pos e)
     | `(egg_rw_expr|(↑ $off $cut $e))         => return .shift (parseShiftOffset off) cut.getNat (← go pos e)
+    | `(egg_rw_expr|(◇ $_ $e))                => go pos e
     | `(egg_rw_expr|(Rewrite$dir $src $body)) => parseRw dir src body pos
     | _                                       => unreachable!
 

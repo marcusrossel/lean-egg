@@ -1,10 +1,5 @@
 import Egg
 
--- BUG: Hangs if you set true to false:
-set_option egg.genTcSpecRws true in
-example (a b : α) [Add α] (h : ∀ x y : α, x + y = y + x) : a + b = b + a := by
-  egg [h]
-
 -- The universe mvars (or universe params if you make this a theorem instead of an example) are
 -- different for the respective `α`s, so this doesn't hold by reflexivity. But `by rfl` can somehow
 -- prove this.

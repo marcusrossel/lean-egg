@@ -7,6 +7,7 @@ namespace Egg.Config
 
 structure Modifier where
   eraseProofs         : Option Bool            := none
+  shapes              : Option Bool            := none
   betaReduceRws       : Option Bool            := none
   etaReduceRws        : Option Bool            := none
   natReduceRws        : Option Bool            := none
@@ -33,6 +34,7 @@ structure Modifier where
 
 def modify (cfg : Config) (mod : Modifier) : Config where
   eraseProofs         := mod.eraseProofs.getD cfg.eraseProofs
+  shapes              := mod.shapes.getD cfg.shapes
   betaReduceRws       := mod.betaReduceRws.getD cfg.betaReduceRws
   etaReduceRws        := mod.etaReduceRws.getD cfg.etaReduceRws
   natReduceRws        := mod.natReduceRws.getD cfg.natReduceRws
