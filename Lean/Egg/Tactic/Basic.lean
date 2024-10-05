@@ -63,30 +63,33 @@ protected partial def eval
     (mod : TSyntax ``egg_cfg_mod) (prems : TSyntax `egg_premises) (base : Option (TSyntax `egg_base))
     (guides : Option (TSyntax `egg_guides)) (basket? : Option Name := none)
     (calcifyTk? : Option Syntax := none) : TacticM Unit := do
-  let startTime ← IO.monoMsNow
-  let goal ← getMainGoal
-  let mod  ← Config.Modifier.parse mod
-  let cfg := { (← Config.fromOptions).modify mod with basket? }
-  cfg.trace `egg.config
-  let goal ← Goal.gen goal base
-  goal.id.withContext do
-    let guides := (← guides.mapM Guides.parseGuides).getD #[]
-    let amb ← collectAmbientMVars goal guides cfg.eraseProofs
-    amb.trace `egg.ambient
-    -- We increase the mvar context depth, so that ambient mvars aren't unified during proof
-    -- reconstruction. Note that this also means that we can't assign the `goal` mvar here.
-    let res ← withNewMCtxDepth do
-      let (rws, facts) ← Premises.gen goal.toCongr prems guides cfg amb
-      runEqSat goal rws facts guides cfg amb
-    match res with
-    | some (proof, proofTime, result) =>
-      if cfg.reporting then
-        let totalTime := (← IO.monoMsNow) - startTime
-        logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl)
-      goal.id.assignIfDefeq' proof
-      if let some tk := calcifyTk? then calcify tk proof goal.intros
-    | none => goal.id.admit
+  let save ← saveState
+  try core catch err => restoreState save; throw err
 where
+  core : TacticM Unit := do
+    let startTime ← IO.monoMsNow
+    let goal ← getMainGoal
+    let mod  ← Config.Modifier.parse mod
+    let cfg := { (← Config.fromOptions).modify mod with basket? }
+    cfg.trace `egg.config
+    let goal ← Goal.gen goal base
+    goal.id.withContext do
+      let guides := (← guides.mapM Guides.parseGuides).getD #[]
+      let amb ← collectAmbientMVars goal guides cfg.eraseProofs
+      amb.trace `egg.ambient
+      -- We increase the mvar context depth, so that ambient mvars aren't unified during proof
+      -- reconstruction. Note that this also means that we can't assign the `goal` mvar here.
+      let res ← withNewMCtxDepth do
+        let (rws, facts) ← Premises.gen goal.toCongr prems guides cfg amb
+        runEqSat goal rws facts guides cfg amb
+      match res with
+      | some (proof, proofTime, result) =>
+        if cfg.reporting then
+          let totalTime := (← IO.monoMsNow) - startTime
+          logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl)
+        goal.id.assignIfDefeq' proof
+        if let some tk := calcifyTk? then calcify tk proof goal.intros
+      | none => goal.id.admit
   runEqSat
       (goal : Goal) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Config)
       (amb : MVars.Ambient) : TacticM <| Option (Expr × Nat × Request.Result) := do
