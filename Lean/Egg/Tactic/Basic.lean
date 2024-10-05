@@ -3,6 +3,7 @@ import Egg.Core.Explanation.Proof
 import Egg.Tactic.Config.Option
 import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Base
+import Egg.Tactic.Goal
 import Egg.Tactic.Guides
 import Egg.Tactic.Premises.Gen
 import Egg.Tactic.Trace
@@ -12,39 +13,6 @@ import Lean
 open Lean Meta Elab Tactic
 
 namespace Egg
-
--- Note: If `base? ≠ none`, the goal is an auxiliary goal and needs to be handled specially after
---       proof reconstruction.
-private structure Goal extends Congr where
-  id    : MVarId
-  base? : Option FVarId
-
-private def parseGoal (goal : MVarId) (base? : Option (TSyntax `egg_base)) :
-    TacticM (Goal × Array Name) := do
-  goal.withContext do
-    let base? ← base?.mapM parseBase
-    let (cgr, id, newFVars) ← getCongr base?
-    return ({ cgr with id, base? }, newFVars)
-where
-  getCongr (base? : Option FVarId) : TacticM (Congr × MVarId × Array Name) := do
-    if let some base := base? then
-      let cgr ← Congr.from! (← mkEq (← base.getType) (← goal.getType'))
-      return (cgr, goal, #[])
-    else
-      let fvars := (← getLCtx).getFVarIds
-      evalTactic <| ← `(tactic| repeat intro)
-      let goal ← getMainGoal
-      goal.withContext do
-        let mut goal := goal
-        let mut newFVars := #[]
-        for fvar in (← getLCtx).getFVarIds.filter (!fvars.contains ·) do
-          let name := (← fvar.getUserName).eraseMacroScopes
-          newFVars := newFVars.push name
-          goal ← goal.rename fvar name
-        let goalType ← goal.getType'
-        let some cgr ← Congr.from? goalType
-          | throwError "expected goal to be of type '=', '↔', '∀ ..., _ = _', or '∀ ..., _ ↔ _', but found:\n{← ppExpr goalType}"
-        return (cgr, goal, newFVars)
 
 -- TODO: We should also consider the level mvars of all `Fact`s.
 private def collectAmbientMVars (goal : Goal) (guides : Guides) (proofErasure : Bool) :
@@ -100,7 +68,7 @@ protected partial def eval
   let mod  ← Config.Modifier.parse mod
   let cfg := { (← Config.fromOptions).modify mod with basket? }
   cfg.trace `egg.config
-  let (goal, newFVars) ← parseGoal goal base
+  let goal ← Goal.gen goal base
   goal.id.withContext do
     let guides := (← guides.mapM Guides.parseGuides).getD #[]
     let amb ← collectAmbientMVars goal guides cfg.eraseProofs
@@ -116,7 +84,7 @@ protected partial def eval
         let totalTime := (← IO.monoMsNow) - startTime
         logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl)
       goal.id.assignIfDefeq' proof
-      if let some tk := calcifyTk? then calcify tk proof newFVars
+      if let some tk := calcifyTk? then calcify tk proof goal.intros
     | none => goal.id.admit
 where
   runEqSat

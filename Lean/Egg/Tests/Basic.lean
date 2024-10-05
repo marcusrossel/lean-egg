@@ -7,7 +7,8 @@ example : true = false := by
 
 /--
 error: expected goal to be of type '=', '↔', '∀ ..., _ = _', or '∀ ..., _ ↔ _', but found:
-True
+
+  True
 -/
 #guard_msgs in
 example : True := by
