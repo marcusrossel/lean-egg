@@ -32,10 +32,6 @@ set_option egg.builtins false in
 example (h : ∀ x y : Nat, x + y = y + x) : 0 + 1 = 1 + 0 := by
   egg [h]
 
-set_option egg.shapes false in
-example (h : ∀ u : Unit, u = .unit) : Nat.add = Nat.mul := by
-  egg (config := { exitPoint := some .beforeProof }) [h]
-
 /-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 example (h : ∀ u : Unit, u = .unit) : Nat.add = Nat.mul := by

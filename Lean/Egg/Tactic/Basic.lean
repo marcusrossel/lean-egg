@@ -55,10 +55,19 @@ private def collectAmbientMVars (goal : Goal) (guides : Guides) (proofErasure : 
     return res.merge (← MVars.collect g.expr proofErasure).lvl
   return { expr, lvl := goalLvl.merge guidesLvl }
 
+private inductive Proof? where
+  | proof (p : Expr)
+  | retryWithShapes
+
 private def resultToProof
     (result : Request.Result) (goal : Goal) (rws : Rewrites) (facts : Facts) (ctx : EncodingCtx) :
-    TacticM Expr := do
-  let proof ← result.expl.proof rws facts result.egraph ctx
+    TacticM Proof? := do
+  let proof ←
+    try
+      result.expl.proof rws facts result.egraph ctx
+    catch err =>
+      -- If proof reconstruction fails but we haven't tried using shapes yet, retry with shapes.
+      if ctx.cfg.shapes then throw err else return .retryWithShapes
   proof.trace `egg.proof
   let mut prf ← proof.prove goal.toCongr
   prf ← instantiateMVars prf
@@ -69,7 +78,7 @@ private def resultToProof
   catchLooseMVars prf ctx.amb proof.subgoals
   -- TODO: These mvars have the wrong depth.
   appendGoals proof.subgoals
-  return prf
+  return .proof prf
 where
   catchLooseMVars (prf : Expr) (amb : MVars.Ambient) (subgoals : List MVarId) : MetaM Unit := do
     let mvars ← MVars.collect prf (proofErasure := false)
@@ -82,7 +91,7 @@ where
 
 open Config.Modifier (egg_cfg_mod)
 
-protected def eval
+protected partial def eval
     (mod : TSyntax ``egg_cfg_mod) (prems : TSyntax `egg_premises) (base : Option (TSyntax `egg_base))
     (guides : Option (TSyntax `egg_guides)) (basket? : Option Name := none)
     (calcifyTk? : Option Syntax := none) : TacticM Unit := do
@@ -97,30 +106,36 @@ protected def eval
     let amb ← collectAmbientMVars goal guides cfg.eraseProofs
     amb.trace `egg.ambient
     -- We increase the mvar context depth, so that ambient mvars aren't unified during proof
-    -- reconstruction. Note that this also means that we can't assign the `goal` mvar within this
-    -- do-block.
-    let proof? ← withNewMCtxDepth do
+    -- reconstruction. Note that this also means that we can't assign the `goal` mvar here.
+    let res ← withNewMCtxDepth do
       let (rws, facts) ← Premises.gen goal.toCongr prems guides cfg amb
-      let req ← Request.encoding goal.toCongr rws facts guides cfg amb
-      withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
-      if let .beforeEqSat := cfg.exitPoint then return none
-      let result ← req.run fun failReport => do
-        let msg := s!"egg failed to prove the goal ({failReport.stopReason.description}) "
-        unless cfg.reporting do throwError msg
-        throwError msg ++ formatReport cfg.flattenReports failReport
-      if let .beforeProof := cfg.exitPoint then return none
-      let beforeProof ← IO.monoMsNow
-      let prf ← resultToProof result goal rws facts {amb, cfg}
-      let proofTime := (← IO.monoMsNow) - beforeProof
+      runEqSat goal rws facts guides cfg amb
+    match res with
+    | some (proof, proofTime, result) =>
       if cfg.reporting then
         let totalTime := (← IO.monoMsNow) - startTime
         logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl)
-      return some prf
-    if let some proof := proof? then
       goal.id.assignIfDefeq' proof
       if let some tk := calcifyTk? then calcify tk proof newFVars
-    else
-      goal.id.admit
+    | none => goal.id.admit
+where
+  runEqSat
+      (goal : Goal) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Config)
+      (amb : MVars.Ambient) : TacticM <| Option (Expr × Nat × Request.Result) := do
+    let req ← Request.encoding goal.toCongr rws facts guides cfg amb
+    withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
+    if let .beforeEqSat := cfg.exitPoint then return none
+    let result ← req.run fun failReport => do
+      let msg := s!"egg failed to prove the goal ({failReport.stopReason.description}) "
+      unless cfg.reporting do throwError msg
+      throwError msg ++ formatReport cfg.flattenReports failReport
+    if let .beforeProof := cfg.exitPoint then return none
+    let beforeProof ← IO.monoMsNow
+    match ← resultToProof result goal rws facts {amb, cfg} with
+    | .proof prf =>
+      let proofTime := (← IO.monoMsNow) - beforeProof
+      return some (prf, proofTime, result)
+    | .retryWithShapes => runEqSat goal rws facts guides { cfg with shapes := true } amb
 
 syntax &"egg" egg_cfg_mod egg_premises (egg_base)? (egg_guides)? : tactic
 elab_rules : tactic
