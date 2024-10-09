@@ -25,8 +25,8 @@ def Goal.gen (goal : MVarId) (base? : Option <| TSyntax `egg_base) : TacticM Goa
       let fvars := (← getLCtx).getFVarIds
       evalTactic <| ← `(tactic|repeat intro)
       let goal ← getMainGoal
+      let (goal, intros) ← genIntros goal fvars
       goal.withContext do
-        let (goal, intros) ← genIntros goal fvars
         let goalType ← goal.getType'
         let some cgr ← Congr.from? goalType
           | throwError "expected goal to be of type '=', '↔', '∀ ..., _ = _', or '∀ ..., _ ↔ _', \
@@ -34,11 +34,14 @@ def Goal.gen (goal : MVarId) (base? : Option <| TSyntax `egg_base) : TacticM Goa
         return { cgr with id := goal, intros }
 where
   genIntros (goal : MVarId) (previousFVars : Array FVarId) : MetaM (MVarId × Array Name) := do
-    let mut goal := goal
-    let mut intros := #[]
-    let newFVars := (← getLCtx).getFVarIds.filter (!previousFVars.contains ·)
-    for fvar in newFVars do
-      let usableName := (← fvar.getUserName).eraseMacroScopes
-      intros := intros.push usableName
-      goal ← goal.rename fvar usableName
-    return (goal, intros)
+    goal.withContext do
+      let mut goal := goal
+      let mut intros := #[]
+      let newFVars := (← getLCtx).getFVarIds.filter (!previousFVars.contains ·)
+      for fvar in newFVars do
+        let (g, name) ← goal.withContext do
+          let userName := (← getLCtx).getUnusedName (← fvar.getUserName)
+          pure (← goal.rename fvar userName, userName)
+        goal := g
+        intros := intros.push name
+      return (goal, intros)
