@@ -5,20 +5,28 @@ open Lean
 namespace Egg
 
 declare_syntax_cat _egg_opt
-syntax ident (" : " term:max)? : _egg_opt
+syntax ident (" : " term:max)? (str)? : _egg_opt
 
-private def parseOpt : TSyntax `_egg_opt → MacroM (Ident × Term)
-  | `(_egg_opt| $name:ident $[: $ty]?) => return (name, ty.getD <| ← `(Bool))
-  | _                                  => unreachable!
+private def parseOpt : TSyntax `_egg_opt → MacroM (Ident × Term × String)
+  | `(_egg_opt| $name:ident $[: $ty]? $[$descr]?) => do
+    let ty := ty.getD <| ← `(Bool)
+    let descr := descr.map (·.getString) |>.getD ""
+    return (name, ty, descr)
+  | _ => unreachable!
 
 local macro "register_egg_options" opts:_egg_opt* : command => do
   let mut regs := #[]
   let mut names := #[]
   let mut defs := #[]
   for opt in opts do
-    let (name, ty) ← parseOpt opt
+    let (name, ty, descr) ← parseOpt opt
     let regName  := mkIdentFrom name (`egg ++ name.getId)
-    regs := regs.push <| ← `(register_option $regName : $ty := { defValue := ({} : Config).$name})
+    regs := regs.push <| ← `(
+      register_option $regName : $ty := {
+        defValue := ({} : Config).$name
+        descr := $(quote descr)
+      }
+    )
     names := names.push name
     defs := defs.push <| mkIdentFrom name (`egg ++ name.getId ++ `get)
   let cfgFromOpts ← `(
@@ -49,7 +57,10 @@ register_egg_options
   shiftCapturedBVars
   conditionSubgoals
   optimizeExpl
-  timeLimit : Nat
+  timeLimit : Nat "The number of seconds allotted to equality saturation before it aborts. Note
+                   that the total invocation time of `egg` can exceed this time limit as it only
+                   applies to the equality saturation step, and not other steps like equation
+                   generation and proof reconstruction."
   nodeLimit : Nat
   iterLimit : Nat
   reporting
