@@ -1,24 +1,18 @@
 import Egg
 
 class Magma (α : Type _) where
-  /-- `a ◇ b` computes a binary operation of `a` and `b`. -/
   op : α → α → α
 
 infix:65 " ◇ " => Magma.op
 
 variable (G : Type) [Magma G]
 
-abbrev Equation387 := ∀ (x y : G), x ◇ y = (y ◇ y) ◇ x
-abbrev Equation43 :=  ∀ (x y : G), x ◇ y = y ◇ x
-abbrev Equation2 := ∀ (x y : G), x = y
-abbrev Equation1689 :=  ∀ (x y z : G), x = (y ◇ x) ◇ ((x ◇ z) ◇ z)
+abbrev Equation387  := ∀ (x y : G), x ◇ y = (y ◇ y) ◇ x
+abbrev Equation43   := ∀ (x y : G), x ◇ y = y ◇ x
+abbrev Equation2    := ∀ (x y : G), x = y
+abbrev Equation1689 := ∀ (x y z : G), x = (y ◇ x) ◇ ((x ◇ z) ◇ z)
 
-
-/-- error: unknown identifier 'x'
----
-error: unknown identifier 'y' -/
-#guard_msgs in
-theorem Equation387_implies_Equation43_calc (h:  Equation387 G) : Equation43 G := by
+theorem Equation387_implies_Equation43_calc (h : Equation387 G) : Equation43 G := by
     intro x y
     egg calc [*]
       x ◇ y
@@ -30,19 +24,19 @@ theorem Equation387_implies_Equation43_calc (h:  Equation387 G) : Equation43 G :
       _ = (x ◇ x) ◇ y
       _ = y ◇ x
 
-/-- This proof is from https://mathoverflow.net/a/450905/766 -/
-theorem Equation387_implies_Equation43 (h:  Equation387 G) : Equation43 G := by
+theorem Equation387_implies_Equation43 (h : Equation387 G) : Equation43 G := by
   egg [*]
 
-set_option egg.explosion true in
-theorem Equation1571_implies_Equation40 (h: ∀ (x y z : G), x = (y ◇ z) ◇ (y ◇ (x ◇ z))) : ∀ (x y : G), x ◇ x = y ◇ y := by
+set_option egg.explosion true
+
+theorem Equation1571_implies_Equation40 (h : ∀ (x y z : G), x = (y ◇ z) ◇ (y ◇ (x ◇ z))) :
+    ∀ (x y : G), x ◇ x = y ◇ y := by
   egg [*]
 
-set_option egg.explosion true in
-theorem Equation3744_implies_Equation381 (h: ∀ (x y z w : G), x ◇ y = (x ◇ z) ◇ (w ◇ y)) : ∀ (x y z : G), x ◇ y = (x ◇ z) ◇ y:= by
+theorem Equation3744_implies_Equation381 (h : ∀ (x y z w : G), x ◇ y = (x ◇ z) ◇ (w ◇ y)) :
+    ∀ (x y z : G), x ◇ y = (x ◇ z) ◇ y := by
   egg [*]
 
-set_option egg.explosion true in
-theorem Equation1689_implies_Equation2' (h: Equation1689 G) : Equation2 G:= by
+theorem Equation1689_implies_Equation2' (h : Equation1689 G) : Equation2 G := by
   have : ∀ a b c : G, a ◇ (b ◇ ((b ◇ c) ◇ c)) = (a ◇ b) ◇ b := by egg [*, h _ (_ ◇ _) _; h]
   egg [*]

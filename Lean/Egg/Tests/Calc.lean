@@ -21,13 +21,20 @@ example (h₁ : a = b) (h₂ : b = c) : a = c := by
     a = b
     _ = c
 
+example : ∀ a b c : Nat, (a = b) → (b = c) → a = c := by
+  intro a b c h₁ h₂
+  egg calc [h₁, h₂]
+    a = b
+    _ = c
+
 example (h₁ : a = b) (h₂ : b = c) : a = c := by
   egg calc
     a = b with [h₁]
     _ = c with [h₂]
 
 example (h₁ : 0 = 0 → a = b) : a = b := by
-  egg calc [h₁; (rfl : 0 = 0)] _ = _
+  egg calc [h₁; (rfl : 0 = 0)]
+    _ = _
 
 example (h₁ : 0 = 0 → a = b) : a = b := by
   egg calc [h₁]

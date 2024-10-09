@@ -105,23 +105,23 @@ where
       return some (prf, proofTime, result)
     | .retryWithShapes => runEqSat goal rws facts guides { cfg with shapes := true } amb
 
-syntax &"egg" egg_cfg_mod egg_premises (egg_base)? (egg_guides)? : tactic
+syntax &"egg " egg_cfg_mod egg_premises (egg_base)? (egg_guides)? : tactic
 elab_rules : tactic
   | `(tactic| egg $mod $prems $[$base]? $[$guides]?) => Egg.eval mod prems base guides
 
 -- WORKAROUND: This fixes `Tests/EndOfInput *`.
-macro "egg" mod:egg_cfg_mod : tactic => `(tactic| egg $mod)
+macro "egg " mod:egg_cfg_mod : tactic => `(tactic| egg $mod)
 
 -- The syntax `egg!` calls egg with the global egg basket.
-elab "egg!" mod:egg_cfg_mod prems:egg_premises base:(egg_base)? guides:(egg_guides)? : tactic =>
+elab "egg! " mod:egg_cfg_mod prems:egg_premises base:(egg_base)? guides:(egg_guides)? : tactic =>
   Egg.eval mod prems base guides (basket? := `egg)
 
 -- WORKAROUND: This fixes a problem analogous to `Tests/EndOfInput *` for `egg!`.
-macro "egg!" mod:egg_cfg_mod : tactic => `(tactic| egg! $mod)
+macro "egg! " mod:egg_cfg_mod : tactic => `(tactic| egg! $mod)
 
 -- The syntax `egg?` calls calcify after running egg.
-elab tk:"egg?" mod:egg_cfg_mod prems:egg_premises base:(egg_base)? guides:(egg_guides)? : tactic =>
+elab tk:"egg? " mod:egg_cfg_mod prems:egg_premises base:(egg_base)? guides:(egg_guides)? : tactic =>
   Egg.eval mod prems base guides (basket? := none) (calcifyTk? := tk)
 
 -- WORKAROUND: This fixes a problem analogous to `Tests/EndOfInput *` for `egg?`.
-macro "egg?" mod:egg_cfg_mod : tactic => `(tactic| egg? $mod)
+macro "egg? " mod:egg_cfg_mod : tactic => `(tactic| egg? $mod)
