@@ -1,12 +1,15 @@
 import Egg.Core.Explanation.Basic
 
-open Lean
+open Lean Parser
 
 namespace Egg.Explanation
 
 declare_syntax_cat egg_expl
-declare_syntax_cat egg_rw_expr
-declare_syntax_cat egg_rw_lvl
+declare_syntax_cat egg_justification
+declare_syntax_cat egg_lemma
+declare_syntax_cat egg_expr
+declare_syntax_cat egg_lvl
+declare_syntax_cat egg_slot
 declare_syntax_cat egg_lit
 declare_syntax_cat egg_shape
 declare_syntax_cat egg_shift_offset
@@ -27,11 +30,10 @@ declare_syntax_cat egg_rw_src
 syntax num : egg_lit
 syntax str : egg_lit
 
+syntax &"s" noWs num : egg_slot
+
 syntax "*"                          : egg_shape
 syntax "(→" egg_shape egg_shape ")" : egg_shape
-
-syntax "=>" : egg_rw_dir
-syntax "<=" : egg_rw_dir
 
 syntax "▪"     : egg_tc_proj_loc
 syntax "◂"     : egg_tc_proj_loc
@@ -94,48 +96,51 @@ syntax "!" egg_fwd_rw_src : egg_fact_src
 
 syntax egg_fwd_rw_src (noWs "-rev")? egg_fact_src* : egg_rw_src
 
-syntax "+" num : egg_shift_offset
-syntax "-" num : egg_shift_offset
+-- TODO: syntax "+" num : egg_shift_offset
+-- TODO: syntax "-" num : egg_shift_offset
 
-syntax num                                                      : egg_rw_lvl
-syntax "(" &"uvar" num ")"                                      : egg_rw_lvl
-syntax "(" &"param" ident ")"                                   : egg_rw_lvl
-syntax "(" &"succ" egg_rw_lvl ")"                               : egg_rw_lvl
-syntax "(" &"max" egg_rw_lvl egg_rw_lvl ")"                     : egg_rw_lvl
-syntax "(" &"imax" egg_rw_lvl egg_rw_lvl ")"                    : egg_rw_lvl
-syntax "(" &"Rewrite" noWs egg_rw_dir egg_rw_src egg_rw_lvl ")" : egg_rw_lvl
+syntax num                             : egg_lvl
+syntax "(" &"uvar" num ")"             : egg_lvl
+syntax "(" &"param" ident ")"          : egg_lvl
+syntax "(" &"succ" egg_lvl ")"         : egg_lvl
+syntax "(" &"max" egg_lvl egg_lvl ")"  : egg_lvl
+syntax "(" &"imax" egg_lvl egg_lvl ")" : egg_lvl
 
-syntax "(" &"bvar" num ")"                                       : egg_rw_expr
-syntax "(" &"fvar" num ")"                                       : egg_rw_expr
-syntax "(" &"mvar" num ")"                                       : egg_rw_expr
-syntax "(" &"sort" egg_rw_lvl ")"                                : egg_rw_expr
-syntax "(" &"const" ident egg_rw_lvl* ")"                        : egg_rw_expr
-syntax "(" &"app" egg_rw_expr egg_rw_expr ")"                    : egg_rw_expr
-syntax "(" &"λ" egg_rw_expr egg_rw_expr ")"                      : egg_rw_expr
-syntax "(" &"∀" egg_rw_expr egg_rw_expr ")"                      : egg_rw_expr
-syntax "(" &"lit" egg_lit ")"                                    : egg_rw_expr
-syntax "(" &"proof" egg_rw_expr ")"                              : egg_rw_expr
-syntax "(" &"↦" num egg_rw_expr egg_rw_expr ")"                  : egg_rw_expr
-syntax "(" &"↑" egg_shift_offset num egg_rw_expr ")"             : egg_rw_expr
-syntax "(" "◇" egg_shape egg_rw_expr ")"                         : egg_rw_expr
-syntax "(" &"Rewrite" noWs egg_rw_dir egg_rw_src egg_rw_expr ")" : egg_rw_expr
+syntax "(" &"bvar" egg_slot ")"                            : egg_expr
+syntax "(" &"fvar" num ")"                                 : egg_expr
+syntax "(" &"mvar" num ")"                                 : egg_expr
+syntax "(" &"sort" egg_lvl ")"                             : egg_expr
+syntax "(" &"const" ident egg_lvl* ")"                     : egg_expr
+syntax "(" &"app" egg_expr egg_expr ")"                    : egg_expr
+syntax "(" &"λ" egg_slot egg_expr egg_expr ")"             : egg_expr
+syntax "(" &"∀" egg_slot egg_expr egg_expr ")"             : egg_expr
+syntax "(" &"lit" egg_lit ")"                              : egg_expr
+syntax "(" &"proof" egg_expr ")"                           : egg_expr
+-- TODO: syntax "(" &"↦" num egg_expr egg_expr ")"         : egg_expr
+-- TODO: syntax "(" &"↑" egg_shift_offset num egg_expr ")" : egg_expr
+syntax "(" "◇" egg_shape egg_expr ")"                      : egg_expr
 
-syntax egg_rw_expr+ : egg_expl
+syntax &"refl"                                            : egg_justification
+syntax &"symmetry" "(" num ")"                            : egg_justification
+syntax &"transitivity" "(" num "," num ")"                : egg_justification
+syntax &"congruence" "(" num,+ ")"                        : egg_justification
+syntax &"Some" "(" doubleQuote egg_rw_src doubleQuote ")" : egg_justification
+
+syntax &"lemma" noWs num ":" singleQuote egg_expr singleQuote &"by" egg_justification : egg_lemma
+
+syntax egg_lemma+ : egg_expl
 
 private def parseLit : (TSyntax `egg_lit) → Literal
   | `(egg_lit|$n:num) => .natVal n.getNat
   | `(egg_lit|$s:str) => .strVal s.getString
   | _                 => unreachable!
 
+/- TODO:
 private def parseShiftOffset : (TSyntax `egg_shift_offset) → Int
   | `(egg_shift_offset|+ $n:num) => n.getNat
   | `(egg_shift_offset|- $n:num) => -n.getNat
   | _                            => unreachable!
-
-private def parseRwDir : (TSyntax `egg_rw_dir) → Direction
-  | `(egg_rw_dir|=>) => .forward
-  | `(egg_rw_dir|<=) => .backward
-  | _                => unreachable!
+-/
 
 private def parsTcSpecSrc : (TSyntax `egg_tc_spec_src) → Source.TcSpec
   | `(egg_tc_spec_src|→) => .dir .forward
@@ -167,9 +172,6 @@ private def parseTcExtension (src : Source) : (TSyntax `egg_tc_extension) → So
 
 inductive ParseError where
   | noSteps
-  | startContainsRw
-  | missingRw
-  | multipleRws
   | nonDefeqProofRw
   deriving Inhabited
 
@@ -180,9 +182,6 @@ open ParseError in
 instance : Coe ParseError MessageData where
   coe
     | noSteps         => s!"{msgPrefix} no steps found"
-    | startContainsRw => s!"{msgPrefix} start contains a rewrite"
-    | missingRw       => s!"{msgPrefix} (non-start) step does not contain a rewrite"
-    | multipleRws     => s!"{msgPrefix} step contains multiple rewrites"
     | nonDefeqProofRw => s!"{msgPrefix} step contains non-defeq type-level rewrite in proof"
 
 private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Except ParseError Source
@@ -233,17 +232,17 @@ private def parseRwSrc : (TSyntax `egg_rw_src) → Except ParseError Rewrite.Des
 private abbrev ParseStepResult := Except ParseError <| Expression × (Option Rewrite.Info)
 private abbrev ParseStepM := ExceptT ParseError <| StateM (Option Rewrite.Info)
 
-private partial def parseLevel : (TSyntax `egg_rw_lvl) → ParseStepM Level
-  | `(egg_rw_lvl|$n:num)                   => return n.getNat.toLevel
-  | `(egg_rw_lvl|(uvar $id))               => return .mvar (.fromUniqueIdx id.getNat)
-  | `(egg_rw_lvl|(param $n))               => return .param n.getId
-  | `(egg_rw_lvl|(succ $lvl))              => return .succ (← parseLevel lvl)
-  | `(egg_rw_lvl|(max $lvl₁ $lvl₂))        => return .max (← parseLevel lvl₁) (← parseLevel lvl₂)
-  | `(egg_rw_lvl|(imax $lvl₁ $lvl₂))       => return .imax (← parseLevel lvl₁) (← parseLevel lvl₂)
-  | `(egg_rw_lvl|(Rewrite$dir $src $body)) => parseRw dir src body
+private partial def parseLevel : (TSyntax `egg_lvl) → ParseStepM Level
+  | `(egg_lvl|$n:num)                   => return n.getNat.toLevel
+  | `(egg_lvl|(uvar $id))               => return .mvar (.fromUniqueIdx id.getNat)
+  | `(egg_lvl|(param $n))               => return .param n.getId
+  | `(egg_lvl|(succ $lvl))              => return .succ (← parseLevel lvl)
+  | `(egg_lvl|(max $lvl₁ $lvl₂))        => return .max (← parseLevel lvl₁) (← parseLevel lvl₂)
+  | `(egg_lvl|(imax $lvl₁ $lvl₂))       => return .imax (← parseLevel lvl₁) (← parseLevel lvl₂)
+  | `(egg_lvl|(Rewrite$dir $src $body)) => parseRw dir src body
   | _                                      => unreachable!
 where
-  parseRw (dir : TSyntax `egg_rw_dir) (src : TSyntax `egg_rw_src) (body : TSyntax `egg_rw_lvl) :
+  parseRw (dir : TSyntax `egg_rw_dir) (src : TSyntax `egg_rw_src) (body : TSyntax `egg_lvl) :
       ParseStepM Level := do
     unless (← get).isNone do throw .multipleRws
     let info ← parseRwSrc src
@@ -251,28 +250,28 @@ where
     set <| some { info with dir, pos? := none : Rewrite.Info }
     parseLevel body
 
-private partial def parseExpr (stx : TSyntax `egg_rw_expr) : ParseStepResult :=
+private partial def parseExpr (stx : TSyntax `egg_expr) : ParseStepResult :=
   let (e, info?) := go .root stx |>.run none
   return (← e, info?)
 where
-  go (pos : SubExpr.Pos) : (TSyntax `egg_rw_expr) → ParseStepM Expression
-    | `(egg_rw_expr|(bvar $idx))              => return .bvar idx.getNat
-    | `(egg_rw_expr|(fvar $id))               => return .fvar (.fromUniqueIdx id.getNat)
-    | `(egg_rw_expr|(mvar $id))               => return .mvar (.fromUniqueIdx id.getNat)
-    | `(egg_rw_expr|(sort $lvl))              => return .sort (← parseLevel lvl)
-    | `(egg_rw_expr|(const $name $lvls*))     => return .const name.getId (← lvls.mapM parseLevel).toList
-    | `(egg_rw_expr|(app $fn $arg))           => return .app (← go pos.pushAppFn fn) (← go pos.pushAppArg arg)
-    | `(egg_rw_expr|(λ $ty $body))            => return .lam (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
-    | `(egg_rw_expr|(∀ $ty $body))            => return .forall (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
-    | `(egg_rw_expr|(lit $l))                 => return .lit (parseLit l)
-    | `(egg_rw_expr|(proof $p))               => return .proof (← parseProof p pos)
-    | `(egg_rw_expr|(↦ $idx $to $e))          => return .subst idx.getNat (← go pos to) (← go pos e)
-    | `(egg_rw_expr|(↑ $off $cut $e))         => return .shift (parseShiftOffset off) cut.getNat (← go pos e)
-    | `(egg_rw_expr|(◇ $_ $e))                => go pos e
-    | `(egg_rw_expr|(Rewrite$dir $src $body)) => parseRw dir src body pos
+  go (pos : SubExpr.Pos) : (TSyntax `egg_expr) → ParseStepM Expression
+    | `(egg_expr|(bvar $idx))              => return .bvar idx.getNat
+    | `(egg_expr|(fvar $id))               => return .fvar (.fromUniqueIdx id.getNat)
+    | `(egg_expr|(mvar $id))               => return .mvar (.fromUniqueIdx id.getNat)
+    | `(egg_expr|(sort $lvl))              => return .sort (← parseLevel lvl)
+    | `(egg_expr|(const $name $lvls*))     => return .const name.getId (← lvls.mapM parseLevel).toList
+    | `(egg_expr|(app $fn $arg))           => return .app (← go pos.pushAppFn fn) (← go pos.pushAppArg arg)
+    | `(egg_expr|(λ $ty $body))            => return .lam (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
+    | `(egg_expr|(∀ $ty $body))            => return .forall (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
+    | `(egg_expr|(lit $l))                 => return .lit (parseLit l)
+    | `(egg_expr|(proof $p))               => return .proof (← parseProof p pos)
+    | `(egg_expr|(↦ $idx $to $e))          => return .subst idx.getNat (← go pos to) (← go pos e)
+    | `(egg_expr|(↑ $off $cut $e))         => return .shift (parseShiftOffset off) cut.getNat (← go pos e)
+    | `(egg_expr|(◇ $_ $e))                => go pos e
+    | `(egg_expr|(Rewrite$dir $src $body)) => parseRw dir src body pos
     | _                                       => unreachable!
 
-  parseProof (p : TSyntax `egg_rw_expr) (pos : SubExpr.Pos) : ParseStepM Expression := do
+  parseProof (p : TSyntax `egg_expr) (pos : SubExpr.Pos) : ParseStepM Expression := do
     -- If `p` did not contain a rewrite, all is well and we return `e`. Otherwise, obtain the
     -- `rwInfo` and make sure it is a defeq rewrite. If not, we have a non-defeq type-level rewrite,
     -- which we cannot handle, yet.
@@ -282,7 +281,7 @@ where
       unless rwIsOutsideProof || rwInfo.src.isDefEq do throw .nonDefeqProofRw
     return e
 
-  parseRw (dir : TSyntax `egg_rw_dir) (src : TSyntax `egg_rw_src) (body : TSyntax `egg_rw_expr)
+  parseRw (dir : TSyntax `egg_rw_dir) (src : TSyntax `egg_rw_src) (body : TSyntax `egg_expr)
       (pos : SubExpr.Pos) : ParseStepM Expression := do
     unless (← get).isNone do throw .multipleRws
     let info ← parseRwSrc src
@@ -291,7 +290,7 @@ where
     go pos body
 
 private def parseExpl : (TSyntax `egg_expl) → Except ParseError Explanation
-  | `(egg_expl|$steps:egg_rw_expr*) => do
+  | `(egg_expl|$steps:egg_expr*) => do
     let some start := steps[0]? | throw .noSteps
     let .ok (start, none) := parseExpr start | throw .startContainsRw
     let mut tl : Array Step := #[]

@@ -1,5 +1,6 @@
+/*
 use std::collections::HashSet;
-use egg::*;
+use slotted_egraphs::*;
 use crate::lean_expr::*;
 use crate::util::*;
 
@@ -136,3 +137,4 @@ impl Analysis<LeanExpr> for LeanAnalysis {
 
 pub type LeanEGraph = EGraph<LeanExpr, LeanAnalysis>;
 pub type LeanRewrite = Rewrite<LeanExpr, LeanAnalysis>;
+*/

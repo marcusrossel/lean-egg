@@ -148,7 +148,6 @@ theorem inv_inv : a⁻¹⁻¹ = a := by
   calc _ = a⁻¹⁻¹ * (a⁻¹ * a) := by group
        _ = _                 := by group
 
-set_option egg.timeLimit 3 in
 theorem inv_mul' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
 

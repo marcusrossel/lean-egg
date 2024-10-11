@@ -11,12 +11,7 @@ namespace Rewrite
 
 structure Descriptor where
   src   : Source
-  dir   : Direction
   facts : Array (Option Source)
-  deriving Inhabited
-
-structure Info extends Descriptor where
-  pos? : Option SubExpr.Pos
   deriving Inhabited
 
 end Rewrite
@@ -33,16 +28,26 @@ inductive Expression where
   | forall (ty body : Expression)
   | lit (l : Literal)
   | proof (prop : Expression)
-  | subst (idx : Nat) (to e : Expression)
-  | shift (offset : Int) (cutoff : Nat) (e : Expression)
+  -- TODO: | subst (idx : Nat) (to e : Expression)
+  -- TODO: | shift (offset : Int) (cutoff : Nat) (e : Expression)
   deriving Inhabited
 
-structure Step extends Rewrite.Info where
-  dst : Expression
+inductive Lemma.Justification where
+  | rfl
+  | symm  (lem : Nat)
+  | trans (lem₁ lem₂ : Nat)
+  | congr (lems : List Nat)
+  | rw    (descr : Rewrite.Descriptor)
   deriving Inhabited
+
+structure Lemma where
+  lhs : Expression
+  rhs : Expression
+  jus : Lemma.Justification
 
 end Explanation
 
-structure Explanation where
-  start : Explanation.Expression
-  steps : Array Explanation.Step
+-- TODO: This is not a sequence of explanation steps, but rather a tree. Should we flatten it, or
+--       can we handle it as is? Might be easier to flatten, because then we can keep our remaining
+--       proof reconstruction.
+abbrev Explanation := Array Explanation.Lemma

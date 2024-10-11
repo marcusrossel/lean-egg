@@ -1,4 +1,5 @@
-use egg::*;
+/*
+use slotted_egraphs::*;
 use crate::analysis::*;
 use crate::lean_expr::*;
 
@@ -26,3 +27,4 @@ impl Applier<LeanExpr, LeanAnalysis> for Eta {
         vec![id]
     }
 }
+*/

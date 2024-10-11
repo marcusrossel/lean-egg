@@ -14,7 +14,7 @@ private def encodeLevel : Level → EncodeM Expression
   | .succ l     => return s!"(succ {← encodeLevel l})"
   | .max l₁ l₂  => return s!"(max {← encodeLevel l₁} {← encodeLevel l₂})"
   | .imax l₁ l₂ => return s!"(imax {← encodeLevel l₁} {← encodeLevel l₂})"
-  | .param name => return s!"(param {name})"
+  | .param name => return s!"(param \"{name}\")"
   | .mvar id    => do
     if (← isAmbientLvl id)
     then return s!"(uvar {id.uniqueIdx!})"
@@ -47,7 +47,7 @@ where
     | .fvar id          => encodeFVar id
     | .mvar id          => encodeMVar id
     | .sort lvl         => return s!"(sort {← encodeLevel lvl})"
-    | .const name lvls  => return s!"(const {name}{← encodeConstLvls lvls})"
+    | .const name lvls  => return s!"(const \"{name}\"{← encodeConstLvls lvls})"
     | .app fn arg       => return s!"(app {← go fn} {← go arg})"
     | .lam _ ty b _     => encodeLambda ty b
     | .forallE _ ty b _ => encodeForall ty b
@@ -57,8 +57,8 @@ where
     | _                 => panic! "'Egg.encode.core' received non-normalized expression"
 
   encodeFVar (id : FVarId) : EncodeM Expression := do
-    if let some bvarIdx ← bvarIdx? id
-    then return s!"(bvar {bvarIdx})"
+    if ← representsBVar id
+    then return s!"(bvar s{id.uniqueIdx!})"
     else return s!"(fvar {id.uniqueIdx!})"
 
   encodeMVar (id : MVarId) : EncodeM Expression := do
@@ -73,10 +73,10 @@ where
     -- It's critical that we encode `ty` outside of the `withInstantiatedBVar` block, as otherwise
     -- the bvars in `encTy` are incorrectly shifted by 1.
     let encTy ← go ty
-    withInstantiatedBVar ty b fun body => return s!"(λ {encTy} {← go body})"
+    withInstantiatedBVar ty b fun var body => return s!"(λ {var} {encTy} {← go body})"
 
   encodeForall (ty b : Expr) : EncodeM Expression := do
     -- It's critical that we encode `ty` outside of the `withInstantiatedBVar` block, as otherwise
     -- the bvars in `encTy` are incorrectly shifted by 1.
     let encTy ← go ty
-    withInstantiatedBVar ty b fun body => return s!"(∀ {encTy} {← go body})"
+    withInstantiatedBVar ty b fun var body => return s!"(∀ {var} {encTy} {← go body})"

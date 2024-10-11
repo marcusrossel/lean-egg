@@ -1,4 +1,5 @@
-use egg::*;
+/*
+use slotted_egraphs::*;
 use crate::lean_expr::*;
 use crate::analysis::*;
 
@@ -108,3 +109,4 @@ pub fn subst_rws() -> Vec<LeanRewrite> {
     // TODO: Do we need substitution over the `proof` constructor, or can we ignore that for now as we disallow type-level rewrites anyway?
     rws
 }
+*/

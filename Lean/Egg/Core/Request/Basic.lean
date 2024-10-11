@@ -18,8 +18,6 @@ protected structure Config where
   genEtaRw             : Bool
   genBetaRw            : Bool
   genLevelRws          : Bool
-  blockInvalidMatches  : Bool
-  shiftCapturedBVars   : Bool
   allowUnsatConditions : Bool
 
 instance : Coe Config Request.Config where
@@ -32,8 +30,6 @@ instance : Coe Config Request.Config where
     genEtaRw             := cfg.genEtaRw
     genBetaRw            := cfg.genBetaRw
     genLevelRws          := cfg.genLevelRws
-    blockInvalidMatches  := cfg.blockInvalidMatches
-    shiftCapturedBVars   := cfg.shiftCapturedBVars
     allowUnsatConditions := cfg.conditionSubgoals
   }
 
@@ -113,3 +109,21 @@ def run (req : Request) (onFail : Result.Report → MetaM Result) : MetaM Result
     else
       let some egraph := raw.egraph? | throwError "egg: internal error: e-graph is absent"
       return { expl := ← raw.expl.parse, egraph, report }
+
+structure Result' where
+  expl   : String
+  egraph : EGraph
+  report : Result.Report
+
+def run' (req : Request) (onFail : Result.Report → MetaM Result') : MetaM Result' := do
+  let raw := runRaw req
+  withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] raw.expl
+  if "⚡️".isPrefixOf raw.expl then
+    throwError s!"egg backend failed:\n  {raw.expl}"
+  else
+    let some report := raw.report? | throwError "egg: internal error: report is absent"
+    if raw.expl.isEmpty then
+      onFail report
+    else
+      let some egraph := raw.egraph? | throwError "egg: internal error: e-graph is absent"
+      return { expl := raw.expl, egraph, report }

@@ -1,9 +1,9 @@
 import Egg
 
-set_option egg.shiftCapturedBVars true in
 example (h : ∀ x y : Nat, x = y ↔ y = x) : (∀ x y : Nat, x = y) ↔ (∀ a b : Nat, b = a + 0) := by
   egg [h, Nat.add_zero]
 
+/-
 -- We have to disable β-reduction as part of normalization, as otherwise `thm₁,₂` are useless, and
 -- disable β-reduction in egg, as this interferes with the test cases.
 set_option egg.betaReduceRws false
@@ -27,3 +27,4 @@ set_option egg.shiftCapturedBVars true in
 #guard_msgs in
 example : (fun x => (x, 5).fst) = (fun _ : Nat => (fun x => x) 1) := by
   egg [thm₁]
+-/

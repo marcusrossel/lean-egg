@@ -1,4 +1,5 @@
-use egg::*;
+/*
+use slotted_egraphs::*;
 use crate::lean_expr::*;
 use crate::analysis::*;
 
@@ -147,3 +148,4 @@ pub fn shift_rws() -> Vec<LeanRewrite> {
     // TODO: Do we need shifting over the `proof` constructor, or can we ignore that for now as we disallow type-level rewrites anyway?
     rws
 }
+*/

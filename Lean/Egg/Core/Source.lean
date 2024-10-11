@@ -54,8 +54,8 @@ inductive Source where
   | tcSpec (src : Source) (spec : Source.TcSpec)
   | explosion (src : Source) (dir : Direction) (loc : List Nat)
   | natLit (src : Source.NatLit)
-  | subst (src : Source.SubstShift)
-  | shift (src : Source.SubstShift)
+  -- TODO: | subst (src : Source.SubstShift)
+  -- TODO: | shift (src : Source.SubstShift)
   | eta
   | beta
   | level (src : Source.Level)
@@ -112,8 +112,8 @@ def description : Source → String
   | tcSpec src spec         => s!"{src.description}<{spec.description}>"
   | explosion src dir loc   => s!"{src.description}💥{dir.description}{(toString loc).replace " " ""}"
   | natLit src              => src.description
-  | subst src               => s!"↦{src.description}"
-  | shift src               => s!"↑{src.description}"
+  -- TODO: | subst src               => s!"↦{src.description}"
+  -- TODO: | shift src               => s!"↑{src.description}"
   | eta                     => "≡η"
   | beta                    => "≡β"
   | level src               => src.description
@@ -129,8 +129,8 @@ def isRewrite : Source → Bool
   | _              => true
 
 def isDefEq : Source → Bool
-  | natLit _ | eta | beta | level _ | subst _ | shift _ => true
-  | _                                                   => false
+  | natLit _ | eta | beta | level _ => true -- TODO: | subst _ | shift _ => true
+  | _                               => false
 
 def containsTcProj : Source → Bool
   | tcProj ..     => true
@@ -141,6 +141,7 @@ def isNatLitConversion : Source → Bool
   | .natLit .zero | .natLit .toSucc | .natLit .ofSucc => true
   | _                                                 => false
 
-def isSubst : Source → Bool
-  | .subst _ => true
-  | _        => false
+-- TODO:
+-- def isSubst : Source → Bool
+--   | .subst _ => true
+--   | _        => false

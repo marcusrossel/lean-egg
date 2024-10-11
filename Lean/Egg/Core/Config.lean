@@ -31,15 +31,13 @@ structure Gen where
   deriving BEq
 
 structure Backend where
-  blockInvalidMatches := true
-  shiftCapturedBVars  := true -- This option implies `blockInvalidMatches`.
-  conditionSubgoals   := false
-  optimizeExpl        := true
-  timeLimit           := 3
-  nodeLimit           := 1000000000000000000
-  iterLimit           := 1000000000000000000
-  reporting           := false
-  flattenReports      := false
+  conditionSubgoals := false
+  optimizeExpl      := true
+  timeLimit         := 3
+  nodeLimit         := 1000000000000000000
+  iterLimit         := 1000000000000000000
+  reporting         := false
+  flattenReports    := false
   deriving BEq
 
 inductive Debug.ExitPoint

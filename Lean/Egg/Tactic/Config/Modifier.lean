@@ -6,58 +6,54 @@ open Lean Elab
 namespace Egg.Config
 
 structure Modifier where
-  eraseProofs         : Option Bool            := none
-  shapes              : Option Bool            := none
-  betaReduceRws       : Option Bool            := none
-  etaReduceRws        : Option Bool            := none
-  natReduceRws        : Option Bool            := none
-  builtins            : Option Bool            := none
-  genTcProjRws        : Option Bool            := none
-  genTcSpecRws        : Option Bool            := none
-  genGoalTcSpec       : Option Bool            := none
-  genNatLitRws        : Option Bool            := none
-  genEtaRw            : Option Bool            := none
-  genBetaRw           : Option Bool            := none
-  genLevelRws         : Option Bool            := none
-  explosion           : Option Bool            := none
-  shiftCapturedBVars  : Option Bool            := none
-  blockInvalidMatches : Option Bool            := none
-  conditionSubgoals   : Option Bool            := none
-  optimizeExpl        : Option Bool            := none
-  timeLimit           : Option Nat             := none
-  nodeLimit           : Option Nat             := none
-  iterLimit           : Option Nat             := none
-  reporting           : Option Bool            := none
-  flattenReports      : Option Bool            := none
-  exitPoint           : Option Debug.ExitPoint := none
-  vizPath             : Option String          := none
+  eraseProofs       : Option Bool            := none
+  shapes            : Option Bool            := none
+  betaReduceRws     : Option Bool            := none
+  etaReduceRws      : Option Bool            := none
+  natReduceRws      : Option Bool            := none
+  builtins          : Option Bool            := none
+  genTcProjRws      : Option Bool            := none
+  genTcSpecRws      : Option Bool            := none
+  genGoalTcSpec     : Option Bool            := none
+  genNatLitRws      : Option Bool            := none
+  genEtaRw          : Option Bool            := none
+  genBetaRw         : Option Bool            := none
+  genLevelRws       : Option Bool            := none
+  explosion         : Option Bool            := none
+  conditionSubgoals : Option Bool            := none
+  optimizeExpl      : Option Bool            := none
+  timeLimit         : Option Nat             := none
+  nodeLimit         : Option Nat             := none
+  iterLimit         : Option Nat             := none
+  reporting         : Option Bool            := none
+  flattenReports    : Option Bool            := none
+  exitPoint         : Option Debug.ExitPoint := none
+  vizPath           : Option String          := none
 
 def modify (cfg : Config) (mod : Modifier) : Config where
-  eraseProofs         := mod.eraseProofs.getD cfg.eraseProofs
-  shapes              := mod.shapes.getD cfg.shapes
-  betaReduceRws       := mod.betaReduceRws.getD cfg.betaReduceRws
-  etaReduceRws        := mod.etaReduceRws.getD cfg.etaReduceRws
-  natReduceRws        := mod.natReduceRws.getD cfg.natReduceRws
-  builtins            := mod.builtins.getD cfg.builtins
-  genTcProjRws        := mod.genTcProjRws.getD cfg.genTcProjRws
-  genTcSpecRws        := mod.genTcSpecRws.getD cfg.genTcSpecRws
-  genGoalTcSpec       := mod.genGoalTcSpec.getD cfg.genGoalTcSpec
-  genNatLitRws        := mod.genNatLitRws.getD cfg.genNatLitRws
-  genEtaRw            := mod.genEtaRw.getD cfg.genEtaRw
-  genBetaRw           := mod.genBetaRw.getD cfg.genBetaRw
-  genLevelRws         := mod.genLevelRws.getD cfg.genLevelRws
-  explosion           := mod.explosion.getD cfg.explosion
-  shiftCapturedBVars  := mod.shiftCapturedBVars.getD cfg.shiftCapturedBVars
-  blockInvalidMatches := mod.blockInvalidMatches.getD cfg.blockInvalidMatches
-  conditionSubgoals   := mod.conditionSubgoals.getD cfg.conditionSubgoals
-  optimizeExpl        := mod.optimizeExpl.getD cfg.optimizeExpl
-  timeLimit           := mod.timeLimit.getD cfg.timeLimit
-  nodeLimit           := mod.nodeLimit.getD cfg.nodeLimit
-  iterLimit           := mod.iterLimit.getD cfg.iterLimit
-  reporting           := mod.reporting.getD cfg.reporting
-  flattenReports      := mod.flattenReports.getD cfg.flattenReports
-  exitPoint           := mod.exitPoint.getD cfg.exitPoint
-  vizPath             := match mod.vizPath with | some p => p | none => cfg.vizPath
+  eraseProofs       := mod.eraseProofs.getD cfg.eraseProofs
+  shapes            := mod.shapes.getD cfg.shapes
+  betaReduceRws     := mod.betaReduceRws.getD cfg.betaReduceRws
+  etaReduceRws      := mod.etaReduceRws.getD cfg.etaReduceRws
+  natReduceRws      := mod.natReduceRws.getD cfg.natReduceRws
+  builtins          := mod.builtins.getD cfg.builtins
+  genTcProjRws      := mod.genTcProjRws.getD cfg.genTcProjRws
+  genTcSpecRws      := mod.genTcSpecRws.getD cfg.genTcSpecRws
+  genGoalTcSpec     := mod.genGoalTcSpec.getD cfg.genGoalTcSpec
+  genNatLitRws      := mod.genNatLitRws.getD cfg.genNatLitRws
+  genEtaRw          := mod.genEtaRw.getD cfg.genEtaRw
+  genBetaRw         := mod.genBetaRw.getD cfg.genBetaRw
+  genLevelRws       := mod.genLevelRws.getD cfg.genLevelRws
+  explosion         := mod.explosion.getD cfg.explosion
+  conditionSubgoals := mod.conditionSubgoals.getD cfg.conditionSubgoals
+  optimizeExpl      := mod.optimizeExpl.getD cfg.optimizeExpl
+  timeLimit         := mod.timeLimit.getD cfg.timeLimit
+  nodeLimit         := mod.nodeLimit.getD cfg.nodeLimit
+  iterLimit         := mod.iterLimit.getD cfg.iterLimit
+  reporting         := mod.reporting.getD cfg.reporting
+  flattenReports    := mod.flattenReports.getD cfg.flattenReports
+  exitPoint         := mod.exitPoint.getD cfg.exitPoint
+  vizPath           := match mod.vizPath with | some p => p | none => cfg.vizPath
 
 namespace Modifier
 

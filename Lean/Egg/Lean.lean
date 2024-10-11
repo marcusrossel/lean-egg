@@ -77,3 +77,23 @@ def RBTree.subtract (t₁ t₂ : RBTree α cmp) : RBTree α cmp :=
 
 def RBTree.singleton (a : α) : RBTree α cmp :=
   insert ∅ a
+
+namespace Parser
+
+-- Cf. https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Syntax.20atoms.20beginning.20with.20a.20single.20quote/near/294882665
+
+def singleQuote : Parser := rawCh '\'' (trailingWs := false)
+
+@[combinator_formatter singleQuote]
+def singleQuote.formatter := PrettyPrinter.Formatter.visitAtom Name.anonymous
+
+@[combinator_parenthesizer singleQuote]
+def singleQuote.parenthesizer := PrettyPrinter.Parenthesizer.visitToken
+
+def doubleQuote : Parser := rawCh '\"' (trailingWs := false)
+
+@[combinator_formatter doubleQuote]
+def singleQdoubleQuoteuote.formatter := PrettyPrinter.Formatter.visitAtom Name.anonymous
+
+@[combinator_parenthesizer doubleQuote]
+def doubleQuote.parenthesizer := PrettyPrinter.Parenthesizer.visitToken

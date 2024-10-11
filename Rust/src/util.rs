@@ -1,6 +1,7 @@
+/*
 use std::collections::HashSet;
 use std::hash::Hash;
-use egg::*;
+use slotted_egraphs::*;
 
 pub fn union_sets<T: Eq + Hash + Clone>(to: &mut HashSet<T>, from: HashSet<T>) -> DidMerge {
     let to_sub_from = to.is_subset(&from);
@@ -32,3 +33,4 @@ pub fn shift_down(indices: &HashSet<u64>) -> HashSet<u64> {
     }
     return result
 }
+*/

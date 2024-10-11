@@ -1,28 +1,27 @@
-use analysis::LeanEGraph;
-use egg::*;
+use slotted_egraphs::*;
 use core::ffi::c_char;
 use core::ffi::CStr;
 use std::ffi::CString;
 use libc::c_double;
-use std::str::FromStr;
 use basic::*;
+use lean_expr::*;
+use reporting::*;
 use result::*;
 use rewrite::*;
 
 mod analysis;
 mod basic;
 mod beta;
-mod bvar_correction;
 mod eta;
 mod lean_expr;
 mod levels;
 mod nat_lit;
+mod reporting;
 mod result;
 mod rewrite;
 mod shift;
 mod subst;
 mod util;
-mod valid_match;
 
 // Cf. https://doc.rust-lang.org/stable/std/ffi/struct.CStr.html#examples
 fn c_str_to_string(c_str: *const c_char) -> String {
@@ -82,9 +81,9 @@ impl CRewritesArray {
             let lhs_str       = lhs_c_str.to_str().unwrap();
             let rhs_str       = rhs_c_str.to_str().unwrap();
             let conds_strs    = rw.conds.to_vec();
-            let lhs           = Pattern::from_str(lhs_str).expect("Failed to parse lhs");
-            let rhs           = Pattern::from_str(rhs_str).expect("Failed to parse rhs");
-            let conds: Vec<_> = conds_strs.iter().map(|cond| Pattern::from_str(cond).expect("Failed to parse condition")).collect();
+            let lhs           = Pattern::parse(lhs_str).expect("Failed to parse lhs");
+            let rhs           = Pattern::parse(rhs_str).expect("Failed to parse rhs");
+            let conds: Vec<_> = conds_strs.iter().map(|cond| Pattern::parse(cond).expect("Failed to parse condition")).collect();
 
             if rw.dirs == RewriteDirections::Forward || rw.dirs == RewriteDirections::Both {
                 res.push(RewriteTemplate { name: name_str.to_string(), lhs: lhs.clone(), rhs: rhs.clone(), conds: conds.clone() })
@@ -139,11 +138,11 @@ impl CStopReason {
 
     fn from_stop_reason(r: StopReason) -> CStopReason {
         match r {
-            StopReason::Saturated         => CStopReason::Saturated,
-            StopReason::IterationLimit(_) => CStopReason::IterationLimit,
-            StopReason::NodeLimit(_)      => CStopReason::NodeLimit,
-            StopReason::TimeLimit(_)      => CStopReason::TimeLimit,
-            StopReason::Other(_)          => CStopReason::Other,
+            StopReason::Saturated      => CStopReason::Saturated,
+            StopReason::IterationLimit => CStopReason::IterationLimit,
+            StopReason::NodeLimit      => CStopReason::NodeLimit,
+            StopReason::TimeLimit      => CStopReason::TimeLimit,
+            StopReason::Other          => CStopReason::Other,
         }
     }
 }
@@ -239,15 +238,14 @@ pub unsafe extern "C" fn egg_query_equiv(
     goal_str_ptr: *const c_char
 ) -> *const c_char {
     let egraph = egraph.as_mut().unwrap();
-    let init = c_str_to_string(init_str_ptr).parse().unwrap();
-    let goal = c_str_to_string(goal_str_ptr).parse().unwrap();
-    let init_id = egraph.add_expr(&init);
-    let goal_id = egraph.add_expr(&goal);
+    let init = RecExpr::parse(&c_str_to_string(init_str_ptr)).unwrap();
+    let goal = RecExpr::parse(&c_str_to_string(goal_str_ptr)).unwrap();
+    let init_id = egraph.add_expr(init.clone());
+    let goal_id = egraph.add_expr(goal.clone());
 
-    if egraph.find(init_id) == egraph.find(goal_id) {
-        let mut expl = egraph.explain_equivalence(&init, &goal);
-        let expl_str = expl.get_flat_string();
-        let expl_c_str = CString::new(expl_str.to_string()).expect("conversion of explanation to C-string failed");
+    if egraph.find_applied_id(&init_id) == egraph.find_applied_id(&goal_id) {
+        let expl = egraph.explain_equivalence(init, goal).to_string_expr(&egraph);
+        let expl_c_str = CString::new(expl).expect("conversion of explanation to C-string failed");
         expl_c_str.into_raw()
     } else {
         CString::new("").unwrap().into_raw()

@@ -1,6 +1,6 @@
-use egg::*;
+/*
+use slotted_egraphs::*;
 use crate::lean_expr::*;
-use crate::analysis::*;
 use std::ops::*;
 
 struct ToSucc {
@@ -92,3 +92,4 @@ fn u64_div(lhs: u64, rhs: u64) -> u64 {
 fn u64_mod(lhs: u64, rhs: u64) -> u64 {
     if rhs == 0 { lhs } else { lhs % rhs }
 }
+*/

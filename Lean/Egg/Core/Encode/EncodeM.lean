@@ -28,16 +28,16 @@ def isAmbientLvl (lmvar : LMVarId) : EncodeM Bool := do
   return (← get).amb.lvl.contains lmvar
 
 -- Note: This only works as intended if `m` does not add any additional bvars (permanently).
-def withInstantiatedBVar (ty body : Expr) (m : Expr → EncodeM α) : EncodeM α := do
+def withInstantiatedBVar (ty body : Expr) (m : String → Expr → EncodeM α) : EncodeM α := do
   Meta.withLocalDecl .anonymous .default ty fun fvar => do
     let s ← get
     set { s with bvars := fvar.fvarId! :: s.bvars }
-    let a ← m (body.instantiate #[fvar])
+    let a ← m s!"s{fvar.fvarId!.uniqueIdx!}" (body.instantiate #[fvar])
     set { s with bvars := s.bvars }
     return a
 
-def bvarIdx? (id : FVarId) : EncodeM (Option Nat) := do
-  return (← get).bvars.indexOf? id
+def representsBVar (id : FVarId) : EncodeM Bool := do
+  return (← get).bvars.contains id
 
 def needsProofErasure (e : Expr) : EncodeM Bool := do
   (return (← config).eraseProofs) <&&> Meta.isProof e

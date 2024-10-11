@@ -53,8 +53,6 @@ register_egg_options
   genBetaRw
   genLevelRws
   explosion
-  blockInvalidMatches
-  shiftCapturedBVars
   conditionSubgoals
   optimizeExpl
   timeLimit : Nat "The number of seconds allotted to equality saturation before it aborts. Note
