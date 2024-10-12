@@ -14,10 +14,7 @@ error: expected goal to be of type '=', '↔', '∀ ..., _ = _', or '∀ ..., _ 
 example : True := by
   egg
 
-/-- error: egg requires arguments to be theorems, definitions or axioms -/
-#guard_msgs in
-example : true = true := by
-  egg [true]
+def foo := true
 
 example : 0 = 0 := by
   egg

@@ -24,7 +24,7 @@ variable (f : Nat → Nat → Nat)
 /--
 info: Try this: calc
     f 1 2
-    _ = f 2 1 := Eq.symm (h 2 1)
+    _ = f 2 1 := (h 2 1).symm
 -/
 #guard_msgs in
 example (h : ∀ x y : Nat, f x y = f y x) : f 1 2 = f 2 1 := by
