@@ -33,7 +33,7 @@ partial def Premise.Raw.elab (prem : Term) : TacticM Premise.Raw := do
       throwErrorAt prem "egg does not support using auxiliary declarations"
     else
       return .single (.fvar hyp) (← hyp.getType)
-  else if let some const ← optional (resolveGlobalConstNoOverload prem) then
+  else if let some const ← optional (realizeGlobalConstNoOverloadWithInfo prem) then
     if let some eqs ← getEqnsFor? const then
       -- `prem` is a global definition.
       return .eqns <| ← eqs.mapM (elabGlobalConstNoEqns ·)
@@ -48,15 +48,9 @@ partial def Premise.Raw.elab (prem : Term) : TacticM Premise.Raw := do
     return .single (← Tactic.elabTerm prem none)
 where
   elabGlobalConstNoEqns (const : Name) : MetaM (Expr × Expr) := do
-    let env ← getEnv
-    let some info := env.find? const | throwErrorAt prem m!"unknown constant '{mkConst const}'"
-    match info with
-    | .defnInfo _ | .axiomInfo _ | .thmInfo _ | .opaqueInfo _ =>
-      let lvlMVars ← List.replicateM info.numLevelParams mkFreshLevelMVar
-      let val := if info.hasValue then info.instantiateValueLevelParams! lvlMVars else .const info.name lvlMVars
-      let type := info.instantiateTypeLevelParams lvlMVars
-      return (val, type)
-    | _ => throwErrorAt prem "egg requires arguments to be theorems, definitions or axioms"
+    let val ← mkConstWithFreshMVarLevels const
+    let type ← inferType val
+    return (val, type)
 
 structure WithSyntax (α) where
   elems : α
