@@ -11,43 +11,44 @@ namespace Rewrite
 
 structure Descriptor where
   src   : Source
+  dir   : Direction
   facts : Array (Option Source)
   deriving Inhabited
 
 end Rewrite
 
--- TODO: We can omit this type and directly parse to an `Expr`.
 inductive Expression where
-  | bvar (idx : Nat)
+  | lvl (l : Level)
+  | bvar (id : Name)
   | fvar (id : FVarId)
   | mvar (id : MVarId)
   | sort (lvl : Level)
   | const (name : Name) (lvls : List Level)
   | app (fn arg : Expression)
-  | lam (ty body : Expression)
-  | forall (ty body : Expression)
+  | lam (var : Name) (ty body : Expression)
+  | forall (var : Name) (ty body : Expression)
   | lit (l : Literal)
   | proof (prop : Expression)
   -- TODO: | subst (idx : Nat) (to e : Expression)
   -- TODO: | shift (offset : Int) (cutoff : Nat) (e : Expression)
   deriving Inhabited
 
-inductive Lemma.Justification where
+inductive Justification where
   | rfl
   | symm  (lem : Nat)
   | trans (lem₁ lem₂ : Nat)
-  | congr (lems : List Nat)
+  | congr (lems : Array Nat)
   | rw    (descr : Rewrite.Descriptor)
   deriving Inhabited
 
 structure Lemma where
   lhs : Expression
   rhs : Expression
-  jus : Lemma.Justification
+  jus : Justification
+  deriving Inhabited
 
 end Explanation
 
--- TODO: This is not a sequence of explanation steps, but rather a tree. Should we flatten it, or
---       can we handle it as is? Might be easier to flatten, because then we can keep our remaining
---       proof reconstruction.
-abbrev Explanation := Array Explanation.Lemma
+structure Explanation where
+  lemmas : Array Explanation.Lemma
+  target : Explanation.Lemma

@@ -30,7 +30,7 @@ declare_syntax_cat egg_rw_src
 syntax num : egg_lit
 syntax str : egg_lit
 
-syntax &"s" noWs num : egg_slot
+syntax ident : egg_slot
 
 syntax "*"                          : egg_shape
 syntax "(→" egg_shape egg_shape ")" : egg_shape
@@ -106,6 +106,7 @@ syntax "(" &"succ" egg_lvl ")"         : egg_lvl
 syntax "(" &"max" egg_lvl egg_lvl ")"  : egg_lvl
 syntax "(" &"imax" egg_lvl egg_lvl ")" : egg_lvl
 
+syntax egg_lvl                                             : egg_expr
 syntax "(" &"bvar" egg_slot ")"                            : egg_expr
 syntax "(" &"fvar" num ")"                                 : egg_expr
 syntax "(" &"mvar" num ")"                                 : egg_expr
@@ -120,13 +121,13 @@ syntax "(" &"proof" egg_expr ")"                           : egg_expr
 -- TODO: syntax "(" &"↑" egg_shift_offset num egg_expr ")" : egg_expr
 syntax "(" "◇" egg_shape egg_expr ")"                      : egg_expr
 
-syntax &"refl"                                            : egg_justification
-syntax &"symmetry" "(" num ")"                            : egg_justification
-syntax &"transitivity" "(" num "," num ")"                : egg_justification
-syntax &"congruence" "(" num,+ ")"                        : egg_justification
-syntax &"Some" "(" doubleQuote egg_rw_src doubleQuote ")" : egg_justification
+local syntax "refl"                                            : egg_justification
+local syntax "symmetry" "(" num ")"                            : egg_justification
+local syntax "transitivity" "(" num "," num ")"                : egg_justification
+local syntax "congruence" "(" num,+ ")"                        : egg_justification
+local syntax "Some" "(" doubleQuote egg_rw_src doubleQuote ")" : egg_justification
 
-syntax &"lemma" noWs num ":" singleQuote egg_expr singleQuote &"by" egg_justification : egg_lemma
+local syntax "lemma" noWs num ": " singleQuote egg_expr " = " egg_expr singleQuote &"by " egg_justification : egg_lemma
 
 syntax egg_lemma+ : egg_expl
 
@@ -170,141 +171,105 @@ private def parseTcExtension (src : Source) : (TSyntax `egg_tc_extension) → So
   | `(egg_tc_extension|<$tcSpecsrc>)    => .tcSpec src (parsTcSpecSrc tcSpecsrc)
   | _                                   => unreachable!
 
-inductive ParseError where
-  | noSteps
-  | nonDefeqProofRw
-  deriving Inhabited
-
-private def ParseError.msgPrefix :=
-  "egg received invalid explanation:"
-
-open ParseError in
-instance : Coe ParseError MessageData where
-  coe
-    | noSteps         => s!"{msgPrefix} no steps found"
-    | nonDefeqProofRw => s!"{msgPrefix} step contains non-defeq type-level rewrite in proof"
-
-private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Except ParseError Source
-  | `(egg_fwd_rw_src|↦bvar)  => return .subst .bvar
-  | `(egg_fwd_rw_src|↦app)   => return .subst .app
-  | `(egg_fwd_rw_src|↦λ)     => return .subst .lam
-  | `(egg_fwd_rw_src|↦∀)     => return .subst .forall
-  | `(egg_fwd_rw_src|↑bvar)  => return .shift .bvar
-  | `(egg_fwd_rw_src|↑app)   => return .shift .app
-  | `(egg_fwd_rw_src|↑λ)     => return .shift .lam
-  | `(egg_fwd_rw_src|↑∀)     => return .shift .forall
-  | `(egg_fwd_rw_src|≡maxS)  => return .level .maxSucc
-  | `(egg_fwd_rw_src|≡max↔)  => return .level .maxComm
-  | `(egg_fwd_rw_src|≡imax0) => return .level .imaxZero
-  | `(egg_fwd_rw_src|≡imaxS) => return .level .imaxSucc
-  | `(egg_fwd_rw_src|≡η)     => return .eta
-  | `(egg_fwd_rw_src|≡β)     => return .beta
-  | `(egg_fwd_rw_src|≡0)     => return .natLit .zero
-  | `(egg_fwd_rw_src|≡→S)    => return .natLit .toSucc
-  | `(egg_fwd_rw_src|≡S→)    => return .natLit .ofSucc
-  | `(egg_fwd_rw_src|≡+)     => return .natLit .add
-  | `(egg_fwd_rw_src|≡-)     => return .natLit .sub
-  | `(egg_fwd_rw_src|≡*)     => return .natLit .mul
-  | `(egg_fwd_rw_src|≡^)     => return .natLit .pow
-  | `(egg_fwd_rw_src|≡/)     => return .natLit .div
-  | `(egg_fwd_rw_src|"≡%")   => return .natLit .mod
+private def parseFwdRwSrc : (TSyntax `egg_fwd_rw_src) → Source
+  -- TODO: | `(egg_fwd_rw_src|↦bvar)  => return .subst .bvar
+  -- TODO: | `(egg_fwd_rw_src|↦app)   => return .subst .app
+  -- TODO: | `(egg_fwd_rw_src|↦λ)     => return .subst .lam
+  -- TODO: | `(egg_fwd_rw_src|↦∀)     => return .subst .forall
+  -- TODO: | `(egg_fwd_rw_src|↑bvar)  => return .shift .bvar
+  -- TODO: | `(egg_fwd_rw_src|↑app)   => return .shift .app
+  -- TODO: | `(egg_fwd_rw_src|↑λ)     => return .shift .lam
+  -- TODO: | `(egg_fwd_rw_src|↑∀)     => return .shift .forall
+  | `(egg_fwd_rw_src|≡maxS)  => .level .maxSucc
+  | `(egg_fwd_rw_src|≡max↔)  => .level .maxComm
+  | `(egg_fwd_rw_src|≡imax0) => .level .imaxZero
+  | `(egg_fwd_rw_src|≡imaxS) => .level .imaxSucc
+  | `(egg_fwd_rw_src|≡η)     => .eta
+  | `(egg_fwd_rw_src|≡β)     => .beta
+  | `(egg_fwd_rw_src|≡0)     => .natLit .zero
+  | `(egg_fwd_rw_src|≡→S)    => .natLit .toSucc
+  | `(egg_fwd_rw_src|≡S→)    => .natLit .ofSucc
+  | `(egg_fwd_rw_src|≡+)     => .natLit .add
+  | `(egg_fwd_rw_src|≡-)     => .natLit .sub
+  | `(egg_fwd_rw_src|≡*)     => .natLit .mul
+  | `(egg_fwd_rw_src|≡^)     => .natLit .pow
+  | `(egg_fwd_rw_src|≡/)     => .natLit .div
+  | `(egg_fwd_rw_src|"≡%")   => .natLit .mod
   | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src$tcExts:egg_tc_extension*) =>
-    return tcExts.foldl (init := parseBasicFwdRwSrc src) parseTcExtension
+    tcExts.foldl (init := parseBasicFwdRwSrc src) parseTcExtension
   | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src💥→[$idxs:num,*]) =>
-    return .explosion (parseBasicFwdRwSrc src) .forward (idxs.getElems.map (·.getNat)).toList
+    .explosion (parseBasicFwdRwSrc src) .forward (idxs.getElems.map (·.getNat)).toList
   | `(egg_fwd_rw_src|$src:egg_basic_fwd_rw_src💥←[$idxs:num,*]) =>
-    return .explosion (parseBasicFwdRwSrc src) .backward (idxs.getElems.map (·.getNat)).toList
+    .explosion (parseBasicFwdRwSrc src) .backward (idxs.getElems.map (·.getNat)).toList
   | _ => unreachable!
 
-private def parseFactSrc : (TSyntax `egg_fact_src) → Except ParseError (Option Source)
-  | `(egg_fact_src|!?)                 => return none
-  | `(egg_fact_src|!$f:egg_fwd_rw_src) => return some (.fact <| ← parseFwdRwSrc f)
+private def parseFactSrc : (TSyntax `egg_fact_src) → Option Source
+  | `(egg_fact_src|!?)                 => none
+  | `(egg_fact_src|!$f:egg_fwd_rw_src) => some <| .fact (parseFwdRwSrc f)
   | _                                  => unreachable!
 
-private def parseRwSrc : (TSyntax `egg_rw_src) → Except ParseError Rewrite.Descriptor
-  | `(egg_rw_src|$fwdSrc:egg_fwd_rw_src$[-rev%$rev]?$[$facts]*) => do
-    let src   ← parseFwdRwSrc fwdSrc
-    let dir  := if rev.isSome then .backward else .forward
-    let facts ← facts.mapM parseFactSrc
-    return { src, dir, facts }
+private def parseRwSrc : (TSyntax `egg_rw_src) → Rewrite.Descriptor
+  | `(egg_rw_src|$fwdSrc:egg_fwd_rw_src$[-rev%$rev]?$[$facts]*) => {
+      src   := parseFwdRwSrc fwdSrc
+      dir   := if rev.isSome then .backward else .forward
+      facts := facts.map parseFactSrc
+    }
   | _ => unreachable!
 
-private abbrev ParseStepResult := Except ParseError <| Expression × (Option Rewrite.Info)
-private abbrev ParseStepM := ExceptT ParseError <| StateM (Option Rewrite.Info)
+private def parseJustification : (TSyntax `egg_justification) → Justification
+  | `(egg_justification|refl)                       => .rfl
+  | `(egg_justification|symmetry($lem))             => .symm lem.getNat
+  | `(egg_justification|transitivity($lem₁, $lem₂)) => .trans lem₁.getNat lem₂.getNat
+  | `(egg_justification|congruence($lems,*))        => .congr <| lems.getElems.map (·.getNat)
+  | `(egg_justification|Some("$src"))               => .rw (parseRwSrc src)
+  | _                                               => unreachable!
 
-private partial def parseLevel : (TSyntax `egg_lvl) → ParseStepM Level
-  | `(egg_lvl|$n:num)                   => return n.getNat.toLevel
-  | `(egg_lvl|(uvar $id))               => return .mvar (.fromUniqueIdx id.getNat)
-  | `(egg_lvl|(param $n))               => return .param n.getId
-  | `(egg_lvl|(succ $lvl))              => return .succ (← parseLevel lvl)
-  | `(egg_lvl|(max $lvl₁ $lvl₂))        => return .max (← parseLevel lvl₁) (← parseLevel lvl₂)
-  | `(egg_lvl|(imax $lvl₁ $lvl₂))       => return .imax (← parseLevel lvl₁) (← parseLevel lvl₂)
-  | `(egg_lvl|(Rewrite$dir $src $body)) => parseRw dir src body
-  | _                                      => unreachable!
-where
-  parseRw (dir : TSyntax `egg_rw_dir) (src : TSyntax `egg_rw_src) (body : TSyntax `egg_lvl) :
-      ParseStepM Level := do
-    unless (← get).isNone do throw .multipleRws
-    let info ← parseRwSrc src
-    let dir := info.dir.merge (parseRwDir dir)
-    set <| some { info with dir, pos? := none : Rewrite.Info }
-    parseLevel body
+private partial def parseLevel : (TSyntax `egg_lvl) → Level
+  | `(egg_lvl|$n:num)             => n.getNat.toLevel
+  | `(egg_lvl|(uvar $id))         => .mvar (.fromUniqueIdx id.getNat)
+  | `(egg_lvl|(param $n))         => .param n.getId
+  | `(egg_lvl|(succ $lvl))        => .succ (parseLevel lvl)
+  | `(egg_lvl|(max $lvl₁ $lvl₂))  => .max (parseLevel lvl₁) (parseLevel lvl₂)
+  | `(egg_lvl|(imax $lvl₁ $lvl₂)) => .imax (parseLevel lvl₁) (parseLevel lvl₂)
+  | _                             => unreachable!
 
-private partial def parseExpr (stx : TSyntax `egg_expr) : ParseStepResult :=
-  let (e, info?) := go .root stx |>.run none
-  return (← e, info?)
-where
-  go (pos : SubExpr.Pos) : (TSyntax `egg_expr) → ParseStepM Expression
-    | `(egg_expr|(bvar $idx))              => return .bvar idx.getNat
-    | `(egg_expr|(fvar $id))               => return .fvar (.fromUniqueIdx id.getNat)
-    | `(egg_expr|(mvar $id))               => return .mvar (.fromUniqueIdx id.getNat)
-    | `(egg_expr|(sort $lvl))              => return .sort (← parseLevel lvl)
-    | `(egg_expr|(const $name $lvls*))     => return .const name.getId (← lvls.mapM parseLevel).toList
-    | `(egg_expr|(app $fn $arg))           => return .app (← go pos.pushAppFn fn) (← go pos.pushAppArg arg)
-    | `(egg_expr|(λ $ty $body))            => return .lam (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
-    | `(egg_expr|(∀ $ty $body))            => return .forall (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
-    | `(egg_expr|(lit $l))                 => return .lit (parseLit l)
-    | `(egg_expr|(proof $p))               => return .proof (← parseProof p pos)
-    | `(egg_expr|(↦ $idx $to $e))          => return .subst idx.getNat (← go pos to) (← go pos e)
-    | `(egg_expr|(↑ $off $cut $e))         => return .shift (parseShiftOffset off) cut.getNat (← go pos e)
-    | `(egg_expr|(◇ $_ $e))                => go pos e
-    | `(egg_expr|(Rewrite$dir $src $body)) => parseRw dir src body pos
-    | _                                       => unreachable!
+private partial def parseExpr : (TSyntax `egg_expr) → Expression
+  | `(egg_expr|$lvl:egg_lvl)             => .lvl (parseLevel lvl)
+  | `(egg_expr|(bvar $id:ident))         => .bvar id.getId
+  | `(egg_expr|(fvar $id))               => .fvar (.fromUniqueIdx id.getNat)
+  | `(egg_expr|(mvar $id))               => .mvar (.fromUniqueIdx id.getNat)
+  | `(egg_expr|(sort $lvl))              => .sort (parseLevel lvl)
+  | `(egg_expr|(const $name $lvls*))     => .const name.getId (lvls.map parseLevel).toList
+  | `(egg_expr|(app $fn $arg))           => .app (parseExpr fn) (parseExpr arg)
+  | `(egg_expr|(λ $var:ident $ty $body)) => .lam var.getId (parseExpr ty) (parseExpr body)
+  | `(egg_expr|(∀ $var:ident $ty $body)) => .forall var.getId (parseExpr ty) (parseExpr body)
+  | `(egg_expr|(lit $l))                 => .lit (parseLit l)
+  | `(egg_expr|(proof $p))               => .proof (parseExpr p)
+  -- TODO: | `(egg_expr|(↦ $idx $to $e))  => return .subst idx.getNat (← go pos to) (← go pos e)
+  -- TODO: | `(egg_expr|(↑ $off $cut $e)) => return .shift (parseShiftOffset off) cut.getNat (← go pos e)
+  | `(egg_expr|(◇ $_ $e))                => parseExpr e
+  | _                                    => unreachable!
 
-  parseProof (p : TSyntax `egg_expr) (pos : SubExpr.Pos) : ParseStepM Expression := do
-    -- If `p` did not contain a rewrite, all is well and we return `e`. Otherwise, obtain the
-    -- `rwInfo` and make sure it is a defeq rewrite. If not, we have a non-defeq type-level rewrite,
-    -- which we cannot handle, yet.
-    let rwIsOutsideProof := (← get).isSome
-    let e ← go pos p
-    if let some rwInfo ← get then
-      unless rwIsOutsideProof || rwInfo.src.isDefEq do throw .nonDefeqProofRw
-    return e
+private def parseLemma : (TSyntax `egg_lemma) → Lemma
+  | `(egg_lemma|lemma$_ : ' $lhs = $rhs ' by $jus) => {
+      lhs := parseExpr lhs
+      rhs := parseExpr rhs
+      jus := parseJustification jus
+    }
+  | _ => unreachable!
 
-  parseRw (dir : TSyntax `egg_rw_dir) (src : TSyntax `egg_rw_src) (body : TSyntax `egg_expr)
-      (pos : SubExpr.Pos) : ParseStepM Expression := do
-    unless (← get).isNone do throw .multipleRws
-    let info ← parseRwSrc src
-    let dir := info.dir.merge (parseRwDir dir)
-    set <| some { info with dir, pos? := pos : Rewrite.Info }
-    go pos body
-
-private def parseExpl : (TSyntax `egg_expl) → Except ParseError Explanation
-  | `(egg_expl|$steps:egg_expr*) => do
-    let some start := steps[0]? | throw .noSteps
-    let .ok (start, none) := parseExpr start | throw .startContainsRw
-    let mut tl : Array Step := #[]
-    for step in steps[1:] do
-      let (dst, some info) ← parseExpr step | throw .missingRw
-      tl := tl.push { info with dst }
-    return { start, steps := tl }
+private def parseExpl : (TSyntax `egg_expl) → Option Explanation
+  | `(egg_expl|$lems:egg_lemma*) => do
+    let lems := lems.map parseLemma
+    let some target := lems[lems.size - 1]? | failure
+    return { lemmas := lems[:lems.size - 2], target }
   | _ => unreachable!
 
 -- Note: This could be generalized to any monad with an environment and exceptions.
 def Raw.parse (raw : Explanation.Raw) : CoreM Explanation := do
   match Parser.runParserCategory (← getEnv) `egg_expl raw with
-  | .ok stx    =>
-    match parseExpl ⟨stx⟩ with
-    | .ok expl => return expl
-    | .error err => throwError err
-  | .error err => throwError s!"{ParseError.msgPrefix}\n{err}\n\n{raw}"
+  | .ok stx =>
+    let some expl := parseExpl ⟨stx⟩
+      | throwError "egg internal error: called 'Explanation.Raw.parse' on an empty explanation"
+    return expl
+  | .error err => throwError s!"egg received invalid explanation:\n{err}\n\n{raw}"

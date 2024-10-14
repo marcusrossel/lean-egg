@@ -8,6 +8,10 @@ inductive Direction where
   | backward
   deriving Inhabited, BEq, Hashable
 
+def Direction.opposite : Direction → Direction
+  | forward  => .backward
+  | backward => .forward
+
 def Direction.description : Direction → String
   | forward  => "→"
   | backward => "←"

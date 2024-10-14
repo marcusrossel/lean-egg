@@ -8,7 +8,9 @@ import Egg.Tactic.Tags
 import Egg.Tactic.Calcify
 import Egg.Tactic.Basic
 import Egg.Tactic.Trace
+import Egg.Tactic.Goal
 import Egg.Tactic.Guides
+import Egg.Core.Explanation.Flat
 import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Congr
 import Egg.Core.Explanation.Proof

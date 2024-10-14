@@ -82,7 +82,7 @@ namespace Parser
 
 -- Cf. https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Syntax.20atoms.20beginning.20with.20a.20single.20quote/near/294882665
 
-def singleQuote : Parser := rawCh '\'' (trailingWs := false)
+def singleQuote : Parser := rawCh '\'' (trailingWs := true)
 
 @[combinator_formatter singleQuote]
 def singleQuote.formatter := PrettyPrinter.Formatter.visitAtom Name.anonymous

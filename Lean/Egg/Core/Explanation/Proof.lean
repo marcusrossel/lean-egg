@@ -78,6 +78,7 @@ where
   throwDifferent (e₁ e₂ : Expr) {α} : MetaM α :=
     throwError "Egg.Explanation.replaceSubexprs' tried to lens on different expressions:\n  {e₁}\nvs\n {e₂}"
 
+-- NEXT:
 def Expression.toExpr : Expression → MetaM Expr
   | bvar idx        => return .bvar idx
   | fvar id         => return .fvar id
