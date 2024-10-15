@@ -29,7 +29,7 @@ nonrec def formatReport
     (format <| (1000 * rep.time).toUInt64.toNat) ++ "," ++
     (if let some d := proofDuration? then format d else "-") ++ "," ++ (format rep.iterations) ++
     "," ++ (format rep.nodeCount) ++ "," ++ (format rep.classCount) ++ "," ++
-    (if let some e := expl? then format e.steps.size else "-") ++ ")"
+    (if let some e := expl? then format e.steps.length else "-") ++ ")"
   else
     (if let some d := totalDuration? then "\ntotal time: " ++ format d ++ "ms" else "-") ++ "\n" ++
     "eqsat time: " ++ (format <| (1000 * rep.time).toUInt64.toNat) ++ "ms\n" ++
@@ -37,7 +37,7 @@ nonrec def formatReport
     "iters:      " ++ (format rep.iterations)  ++ "\n" ++
     "nodes:      " ++ (format rep.nodeCount)   ++ "\n" ++
     "classes:    " ++ (format rep.classCount)  ++ "\n" ++
-    (if let some e := expl? then "steps:      " ++ format e.steps.size else "-")
+    (if let some e := expl? then "steps:      " ++ format e.steps.length else "-")
 
 nonrec def MVars.toMessageData (mvars : MVars) : MetaM MessageData := do
   let expr := format <| ← mvars.expr.toList.mapM (ppExpr <| Expr.mvar ·)
@@ -140,7 +140,7 @@ nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
       if idx == 0 then trace cls fun _ => step.lhs
       match step.rw with
       | .defeq src =>
-        if src.isNatLitConversion || src.isSubst then continue
+        if src.isNatLitConversion /- TODO: || src.isSubst -/ then continue
         withTraceNode cls (fun _ => return step.rhs) do
           trace cls fun _ => m!"{src.description}({dirFormat step.dir})"
       | .rw rw _ =>

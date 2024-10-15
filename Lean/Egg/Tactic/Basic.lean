@@ -54,11 +54,6 @@ where
       unless amb.lvl.contains lmvar do
         throwError m!"egg: final proof contains level mvar {Level.mvar lmvar}"
 
-def resultToProof'
-    (result : Request.Result') (goal : Goal) (rws : Rewrites) (facts : Facts) (ctx : EncodingCtx) :
-    TacticM Proof? :=
-  return .proof (← mkSorry (← goal.expr) false)
-
 open Config.Modifier (egg_cfg_mod)
 
 protected partial def eval
@@ -94,17 +89,17 @@ where
       | none => goal.id.admit
   runEqSat
       (goal : Goal) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Config)
-      (amb : MVars.Ambient) : TacticM <| Option (Expr × Nat × Request.Result') := do
+      (amb : MVars.Ambient) : TacticM <| Option (Expr × Nat × Request.Result) := do
     let req ← Request.encoding goal.toCongr rws facts guides cfg amb
     withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
     if let .beforeEqSat := cfg.exitPoint then return none
-    let result ← req.run' fun failReport => do
+    let result ← req.run fun failReport => do
       let msg := s!"egg failed to prove the goal ({failReport.stopReason.description}) "
       unless cfg.reporting do throwError msg
       throwError msg ++ formatReport cfg.flattenReports failReport
     if let .beforeProof := cfg.exitPoint then return none
     let beforeProof ← IO.monoMsNow
-    match ← resultToProof' result goal rws facts {amb, cfg} with
+    match ← resultToProof result goal rws facts {amb, cfg} with
     | .proof prf =>
       let proofTime := (← IO.monoMsNow) - beforeProof
       return some (prf, proofTime, result)

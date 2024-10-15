@@ -34,7 +34,6 @@ example (a b c : Nat) (h₁ : a = b) (h₂ : b = c) : a = c := by
 example (a b : Nat) : a + b = b + a := by
   egg [Nat.add_comm]
 
-set_option trace.egg true in
 example (a b c : Nat) : (a + b) + c = (c + b) + a := by
   egg [Nat.add_comm, Nat.add_assoc]
 

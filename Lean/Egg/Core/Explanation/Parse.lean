@@ -1,4 +1,5 @@
 import Egg.Core.Explanation.Basic
+import Egg.Core.Explanation.Flatten
 
 open Lean Parser
 
@@ -111,7 +112,7 @@ syntax "(" &"bvar" egg_slot ")"                            : egg_expr
 syntax "(" &"fvar" num ")"                                 : egg_expr
 syntax "(" &"mvar" num ")"                                 : egg_expr
 syntax "(" &"sort" egg_lvl ")"                             : egg_expr
-syntax "(" &"const" ident egg_lvl* ")"                     : egg_expr
+syntax "(" &"const" ident egg_lvl* ")" : egg_expr
 syntax "(" &"app" egg_expr egg_expr ")"                    : egg_expr
 syntax "(" &"λ" egg_slot egg_expr egg_expr ")"             : egg_expr
 syntax "(" &"∀" egg_slot egg_expr egg_expr ")"             : egg_expr
@@ -121,13 +122,13 @@ syntax "(" &"proof" egg_expr ")"                           : egg_expr
 -- TODO: syntax "(" &"↑" egg_shift_offset num egg_expr ")" : egg_expr
 syntax "(" "◇" egg_shape egg_expr ")"                      : egg_expr
 
-local syntax "refl"                                            : egg_justification
-local syntax "symmetry" "(" num ")"                            : egg_justification
-local syntax "transitivity" "(" num "," num ")"                : egg_justification
-local syntax "congruence" "(" num,+ ")"                        : egg_justification
-local syntax "Some" "(" doubleQuote egg_rw_src doubleQuote ")" : egg_justification
+syntax "refl"                                            : egg_justification
+syntax "symmetry" "(" num ")"                            : egg_justification
+syntax "transitivity" "(" num "," num ")"                : egg_justification
+syntax "congruence" "(" num,+ ")"                        : egg_justification
+syntax "Some" "(" egg_rw_src ")" : egg_justification
 
-local syntax "lemma" noWs num ": " singleQuote egg_expr " = " egg_expr singleQuote &"by " egg_justification : egg_lemma
+syntax ident ": " egg_expr " = " egg_expr "by " egg_justification : egg_lemma
 
 syntax egg_lemma+ : egg_expl
 
@@ -221,7 +222,7 @@ private def parseJustification : (TSyntax `egg_justification) → Justification
   | `(egg_justification|symmetry($lem))             => .symm lem.getNat
   | `(egg_justification|transitivity($lem₁, $lem₂)) => .trans lem₁.getNat lem₂.getNat
   | `(egg_justification|congruence($lems,*))        => .congr <| lems.getElems.map (·.getNat)
-  | `(egg_justification|Some("$src"))               => .rw (parseRwSrc src)
+  | `(egg_justification|Some($src))                 => .rw (parseRwSrc src)
   | _                                               => unreachable!
 
 private partial def parseLevel : (TSyntax `egg_lvl) → Level
@@ -251,14 +252,12 @@ private partial def parseExpr : (TSyntax `egg_expr) → Expression
   | _                                    => unreachable!
 
 private def parseLemma : (TSyntax `egg_lemma) → Lemma
-  | `(egg_lemma|lemma$_ : ' $lhs = $rhs ' by $jus) => {
-      lhs := parseExpr lhs
-      rhs := parseExpr rhs
-      jus := parseJustification jus
-    }
+  | `(egg_lemma|$lem:ident : $lhs = $rhs by $jus) =>
+    -- TODO: assert that lem has the form "lemma<num>"
+    { lhs := parseExpr lhs, rhs := parseExpr rhs, jus := parseJustification jus }
   | _ => unreachable!
 
-private def parseExpl : (TSyntax `egg_expl) → Option Explanation
+private def parseExpl : (TSyntax `egg_expl) → Option Explanation.Tree
   | `(egg_expl|$lems:egg_lemma*) => do
     let lems := lems.map parseLemma
     let some target := lems[lems.size - 1]? | failure
@@ -267,9 +266,12 @@ private def parseExpl : (TSyntax `egg_expl) → Option Explanation
 
 -- Note: This could be generalized to any monad with an environment and exceptions.
 def Raw.parse (raw : Explanation.Raw) : CoreM Explanation := do
+  let raw := raw.replace "'" "" |>.replace "\"" ""
   match Parser.runParserCategory (← getEnv) `egg_expl raw with
   | .ok stx =>
     let some expl := parseExpl ⟨stx⟩
       | throwError "egg internal error: called 'Explanation.Raw.parse' on an empty explanation"
-    return expl
+    match expl.flatten with
+    | .ok expl => return expl
+    | .error err => throwError err.description
   | .error err => throwError s!"egg received invalid explanation:\n{err}\n\n{raw}"

@@ -54,16 +54,20 @@ where
     | _ => panic! s!"in 'Expression.replaceSubexpr.replaceLvl: tried to subsitute non-level 'Expression'"
   | _, _ => panic! s!"in 'Expression.replaceSubexpr.replaceLvl: invalid coordinate"
 
-structure Flat.Step extends Rewrite.Descriptor where
+structure Step extends Rewrite.Descriptor where
   dst : Expression
   pos : SubExpr.Pos
 
-protected structure Flat where
+structure _root_.Egg.Explanation where
   start : Expression
-  steps : List Flat.Step
+  steps : List Step
 
 inductive Error where
   | nonDefEqPrimitiveRw
+
+def Error.description : Error → String
+  | nonDefEqPrimitiveRw =>
+    "egg: failed to flatten explanation. found non-defeq rewrite in primitive constructor"
 
 namespace FlattenM
 
@@ -94,7 +98,7 @@ def withMove (subpos : Nat) (m : FlattenM α) : FlattenM α := do
   modify ({ · with pos, needsDefEq })
   return res
 
-def mkStep (descr : Rewrite.Descriptor) (lhs rhs : Expression) : FlattenM Flat.Step := do
+def mkStep (descr : Rewrite.Descriptor) (lhs rhs : Expression) : FlattenM Step := do
   let { head, pos, symm, needsDefEq } ← get
   let (dir, subDst) := if symm then (descr.dir.opposite, lhs) else (descr.dir, rhs)
   if (needsDefEq || subDst.needsDefEq) && !descr.src.isDefEq then throw .nonDefEqPrimitiveRw
@@ -107,12 +111,12 @@ def mkStep (descr : Rewrite.Descriptor) (lhs rhs : Expression) : FlattenM Flat.S
 end FlattenM
 
 open FlattenM in
-partial def flatten (expl : Explanation) : Except Error Explanation.Flat := do
+partial def Tree.flatten (expl : Tree) : Except Error Explanation := do
   let (steps?, _) := go expl.target |>.run
     { head := expl.target.lhs, pos := .root, symm := false, needsDefEq := false }
   return { start := expl.target.lhs, steps := ← steps? }
 where
-  go (lem : Lemma) : FlattenM (List Flat.Step) := do
+  go (lem : Lemma) : FlattenM (List Step) := do
     match lem.jus with
     | .rw descr    => return [← mkStep descr lem.lhs lem.rhs]
     | .rfl         => return []

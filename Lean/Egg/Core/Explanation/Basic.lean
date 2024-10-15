@@ -47,8 +47,6 @@ structure Lemma where
   jus : Justification
   deriving Inhabited
 
-end Explanation
-
-structure Explanation where
+structure Tree where
   lemmas : Array Explanation.Lemma
   target : Explanation.Lemma
