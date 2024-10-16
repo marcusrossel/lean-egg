@@ -172,6 +172,3 @@ impl Language for LeanExpr {
         }
     }
 }
-
-pub type LeanEGraph = EGraph<LeanExpr>;
-pub type LeanRewrite = Rewrite<LeanExpr>;

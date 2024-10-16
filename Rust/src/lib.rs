@@ -4,7 +4,7 @@ use core::ffi::CStr;
 use std::ffi::CString;
 use libc::c_double;
 use basic::*;
-use lean_expr::*;
+use analysis::*;
 use reporting::*;
 use result::*;
 use rewrite::*;
@@ -21,7 +21,6 @@ mod result;
 mod rewrite;
 mod shift;
 mod subst;
-mod util;
 
 // Cf. https://doc.rust-lang.org/stable/std/ffi/struct.CStr.html#examples
 fn c_str_to_string(c_str: *const c_char) -> String {

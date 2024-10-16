@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use slotted_egraphs::*;
 use crate::result::*;
 use crate::lean_expr::*;
+use crate::analysis::*;
 
 pub struct RewriteTemplate {
     pub name:  String,
@@ -17,14 +18,18 @@ pub fn templates_to_rewrites(
 ) -> Res<Vec<LeanRewrite>> {
     let mut result: Vec<LeanRewrite> = vec![];
     for template in templates {
-        let lhs = template.lhs.clone();
+        let lhs_search = template.lhs.clone();
+        let lhs_apply = template.lhs.clone();
         let facts = facts.clone();
         let rw = RewriteT {
-            searcher: Box::new(move |graph| { ematch_all(graph, &lhs) }),
+            searcher: Box::new(move |graph| { ematch_all(graph, &lhs_search) }),
             applier: Box::new(move |substs, graph| {
                 for subst in substs {
+                    let lhs = pattern_subst(graph, &lhs_apply, &subst);
+                    let analysis: &LeanAnalysis = graph.analysis_data(lhs.id);
+                    
                     // Disallows rewriting on primitive e-nodes.
-                    // TODO: if graph[lhs].data.is_primitive { return vec![] }
+                    if analysis.is_primitive { return }
 
                     let mut rule = template.name.clone();
                     

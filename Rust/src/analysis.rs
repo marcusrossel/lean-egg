@@ -1,41 +1,32 @@
-/*
-use std::collections::HashSet;
 use slotted_egraphs::*;
 use crate::lean_expr::*;
-use crate::util::*;
 
-#[derive(Debug, Default)]
-pub struct LeanAnalysisData {
-    pub nat_val:      Option<u64>,
-    pub dir_val:      Option<bool>,
-    pub loose_bvars:  HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
-    pub is_primitive: bool          // A class is primitive if it represents a `Nat`, `Str` or universe level e-node.
+#[derive(Default, Clone, PartialEq, Eq)]
+pub struct LeanAnalysis {
+    pub nat_val: Option<u64>,
+    pub is_primitive: bool // A class is primitive if it represents a `Nat`, `Str` or universe level e-node.
+    // TODO: pub dir_val: Option<bool>,
 }
 
-#[derive(Default)]
-pub struct LeanAnalysis;
 impl Analysis<LeanExpr> for LeanAnalysis {
-    type Data = LeanAnalysisData;
 
-    fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {       
-        // `merge_max` prefers `Some` value over `None`. Note that if `to` and `from` both have nat values,
-        // then they should have the *same* value as otherwise merging their e-classes indicates an invalid 
-        // rewrite. The same applies for the `dir_val`s.
-        egg::merge_max(&mut to.nat_val, from.nat_val) | 
-        egg::merge_max(&mut to.dir_val, from.dir_val) | 
-        union_sets(&mut to.loose_bvars, from.loose_bvars) |
-        egg::merge_max(&mut to.is_primitive, from.is_primitive)
+    fn merge(l: Self, r: Self) -> Self {       
+        Self {
+            nat_val: l.nat_val.max(r.nat_val),
+            is_primitive: l.is_primitive || r.is_primitive
+        }
     }
 
-    fn make(egraph: &EGraph<LeanExpr, Self>, enode: &LeanExpr) -> Self::Data {      
+    fn make(_: &EGraph<LeanExpr, Self>, enode: &LeanExpr) -> Self {      
         match enode {
-            LeanExpr::Nat(n) => 
-                Self::Data { 
-                    nat_val: Some(*n), 
-                    is_primitive: true,
-                    ..Default::default() 
-                },
+            LeanExpr::Nat(n) => Self { nat_val: Some(*n), is_primitive: true },
             
+            LeanExpr::Str(_) | LeanExpr::UVar(_) | LeanExpr::Param(_) | LeanExpr::Succ(_) | 
+            LeanExpr::Max(_, _) | LeanExpr::IMax(_, _) => 
+                Self { is_primitive: true, ..Default::default() },
+
+            /* TODO:
+
             LeanExpr::Str(shift_up) if shift_up == "+" => 
                 Self::Data { 
                     dir_val: Some(true), 
@@ -50,45 +41,9 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                     ..Default::default() 
                 },
 
-            LeanExpr::Str(_) => 
-                Self::Data { 
-                    is_primitive: true,
-                    ..Default::default() 
-                },
-
             LeanExpr::Fun(_) => 
                 Self::Data { 
                     is_primitive: true,
-                    ..Default::default() 
-                },
-
-            LeanExpr::UVar(_) | LeanExpr::Param(_) | LeanExpr::Succ(_) | LeanExpr::Max(_) | LeanExpr::IMax(_) => 
-                Self::Data { 
-                    is_primitive: true,
-                    ..Default::default() 
-                },
-            
-            LeanExpr::BVar(idx) => 
-                Self::Data { 
-                    loose_bvars: match egraph[*idx].data.nat_val { 
-                        Some(n) => vec![n].into_iter().collect(),
-                        None    => HashSet::new()
-                    }, 
-                    ..Default::default() 
-                },
-            
-            LeanExpr::App([fun, arg]) => 
-                Self::Data { 
-                    loose_bvars: union_clone(&egraph[*fun].data.loose_bvars, &egraph[*arg].data.loose_bvars),
-                    ..Default::default() 
-                },
-            
-            LeanExpr::Lam([ty, body]) | LeanExpr::Forall([ty, body]) =>
-                Self::Data { 
-                    loose_bvars: union_clone(
-                        &egraph[*ty].data.loose_bvars, 
-                        &shift_down(&egraph[*body].data.loose_bvars)
-                    ), 
                     ..Default::default() 
                 },
 
@@ -129,6 +84,7 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                 }
                 Self::Data { loose_bvars, ..Default::default() }
             },
+            */
 
             _ => Default::default()
         }
@@ -137,4 +93,3 @@ impl Analysis<LeanExpr> for LeanAnalysis {
 
 pub type LeanEGraph = EGraph<LeanExpr, LeanAnalysis>;
 pub type LeanRewrite = Rewrite<LeanExpr, LeanAnalysis>;
-*/

@@ -1,5 +1,5 @@
 use slotted_egraphs::*;
-use crate::lean_expr::*;
+use crate::analysis::*;
 
 pub fn level_rws() -> Vec<LeanRewrite> {
     let mut rws = vec![];
