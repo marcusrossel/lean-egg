@@ -53,7 +53,7 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
         Ok(r)    => rws = r,
         Err(err) => return Err(Error::Rewrite(err.to_string()))
     }
-    if cfg.gen_nat_lit_rws { rws.append(&mut nat_lit_rws()) }
+    if cfg.gen_nat_lit_rws { rws.append(&mut nat_lit_rws(false)) }
     if cfg.gen_eta_rw      { rws.push(eta_reduction_rw()) }
     if cfg.gen_beta_rw     { rws.push(beta_reduction_rw()) }
     if cfg.gen_level_rws   { rws.append(&mut level_rws()) }
