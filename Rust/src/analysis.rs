@@ -49,19 +49,8 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                     ..Default::default() 
                 },
 
-            LeanExpr::Str(_) => 
-                Self::Data { 
-                    is_primitive: true,
-                    ..Default::default() 
-                },
-
-            LeanExpr::Fun(_) => 
-                Self::Data { 
-                    is_primitive: true,
-                    ..Default::default() 
-                },
-
-            LeanExpr::UVar(_) | LeanExpr::Param(_) | LeanExpr::Succ(_) | LeanExpr::Max(_) | LeanExpr::IMax(_) => 
+            LeanExpr::Str(_) | LeanExpr::Fun(_) | LeanExpr::UVar(_) | LeanExpr::Param(_) | 
+            LeanExpr::Succ(_) | LeanExpr::Max(_) | LeanExpr::IMax(_) => 
                 Self::Data { 
                     is_primitive: true,
                     ..Default::default() 
@@ -128,6 +117,9 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                 }
                 Self::Data { loose_bvars, ..Default::default() }
             },
+
+            LeanExpr::Shaped([_, e]) | LeanExpr::Proof(e)  =>
+                Self::Data { loose_bvars: egraph[*e].data.loose_bvars.clone(), ..Default::default() },
 
             _ => Default::default()
         }
