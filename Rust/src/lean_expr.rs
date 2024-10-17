@@ -1,4 +1,4 @@
-use slotted_egraphs::*;
+pub use slotted_egraphs::{lang::*, types::*, rewrite::*};
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum LeanExpr {

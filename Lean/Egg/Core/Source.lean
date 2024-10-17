@@ -121,9 +121,6 @@ def description : Source → String
   | tagged idx none         => s!"□{idx}"
   | tagged idx (some eqn)   => s!"□{idx}/{eqn}"
 
-instance : ToString Source where
-  toString := description
-
 def isRewrite : Source → Bool
   | goal | guide _ => false
   | _              => true

@@ -19,7 +19,7 @@ where
   | (_ + 1) :: _, .const ..        => none
   | 0 :: tl,      .app fn _        => go tl fn
   | 1 :: tl,      .app _ arg       => go tl arg
-  | 0 :: tl,      .lam _ ty _      => go tl ty -- TODO: does the var count in congruence justifications?
+  | 0 :: tl,      .lam _ ty _      => go tl ty
   | 1 :: tl,      .lam _ _ body    => go tl body
   | 0 :: tl,      .forall _ ty _   => go tl ty
   | 1 :: tl,      .forall _ _ body => go tl body
@@ -36,7 +36,7 @@ where
   | (n + 1) :: tl, .const name ls      => .const name <| ls.enum.map fun (i, l) => if i == n then (replaceLvl tl l) else l
   | 0 :: tl,       .app fn arg         => .app (go tl fn) arg
   | 1 :: tl,       .app fn arg         => .app fn (go tl arg)
-  | 0 :: tl,       .lam var ty body    => .lam var (go tl ty) body -- TODO: does the var count in congruence justifications?
+  | 0 :: tl,       .lam var ty body    => .lam var (go tl ty) body
   | 1 :: tl,       .lam var ty body    => .lam var ty (go tl body)
   | 0 :: tl,       .forall var ty body => .forall var (go tl ty) body
   | 1 :: tl,       .forall var ty body => .forall var ty (go tl body)
@@ -58,9 +58,15 @@ structure Step extends Rewrite.Descriptor where
   dst : Expression
   pos : SubExpr.Pos
 
+def Step.toString (s : Step) : String :=
+  s!"{s.dst.toString}\n  by {s.src.description}"
+
 structure _root_.Egg.Explanation where
   start : Expression
   steps : List Step
+
+def toString (expl : Explanation) : String :=
+  expl.steps.foldl (init := expl.start.toString) fun str step => s!"{str}\n\n{step.toString}"
 
 inductive Error where
   | nonDefEqPrimitiveRw
@@ -112,19 +118,23 @@ end FlattenM
 
 open FlattenM in
 partial def Tree.flatten (expl : Tree) : Except Error Explanation := do
+  dbg_trace s!"{expl.toString}\n"
   let (steps?, _) := go expl.target |>.run
-    { head := expl.target.lhs, pos := .root, symm := false, needsDefEq := false }
-  return { start := expl.target.lhs, steps := ← steps? }
+    { head := expl.targetLemma.lhs, pos := .root, symm := false, needsDefEq := false }
+  let res := { start := expl.targetLemma.lhs, steps := ← steps? }
+  dbg_trace s!"{res.toString}\n"
+  return res
 where
-  go (lem : Lemma) : FlattenM (List Step) := do
-    match lem.jus with
-    | .rw descr    => return [← mkStep descr lem.lhs lem.rhs]
+  go (lem : Nat) : FlattenM (List Step) := do
+    let { lhs, rhs, jus } := expl.lemmas[lem]!
+    match jus with
+    | .rw descr    => return [← mkStep descr lhs rhs]
     | .rfl         => return []
-    | .symm l      => withToggledSymm do go expl.lemmas[l]!
+    | .symm l      => withToggledSymm do go l
     | .trans l₁ l₂ =>
       if ← symm
-      then return (← go expl.lemmas[l₂]!).reverse ++ (← go expl.lemmas[l₁]!).reverse
-      else return (← go expl.lemmas[l₁]!)         ++ (← go expl.lemmas[l₂]!)
+      then return (← go l₂).reverse ++ (← go l₁).reverse
+      else return (← go l₁)         ++ (← go l₂)
     | .congr ls =>
       ls.toList.enum.foldlM (init := [])
-        fun steps (subpos, lem) => withMove subpos do return steps ++ (← go expl.lemmas[lem]!)
+        fun steps (subpos, l) => withMove subpos do return steps ++ (← go l)

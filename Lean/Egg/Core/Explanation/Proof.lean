@@ -84,7 +84,7 @@ where
       return (step, [])
     let facts ← step.facts.mapM fun src? => do
       let some src := src? | pure none
-      facts.find? (·.src == src) |>.getDM <| fail m!"explanation references unknown fact {src}"
+      facts.find? (·.src == src) |>.getDM <| fail m!"explanation references unknown fact {src.description}"
     let (prf, subgoals) ← mkCongrStep current next step.pos (← rw.forDir step.dir) facts
     let step := {
       lhs := current, rhs := next, proof := prf,

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use slotted_egraphs::*;
+pub use slotted_egraphs::{types::*, rewrite::*};
 use crate::result::*;
 use crate::lean_expr::*;
 use crate::analysis::*;

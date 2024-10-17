@@ -1,6 +1,6 @@
 use std::time::Instant;
 use std::collections::HashMap;
-use slotted_egraphs::*;
+pub use slotted_egraphs::{*};
 use crate::result::*;
 use crate::analysis::*;
 // use crate::beta::*;
@@ -27,7 +27,7 @@ pub struct Config {
 
 pub fn explain_congr(
     init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, 
-    guides: Vec<String>, cfg: Config, viz_path: Option<String>
+    guides: Vec<String>, cfg: Config, _viz_path: Option<String>
 ) -> Result<(String, LeanEGraph, Report), Error> {    
     let mut egraph: LeanEGraph = EGraph::new();
     
@@ -119,7 +119,7 @@ pub fn explain_congr(
     };
 
     if egraph.find_applied_id(&init_id) == egraph.find_applied_id(&goal_id) {
-        let expl = egraph.explain_equivalence(init_expr, goal_expr).to_string_expr(&egraph);
+        let expl = egraph.explain_equivalence(init_expr, goal_expr).to_string(&egraph);
         Ok((expl, egraph, report))
     } else {
         Ok(("".to_string(), egraph, report))

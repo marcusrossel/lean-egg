@@ -1,5 +1,6 @@
 import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Flatten
+import Std
 
 open Lean Parser
 
@@ -31,7 +32,8 @@ declare_syntax_cat egg_rw_src
 syntax num : egg_lit
 syntax str : egg_lit
 
-syntax ident : egg_slot
+syntax "s-" num : egg_slot
+syntax ident    : egg_slot
 
 syntax "*"                          : egg_shape
 syntax "(→" egg_shape egg_shape ")" : egg_shape
@@ -107,7 +109,6 @@ syntax "(" &"succ" egg_lvl ")"         : egg_lvl
 syntax "(" &"max" egg_lvl egg_lvl ")"  : egg_lvl
 syntax "(" &"imax" egg_lvl egg_lvl ")" : egg_lvl
 
-syntax egg_lvl                                             : egg_expr
 syntax "(" &"bvar" egg_slot ")"                            : egg_expr
 syntax "(" &"fvar" num ")"                                 : egg_expr
 syntax "(" &"mvar" num ")"                                 : egg_expr
@@ -121,16 +122,23 @@ syntax "(" &"proof" egg_expr ")"                           : egg_expr
 -- TODO: syntax "(" &"↦" num egg_expr egg_expr ")"         : egg_expr
 -- TODO: syntax "(" &"↑" egg_shift_offset num egg_expr ")" : egg_expr
 syntax "(" "◇" egg_shape egg_expr ")"                      : egg_expr
+syntax egg_lvl                                             : egg_expr
+syntax egg_shape                                           : egg_expr
 
-syntax "refl"                                            : egg_justification
-syntax "symmetry" "(" num ")"                            : egg_justification
-syntax "transitivity" "(" num "," num ")"                : egg_justification
-syntax "congruence" "(" num,+ ")"                        : egg_justification
-syntax "Some" "(" egg_rw_src ")" : egg_justification
+syntax "refl"                             : egg_justification
+syntax "symmetry" "(" num ")"             : egg_justification
+syntax "transitivity" "(" num "," num ")" : egg_justification
+syntax "congruence" "(" num,+ ")"         : egg_justification
+syntax "Some" "(" egg_rw_src ")"          : egg_justification
 
-syntax ident ": " egg_expr " = " egg_expr "by " egg_justification : egg_lemma
+syntax num ": " egg_expr " = " egg_expr "by " egg_justification : egg_lemma
 
 syntax egg_lemma+ : egg_expl
+
+private def parseSlot : (TSyntax `egg_slot) → Name
+  | `(egg_slot|s-$n)     => Name.mkStr1 s!"s-{n.getNat}"
+  | `(egg_slot|$i:ident) => i.getId
+  | _                    => unreachable!
 
 private def parseLit : (TSyntax `egg_lit) → Literal
   | `(egg_lit|$n:num) => .natVal n.getNat
@@ -234,44 +242,84 @@ private partial def parseLevel : (TSyntax `egg_lvl) → Level
   | `(egg_lvl|(imax $lvl₁ $lvl₂)) => .imax (parseLevel lvl₁) (parseLevel lvl₂)
   | _                             => unreachable!
 
-private partial def parseExpr : (TSyntax `egg_expr) → Expression
-  | `(egg_expr|$lvl:egg_lvl)             => .lvl (parseLevel lvl)
-  | `(egg_expr|(bvar $id:ident))         => .bvar id.getId
-  | `(egg_expr|(fvar $id))               => .fvar (.fromUniqueIdx id.getNat)
-  | `(egg_expr|(mvar $id))               => .mvar (.fromUniqueIdx id.getNat)
-  | `(egg_expr|(sort $lvl))              => .sort (parseLevel lvl)
-  | `(egg_expr|(const $name $lvls*))     => .const name.getId (lvls.map parseLevel).toList
-  | `(egg_expr|(app $fn $arg))           => .app (parseExpr fn) (parseExpr arg)
-  | `(egg_expr|(λ $var:ident $ty $body)) => .lam var.getId (parseExpr ty) (parseExpr body)
-  | `(egg_expr|(∀ $var:ident $ty $body)) => .forall var.getId (parseExpr ty) (parseExpr body)
-  | `(egg_expr|(lit $l))                 => .lit (parseLit l)
-  | `(egg_expr|(proof $p))               => .proof (parseExpr p)
+private inductive ParseExprResult where
+  | expr   (e : Expression)
+  | shaped (e : Expression)
+  | shape
+  deriving Inhabited
+
+private def ParseExprResult.expr! : ParseExprResult → Expression
+  | expr e | shaped e => e
+  | shape => panic! "called 'ParseExprResult.expr!' on `ParseExprResult.shape`"
+
+private partial def parseExpr : (TSyntax `egg_expr) → ParseExprResult
+  | `(egg_expr|(bvar $id))           => .expr <| .bvar (parseSlot id)
+  | `(egg_expr|(fvar $id))           => .expr <| .fvar (.fromUniqueIdx id.getNat)
+  | `(egg_expr|(mvar $id))           => .expr <| .mvar (.fromUniqueIdx id.getNat)
+  | `(egg_expr|(sort $lvl))          => .expr <| .sort (parseLevel lvl)
+  | `(egg_expr|(const $name $lvls*)) => .expr <| .const name.getId (lvls.map parseLevel).toList
+  | `(egg_expr|(app $fn $arg))       => .expr <| .app (parseExpr fn).expr! (parseExpr arg).expr!
+  | `(egg_expr|(λ $var $ty $body))   => .expr <| .lam (parseSlot var) (parseExpr ty).expr! (parseExpr body).expr!
+  | `(egg_expr|(∀ $var $ty $body))   => .expr <| .forall (parseSlot var) (parseExpr ty).expr! (parseExpr body).expr!
+  | `(egg_expr|(lit $l))             => .expr <| .lit (parseLit l)
+  | `(egg_expr|(proof $p))           => .expr <| .proof (parseExpr p).expr!
   -- TODO: | `(egg_expr|(↦ $idx $to $e))  => return .subst idx.getNat (← go pos to) (← go pos e)
   -- TODO: | `(egg_expr|(↑ $off $cut $e)) => return .shift (parseShiftOffset off) cut.getNat (← go pos e)
-  | `(egg_expr|(◇ $_ $e))                => parseExpr e
-  | _                                    => unreachable!
+  | `(egg_expr|(◇ $_ $e))            => .shaped (parseExpr e).expr!
+  | `(egg_expr|$lvl:egg_lvl)         => .expr <| .lvl (parseLevel lvl)
+  | `(egg_expr|$_:egg_shape)         => .shape
+  | _                                => unreachable!
 
-private def parseLemma : (TSyntax `egg_lemma) → Lemma
-  | `(egg_lemma|$lem:ident : $lhs = $rhs by $jus) =>
-    -- TODO: assert that lem has the form "lemma<num>"
-    { lhs := parseExpr lhs, rhs := parseExpr rhs, jus := parseJustification jus }
+private inductive ParseLemmaResult where
+  | lem (idx : Nat) (lem : Lemma)
+  | redirect («from» to : Nat)
+  | erase
+  deriving Inhabited
+
+-- If the lemma is `none`, this indicates an erased lemma. If the associated `Nat` is set, the lemma
+-- is replaced by another lemmas with that index.
+private def parseLemma : (TSyntax `egg_lemma) → ParseLemmaResult
+  | `(egg_lemma|$n:num : $lhs = $rhs by $jus) =>
+    let jus := parseJustification jus
+    match parseExpr lhs, parseExpr rhs with
+    | .expr lhs,   .expr rhs   => .lem n.getNat  { lhs, rhs, jus }
+    | .shaped lhs, .shaped rhs => if let .congr #[_, r] := jus then .redirect n.getNat r else .lem n.getNat { lhs, rhs, jus }
+    | .shape,      .shape      => .erase
+    | _,           _           => panic! "'Egg.Explanation.parseLemma' got different results from 'parseExpr'"
   | _ => unreachable!
 
-private def parseExpl : (TSyntax `egg_expl) → Option Explanation.Tree
+private partial def parseExplTree : (TSyntax `egg_expl) → Option Explanation.Tree
   | `(egg_expl|$lems:egg_lemma*) => do
-    let lems := lems.map parseLemma
-    let some target := lems[lems.size - 1]? | failure
-    return { lemmas := lems[:lems.size - 2], target }
+    let mut lemmas : Std.HashMap Nat Lemma := ∅
+    let mut redirects : Std.HashMap Nat Nat := ∅
+    for lem in lems do
+      match parseLemma lem with
+      | .erase              => continue
+      | .redirect «from» to => redirects := redirects.insert «from» to
+       -- This approach assumes that lemmas are parsed in order of their indices.
+      | .lem idx lem        => lemmas := lemmas.insert idx { lem with jus := applyRedirects redirects lem.jus }
+    let some target := lemmas.keys.maximum? | failure
+    return { lemmas, target }
   | _ => unreachable!
+where
+  applyRedirects (r : Std.HashMap Nat Nat) : Justification → Justification
+    | .symm i      => .symm (redirectIdx r i)
+    | .trans i₁ i₂ => .trans (redirectIdx r i₁) (redirectIdx r i₂)
+    | .congr is    => .congr <| is.map (redirectIdx r)
+    | j            => j
+  redirectIdx (r : Std.HashMap Nat Nat) (idx : Nat) : Nat :=
+    match r[idx]? with
+    | none   => idx
+    | some i => redirectIdx r i
 
 -- Note: This could be generalized to any monad with an environment and exceptions.
 def Raw.parse (raw : Explanation.Raw) : CoreM Explanation := do
-  let raw := raw.replace "'" "" |>.replace "\"" ""
+  let raw := raw.replace "\"" "" -- HACK
   match Parser.runParserCategory (← getEnv) `egg_expl raw with
   | .ok stx =>
-    let some expl := parseExpl ⟨stx⟩
+    let some expl := parseExplTree ⟨stx⟩
       | throwError "egg internal error: called 'Explanation.Raw.parse' on an empty explanation"
     match expl.flatten with
-    | .ok expl => return expl
+    | .ok expl   => return expl
     | .error err => throwError err.description
   | .error err => throwError s!"egg received invalid explanation:\n{err}\n\n{raw}"
