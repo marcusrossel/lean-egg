@@ -1,4 +1,4 @@
-pub use slotted_egraphs::{types::*, rewrite::*};
+use slotted_egraphs::*;
 use crate::analysis::*;
 
 pub fn level_rws() -> Vec<LeanRewrite> {

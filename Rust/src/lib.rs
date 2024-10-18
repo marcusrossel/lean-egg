@@ -1,4 +1,4 @@
-pub use slotted_egraphs::{lang::*, types::*, extract::*, slotmap::*};
+use slotted_egraphs::*;
 use core::ffi::c_char;
 use core::ffi::CStr;
 use std::ffi::CString;

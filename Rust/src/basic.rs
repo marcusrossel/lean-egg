@@ -1,6 +1,6 @@
 use std::time::Instant;
 use std::collections::HashMap;
-pub use slotted_egraphs::{*};
+use slotted_egraphs::*;
 use crate::result::*;
 use crate::analysis::*;
 // use crate::beta::*;

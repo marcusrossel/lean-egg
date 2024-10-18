@@ -58,7 +58,7 @@ where
 
   encodeFVar (id : FVarId) : EncodeM Expression := do
     if ← representsBVar id
-    then return s!"(bvar s{id.uniqueIdx!})"
+    then return s!"(bvar ${id.uniqueIdx!})"
     else return s!"(fvar {id.uniqueIdx!})"
 
   encodeMVar (id : MVarId) : EncodeM Expression := do

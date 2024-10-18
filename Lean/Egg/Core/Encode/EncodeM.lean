@@ -32,7 +32,7 @@ def withInstantiatedBVar (ty body : Expr) (m : String → Expr → EncodeM α) :
   Meta.withLocalDecl .anonymous .default ty fun fvar => do
     let s ← get
     set { s with bvars := fvar.fvarId! :: s.bvars }
-    let a ← m s!"s{fvar.fvarId!.uniqueIdx!}" (body.instantiate #[fvar])
+    let a ← m s!"${fvar.fvarId!.uniqueIdx!}" (body.instantiate #[fvar])
     set { s with bvars := s.bvars }
     return a
 

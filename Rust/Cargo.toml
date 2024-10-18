@@ -7,6 +7,6 @@ edition = "2021"
 crate-type = ["staticlib"]
 
 [dependencies]
-slotted-egraphs = { version = "=0.0.9", features = ["explanations"] }
+slotted-egraphs = { version = "=0.0.10", features = ["explanations"] }
 indexmap = "1.8.1"
 libc = "0.2"

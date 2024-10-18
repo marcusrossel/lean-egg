@@ -18,14 +18,14 @@ structure Descriptor where
 end Rewrite
 
 inductive Expression where
-  | bvar (id : Name)
+  | bvar (id : Nat)
   | fvar (id : FVarId)
   | mvar (id : MVarId)
   | sort (lvl : Level)
   | const (name : Name) (lvls : List Level)
   | app (fn arg : Expression)
-  | lam (var : Name) (ty body : Expression)
-  | forall (var : Name) (ty body : Expression)
+  | lam (var : Nat) (ty body : Expression)
+  | forall (var : Nat) (ty body : Expression)
   | lit (l : Literal)
   | proof (prop : Expression)
   -- TODO: | subst (idx : Nat) (to e : Expression)

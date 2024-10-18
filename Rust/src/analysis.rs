@@ -1,4 +1,4 @@
-pub use slotted_egraphs::{*};
+use slotted_egraphs::*;
 use crate::lean_expr::*;
 
 #[derive(Default, Clone, PartialEq, Eq)]

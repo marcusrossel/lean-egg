@@ -32,8 +32,7 @@ declare_syntax_cat egg_rw_src
 syntax num : egg_lit
 syntax str : egg_lit
 
-syntax "s-" num : egg_slot
-syntax ident    : egg_slot
+syntax "$" num : egg_slot
 
 syntax "*"                          : egg_shape
 syntax "(→" egg_shape egg_shape ")" : egg_shape
@@ -135,10 +134,9 @@ syntax num ": " egg_expr " = " egg_expr "by " egg_justification : egg_lemma
 
 syntax egg_lemma+ : egg_expl
 
-private def parseSlot : (TSyntax `egg_slot) → Name
-  | `(egg_slot|s-$n)     => Name.mkStr1 s!"s-{n.getNat}"
-  | `(egg_slot|$i:ident) => i.getId
-  | _                    => unreachable!
+private def parseSlot : (TSyntax `egg_slot) → Nat
+  | `(egg_slot|$ $n) => n.getNat
+  | _                => unreachable!
 
 private def parseLit : (TSyntax `egg_lit) → Literal
   | `(egg_lit|$n:num) => .natVal n.getNat
