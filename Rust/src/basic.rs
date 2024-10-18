@@ -21,6 +21,7 @@ pub struct Config {
     gen_eta_rw:             bool,
     gen_beta_rw:            bool,
     gen_level_rws:          bool,
+    shapes:                 bool,
     block_invalid_matches:  bool,
     shift_captured_bvars:   bool,
     allow_unsat_conditions: bool
@@ -53,7 +54,7 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
         Ok(r)    => rws = r,
         Err(err) => return Err(Error::Rewrite(err.to_string()))
     }
-    if cfg.gen_nat_lit_rws { rws.append(&mut nat_lit_rws(false)) }
+    if cfg.gen_nat_lit_rws { rws.append(&mut nat_lit_rws(cfg.shapes)) }
     if cfg.gen_eta_rw      { rws.push(eta_reduction_rw()) }
     if cfg.gen_beta_rw     { rws.push(beta_reduction_rw()) }
     if cfg.gen_level_rws   { rws.append(&mut level_rws()) }

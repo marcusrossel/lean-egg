@@ -28,7 +28,7 @@ impl Applier<LeanExpr, LeanAnalysis> for ToSucc {
             if !(nat_val > 0) { return vec![] }
             
             let res = 
-                if self.shapes { format!("(app (◇ (* → *) (const Nat.succ)) (◇ * (lit {})))", nat_val - 1) } 
+                if self.shapes { format!("(app (◇ (→ * *) (const Nat.succ)) (◇ * (lit {})))", nat_val - 1) } 
                 else           { format!("(app (const Nat.succ) (lit {}))",                   nat_val - 1) }
             .parse().unwrap();
                 
@@ -47,7 +47,7 @@ struct OfSucc {
 impl OfSucc {
 
     fn rewrite(shapes: bool) -> LeanRewrite {
-        if shapes { rewrite!("≡S→"; "(app (◇ (* → *) (const Nat.succ)) (◇ * (lit ?n)))" => { OfSucc { nat_val : "?n".parse().unwrap() }}) } 
+        if shapes { rewrite!("≡S→"; "(app (◇ (→ * *) (const Nat.succ)) (◇ * (lit ?n)))" => { OfSucc { nat_val : "?n".parse().unwrap() }}) } 
         else      { rewrite!("≡S→"; "(app (const Nat.succ) (lit ?n))"                   => { OfSucc { nat_val : "?n".parse().unwrap() }}) }   
     }
 }
@@ -76,7 +76,7 @@ impl Op {
 
     fn rewrite(rule: &str, op_name: &str, op: fn(u64, u64) -> u64, shapes: bool) -> LeanRewrite {
         let pattern: Pattern<_> = 
-            if shapes { format!("(app (◇ (* → *) (app (◇ (* → (* → *)) (const Nat.{})) (◇ * (lit ?l)))) (◇ * (lit ?r)))", op_name) } 
+            if shapes { format!("(app (◇ (→ * *) (app (◇ (→ * (→ * *)) (const Nat.{})) (◇ * (lit ?l)))) (◇ * (lit ?r)))", op_name) } 
             else      { format!("(app (app (const Nat.{}) (lit ?l)) (lit ?r))",                                           op_name) }
         .parse().unwrap();
 

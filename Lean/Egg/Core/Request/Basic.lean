@@ -18,6 +18,7 @@ protected structure Config where
   genEtaRw             : Bool
   genBetaRw            : Bool
   genLevelRws          : Bool
+  shapes               : Bool
   blockInvalidMatches  : Bool
   shiftCapturedBVars   : Bool
   allowUnsatConditions : Bool
@@ -32,6 +33,7 @@ instance : Coe Config Request.Config where
     genEtaRw             := cfg.genEtaRw
     genBetaRw            := cfg.genBetaRw
     genLevelRws          := cfg.genLevelRws
+    shapes               := cfg.shapes
     blockInvalidMatches  := cfg.blockInvalidMatches
     shiftCapturedBVars   := cfg.shiftCapturedBVars
     allowUnsatConditions := cfg.conditionSubgoals
