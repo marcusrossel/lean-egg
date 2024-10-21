@@ -3,14 +3,12 @@ use std::collections::HashMap;
 use slotted_egraphs::*;
 use crate::result::*;
 use crate::analysis::*;
-// use crate::beta::*;
-// use crate::eta::*;
+use crate::beta::*;
+use crate::eta::*;
 use crate::levels::*;
-// use crate::nat_lit::*;
+use crate::nat_lit::*;
 use crate::reporting::*;
 use crate::rewrite::*;
-// use crate::shift::*;
-// use crate::subst::*;
 
 #[repr(C)]
 pub struct Config {
@@ -35,27 +33,27 @@ pub fn explain_congr(
     // egraph = egraph.with_explanations_enabled();
     // if !cfg.optimize_expl { egraph = egraph.without_explanation_length_optimization() }
 
-    let init_expr = RecExpr::parse(&init).ok_or(
-        Error::Init(format!("Failed to parse lhs of goal:\n\n  {}", init).to_string())
-    )?;
-    let goal_expr = RecExpr::parse(&goal).ok_or(
-        Error::Goal(format!("Failed to parse rhs of goal:\n\n  {}", goal).to_string())
-    )?;
+    let init_expr = RecExpr::parse(&init).map_err(|err| {
+        Error::Init(format!("Failed to parse lhs of goal: {:?}\n\n  {}", err, init).to_string())
+    })?;
+    let goal_expr = RecExpr::parse(&goal).map_err(|err| {
+        Error::Goal(format!("Failed to parse rhs of goal: {:?}\n\n  {}", err, goal).to_string())
+    })?;
     let init_id = egraph.add_expr(init_expr.clone());
     let goal_id = egraph.add_expr(goal_expr.clone());
 
     for guide in guides {
-        let expr = RecExpr::parse(&guide).ok_or(
-            Error::Guide(format!("Failed to parse guide term:\n\n  {}", guide).to_string())
-        )?;
+        let expr = RecExpr::parse(&guide).map_err(|err| {
+            Error::Guide(format!("Failed to parse guide term: {:?}\n\n  {}", err, guide).to_string())
+    })?;
         egraph.add_expr(expr);
     }
 
     let mut fact_map: HashMap<AppliedId, String> = Default::default();
     for (name, expr) in facts {
-        let expr = RecExpr::parse(&expr).ok_or(
-            Error::Fact(format!("Failed to parse fact:\n\n  {}", expr).to_string())
-        )?;
+        let expr = RecExpr::parse(&expr).map_err(|err| {
+            Error::Fact(format!("Failed to parse fact: {:?}\n\n  {}", err, expr).to_string())
+        })?;
         let class = egraph.add_expr(expr);
         fact_map.insert(class, name);
     }
@@ -65,13 +63,10 @@ pub fn explain_congr(
         Ok(r)    => rws = r,
         Err(err) => return Err(Error::Rewrite(err.to_string()))
     }
-    if cfg.gen_nat_lit_rws { /* TODO: rws.append(&mut nat_lit_rws()) */ }
-    if cfg.gen_eta_rw      { /* TODO: rws.push(eta_reduction_rw()) */ }
-    if cfg.gen_beta_rw     { /* TODO: rws.push(beta_reduction_rw()) */ }
+    if cfg.gen_nat_lit_rws { rws.append(&mut nat_lit_rws()) }
+    if cfg.gen_eta_rw      { rws.push(eta_reduction_rw()) }
+    if cfg.gen_beta_rw     { rws.push(beta_reduction_rw()) }
     if cfg.gen_level_rws   { rws.append(&mut level_rws()) }
-    // TODO: Only add these rws if on of the following is active: beta, eta, bvar index correction. Anything else?
-    // TODO: rws.append(&mut subst_rws());
-    // TODO: rws.append(&mut shift_rws());
 
     let start_time = Instant::now();
     let mut iter_count = 0;

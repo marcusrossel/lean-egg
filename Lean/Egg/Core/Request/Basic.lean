@@ -99,7 +99,7 @@ structure Result where
 
 def run (req : Request) (onFail : Result.Report → MetaM Result) : MetaM Result := do
   let raw := runRaw req
-  withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] raw.expl
+  withTraceNode `egg.explanation (fun _ => return "Raw Explanation") do trace[egg.explanation] raw.expl
   if "⚡️".isPrefixOf raw.expl then
     throwError s!"egg backend failed:\n  {raw.expl}"
   else
@@ -108,4 +108,7 @@ def run (req : Request) (onFail : Result.Report → MetaM Result) : MetaM Result
       onFail report
     else
       let some egraph := raw.egraph? | throwError "egg: internal error: e-graph is absent"
-      return { expl := ← raw.expl.parse, egraph, report }
+      let expl ← raw.expl.parse
+      withTraceNode `egg.explanation (fun _ => return "Flat Explanation") do
+        trace[egg.explanation] expl.toString (pretty := true)
+      return { expl, egraph, report }

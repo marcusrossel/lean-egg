@@ -58,15 +58,15 @@ structure Step extends Rewrite.Descriptor where
   dst : Expression
   pos : SubExpr.Pos
 
-def Step.toString (s : Step) : String :=
-  s!"{s.dst.toString}\n  by {s.src.description}"
+def Step.toString (s : Step) (pretty := false) : String :=
+  s!"{s.dst.toString pretty}\n  by {s.src.description}"
 
 structure _root_.Egg.Explanation where
   start : Expression
   steps : List Step
 
-def toString (expl : Explanation) : String :=
-  expl.steps.foldl (init := expl.start.toString) fun str step => s!"{str}\n\n{step.toString}"
+def toString (expl : Explanation) (pretty := true) : String :=
+  expl.steps.foldl (init := expl.start.toString pretty) fun str step => s!"{str}\n\n{step.toString pretty}"
 
 inductive Error where
   | nonDefEqPrimitiveRw
@@ -82,6 +82,7 @@ private structure State where
   pos        : SubExpr.Pos
   symm       : Bool
   needsDefEq : Bool
+  slotMap    : Std.HashMap String String
 
 private abbrev _root_.Egg.Explanation.FlattenM := ExceptT Error <| StateM FlattenM.State
 
@@ -104,29 +105,57 @@ def withMove (subpos : Nat) (m : FlattenM α) : FlattenM α := do
   modify ({ · with pos, needsDefEq })
   return res
 
-def mkStep (descr : Rewrite.Descriptor) (lhs rhs : Expression) : FlattenM Step := do
-  let { head, pos, symm, needsDefEq } ← get
+partial def mkStep (descr : Rewrite.Descriptor) (lhs rhs : Expression) : FlattenM Step := do
+  let { head, pos, symm, needsDefEq, slotMap } ← get
   let (dir, subDst) := if symm then (descr.dir.opposite, lhs) else (descr.dir, rhs)
   if (needsDefEq || subDst.needsDefEq) && !descr.src.isDefEq then throw .nonDefEqPrimitiveRw
-  let dst := head.replaceSubexpr subDst pos
+  let dst := applySlotMap slotMap <| head.replaceSubexpr subDst pos
   modify ({ · with head := dst })
   -- TODO: The `pos` might be off for `proof` constructs when used during proof reconstruction,
   --       because we used to ignore when determining the position during parsing.
   return { descr with dir, pos, dst }
+where
+  applySlotMap (m : Std.HashMap String String) : Expression → Expression
+  | .bvar id            => .bvar (mapSlot m id)
+  | .app fn arg         => .app (applySlotMap m fn) (applySlotMap m arg)
+  | .lam var ty body    => .lam (mapSlot m var) (applySlotMap m ty) (applySlotMap m body)
+  | .forall var ty body => .forall (mapSlot m var) (applySlotMap m ty) (applySlotMap m body)
+  | .proof prop         => .proof (applySlotMap m prop)
+  | e => e
+  mapSlot (m : Std.HashMap String String) (slot : String) : String :=
+    match m[slot]? with
+    | none   => slot
+    | some s => mapSlot m s
+
+private def addSlotMapping («from» to : String) : FlattenM Unit := do
+  unless «from» == to do
+    modify fun s => { s with slotMap := s.slotMap.insert «from» to }
+
+def updateSlotMap (lhs rhs : Expression) : FlattenM Unit := do
+  let { head, pos, symm, .. } ← get
+  let some src := head.viewSubexpr? pos | return
+  let dst := if symm then rhs else lhs
+  go src dst
+where
+  go : Expression → Expression → FlattenM Unit
+  | .bvar id₁,              .bvar id₂              => addSlotMapping id₂ id₁
+  | .app fn₁ arg₁,          .app fn₂ arg₂          => do go fn₁ fn₂; go arg₁ arg₂
+  | .lam var₁ ty₁ body₁,    .lam var₂ ty₂ body₂
+  | .forall var₁ ty₁ body₁, .forall var₂ ty₂ body₂ => do addSlotMapping var₂ var₁; go ty₁ ty₂; go body₁ body₂
+  | .proof prop₁,           .proof prop₂           => go prop₁ prop₂
+  | _, _ => return
 
 end FlattenM
 
 open FlattenM in
 partial def Tree.flatten (expl : Tree) : Except Error Explanation := do
-  dbg_trace s!"{expl.toString}\n"
   let (steps?, _) := go expl.target |>.run
-    { head := expl.targetLemma.lhs, pos := .root, symm := false, needsDefEq := false }
-  let res := { start := expl.targetLemma.lhs, steps := ← steps? }
-  dbg_trace s!"{res.toString}\n"
-  return res
+    { head := expl.targetLemma.lhs, pos := .root, symm := false, needsDefEq := false, slotMap := ∅ }
+  return { start := expl.targetLemma.lhs, steps := ← steps? }
 where
   go (lem : Nat) : FlattenM (List Step) := do
     let { lhs, rhs, jus } := expl.lemmas[lem]!
+    updateSlotMap lhs rhs
     match jus with
     | .rw descr    => return [← mkStep descr lhs rhs]
     | .rfl         => return []

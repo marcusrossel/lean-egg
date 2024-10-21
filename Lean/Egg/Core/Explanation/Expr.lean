@@ -74,14 +74,14 @@ where
   throwDifferent (e₁ e₂ : Expr) {α} : MetaM α :=
     throwError "'Egg.Explanation.replaceSubexprs' tried to lens on different expressions:\n  {e₁}\nvs\n {e₂}"
 
-private abbrev ToExprM := StateT (Std.HashMap Nat Expr) MetaM
+private abbrev ToExprM := StateT (Std.HashMap String Expr) MetaM
 
-private def ToExprM.mapBVar (bvarId : Nat) : ToExprM Expr := do
+private def ToExprM.mapBVar (bvarId : String) : ToExprM Expr := do
   let some fvar := (← get)[bvarId]? | throwError "'Egg.Explanation.ToExprM.mapBVar' received loose bvar"
   return fvar
 
-private def ToExprM.withBinding (var : Nat) (type : Expr) (m : Expr → ToExprM α) : ToExprM α :=
-  withLocalDecl (.num `egg var) .default type fun fvar => do
+private def ToExprM.withBinding (var : String) (type : Expr) (m : Expr → ToExprM α) : ToExprM α :=
+  withLocalDecl (.mkStr1 var) .default type fun fvar => do
     modify (·.insert var fvar)
     m fvar
 

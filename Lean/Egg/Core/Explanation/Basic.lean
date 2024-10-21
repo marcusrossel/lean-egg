@@ -18,34 +18,40 @@ structure Descriptor where
 end Rewrite
 
 inductive Expression where
-  | bvar (id : Nat)
+  | bvar (id : String)
   | fvar (id : FVarId)
   | mvar (id : MVarId)
   | sort (lvl : Level)
   | const (name : Name) (lvls : List Level)
   | app (fn arg : Expression)
-  | lam (var : Nat) (ty body : Expression)
-  | forall (var : Nat) (ty body : Expression)
+  | lam (var : String) (ty body : Expression)
+  | forall (var : String) (ty body : Expression)
   | lit (l : Literal)
   | proof (prop : Expression)
-  -- TODO: | subst (idx : Nat) (to e : Expression)
-  -- TODO: | shift (offset : Int) (cutoff : Nat) (e : Expression)
   | lvl (l : Level)
   deriving Inhabited
 
-def Expression.toString : Expression → String
-  | .bvar id            => s!"{id}"
-  | fvar id             => s!"{id.name}"
-  | mvar id             => s!"{id.name}"
-  | sort l              => s!"(sort {l})"
-  | const name lvls     => s!"(const {name} {lvls})"
-  | app fn arg          => s!"(app {toString fn} {toString arg})"
-  | lam var ty body     => s!"(λ {var} {toString ty} {toString body})"
-  | .forall var ty body => s!"(∀ {var} {toString ty} {toString body})"
-  | lit (.natVal n)     => s!"{n}"
-  | lit (.strVal s)     => s!"\"{s}\""
-  | proof prop          => s!"(? : {toString prop})"
-  | .lvl l              => s!"{l}"
+def Expression.toString : Expression → (pretty : Bool := false) → String
+  | bvar id            , false => s!"${id}"
+  | bvar id            , true  => s!"b#{id}"
+  | fvar id            , false => s!"(fvar {id.name})"
+  | fvar id            , true  => s!"f#{id.name}"
+  | mvar id            , false => s!"(mvar {id.name})"
+  | mvar id            , true  => s!"m#{id.name}"
+  | sort l             , false => s!"(sort {l})"
+  | sort l             , true  => s!"Sort {l}"
+  | const name lvls    , false => s!"(const {name} {lvls})"
+  | const name _       , true  => s!"{name}"
+  | app fn arg         , false => s!"(app {toString fn false} {toString arg false})"
+  | app fn arg         , true  => s!"({toString fn true} {toString arg true})"
+  | lam var ty body    , false => s!"(λ ${var} {toString ty false} {toString body false})"
+  | lam var ty body    , true  => s!"(λ {var} : {toString ty true} => {toString body true})"
+  | .forall var ty body, false => s!"(∀ ${var} {toString ty false} {toString body false})"
+  | .forall var ty body, true  => s!"(∀ {var} : {toString ty true} => {toString body true})"
+  | lit (.natVal n)    , _     => s!"{n}"
+  | lit (.strVal s)    , _     => s!"\"{s}\""
+  | proof prop         , py    => s!"(? : {toString prop py})"
+  | .lvl l             , _     => s!"{l}"
 
 inductive Justification where
   | rfl
@@ -68,8 +74,8 @@ structure Lemma where
   jus : Justification
   deriving Inhabited
 
-def Lemma.toString (lem : Lemma) : String :=
-  s!"{lem.lhs.toString} = {lem.rhs.toString} by {lem.jus.toString}"
+def Lemma.toString (lem : Lemma) (pretty := false) : String :=
+  s!"{lem.lhs.toString pretty} = {lem.rhs.toString pretty} by {lem.jus.toString}"
 
 structure Tree where
   lemmas : Std.HashMap Nat Explanation.Lemma
@@ -78,9 +84,9 @@ structure Tree where
 def Tree.targetLemma (expl : Tree) : Explanation.Lemma :=
   expl.lemmas[expl.target]!
 
-def Tree.toString (expl : Tree) : String := Id.run do
+def Tree.toString (expl : Tree) (pretty := false) : String := Id.run do
   let mut str := ""
   for (idx, lem) in expl.lemmas do
     let sep := if idx == expl.target then "" else "\n\n"
-    str := s!"{str}[{idx}]: {lem.toString}{sep}"
+    str := s!"{str}[{idx}]: {lem.toString pretty}{sep}"
   return str

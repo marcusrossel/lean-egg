@@ -32,7 +32,8 @@ declare_syntax_cat egg_rw_src
 syntax num : egg_lit
 syntax str : egg_lit
 
-syntax "$" num : egg_slot
+syntax num   : egg_slot
+syntax ident : egg_slot
 
 syntax "*"                          : egg_shape
 syntax "(→" egg_shape egg_shape ")" : egg_shape
@@ -134,9 +135,10 @@ syntax num ": " egg_expr " = " egg_expr "by " egg_justification : egg_lemma
 
 syntax egg_lemma+ : egg_expl
 
-private def parseSlot : (TSyntax `egg_slot) → Nat
-  | `(egg_slot|$ $n) => n.getNat
-  | _                => unreachable!
+private def parseSlot : (TSyntax `egg_slot) → String
+  | `(egg_slot|$n:num)   => s!"{n.getNat}"
+  | `(egg_slot|$i:ident) => i.getId.toString
+  | _                    => unreachable!
 
 private def parseLit : (TSyntax `egg_lit) → Literal
   | `(egg_lit|$n:num) => .natVal n.getNat
@@ -312,11 +314,14 @@ where
 
 -- Note: This could be generalized to any monad with an environment and exceptions.
 def Raw.parse (raw : Explanation.Raw) : CoreM Explanation := do
-  let raw := raw.replace "\"" "" -- HACK
+  let raw := raw.replace "\"" "" |>.replace "$" "" -- HACK
   match Parser.runParserCategory (← getEnv) `egg_expl raw with
   | .ok stx =>
     let some expl := parseExplTree ⟨stx⟩
       | throwError "egg internal error: called 'Explanation.Raw.parse' on an empty explanation"
+    -- TODO: Move this outside of core:
+    withTraceNode `egg.explanation (fun _ => return "Tree Explanation") do
+      trace[egg.explanation] expl.toString (pretty := true)
     match expl.flatten with
     | .ok expl   => return expl
     | .error err => throwError err.description

@@ -1,8 +1,5 @@
 import Egg
 
--- PROBLEM: Slots don't match up.
--- SOLUTION?: Match up subexpressions during flattening and construct a slotmap?
-
 example (h : ∀ x y : Nat, x = y ↔ y = x) : (∀ x y : Nat, x = y) ↔ (∀ a b : Nat, b = a + 0) := by
   egg [h, Nat.add_zero]
 

@@ -103,7 +103,9 @@ where
     | .proof prf =>
       let proofTime := (← IO.monoMsNow) - beforeProof
       return some (prf, proofTime, result)
-    | .retryWithShapes => runEqSat goal rws facts guides { cfg with shapes := true } amb
+    | .retryWithShapes =>
+      throwError "without retry"
+      -- runEqSat goal rws facts guides { cfg with shapes := true } amb
 
 syntax &"egg " egg_cfg_mod egg_premises (egg_base)? (egg_guides)? : tactic
 elab_rules : tactic

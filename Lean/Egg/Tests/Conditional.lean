@@ -22,6 +22,7 @@ example (h₁ : x ∧ y) (h₂ : y ∧ x → 1 = 2) : 1 = 2 := by
   have := and_comm.mp h₁
   egg [*; *]
 
+-- TODO: This might not work because of equality up to alpha.
 example (h₁ : ∀ n, n > 2 → n = x) (h₂ : 3 > 2) : 3 = x := by
   egg [h₁; h₂]
 

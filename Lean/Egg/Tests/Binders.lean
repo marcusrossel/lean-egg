@@ -9,6 +9,11 @@ example : (fun x => x) = (fun x => x + 0) := by
 example : (fun x => x) = (fun x => 0 + 0 + x) := by
   egg [Nat.zero_add]
 
+set_option trace.egg true in
+example : (fun x => x) = (fun x => (Nat.add .zero .zero).add x) := by
+  have h : ∀ n : Nat, Nat.zero.add n = n := sorry
+  egg [h]
+
 example : (fun x => x) = (fun x => 0 + x) := by
   egg [Nat.zero_add]
 

@@ -19,8 +19,6 @@ mod nat_lit;
 mod reporting;
 mod result;
 mod rewrite;
-mod shift;
-mod subst;
 
 // Cf. https://doc.rust-lang.org/stable/std/ffi/struct.CStr.html#examples
 fn c_str_to_string(c_str: *const c_char) -> String {
