@@ -35,7 +35,7 @@ private def resultToProof
       result.expl.proof rws facts result.egraph ctx
     catch err =>
       -- If proof reconstruction fails but we haven't tried using shapes yet, retry with shapes.
-      if ctx.cfg.shapes then throw err else return .retryWithShapes
+      if /- TODO: ctx.cfg.shapes -/ true then throw err else return .retryWithShapes
   proof.trace `egg.proof
   let mut prf ← proof.prove goal.toCongr
   prf ← instantiateMVars prf
@@ -104,8 +104,7 @@ where
       let proofTime := (← IO.monoMsNow) - beforeProof
       return some (prf, proofTime, result)
     | .retryWithShapes =>
-      throwError "without retry"
-      -- runEqSat goal rws facts guides { cfg with shapes := true } amb
+      runEqSat goal rws facts guides { cfg with shapes := true } amb
 
 syntax &"egg " egg_cfg_mod egg_premises (egg_base)? (egg_guides)? : tactic
 elab_rules : tactic

@@ -43,7 +43,7 @@ pub fn templates_to_rewrites(
                         //       `id`.
                         if let Some(fact_name) = facts.get(&id) {
                             rule = rule.as_str().to_string(); rule.push_str(&fact_name);
-                        } else if let Some((_, fact_name)) = facts.iter().find(|(f_id, _)| graph.find_applied_id(f_id) == id) { 
+                        } else if let Some((_, fact_name)) = facts.iter().find(|(f_id, _)| graph.eq(f_id, &id)) { 
                             rule = rule.as_str().to_string(); rule.push_str(&fact_name);
                         } else if allow_unsat_conditions {
                             rule = rule.as_str().to_string(); rule.push_str("!?");

@@ -43,7 +43,6 @@ pub fn nat_lit_rws() -> Vec<LeanRewrite> {
 }
 */
 
-
 fn to_succ_rw() -> LeanRewrite {
     let lhs: Pattern<LeanExpr> = Pattern::parse("(lit ?n)").unwrap();
     let lhs_search = lhs.clone();

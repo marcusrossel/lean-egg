@@ -75,7 +75,7 @@ pub fn explain_congr(
     loop {
         apply_rewrites(&mut egraph, &rws);
         
-        if egraph.find_applied_id(&init_id) == egraph.find_applied_id(&goal_id) {
+        if egraph.eq(&init_id, &goal_id) {
             stop_reason = StopReason::Other;
             break
         }
@@ -113,7 +113,7 @@ pub fn explain_congr(
         total_time: start_time.elapsed().as_secs_f64()
     };
 
-    if egraph.find_applied_id(&init_id) == egraph.find_applied_id(&goal_id) {
+    if egraph.eq(&init_id, &goal_id) {
         let expl = egraph.explain_equivalence(init_expr, goal_expr).to_string(&egraph);
         Ok((expl, egraph, report))
     } else {
