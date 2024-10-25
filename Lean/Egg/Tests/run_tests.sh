@@ -110,7 +110,7 @@ summarize_lib_tests() {
 }
 
 test_lib() {
-    cd "$tests_dir/$test_lib_name"
+    cd "$tests_dir/$test_lib_name/$test_lib_name"
     test_lib_output=$(mktemp)
 
     lake clean
