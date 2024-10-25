@@ -1,4 +1,3 @@
-use std::time::Instant;
 use std::collections::HashMap;
 use slotted_egraphs::*;
 use crate::result::*;
@@ -7,7 +6,6 @@ use crate::beta::*;
 use crate::eta::*;
 use crate::levels::*;
 use crate::nat_lit::*;
-use crate::reporting::*;
 use crate::rewrite::*;
 
 #[repr(C)]
@@ -68,50 +66,13 @@ pub fn explain_congr(
     if cfg.gen_beta_rw     { rws.push(beta_reduction_rw()) }
     if cfg.gen_level_rws   { rws.append(&mut level_rws()) }
 
-    let start_time = Instant::now();
-    let mut iter_count = 0;
-    let mut node_count = egraph.total_number_of_nodes();
-    let stop_reason: StopReason;
-    loop {
-        apply_rewrites(&mut egraph, &rws);
-        
+    let report = run_eqsat(&mut egraph, rws, cfg.iter_limit, cfg.time_limit, |egraph| {
         if egraph.eq(&init_id, &goal_id) {
-            stop_reason = StopReason::Other;
-            break
+            Err("proved goal")
+        } else {
+            Ok(())
         }
-
-        if start_time.elapsed().as_secs() >= cfg.time_limit.try_into().unwrap() {
-            stop_reason = StopReason::TimeLimit;
-            break
-        }
-
-        if iter_count >= cfg.iter_limit {
-            stop_reason = StopReason::IterationLimit;
-            break
-        }
-
-        if node_count >= cfg.node_limit {
-            stop_reason = StopReason::NodeLimit;
-            break
-        }
-
-        let new_count = egraph.total_number_of_nodes();
-        if new_count == node_count {
-            stop_reason = StopReason::Saturated;
-            break
-        }
-        
-        iter_count += 1;
-        node_count = new_count;
-    }
-
-    let report = Report {
-        iterations: iter_count,
-        stop_reason: stop_reason,
-        egraph_nodes: egraph.total_number_of_nodes(),
-        egraph_classes: 0, // TODO: `egraph.classes` is public in 0.0.4
-        total_time: start_time.elapsed().as_secs_f64()
-    };
+    });
 
     if egraph.eq(&init_id, &goal_id) {
         let expl = egraph.explain_equivalence(init_expr, goal_expr).to_string(&egraph);

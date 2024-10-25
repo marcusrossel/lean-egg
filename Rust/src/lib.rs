@@ -5,7 +5,6 @@ use std::ffi::CString;
 use libc::c_double;
 use basic::*;
 use analysis::*;
-use reporting::*;
 use result::*;
 use rewrite::*;
 
@@ -16,7 +15,6 @@ mod eta;
 mod lean_expr;
 mod levels;
 mod nat_lit;
-mod reporting;
 mod result;
 mod rewrite;
 
@@ -137,9 +135,8 @@ impl CStopReason {
         match r {
             StopReason::Saturated      => CStopReason::Saturated,
             StopReason::IterationLimit => CStopReason::IterationLimit,
-            StopReason::NodeLimit      => CStopReason::NodeLimit,
             StopReason::TimeLimit      => CStopReason::TimeLimit,
-            StopReason::Other          => CStopReason::Other,
+            StopReason::Other(_)       => CStopReason::Other,
         }
     }
 }
