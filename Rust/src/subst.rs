@@ -20,8 +20,8 @@ impl Applier<LeanExpr, LeanAnalysis> for BVarSubst {
             format!("(bvar {})", bvar_idx).parse().unwrap()
         };
         
-        let (id, _) = egraph.union_instantiations(ast.unwrap(), &new, subst, rule);
-        vec![id]
+        let (id, did_union) = egraph.union_instantiations(ast.unwrap(), &new, subst, rule);
+        if did_union { vec![id] } else { vec![] }
     }
 }
 
@@ -52,8 +52,8 @@ impl Applier<LeanExpr, LeanAnalysis> for AppSubst {
         };
         
         let new_app = format!("(app {} {})", new_fun, new_arg).parse().unwrap();
-        let (id, _) = egraph.union_instantiations(ast.unwrap(), &new_app, subst, rule);
-        vec![id]
+        let (id, did_union) = egraph.union_instantiations(ast.unwrap(), &new_app, subst, rule);
+        if did_union { vec![id] } else { vec![] }
     }
 }
 
@@ -91,8 +91,8 @@ impl Applier<LeanExpr, LeanAnalysis> for BinderSubst {
         };
 
         let new_binder = format!("({} {} {})", self.binder, new_domain, new_body).parse().unwrap();
-        let (id, _) = egraph.union_instantiations(ast.unwrap(), &new_binder, subst, rule);
-        vec![id]
+        let (id, did_union) = egraph.union_instantiations(ast.unwrap(), &new_binder, subst, rule);
+        if did_union { vec![id] } else { vec![] }
     }
 }
 

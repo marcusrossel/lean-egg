@@ -8,7 +8,7 @@ lean_toolchain_file="$batteries_dir/../../../../lean-toolchain"
 lean_toolchain="$(cat "$lean_toolchain_file")"
 lean_version="${lean_toolchain#*:}"
 cd "$batteries_dir"
-git clone -b "bump-$lean_version" "https://github.com/leanprover-community/batteries.git"
+git clone -b "$lean_version" --single-branch --depth 1 "https://github.com/leanprover-community/batteries.git"
 cd "$batteries_repo_dir"
 git remote set-url origin "https://github.com/marcusrossel/batteries.git"
 
@@ -36,7 +36,7 @@ cd "$batteries_repo_dir"
 targets="$(find Batteries -type f | grep -v -e 'SimpOnlyOverride.lean$' -e '.DS_Store')"
 
 while IFS= read -r file; do
-    echo -e "$import_statement\n$(cat $file)" > "$file"
+    echo "$import_statement"$'\n'$"$(cat $file)" > "$file"
 done <<< "$targets"
 
 # Preparation for `lake build`.

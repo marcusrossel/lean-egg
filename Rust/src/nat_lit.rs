@@ -32,8 +32,8 @@ impl Applier<LeanExpr, LeanAnalysis> for ToSucc {
                 else           { format!("(app (const Nat.succ) (lit {}))",                   nat_val - 1) }
             .parse().unwrap();
                 
-            let (id, _) = egraph.union_instantiations(ast, &res, subst, rule);
-            vec![id]
+            let (id, did_union) = egraph.union_instantiations(ast, &res, subst, rule);
+            if did_union { vec![id] } else { vec![] }
         } else {
             vec![]
         }
@@ -61,8 +61,8 @@ impl Applier<LeanExpr, LeanAnalysis> for OfSucc {
         let ast = ast.unwrap(); 
         
         let res = format!("(lit {})", nat_val + 1).parse().unwrap();
-        let (id, _) = egraph.union_instantiations(ast, &res, subst, rule);
-        vec![id]
+        let (id, did_union) = egraph.union_instantiations(ast, &res, subst, rule);
+        if did_union { vec![id] } else { vec![] }
     }
 }
 
@@ -96,8 +96,8 @@ impl Applier<LeanExpr, LeanAnalysis> for Op {
         
         let val = (self.op)(lhs, rhs);
         let res = format!("(lit {})", val).parse().unwrap();
-        let (id, _) = egraph.union_instantiations(ast, &res, subst, rule);
-        vec![id]
+        let (id, did_union) = egraph.union_instantiations(ast, &res, subst, rule);
+        if did_union { vec![id] } else { vec![] }
     }
 }
 

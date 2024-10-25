@@ -31,7 +31,7 @@ impl Applier<LeanExpr, LeanAnalysis> for Beta {
             sub
         };
 
-        let (id, _) = graph.union_instantiations(ast.unwrap(), &beta, subst, rule);
-        vec![id]
+        let (id, did_union) = graph.union_instantiations(ast.unwrap(), &beta, subst, rule);
+        if did_union { vec![id] } else { vec![] }
     }
 }

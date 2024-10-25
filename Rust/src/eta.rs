@@ -22,7 +22,7 @@ impl Applier<LeanExpr, LeanAnalysis> for Eta {
             format!("(↑ - 1 0 {})", self.fun).parse().unwrap()
         };
         
-        let (id, _) = graph.union_instantiations(ast.unwrap(), &new_fun, subst, rule);
-        vec![id]
+        let (id, did_union) = graph.union_instantiations(ast.unwrap(), &new_fun, subst, rule);
+        if did_union { vec![id] } else { vec![] }
     }
 }

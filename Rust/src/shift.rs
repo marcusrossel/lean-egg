@@ -38,8 +38,8 @@ impl Applier<LeanExpr, LeanAnalysis> for BVarShift {
         };
         let new = format!("(bvar {})", new_idx).parse().unwrap();
         
-        let (id, _) = egraph.union_instantiations(ast.unwrap(), &new, subst, rule);
-        vec![id]
+        let (id, did_union) = egraph.union_instantiations(ast.unwrap(), &new, subst, rule);
+        if did_union { vec![id] } else { vec![] }
     }
 }
 
@@ -80,8 +80,8 @@ impl Applier<LeanExpr, LeanAnalysis> for AppShift {
         };
 
         let shifted_app = format!("(app {} {})", shifted_fun, shifted_arg).parse().unwrap();
-        let (id, _) = egraph.union_instantiations(ast.unwrap(), &shifted_app, subst, rule);
-        vec![id]
+        let (id, did_union) = egraph.union_instantiations(ast.unwrap(), &shifted_app, subst, rule);
+        if did_union { vec![id] } else { vec![] }
     }
 }
 
@@ -130,8 +130,8 @@ impl Applier<LeanExpr, LeanAnalysis> for BinderShift {
         };
 
         let shifted_binder = format!("({} {} {})", self.binder, shifted_domain, shifted_body).parse().unwrap();
-        let (id, _) = egraph.union_instantiations(ast.unwrap(), &shifted_binder, subst, rule);
-        vec![id]
+        let (id, did_union) = egraph.union_instantiations(ast.unwrap(), &shifted_binder, subst, rule);
+        if did_union { vec![id] } else { vec![] }
     }
 }
 

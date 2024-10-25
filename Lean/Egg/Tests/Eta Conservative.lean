@@ -11,3 +11,10 @@ theorem first_correct (a : α) (b : β) : first a b = a := rfl
 #guard_msgs in
 example (f : α → α) : (fun x => (first f x) x) = f := by
   egg [first_correct]
+
+
+
+/-- error: egg failed to prove the goal (saturated) -/
+#guard_msgs in
+example : (fun (z : α → α → α) x => (fun _y => z) x x) = (fun x => x) := by
+  egg
