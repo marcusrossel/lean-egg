@@ -25,4 +25,4 @@ theorem Equation387_implies_Equation43_calc (h : Equation387 G) : Equation43 G :
 set_option egg.explosion true in
 theorem Equation1571_implies_Equation40' (h : ∀ (x y z : G), x = (y ◇ z) ◇ (y ◇ (x ◇ z))) :
     ∀ (x y : G), x ◇ x = y ◇ y := by
-  sorry -- egg [*]
+  egg [*]
