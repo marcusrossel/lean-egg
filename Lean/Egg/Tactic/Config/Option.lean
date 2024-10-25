@@ -65,3 +65,4 @@ register_egg_options
   iterLimit : Nat
   reporting
   flattenReports
+  retryWithShapes "When proof reconstruction fails, try running again with `egg.shapes := true`."

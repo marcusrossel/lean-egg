@@ -28,14 +28,15 @@ private inductive Proof? where
   | retryWithShapes
 
 private def resultToProof
-    (result : Request.Result) (goal : Goal) (rws : Rewrites) (facts : Facts) (ctx : EncodingCtx) :
-    TacticM Proof? := do
+    (result : Request.Result) (goal : Goal) (rws : Rewrites) (facts : Facts) (ctx : EncodingCtx)
+    (retryWithShapes : Bool) : TacticM Proof? := do
   let proof ←
     try
       result.expl.proof rws facts result.egraph ctx
     catch err =>
-      -- If proof reconstruction fails but we haven't tried using shapes yet, retry with shapes.
-      if ctx.cfg.shapes then throw err else return .retryWithShapes
+      -- If proof reconstruction fails but we haven't tried using shapes yet, retry with shapes
+      -- (assuming the correcspoding option is enabled).
+      if ctx.cfg.shapes || !retryWithShapes then throw err else return .retryWithShapes
   proof.trace `egg.proof
   let mut prf ← proof.prove goal.toCongr
   prf ← instantiateMVars prf
@@ -99,7 +100,7 @@ where
       throwError msg ++ formatReport cfg.flattenReports failReport
     if let .beforeProof := cfg.exitPoint then return none
     let beforeProof ← IO.monoMsNow
-    match ← resultToProof result goal rws facts {amb, cfg} with
+    match ← resultToProof result goal rws facts {amb, cfg} cfg.retryWithShapes with
     | .proof prf =>
       let proofTime := (← IO.monoMsNow) - beforeProof
       return some (prf, proofTime, result)

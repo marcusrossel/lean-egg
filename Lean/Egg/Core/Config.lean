@@ -53,7 +53,8 @@ structure Debug where
   vizPath   := (none : Option String)
   deriving BEq
 
-structure _root_.Egg.Config extends Encoding, Gen, Backend, Debug
+structure _root_.Egg.Config extends Encoding, Gen, Backend, Debug where
+  retryWithShapes := true
 
 -- TODO: Why aren't these coercions automatic?
 

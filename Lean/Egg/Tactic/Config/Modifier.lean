@@ -29,6 +29,7 @@ structure Modifier where
   iterLimit           : Option Nat             := none
   reporting           : Option Bool            := none
   flattenReports      : Option Bool            := none
+  retryWithShapes     : Option Bool            := none
   exitPoint           : Option Debug.ExitPoint := none
   vizPath             : Option String          := none
 
@@ -56,6 +57,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   iterLimit           := mod.iterLimit.getD cfg.iterLimit
   reporting           := mod.reporting.getD cfg.reporting
   flattenReports      := mod.flattenReports.getD cfg.flattenReports
+  retryWithShapes     := mod.retryWithShapes.getD cfg.retryWithShapes
   exitPoint           := mod.exitPoint.getD cfg.exitPoint
   vizPath             := match mod.vizPath with | some p => p | none => cfg.vizPath
 
