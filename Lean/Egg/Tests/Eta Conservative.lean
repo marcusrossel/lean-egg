@@ -5,5 +5,6 @@ import Egg
 
 theorem Prod.fst_correct (a : α) (b : β) : (a, b).fst = a := rfl
 
+set_option trace.egg true in
 example (f : Nat → Nat) : (fun x => (f, x).fst x) = f := by
   egg [Prod.fst_correct]

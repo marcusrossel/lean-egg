@@ -66,9 +66,11 @@ pub fn explain_congr(
     if cfg.gen_beta_rw     { rws.push(beta_reduction_rw()) }
     if cfg.gen_level_rws   { rws.append(&mut level_rws()) }
 
-    let report = run_eqsat(&mut egraph, rws, cfg.iter_limit, cfg.time_limit, |egraph| {
-        if egraph.eq(&init_id, &goal_id) {
-            Err("proved goal")
+    let i = init_id.clone();
+    let g = goal_id.clone();
+    let report = run_eqsat(&mut egraph, rws, cfg.iter_limit, cfg.time_limit, move |egraph| {
+        if egraph.eq(&i, &g) {
+            Err("proved goal".to_string())
         } else {
             Ok(())
         }
