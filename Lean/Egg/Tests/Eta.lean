@@ -5,7 +5,7 @@ set_option egg.genEtaRw true
 set_option egg.genBetaRw false
 
 set_option egg.genEtaRw false in
-/-- error: egg failed to prove the goal (reached time limit) -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 example : (fun x => Nat.succ x) = Nat.succ := by
   egg
@@ -45,7 +45,7 @@ example : (eta 50 Nat.succ Nat) = Nat.succ := by
   egg
 
 set_option egg.genEtaRw false in
-/-- error: egg failed to prove the goal (reached time limit) -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 example (a : Nat) (h : ∀ b : Nat, b.succ.add a = 0) : (10 |> fun x => Nat.succ x).add a = 0 := by
   egg [h]

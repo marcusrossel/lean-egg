@@ -23,7 +23,7 @@ example : False := by
   contradiction
 
 set_option egg.shiftCapturedBVars true in
-/-- error: egg failed to prove the goal (reached time limit) -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 example : (fun x => (x, 5).fst) = (fun _ : Nat => (fun x => x) 1) := by
   egg [thm₁]

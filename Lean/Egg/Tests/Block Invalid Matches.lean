@@ -35,7 +35,7 @@ theorem thm₂ : ∀ x y : Nat, x = (fun _ => x) y :=
 
 -- This test covers Condition (1) of valid matches.
 set_option egg.blockInvalidMatches true in
-/-- error: egg failed to prove the goal (reached time limit) -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 example : (fun x => x) = (fun _ : Nat => (fun x => x) 1) := by
   egg [thm₂]
