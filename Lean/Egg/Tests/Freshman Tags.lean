@@ -3,9 +3,6 @@ import Egg
 class Inv (α) where inv : α → α
 postfix:max "⁻¹" => Inv.inv
 
-class Zero (α) where zero : α
-instance [Zero α] : OfNat α 0 where ofNat := Zero.zero
-
 class One (α) where one : α
 instance [One α] : OfNat α 1 where ofNat := One.one
 
