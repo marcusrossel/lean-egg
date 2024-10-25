@@ -10,6 +10,7 @@ lean_version="${lean_toolchain#*:}"
 cd "$batteries_dir"
 git clone -b "$lean_version" --single-branch --depth 1 "https://github.com/leanprover-community/batteries.git"
 cd "$batteries_repo_dir"
+git switch -c egg-tests
 git remote set-url origin "https://github.com/marcusrossel/batteries.git"
 
 # TODO: Starting with the next version of batteries, use this toml-based dependency code instead of the lakefile.lean-based one below.
