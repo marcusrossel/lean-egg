@@ -8,6 +8,11 @@ name = "mathlib"
 scope = "leanprover-community"
 
 [[require]]
+name = "dataflow-rewriter"
+git = "https://github.com/VCA-EPFL/dataflow-rewriter/"
+rev = "main"
+
+[[require]]
 name = "egg"
 path = "../../../.."
 

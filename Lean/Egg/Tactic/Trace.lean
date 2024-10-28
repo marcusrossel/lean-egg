@@ -16,6 +16,9 @@ initialize registerTraceClass `egg.proof.term  (inherited := false)
 
 namespace Egg
 
+def Explanation.involvesBinderRewrites (expl : Explanation) : Bool :=
+  expl.steps.any (·.src.involvesBinders)
+
 def Config.Debug.ExitPoint.format : Config.Debug.ExitPoint → Format
   | .none        => "None"
   | .beforeEqSat => "Before Equality Saturation"
@@ -29,7 +32,7 @@ nonrec def formatReport
     (format <| (1000 * rep.time).toUInt64.toNat) ++ "," ++
     (if let some d := proofDuration? then format d else "-") ++ "," ++ (format rep.iterations) ++
     "," ++ (format rep.nodeCount) ++ "," ++ (format rep.classCount) ++ "," ++
-    (if let some e := expl? then format e.steps.size else "-") ++ ")"
+    (if let some e := expl? then format e.steps.size ++ s!",{e.involvesBinderRewrites}" else "-,-") ++ ")"
   else
     (if let some d := totalDuration? then "\ntotal time: " ++ format d ++ "ms" else "-") ++ "\n" ++
     "eqsat time: " ++ (format <| (1000 * rep.time).toUInt64.toNat) ++ "ms\n" ++
@@ -37,7 +40,7 @@ nonrec def formatReport
     "iters:      " ++ (format rep.iterations)  ++ "\n" ++
     "nodes:      " ++ (format rep.nodeCount)   ++ "\n" ++
     "classes:    " ++ (format rep.classCount)  ++ "\n" ++
-    (if let some e := expl? then "steps:      " ++ format e.steps.size else "-")
+    (if let some e := expl? then "expl steps: " ++ format e.steps.size ++ s!"\nbinders:    {e.involvesBinderRewrites}" else "")
 
 nonrec def MVars.toMessageData (mvars : MVars) : MetaM MessageData := do
   let expr := format <| ← mvars.expr.toList.mapM (ppExpr <| Expr.mvar ·)

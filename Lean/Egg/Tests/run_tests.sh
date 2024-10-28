@@ -75,7 +75,7 @@ if [[ "$exit_code" -ne 0 ]]; then
 fi
 
 summarize_lib_tests() {
-    local warning_prefix="warning: ././././Batteries/"
+    local warning_prefix="warning: ././././$test_src_name/"
     local success_prefix="egg succeeded"
     local plain_fail_prefix="egg failed: egg failed to prove the goal"
 
@@ -120,12 +120,14 @@ test_lib() {
 
 if [[ "$test_batteries" == true ]]; then
     test_lib_name="batteries"
+    test_src_name="Batteries"
     trap summarize_lib_tests EXIT
     test_lib
 fi
 
 if [[ "$test_mathlib" == true ]]; then
     test_lib_name="mathlib4"
+    test_src_name="Mathlib"
     trap summarize_lib_tests EXIT
     test_lib
 fi

@@ -144,3 +144,7 @@ def isNatLitConversion : Source → Bool
 def isSubst : Source → Bool
   | .subst _ => true
   | _        => false
+
+def involvesBinders : Source → Bool
+  | .subst _ | .shift _ | .eta | .beta => true
+  | _                                  => false
