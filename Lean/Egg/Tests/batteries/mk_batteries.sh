@@ -3,26 +3,43 @@
 batteries_dir="$(realpath -s "$(dirname "$0")")"
 batteries_repo_dir="$batteries_dir/batteries"
 
-# Fetches the Lean version used by egg and clones the corresponding version of batteries.
-lean_toolchain_file="$batteries_dir/../../../../lean-toolchain"
-lean_toolchain="$(cat "$lean_toolchain_file")"
-lean_version="${lean_toolchain#*:}"
+# Sets a variable corresponding to the `--main` flage.
+use_main_branch=false
+for arg in "$@"
+do
+    if [[ "$arg" == "--main" ]]; then
+        lean_version="main"
+    fi
+done
+
+# Fetches the Lean version used by egg (or uses `main` if the corresponding flag is given). 
+if [[ "$use_main_branch" == true ]]; then
+    lean_version="main"
+else
+    lean_toolchain_file="$batteries_dir/../../../../lean-toolchain"
+    lean_toolchain="$(cat "$lean_toolchain_file")"
+    lean_version="${lean_toolchain#*:}"
+fi
+
+# Clones the previously determined version of batteries.
 cd "$batteries_dir"
 git clone -b "$lean_version" --single-branch --depth 1 "https://github.com/leanprover-community/batteries.git"
 cd "$batteries_repo_dir"
 git switch -c egg-tests
 git remote set-url origin "https://github.com/marcusrossel/batteries.git"
 
-# TODO: Starting with the next version of batteries, use this toml-based dependency code instead of the lakefile.lean-based one below.
-# Adds egg as a dependency to the `lakefile.toml`.
-# lakefile="$batteries_repo_dir/lakefile.toml"
-# toml_dep="\n[[require]]\nname = \"egg\"\npath = \"../../../../..\""
-# echo -e "$toml_dep" >> "$lakefile"
-
-# Adds egg as a dependency to the `lakefile.lean`.
-lakefile="$batteries_repo_dir/lakefile.lean"
-dep="\nrequire egg from \"../../../../..\""
-echo -e "$dep" >> "$lakefile"
+# TODO: Starting with the next version of batteries, remove the non-toml based path.
+if [[ "$use_main_branch" == true ]]; then
+    # Adds egg as a dependency to the `lakefile.toml`.
+    lakefile="$batteries_repo_dir/lakefile.toml"
+    toml_dep="\n[[require]]\nname = \"egg\"\npath = \"../../../../..\""
+    echo -e "$toml_dep" >> "$lakefile"
+else
+    # Adds egg as a dependency to the `lakefile.lean`.
+    lakefile="$batteries_repo_dir/lakefile.lean"
+    dep="\nrequire egg from \"../../../../..\""
+    echo -e "$dep" >> "$lakefile"
+fi
 
 # Moves `SimpOnlyOverride.lean` to its intended destination.
 simp_only_override="$batteries_dir/SimpOnlyOverride.lean"
