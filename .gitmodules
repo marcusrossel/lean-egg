@@ -1,4 +1,0 @@
-[submodule "mathlib-tests"]
-	path = Lean/Egg/Tests/mathlib4
-	url = https://github.com/marcusrossel/mathlib4.git
-	branch = egg-tests

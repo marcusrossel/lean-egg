@@ -3,12 +3,12 @@
 batteries_dir="$(realpath -s "$(dirname "$0")")"
 batteries_repo_dir="$batteries_dir/batteries"
 
-# Sets a variable corresponding to the `--main` flage.
+# Sets a variable corresponding to the `--main` flag.
 use_main_branch=false
 for arg in "$@"
 do
     if [[ "$arg" == "--main" ]]; then
-        lean_version="main"
+        use_main_branch=true
     fi
 done
 
@@ -23,10 +23,10 @@ fi
 
 # Clones the previously determined version of batteries.
 cd "$batteries_dir"
-git clone -b "$lean_version" --single-branch --depth 1 "https://github.com/leanprover-community/batteries.git"
-cd "$batteries_repo_dir"
-git switch -c egg-tests
-git remote set-url origin "https://github.com/marcusrossel/batteries.git"
+git clone -b "$lean_version" --single-branch --depth 1 "https://github.com/leanprover-community/batteries.git" || { exit 1; }
+cd "$batteries_repo_dir" || { exit 1; }
+git switch -c egg-tests || { exit 1; }
+git remote set-url origin "https://github.com/marcusrossel/batteries.git" || { exit 1; }
 
 # TODO: Starting with the next version of batteries, remove the non-toml based path.
 if [[ "$use_main_branch" == true ]]; then
@@ -51,7 +51,7 @@ cp "$simp_only_override" "$simp_only_override_dst"
 # except a few select ones.
 import_statement="import Batteries.Test.Egg.SimpOnlyOverride"
 cd "$batteries_repo_dir"
-targets="$(find Batteries -type f | grep -v -e 'SimpOnlyOverride.lean$' -e '.DS_Store')"
+targets="$(find Batteries -type f | grep -v -e 'SimpOnlyOverride.lean$' -e '.DS_Store')" || { exit 1; }
 
 while IFS= read -r file; do
     echo "$import_statement"$'\n'$"$(cat $file)" > "$file"
