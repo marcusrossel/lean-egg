@@ -1,0 +1,15 @@
+name = "DataflowRewriter"
+version = "0.1.0"
+keywords = ["math"]
+defaultTargets = ["DataflowRewriter"]
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+
+[[require]]
+name = "egg"
+path = "../../../.."
+
+[[lean_lib]]
+name = "DataflowRewriter"

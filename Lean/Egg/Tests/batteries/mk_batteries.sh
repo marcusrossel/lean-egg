@@ -21,7 +21,7 @@ git remote set-url origin "https://github.com/marcusrossel/batteries.git"
 
 # Adds egg as a dependency to the `lakefile.lean`.
 lakefile="$batteries_repo_dir/lakefile.lean"
-dep="require egg from \"../../../../..\""
+dep="\nrequire egg from \"../../../../..\""
 echo -e "$dep" >> "$lakefile"
 
 # Moves `SimpOnlyOverride.lean` to its intended destination.
