@@ -54,7 +54,7 @@ register_egg_options
   genLevelRws
   explosion
   blockInvalidMatches
-  shiftCapturedBVars
+  shiftCapturedBVars "Note: Setting this to `true` also enables `egg.blockInvalidMatches`."
   conditionSubgoals
   optimizeExpl
   timeLimit : Nat "The number of seconds allotted to equality saturation before it aborts. Note
