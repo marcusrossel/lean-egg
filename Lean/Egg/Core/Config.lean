@@ -31,6 +31,7 @@ structure Gen where
   deriving BEq
 
 structure Backend where
+  slotted             := false
   blockInvalidMatches := true
   shiftCapturedBVars  := true -- This option implies `blockInvalidMatches`.
   conditionSubgoals   := false

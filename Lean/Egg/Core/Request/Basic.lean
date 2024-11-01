@@ -10,6 +10,7 @@ namespace Egg.Request
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 protected structure Config where
+  slotted              : Bool
   optimizeExpl         : Bool
   timeLimit            : Nat
   nodeLimit            : Nat
@@ -25,6 +26,7 @@ protected structure Config where
 
 instance : Coe Config Request.Config where
   coe cfg := {
+    slotted              := cfg.slotted
     optimizeExpl         := cfg.optimizeExpl
     timeLimit            := cfg.timeLimit
     nodeLimit            := cfg.nodeLimit
