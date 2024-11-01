@@ -12,6 +12,7 @@ def Normalization.noReduce : Normalization where
   natReduceRws  := false
 
 structure Encoding extends Normalization where
+  slotted     := false
   eraseProofs := true
   -- TODO: Currently, this option implicitly disables defeq rewrites as they can not handle shapes, yet.
   shapes      := false
@@ -31,7 +32,6 @@ structure Gen where
   deriving BEq
 
 structure Backend where
-  slotted             := false
   blockInvalidMatches := true
   shiftCapturedBVars  := true -- This option implies `blockInvalidMatches`.
   conditionSubgoals   := false

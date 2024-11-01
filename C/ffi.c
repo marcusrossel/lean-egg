@@ -132,6 +132,7 @@ typedef struct config {
 
 /*
 structure Config where
+  slotted              : Bool
   optimizeExpl         : Bool
   timeLimit            : Nat
   nodeLimit            : Nat
@@ -149,18 +150,19 @@ config config_from_lean_obj(lean_obj_arg cfg) {
     unsigned scalar_base_offset = lean_ctor_num_objs(cfg) * sizeof(void*);
     unsigned bool_offset = sizeof(uint8_t);
     return (config) { 
-        .optimize_expl          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 0),
+        // Note: We skip index 0 here, because that's the `slotted` field.
+        .optimize_expl          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 1),
         .time_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 0)),
         .node_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 1)),
         .iter_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 2)),  
-        .gen_nat_lit_rws        = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 1),  
-        .gen_eta_rw             = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 2),  
-        .gen_beta_rw            = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 3),  
-        .gen_level_rws          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 4),  
-        .shapes                 = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 5), 
-        .block_invalid_matches  = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6), 
-        .shift_captured_bvars   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7),  
-        .allow_unsat_conditions = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 8),  
+        .gen_nat_lit_rws        = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 2),  
+        .gen_eta_rw             = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 3),  
+        .gen_beta_rw            = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 4),  
+        .gen_level_rws          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 5),  
+        .shapes                 = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6), 
+        .block_invalid_matches  = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7), 
+        .shift_captured_bvars   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 8),  
+        .allow_unsat_conditions = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 9),  
     };
 }
 
