@@ -1,6 +1,6 @@
 /Lean/Egg/Tests/Dataflow\ Rewriter/.lake
 /Lean/Egg/Tests/batteries/batteries
 /Lean/Egg/Tests/mathlib4/mathlib4
-/Rust/Cargo.lock
-/Rust/target
+/Rust/Egg/Cargo.lock
+/Rust/Egg/target
 /.lake
