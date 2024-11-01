@@ -15,10 +15,8 @@ example (f : Nat → Nat → Nat) : (f 1) x = (f (nat_lit 1)) (x + 0) := by
 example (f : Nat → Nat → Nat) : (f 1) x = (f 1) (x + (nat_lit 0)) := by
   egg [h]
 
--- TODO: The problem here might just be that egg guessed incorrectly what `p` should be,
---       when applying `h`.
 example (f : Nat → Nat → Nat) : (f 1) x = (f 1) (x + 0) := by
-  sorry -- egg [h]
+  egg [h]
 
 /--
 error: tactic 'rewrite' failed, pattern is a metavariable

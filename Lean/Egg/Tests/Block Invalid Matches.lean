@@ -33,6 +33,8 @@ example : (fun x => (fun a => (fun a => a) a) 0) = (fun x => x) := by
 theorem thm₂ : ∀ x y : Nat, x = (fun _ => x) y :=
   fun _ _ => rfl
 
+-- BUG: This also doesn't find a proof if we turn off `blockInvalidMatches`.
+
 -- This test covers Condition (1) of valid matches.
 set_option egg.blockInvalidMatches true in
 /-- error: egg failed to prove the goal (saturated) -/

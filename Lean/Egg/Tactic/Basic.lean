@@ -81,29 +81,29 @@ where
         let (rws, facts) ← Premises.gen goal.toCongr prems guides cfg amb
         runEqSat goal rws facts guides cfg amb
       match res with
-      | some (proof, proofTime, result) =>
+      | some (proof, proofTime, result, goalContainsBinder) =>
         if cfg.reporting then
           let totalTime := (← IO.monoMsNow) - startTime
-          logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl)
+          logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl goalContainsBinder)
         goal.id.assignIfDefeq' proof
         if let some tk := calcifyTk? then calcify tk proof goal.intros
       | none => goal.id.admit
   runEqSat
       (goal : Goal) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Config)
-      (amb : MVars.Ambient) : TacticM <| Option (Expr × Nat × Request.Result) := do
-    let req ← Request.encoding goal.toCongr rws facts guides cfg amb
+      (amb : MVars.Ambient) : TacticM <| Option (Expr × Nat × Request.Result × Bool) := do
+    let (req, goalContainsBinder) ← Request.encoding' goal.toCongr rws facts guides cfg amb
     withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
     if let .beforeEqSat := cfg.exitPoint then return none
     let result ← req.run fun failReport => do
       let msg := s!"egg failed to prove the goal ({failReport.stopReason.description}) "
       unless cfg.reporting do throwError msg
-      throwError msg ++ formatReport cfg.flattenReports failReport
+      throwError msg ++ formatReport cfg.flattenReports failReport (goalContainsBinder := goalContainsBinder)
     if let .beforeProof := cfg.exitPoint then return none
     let beforeProof ← IO.monoMsNow
     match ← resultToProof result goal rws facts {amb, cfg} cfg.retryWithShapes with
     | .proof prf =>
       let proofTime := (← IO.monoMsNow) - beforeProof
-      return some (prf, proofTime, result)
+      return some (prf, proofTime, result, goalContainsBinder)
     | .retryWithShapes => runEqSat goal rws facts guides { cfg with shapes := true } amb
 
 syntax &"egg " egg_cfg_mod egg_premises (egg_base)? (egg_guides)? : tactic

@@ -25,8 +25,11 @@ structure EncodingCtx where
   amb : MVars.Ambient
 
 -- Note: This function expects its input expression to be normalized (cf. `Egg.normalize`).
-partial def encode (e : Expr) (ctx : EncodingCtx) : MetaM Expression :=
-  Prod.fst <$> (go e).run { config := ctx.cfg, amb := ctx.amb }
+--
+-- Returns the encoded expression with a flag indicating whether it contains a binder.
+partial def encode' (e : Expr) (ctx : EncodingCtx) : MetaM (Expression × Bool) := do
+  let (expr, { usedBinder, .. }) ← (go e).run { config := ctx.cfg, amb := ctx.amb }
+  return (expr, usedBinder)
 where
   go (e : Expr) : EncodeM Expression :=
     withCache e do
@@ -70,13 +73,19 @@ where
     lvls.foldlM (init := "") (return s!"{·} {← encodeLevel ·}")
 
   encodeLambda (ty b : Expr) : EncodeM Expression := do
+    setUsedBinder
     -- It's critical that we encode `ty` outside of the `withInstantiatedBVar` block, as otherwise
     -- the bvars in `encTy` are incorrectly shifted by 1.
     let encTy ← go ty
     withInstantiatedBVar ty b fun body => return s!"(λ {encTy} {← go body})"
 
   encodeForall (ty b : Expr) : EncodeM Expression := do
+    setUsedBinder
     -- It's critical that we encode `ty` outside of the `withInstantiatedBVar` block, as otherwise
     -- the bvars in `encTy` are incorrectly shifted by 1.
     let encTy ← go ty
     withInstantiatedBVar ty b fun body => return s!"(∀ {encTy} {← go body})"
+
+-- Note: This function expects its input expression to be normalized (cf. `Egg.normalize`).
+def encode (e : Expr) (ctx : EncodingCtx) : MetaM Expression :=
+  Prod.fst <$> encode' e ctx

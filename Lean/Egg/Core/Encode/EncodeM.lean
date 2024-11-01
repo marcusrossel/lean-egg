@@ -9,10 +9,11 @@ namespace Egg
 abbrev Expression := String
 
 structure EncodeM.State where
-  config : Config.Encoding
-  bvars  : List FVarId := []
-  amb    : MVars.Ambient
-  cache  : HashMap Expr Expression := ∅
+  config     : Config.Encoding
+  bvars      : List FVarId := []
+  amb        : MVars.Ambient
+  cache      : HashMap Expr Expression := ∅
+  usedBinder : Bool := false
 
 abbrev EncodeM := StateT EncodeM.State MetaM
 
@@ -58,3 +59,6 @@ def withoutShapes (m : EncodeM Expression) : EncodeM Expression := do
   let enc ← m
   set { s with config.shapes := shapes }
   return enc
+
+def setUsedBinder : EncodeM Unit :=
+  modify ({ · with usedBinder := true })
