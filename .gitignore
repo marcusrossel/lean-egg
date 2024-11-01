@@ -3,4 +3,6 @@
 /Lean/Egg/Tests/mathlib4/mathlib4
 /Rust/Egg/Cargo.lock
 /Rust/Egg/target
+/Rust/Slotted/Cargo.lock
+/Rust/Slotted/target
 /.lake

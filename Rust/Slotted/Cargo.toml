@@ -1,0 +1,11 @@
+[package]
+name = "slotted-for-lean"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+slotted-egraphs = { version = "=0.0.20", features = ["explanations"] }
+libc = "0.2"
