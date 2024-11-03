@@ -72,32 +72,3 @@ where
 
   throwDifferent (e₁ e₂ : Expr) {α} : MetaM α :=
     throwError "Egg.Explanation.replaceSubexprs' tried to lens on different expressions:\n  {e₁}\nvs\n {e₂}"
-
-def Expression.toExpr : Expression → MetaM Expr
-  | bvar idx        => return .bvar idx
-  | fvar id         => return .fvar id
-  | mvar id         => return .mvar id
-  | sort lvl        => return .sort lvl
-  | const name lvls => return .const name lvls
-  | app fn arg      => return .app (← toExpr fn) (← toExpr arg)
-  | lam ty body     => return .lam .anonymous (← toExpr ty) (← toExpr body) .default
-  | .forall ty body => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
-  | lit l           => return .lit l
-  | proof prop      => do mkFreshExprMVar (← toExpr prop)
-  | subst idx to e  => return applySubst idx (← to.toExpr) (← e.toExpr)
-  | shift off cut e => return applyShift off cut (← e.toExpr)
-where
-  applySubst (idx : Nat) (to : Expr) : Expr → Expr
-    | .bvar i          => if i = idx then to else .bvar i
-    | .app fn arg      => .app (applySubst idx to fn) (applySubst idx to arg)
-    -- We don't shift `to` here because that's already handled in the egg backend. That is, the
-    -- given `Expression` should contain the required shifts explicitly.
-    | .lam n d b i     => .lam n (applySubst idx to d) (applySubst (idx + 1) to b) i
-    | .forallE n d b i => .forallE n (applySubst idx to d) (applySubst (idx + 1) to b) i
-    | e                => e
-  applyShift (off : Int) (cut : Nat) : Expr → Expr
-    | .bvar idx        => if idx < cut then .bvar idx else .bvar (idx + off).toNat
-    | .app fn arg      => .app (applyShift off cut fn) (applyShift off cut arg)
-    | .lam n d b i     => .lam n (applyShift off cut d) (applyShift off (cut + 1) b) i
-    | .forallE n d b i => .forallE n (applyShift off cut d) (applyShift off (cut + 1) b) i
-    | e                => e

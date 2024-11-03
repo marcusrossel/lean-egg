@@ -3,7 +3,7 @@ import Egg.Core.Encode.Rewrites
 import Egg.Core.Encode.Guides
 import Egg.Core.Encode.Facts
 import Egg.Core.Config
-import Egg.Core.Explanation.Parse
+import Egg.Core.Explanation.Parse.Basic
 open Lean
 
 namespace Egg.Request
@@ -98,7 +98,7 @@ structure Result.Report where
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 private structure Result.Raw where
-  expl    : Explanation.Raw
+  expl    : String
   egraph? : Option EGraph.Obj
   report? : Option Report
   deriving Inhabited
@@ -123,4 +123,5 @@ def run (req : Request) (onFail : Result.Report → MetaM Result) : MetaM Result
     else
       let some obj := raw.egraph? | throwError "egg: internal error: e-graph is absent"
       let egraph := { obj, slotted := req.cfg.slotted }
-      return { expl := ← raw.expl.parse, egraph, report }
+      let expl ← Explanation.Raw.parse { str := raw.expl, slotted := req.cfg.slotted }
+      return { expl, egraph, report }

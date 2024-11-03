@@ -8,11 +8,16 @@ import Egg.Tactic.Tags
 import Egg.Tactic.Calcify
 import Egg.Tactic.Basic
 import Egg.Tactic.Trace
+import Egg.Tactic.Goal
 import Egg.Tactic.Guides
+import Egg.Core.Explanation.Parse.Slotted
+import Egg.Core.Explanation.Parse.Basic
+import Egg.Core.Explanation.Parse.Egg
+import Egg.Core.Explanation.Parse.Shared
 import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Congr
 import Egg.Core.Explanation.Proof
-import Egg.Core.Explanation.Parse
+import Egg.Core.Explanation.Expr
 import Egg.Core.Encode.Shapes
 import Egg.Core.Encode.Facts
 import Egg.Core.Encode.Basic

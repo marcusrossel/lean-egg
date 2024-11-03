@@ -371,7 +371,7 @@ eqsat_result run_eqsat_request_core(lean_obj_arg req) {
 
 /*
 structure Result.Raw where
-  expl    : Explanation.Raw
+  expl    : String
   egraph? : Option EGraph
   report? : Option Report
 */

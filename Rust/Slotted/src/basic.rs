@@ -77,7 +77,7 @@ pub fn explain_congr(
     });
 
     if egraph.eq(&init_id, &goal_id) {
-        let expl = egraph.explain_equivalence(init_expr, goal_expr).to_string(&egraph);
+        let expl = egraph.explain_equivalence(init_expr, goal_expr).to_flat_string(&egraph);
         Ok((expl, egraph, report))
     } else {
         Ok(("".to_string(), egraph, report))

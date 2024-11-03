@@ -1,6 +1,6 @@
 import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Congr
-import Egg.Core.Explanation.Parse
+import Egg.Core.Explanation.Parse.Basic
 import Egg.Core.Explanation.Expr
 import Egg.Core.Premise.Rewrites
 import Egg.Core.Premise.Facts
@@ -52,11 +52,11 @@ where
 partial def Explanation.proof
     (expl : Explanation) (rws : Rewrites) (facts : Facts) (egraph : EGraph) (ctx : EncodingCtx) :
     MetaM Proof := do
-  let mut current ← expl.start.toExpr
-  let mut steps    : Array Proof.Step := #[]
+  let mut current := expl.start
+  let mut steps : Array Proof.Step := #[]
   let mut subgoals : Proof.Subgoals := []
   for step in expl.steps do
-    let next ← step.dst.toExpr
+    let next := step.dst
     let (prf, sub) ← proofStep current next step.toInfo
     steps    := steps.push prf
     subgoals := subgoals ++ sub
@@ -132,7 +132,7 @@ where
 
   mkConditionSubproof (fact : Fact) (cond : Expr) : MetaM (Option Expr) := do
     let rawExpl := egraph.run (← Request.Equiv.encoding fact.type cond ctx)
-    if rawExpl.isEmpty then return none
+    if rawExpl.str.isEmpty then return none
     let expl ← rawExpl.parse
     let proof ← expl.proof rws facts egraph ctx
     let factEqCond ← proof.prove { lhs := fact.type, rhs := cond, rel := .eq }

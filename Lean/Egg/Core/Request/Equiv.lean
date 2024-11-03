@@ -16,7 +16,8 @@ def Equiv.encoding (init goal : Expr) (ctx : EncodingCtx) : MetaM Equiv :=
 end Request
 
 @[extern "explain_equiv"]
-private opaque explainEquivRaw (graph : @& EGraph.Obj) (slotted : Bool) (e₁ e₂ : Expression) : Explanation.Raw
+private opaque explainEquivRaw (graph : @& EGraph.Obj) (slotted : Bool) (e₁ e₂ : Expression) : String
 
-def EGraph.run (graph : @& EGraph) (req : Request.Equiv) : Explanation.Raw :=
-  explainEquivRaw graph.obj graph.slotted req.init req.goal
+def EGraph.run (graph : @& EGraph) (req : Request.Equiv) : Explanation.Raw where
+  str := explainEquivRaw graph.obj graph.slotted req.init req.goal
+  slotted := graph.slotted

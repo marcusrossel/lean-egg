@@ -5,7 +5,9 @@ open Lean
 
 namespace Egg.Explanation
 
-abbrev Raw := String
+structure Raw where
+  str     : String
+  slotted : Bool
 
 namespace Rewrite
 
@@ -21,28 +23,12 @@ structure Info extends Descriptor where
 
 end Rewrite
 
--- TODO: We can omit this type and directly parse to an `Expr`.
-inductive Expression where
-  | bvar (idx : Nat)
-  | fvar (id : FVarId)
-  | mvar (id : MVarId)
-  | sort (lvl : Level)
-  | const (name : Name) (lvls : List Level)
-  | app (fn arg : Expression)
-  | lam (ty body : Expression)
-  | forall (ty body : Expression)
-  | lit (l : Literal)
-  | proof (prop : Expression)
-  | subst (idx : Nat) (to e : Expression)
-  | shift (offset : Int) (cutoff : Nat) (e : Expression)
-  deriving Inhabited
-
 structure Step extends Rewrite.Info where
-  dst : Expression
+  dst : Expr
   deriving Inhabited
 
 end Explanation
 
 structure Explanation where
-  start : Explanation.Expression
+  start : Expr
   steps : Array Explanation.Step
