@@ -2,6 +2,10 @@ namespace Egg
 
 private opaque EGraph.Pointed : NonemptyType.{0}
 
-def EGraph := EGraph.Pointed.type
+def EGraph.Obj := EGraph.Pointed.type
 
-instance : Nonempty EGraph := EGraph.Pointed.property
+instance : Nonempty EGraph.Obj := EGraph.Pointed.property
+
+structure EGraph where
+  obj     : EGraph.Obj
+  slotted : Bool

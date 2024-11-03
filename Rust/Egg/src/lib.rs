@@ -181,7 +181,7 @@ impl CReport {
 }
 
 #[repr(C)]
-pub struct EggResult {
+pub struct EqsatResult {
     expl: *const c_char,
     graph: Option<Box<LeanEGraph>>,
     report: CReport
@@ -196,7 +196,7 @@ pub extern "C" fn egg_explain_congr(
     guides: CStringArray, 
     cfg: Config,
     viz_path_ptr: *const c_char
-) -> EggResult {
+) -> EqsatResult {
     let init   = c_str_to_string(init_str_ptr);
     let goal   = c_str_to_string(goal_str_ptr);
     let guides = guides.to_vec();
@@ -208,7 +208,7 @@ pub extern "C" fn egg_explain_congr(
     let rw_templates = rws.to_templates();
     if let Err(rws_err) = rw_templates { 
         let rws_err_c_str = CString::new(rws_err.to_string()).expect("conversion of error message to C-string failed");
-        return EggResult { expl: rws_err_c_str.into_raw(), graph: None, report: CReport::none() }
+        return EqsatResult { expl: rws_err_c_str.into_raw(), graph: None, report: CReport::none() }
     }
     let rw_templates = rw_templates.unwrap();
 
@@ -219,13 +219,13 @@ pub extern "C" fn egg_explain_congr(
     let res = explain_congr(init, goal, rw_templates, facts, guides, cfg, viz_path);
     if let Err(res_err) = res {
         let res_err_c_str = CString::new(res_err.to_string()).expect("conversion of error message to C-string failed");
-        return EggResult { expl: res_err_c_str.into_raw(), graph: None, report: CReport::none() }
+        return EqsatResult { expl: res_err_c_str.into_raw(), graph: None, report: CReport::none() }
     }
     let (expl, egraph, report) = res.unwrap();
 
     let expl_c_str = CString::new(expl).expect("conversion of explanation to C-string failed");
 
-    return EggResult {
+    return EqsatResult {
         expl: expl_c_str.into_raw(),
         graph: Some(Box::new(egraph)),
         report: CReport::from_report(report) 
@@ -255,6 +255,6 @@ pub unsafe extern "C" fn egg_query_equiv(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn free_egraph(egraph: *mut LeanEGraph) {
+pub unsafe extern "C" fn egg_free_egraph(egraph: *mut LeanEGraph) {
     if !egraph.is_null() { drop(Box::from_raw(egraph)); }
 }

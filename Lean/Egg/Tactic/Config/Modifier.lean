@@ -6,6 +6,7 @@ open Lean Elab
 namespace Egg.Config
 
 structure Modifier where
+  slotted             : Option Bool            := none
   eraseProofs         : Option Bool            := none
   shapes              : Option Bool            := none
   betaReduceRws       : Option Bool            := none
@@ -34,6 +35,7 @@ structure Modifier where
   vizPath             : Option String          := none
 
 def modify (cfg : Config) (mod : Modifier) : Config where
+  slotted             := mod.slotted.getD cfg.slotted
   eraseProofs         := mod.eraseProofs.getD cfg.eraseProofs
   shapes              := mod.shapes.getD cfg.shapes
   betaReduceRws       := mod.betaReduceRws.getD cfg.betaReduceRws

@@ -88,7 +88,6 @@ def Result.StopReason.description : StopReason → String
   | nodeLimit      => "reached node limit"
   | other          => "unknown reason"
 
-
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 structure Result.Report where
   iterations:  Nat
@@ -100,11 +99,11 @@ structure Result.Report where
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 private structure Result.Raw where
   expl    : Explanation.Raw
-  egraph? : Option EGraph
+  egraph? : Option EGraph.Obj
   report? : Option Report
   deriving Inhabited
 
-@[extern "run_egg_request"]
+@[extern "run_eqsat_request"]
 private opaque runRaw (req : Request) : Result.Raw
 
 structure Result where
@@ -122,5 +121,6 @@ def run (req : Request) (onFail : Result.Report → MetaM Result) : MetaM Result
     if raw.expl.isEmpty then
       onFail report
     else
-      let some egraph := raw.egraph? | throwError "egg: internal error: e-graph is absent"
+      let some obj := raw.egraph? | throwError "egg: internal error: e-graph is absent"
+      let egraph := { obj, slotted := req.cfg.slotted }
       return { expl := ← raw.expl.parse, egraph, report }

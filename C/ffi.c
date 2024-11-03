@@ -130,6 +130,11 @@ typedef struct config {
     _Bool  allow_unsat_conditions;
 } config;
 
+typedef struct lean_config {
+    _Bool  slotted;
+    config rust_config;
+} lean_config;
+
 /*
 structure Config where
   slotted              : Bool
@@ -146,23 +151,25 @@ structure Config where
   shiftCapturedBVars   : Bool
   allowUnsatConditions : Bool
 */
-config config_from_lean_obj(lean_obj_arg cfg) {
+lean_config config_from_lean_obj(lean_obj_arg cfg) {
     unsigned scalar_base_offset = lean_ctor_num_objs(cfg) * sizeof(void*);
     unsigned bool_offset = sizeof(uint8_t);
-    return (config) { 
-        // Note: We skip index 0 here, because that's the `slotted` field.
-        .optimize_expl          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 1),
-        .time_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 0)),
-        .node_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 1)),
-        .iter_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 2)),  
-        .gen_nat_lit_rws        = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 2),  
-        .gen_eta_rw             = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 3),  
-        .gen_beta_rw            = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 4),  
-        .gen_level_rws          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 5),  
-        .shapes                 = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6), 
-        .block_invalid_matches  = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7), 
-        .shift_captured_bvars   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 8),  
-        .allow_unsat_conditions = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 9),  
+    return (lean_config) { 
+        .slotted = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 0),
+        .rust_config = (config) {
+            .optimize_expl          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 1),
+            .time_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 0)),
+            .node_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 1)),
+            .iter_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 2)),  
+            .gen_nat_lit_rws        = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 2),  
+            .gen_eta_rw             = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 3),  
+            .gen_beta_rw            = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 4),  
+            .gen_level_rws          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 5),  
+            .shapes                 = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6), 
+            .block_invalid_matches  = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7), 
+            .shift_captured_bvars   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 8),  
+            .allow_unsat_conditions = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 9),  
+        }
     };
 }
 
@@ -217,38 +224,96 @@ lean_obj_res report_to_lean(report rep) {
     return r;
 }
 
-typedef void* egraph;
+typedef void* egg_egraph;
+typedef void* slotted_egraph;
 
-extern void free_egraph(egraph);
+extern void egg_free_egraph(egg_egraph);
+extern void slotted_free_egraph(slotted_egraph);
 
-void egraph_finalize(egraph obj) {
-    free_egraph(obj);
+void egg_egraph_finalize(egg_egraph obj) {
+    egg_free_egraph(obj);
 }
 
-void egraph_foreach(egraph _x, b_lean_obj_arg _y) {
-    // do nothing since `egraph` does not contain nested Lean objects
+void slotted_egraph_finalize(slotted_egraph obj) {
+    slotted_free_egraph(obj);
 }
 
-static lean_external_class* egraph_class = NULL;
+void egg_egraph_foreach(egg_egraph _x, b_lean_obj_arg _y) {
+    // do nothing since `egg_egraph` does not contain nested Lean objects
+}
 
-lean_object* egraph_to_lean(egraph e) {
-    if (egraph_class == NULL) {
-        egraph_class = lean_register_external_class(egraph_finalize, egraph_foreach);
+void slotted_egraph_foreach(slotted_egraph _x, b_lean_obj_arg _y) {
+    // do nothing since `slotted_egraph` does not contain nested Lean objects
+}
+
+static lean_external_class* egg_egraph_class = NULL;
+static lean_external_class* slotted_egraph_class = NULL;
+
+lean_object* egg_egraph_to_lean(egg_egraph e) {
+    if (egg_egraph_class == NULL) {
+        egg_egraph_class = lean_register_external_class(egg_egraph_finalize, egg_egraph_foreach);
     }
-    return lean_alloc_external(egraph_class, e);
+    return lean_alloc_external(egg_egraph_class, e);
 }
 
-egraph to_egraph(b_lean_obj_arg e) {
-    return (egraph)(lean_get_external_data(e));
+lean_object* slotted_egraph_to_lean(slotted_egraph e) {
+    if (slotted_egraph_class == NULL) {
+        slotted_egraph_class = lean_register_external_class(slotted_egraph_finalize, slotted_egraph_foreach);
+    }
+    return lean_alloc_external(slotted_egraph_class, e);
+}
+
+egg_egraph to_egg_egraph(b_lean_obj_arg e) {
+    return (egg_egraph)(lean_get_external_data(e));
+}
+
+slotted_egraph to_slotted_egraph(b_lean_obj_arg e) {
+    return (slotted_egraph)(lean_get_external_data(e));
 }
 
 typedef struct egg_result {
     char* expl;
-    egraph graph;
+    egg_egraph graph;
     report rep;
 } egg_result;
 
+typedef struct slotted_result {
+    char* expl;
+    slotted_egraph graph;
+    report rep;
+} slotted_result;
+
+typedef union egraph {
+    egg_egraph egg;
+    slotted_egraph slotted;
+} egraph;
+
+lean_object* egraph_to_lean(egraph e, _Bool slotted) {
+    if (slotted) {
+        return slotted_egraph_to_lean(e.slotted);
+    } else {
+        return egg_egraph_to_lean(e.egg);
+    }
+}
+
+typedef struct eqsat_result {
+    _Bool slotted;
+    char* expl;
+    egraph graph;
+    report rep;
+} eqsat_result;
+
 extern egg_result egg_explain_congr(
+    const char* init, 
+    const char* goal, 
+    rws_array rws, 
+    facts_array facts, 
+    str_array guides, 
+    config cfg,
+    const char* viz_path
+);
+
+extern slotted_result slotted_explain_congr(
     const char* init, 
     const char* goal, 
     rws_array rws, 
@@ -268,16 +333,33 @@ structure Egg.Request where
   vizPath : String
   cfg     : Request.Config
 */
-egg_result run_egg_request_core(lean_obj_arg req) {
+eqsat_result run_eqsat_request_core(lean_obj_arg req) {
     const char* lhs      = lean_string_cstr(lean_ctor_get(req, 0));
     const char* rhs      = lean_string_cstr(lean_ctor_get(req, 1));
     rws_array rws        = rewrites_from_lean_obj(lean_ctor_get(req, 2));
     facts_array facts    = facts_from_lean_obj(lean_ctor_get(req, 3));
     str_array guides     = str_array_from_lean_obj(lean_ctor_get(req, 4));
     const char* viz_path = lean_string_cstr(lean_ctor_get(req, 5));
-    config cfg           = config_from_lean_obj(lean_ctor_get(req, 6));
+    lean_config cfg      = config_from_lean_obj(lean_ctor_get(req, 6));
 
-    egg_result result = egg_explain_congr(lhs, rhs, rws, facts, guides, cfg, viz_path);
+    eqsat_result result;
+    if (cfg.slotted) {
+        slotted_result res = slotted_explain_congr(lhs, rhs, rws, facts, guides, cfg.rust_config, viz_path);
+        result = (eqsat_result) {
+            .slotted = true,
+            .expl    = res.expl,
+            .graph   = { .slotted = res.graph },
+            .rep     = res.rep,
+        };
+    } else {
+        egg_result res = egg_explain_congr(lhs, rhs, rws, facts, guides, cfg.rust_config, viz_path);
+        result = (eqsat_result) {
+            .slotted = false,
+            .expl    = res.expl,
+            .graph   = { .egg = res.graph },
+            .rep     = res.rep,
+        };
+    }
     
     // TODO: Is it safe to free this?
     free_rws_array(rws);
@@ -293,11 +375,11 @@ structure Result.Raw where
   egraph? : Option EGraph
   report? : Option Report
 */
-lean_obj_res run_egg_request(lean_obj_arg req) {
-    egg_result result = run_egg_request_core(req);
-    lean_object* expl = lean_mk_string(result.expl);
-    lean_object* graph = egraph_to_lean(result.graph);
-    lean_object* rep = report_to_lean(result.rep);
+lean_obj_res run_eqsat_request(lean_obj_arg req) {
+    eqsat_result result = run_eqsat_request_core(req);
+    lean_object* expl   = lean_mk_string(result.expl);
+    lean_object* graph  = egraph_to_lean(result.graph, result.slotted);
+    lean_object* rep    = report_to_lean(result.rep);
 
     lean_object* lean_result = lean_alloc_ctor(0, 3, 0);
     lean_ctor_set(lean_result, 0, expl);
@@ -319,14 +401,26 @@ lean_obj_res run_egg_request(lean_obj_arg req) {
 }
 
 extern const char* egg_query_equiv(
-    egraph graph,
+    egg_egraph graph,
     const char* init, 
     const char* goal
 );
 
-lean_obj_res explain_equiv(b_lean_obj_arg graph, lean_obj_arg init, lean_obj_arg goal) {
-    egraph graph_c     = to_egraph(graph);
+extern const char* slotted_query_equiv(
+    slotted_egraph graph,
+    const char* init, 
+    const char* goal
+);
+
+lean_obj_res explain_equiv(b_lean_obj_arg graph, uint8_t slotted, lean_obj_arg init, lean_obj_arg goal) {
     const char* init_c = lean_string_cstr(init);
     const char* goal_c = lean_string_cstr(goal);
-    return lean_mk_string(egg_query_equiv(graph_c, init_c, goal_c));
+    
+    if (slotted != 0) {
+        slotted_egraph graph_c = to_slotted_egraph(graph);
+        return lean_mk_string(slotted_query_equiv(graph_c, init_c, goal_c));
+    } else {
+        egg_egraph graph_c = to_egg_egraph(graph);
+        return lean_mk_string(egg_query_equiv(graph_c, init_c, goal_c));
+    }
 }

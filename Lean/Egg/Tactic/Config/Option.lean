@@ -39,6 +39,7 @@ local macro "register_egg_options" opts:_egg_opt* : command => do
   return ⟨mkNullNode cmds⟩
 
 register_egg_options
+  slotted
   eraseProofs
   shapes
   betaReduceRws
