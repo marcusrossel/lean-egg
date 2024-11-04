@@ -426,40 +426,159 @@ class Semifield (K : Type*) extends CommSemiring K, DivisionSemiring K, CommGrou
 
 instance instSemifield : Semifield ℚ≥0 := sorry
 
-/-- A function `f : α → β` is called injective if `f x = f y` implies `x = y`. -/
-def Injective (f : α → β) : Prop :=
-  ∀ ⦃a₁ a₂⦄, f a₁ = f a₂ → a₁ = a₂
-
 /-- A function `f : α → β` is called surjective if every `b : β` is equal to `f a`
 for some `a : α`. -/
-def Surjective (f : α → β) : Prop :=
+def Function.Surjective (f : α → β) : Prop :=
   ∀ b, ∃ a, f a = b
 
 /-- A function is called bijective if it is both injective and surjective. -/
-def Bijective (f : α → β) :=
-  Injective f ∧ Surjective f
+def Function.Bijective (f : α → β) :=
+  Function.Injective f ∧ Function.Surjective f
 
+def Function.LeftInverse (g : β → α) (f : α → β) : Prop :=
+  ∀ x, g (f x) = x
+
+def Function.RightInverse (g : β → α) (f : α → β) : Prop :=
+  Function.LeftInverse f g
+
+class Group (G : Type u) extends DivInvMonoid G where
+  protected inv_mul_cancel : ∀ a : G, a⁻¹ * a = 1
+
+structure Equiv (α : Sort*) (β : Sort _) where
+  protected toFun : α → β
+  protected invFun : β → α
+  protected left_inv : Function.LeftInverse invFun toFun
+  protected right_inv : Function.RightInverse invFun toFun
+
+infixl:25 " ≃ " => Equiv
+
+abbrev Equiv.Perm (α : Sort*) :=
+  Equiv α α
+
+section Group
+variable [Group G] [MulAction G α] {g : G} {a b : α}
+
+
+theorem inv_smul_smul (g : G) (a : α) : g⁻¹ • g • a = a := by sorry
+
+theorem smul_inv_smul (g : G) (a : α) : g • g⁻¹ • a = a := by sorry
+
+end Group
+
+
+def MulAction.toPerm [Group α] [MulAction α β] (a : α) : Equiv.Perm β :=
+  ⟨fun x => a • x, fun x => a⁻¹ • x, inv_smul_smul a, smul_inv_smul a⟩
+
+section MulAction
+
+
+variable {α} {β} [Group α] [MulAction α β]
+protected theorem MulAction.bijective (g : α) : Function.Bijective (g • · : β → β) :=
+  sorry
+
+end MulAction
 section GroupWithZero
 variable [GroupWithZero G₀] [MulAction G₀ α] {a : G₀}
 
-protected theorem MulAction.bijective (g : α) : Bijective (g • · : β → β) :=
-  (MulAction.toPerm g).bijective
+protected theorem MulAction.bijective₀ (ha : a ≠ 0) : Function.Bijective (a • · : α → α) :=
+  sorry
 
-protected theorem MulAction.bijective₀ (ha : a ≠ 0) : Bijective (a • · : α → α) :=
-  MulAction.bijective <| Units.mk0 a ha
-
-protected theorem MulAction.injective₀ (ha : a ≠ 0) : Injective (a • · : α → α) :=
-  (MulAction.bijective₀ ha).injective
+protected theorem MulAction.injective₀ (ha : a ≠ 0) : Function.Injective (a • · : α → α) :=
+  sorry
 
 end GroupWithZero
+
+variable {R : Type*}
+
+@[simp, norm_cast]
+theorem cast_zero [AddMonoidWithOne R] : ((0 : ℕ) : R) = 0 :=
+  AddMonoidWithOne.natCast_zero
+
+theorem cast_injective [AddMonoidWithOne R] [CharZero R] : Function.Injective (Nat.cast : ℕ → R) :=
+  CharZero.cast_injective
+
+theorem Function.Injective.eq_iff {f : α → β} (I : Function.Injective f) {a b : α} : f a = f b ↔ a = b :=
+  ⟨@I _ _, congrArg f⟩
+
+@[simp, norm_cast]
+theorem cast_inj {m n : ℕ} [AddMonoidWithOne R] [CharZero R] : (m : R) = n ↔ m = n :=
+  cast_injective.eq_iff
+
+theorem cast_eq_zero {n : ℕ} [AddMonoidWithOne R] [CharZero R] : (n : R) = 0 ↔ n = 0 := by rw [← cast_zero, cast_inj]
+
+@[norm_cast]
+theorem Nat.cast_ne_zero [AddMonoidWithOne R] [CharZero R] {n : ℕ} : (n : R) ≠ 0 ↔ n ≠ 0 :=
+  not_congr cast_eq_zero
+
+theorem Rat.den_pos (self : Rat) : 0 < self.den := Nat.pos_of_ne_zero self.den_nz
+
+@[simp] theorem NNRat.den_pos (q : ℚ≥0) : 0 < q.den := Rat.den_pos _
+
+class Preorder (α : Type*) extends LE α, LT α where
+  le_refl : ∀ a : α, a ≤ a
+  le_trans : ∀ a b c : α, a ≤ b → b ≤ c → a ≤ c
+  lt := fun a b => a ≤ b ∧ ¬b ≤ a
+  lt_iff_le_not_le : ∀ a b : α, a < b ↔ a ≤ b ∧ ¬b ≤ a := by intros; rfl
+
+class PartialOrder (α : Type*) extends Preorder α where
+  le_antisymm : ∀ a b : α, a ≤ b → b ≤ a → a = b
+
+class OrderedAddCommMonoid (α : Type*) extends AddCommMonoid α, PartialOrder α where
+  protected add_le_add_left : ∀ a b : α, a ≤ b → ∀ c, c + a ≤ c + b
+
+class OrderedSemiring (α : Type u) extends Semiring α, OrderedAddCommMonoid α where
+  /-- `0 ≤ 1` in any ordered semiring. -/
+  protected zero_le_one : (0 : α) ≤ 1
+  /-- In an ordered semiring, we can multiply an inequality `a ≤ b` on the left
+  by a non-negative element `0 ≤ c` to obtain `c * a ≤ c * b`. -/
+  protected mul_le_mul_of_nonneg_left : ∀ a b c : α, a ≤ b → 0 ≤ c → c * a ≤ c * b
+  /-- In an ordered semiring, we can multiply an inequality `a ≤ b` on the right
+  by a non-negative element `0 ≤ c` to obtain `a * c ≤ b * c`. -/
+  protected mul_le_mul_of_nonneg_right : ∀ a b c : α, a ≤ b → 0 ≤ c → a * c ≤ b * c
+
+class OrderedCancelAddCommMonoid (α : Type*) extends OrderedAddCommMonoid α where
+  protected le_of_add_le_add_left : ∀ a b c : α, a + b ≤ a + c → b ≤ c
+
+class StrictOrderedSemiring (α : Type u) extends Semiring α, OrderedCancelAddCommMonoid α,
+    Nontrivial α where
+  /-- In a strict ordered semiring, `0 ≤ 1`. -/
+  protected zero_le_one : (0 : α) ≤ 1
+  /-- Left multiplication by a positive element is strictly monotone. -/
+  protected mul_lt_mul_of_pos_left : ∀ a b c : α, a < b → 0 < c → c * a < c * b
+  /-- Right multiplication by a positive element is strictly monotone. -/
+  protected mul_lt_mul_of_pos_right : ∀ a b c : α, a < b → 0 < c → a * c < b * c
+
+abbrev StrictOrderedSemiring.toOrderedSemiring' [StrictOrderedSemiring α] [@DecidableRel α (· ≤ ·)] : OrderedSemiring α :=
+  { ‹StrictOrderedSemiring α› with
+    mul_le_mul_of_nonneg_left := fun a b c hab hc => by
+      sorry
+    mul_le_mul_of_nonneg_right := fun a b c hab hc => by
+      sorry}
+
+
+theorem ne_of_lt [Preorder α] {a b : α} (h : a < b) : a ≠ b := sorry
+
+theorem LT.lt.ne' [Preorder α] {x y : α} (h : x < y) : y ≠ x :=
+  ne_of_lt h |>.symm
+
+instance instCharZero : CharZero ℚ≥0 := sorry
+
+instance : Preorder Nat where
+  le_refl := Nat.le_refl
+  le_trans := @Nat.le_trans
+  lt_iff_le_not_le := by sorry
+
+
 -- Until here it's all the background needed for the following example
 
+@[simp] theorem den_mul_eq_num (q : ℚ≥0) : q.den * q = q.num := by sorry
+
+theorem Nat.cast_smul_eq_nsmul [Semiring R] [AddCommMonoid M] [Module R M] (n : ℕ) (b : M) : (n : R) • b = n • b := by sorry
 variable (R S : Type*) [DivisionSemiring R] [CharZero R] [Semiring S] [Module ℚ≥0 S]
 
 example [Module R S] (q : ℚ≥0) (a : S) : (q : R) • a = q • a := by
   refine MulAction.injective₀ (G₀ := ℚ≥0) (Nat.cast_ne_zero.2 q.den_pos.ne') ?_
-  egg [
-    mul_smul, den_mul_eq_num, Nat.cast_smul_eq_nsmul, Nat.cast_smul_eq_nsmul, smul_assoc,
+  egg [MulAction.mul_smul, den_mul_eq_num, Nat.cast_smul_eq_nsmul, Nat.cast_smul_eq_nsmul, smul_assoc,
     nsmul_eq_mul q.den (α := R), cast_natCast, cast_mul, den_mul_eq_num, cast_natCast,
     Nat.cast_smul_eq_nsmul
   ]
