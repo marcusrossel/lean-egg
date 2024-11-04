@@ -1,0 +1,16 @@
+name = "Andrés"
+version = "0.1.0"
+keywords = ["math"]
+defaultTargets = ["«Andrés»"]
+
+[[require]]
+name    = "mathlib"
+scope   = "leanprover-community"
+version = "git#v4.13.0"
+
+[[require]]
+name = "egg"
+path = "../../../.."
+
+[[lean_lib]]
+name = "«Andrés»"
