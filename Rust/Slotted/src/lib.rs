@@ -238,7 +238,7 @@ pub unsafe extern "C" fn slotted_query_equiv(
     let goal_id = egraph.add_expr(goal.clone());
 
     if egraph.eq(&init_id, &goal_id) {
-        let expl = egraph.explain_equivalence(init, goal).to_string(&egraph);
+        let expl = egraph.explain_equivalence(init, goal).to_flat_string(&egraph);
         let expl_c_str = CString::new(expl).expect("conversion of explanation to C-string failed");
         expl_c_str.into_raw()
     } else {
