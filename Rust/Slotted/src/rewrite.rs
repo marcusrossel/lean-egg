@@ -29,12 +29,11 @@ pub fn templates_to_rewrites(
                     let analysis: &LeanAnalysis = graph.analysis_data(lhs.id);
                     
                     // Disallows rewriting on primitive e-nodes.
-                    if analysis.is_primitive { return }
+                    if analysis.is_primitive { continue }
 
                     let mut rule = template.name.clone();
                     
                     for cond in template.conds.clone() {
-
                         let id = pattern_subst(graph, &cond, &subst);
                         
                         // Note: If we don't find a fact matching `id`, this might just be because 
@@ -48,7 +47,7 @@ pub fn templates_to_rewrites(
                         } else if allow_unsat_conditions {
                             rule = rule.as_str().to_string(); rule.push_str("!?");
                         } else {
-                            return
+                            continue
                         }
                     }
 

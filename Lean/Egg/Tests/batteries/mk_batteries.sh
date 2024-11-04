@@ -28,18 +28,10 @@ cd "$batteries_repo_dir" || { exit 1; }
 git switch -c egg-tests || { exit 1; }
 git remote set-url origin "https://github.com/marcusrossel/batteries.git" || { exit 1; }
 
-# TODO: Starting with the next version of batteries, remove the non-toml based path.
-if [[ "$use_main_branch" == true ]]; then
-    # Adds egg as a dependency to the `lakefile.toml`.
-    lakefile="$batteries_repo_dir/lakefile.toml"
-    toml_dep="\n[[require]]\nname = \"egg\"\npath = \"../../../../..\""
-    echo -e "$toml_dep" >> "$lakefile"
-else
-    # Adds egg as a dependency to the `lakefile.lean`.
-    lakefile="$batteries_repo_dir/lakefile.lean"
-    dep="\nrequire egg from \"../../../../..\""
-    echo -e "$dep" >> "$lakefile"
-fi
+# Adds egg as a dependency to the `lakefile.toml`.
+lakefile="$batteries_repo_dir/lakefile.toml"
+toml_dep="\n[[require]]\nname = \"egg\"\npath = \"../../../../..\""
+echo -e "$toml_dep" >> "$lakefile"
 
 # Moves `SimpOnlyOverride.lean` to its intended destination.
 simp_only_override="$batteries_dir/SimpOnlyOverride.lean"
