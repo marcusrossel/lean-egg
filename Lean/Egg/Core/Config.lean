@@ -13,7 +13,7 @@ def Normalization.noReduce : Normalization where
 
 structure Encoding extends Normalization where
   -- TODO: Currently, this option implicitly disables `retryWithShapes` as slotted cannot handle shapes, yet.
-  slotted     := true
+  slotted     := false
   eraseProofs := true
   -- TODO: Currently, this option implicitly disables defeq rewrites as they can not handle shapes, yet.
   shapes      := false
