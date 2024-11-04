@@ -181,5 +181,24 @@ def parseRwSrc : (TSyntax `rw_src) → Rewrite.Descriptor
     { src, dir, facts }
   | _ => unreachable!
 
+inductive ParseError where
+  | noSteps
+  | startContainsRw
+  | missingRw
+  | multipleRws
+  | nonDefeqProofRw
+  deriving Inhabited
+
 def ParseError.msgPrefix :=
   "egg received invalid explanation:"
+
+open ParseError in
+instance : Coe ParseError MessageData where
+  coe
+    | noSteps         => s!"{msgPrefix} no steps found"
+    | startContainsRw => s!"{msgPrefix} start contains a rewrite"
+    | missingRw       => s!"{msgPrefix} (non-start) step does not contain a rewrite"
+    | multipleRws     => s!"{msgPrefix} step contains multiple rewrites"
+    | nonDefeqProofRw => s!"{msgPrefix} step contains non-defeq type-level rewrite in proof"
+
+abbrev ParseStepM := ExceptT ParseError <| StateM (Option Rewrite.Info)

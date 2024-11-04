@@ -36,7 +36,11 @@ private def resultToProof
     catch err =>
       -- If proof reconstruction fails but we haven't tried using shapes yet, retry with shapes
       -- (assuming the correcspoding option is enabled).
-      if ctx.cfg.shapes || !retryWithShapes then throw err else return .retryWithShapes
+      -- TODO: Using slotted e-graphs doesn't support shaped yet.
+      if ctx.cfg.shapes || !retryWithShapes || ctx.cfg.slotted then
+        throw err
+      else
+        return .retryWithShapes
   proof.trace `egg.proof
   let mut prf ← proof.prove goal.toCongr
   prf ← instantiateMVars prf

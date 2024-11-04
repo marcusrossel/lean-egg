@@ -4,22 +4,22 @@ open Lean Meta
 
 namespace Egg.Explanation
 
-inductive EggExpression where
+private inductive Expression where
   | bvar   (idx : Nat)
   | fvar   (id : FVarId)
   | mvar   (id : MVarId)
   | sort   (lvl : Level)
   | const  (name : Name) (lvls : List Level)
-  | app    (fn arg : EggExpression)
-  | lam    (ty body : EggExpression)
-  | forall (ty body : EggExpression)
+  | app    (fn arg : Expression)
+  | lam    (ty body : Expression)
+  | forall (ty body : Expression)
   | lit    (l : Literal)
-  | proof  (prop : EggExpression)
-  | subst  (idx : Nat) (to e : EggExpression)
-  | shift  (offset : Int) (cutoff : Nat) (e : EggExpression)
+  | proof  (prop : Expression)
+  | subst  (idx : Nat) (to e : Expression)
+  | shift  (offset : Int) (cutoff : Nat) (e : Expression)
   deriving Inhabited
 
-private def EggExpression.toExpr : EggExpression → MetaM Expr
+private def Expression.toExpr : Expression → MetaM Expr
   | bvar idx        => return .bvar idx
   | fvar id         => return .fvar id
   | mvar id         => return .mvar id
@@ -30,8 +30,8 @@ private def EggExpression.toExpr : EggExpression → MetaM Expr
   | .forall ty body => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
   | lit l           => return .lit l
   | proof prop      => do mkFreshExprMVar (← toExpr prop)
-  | subst idx to e  => return applySubst idx (← to.toExpr) (← e.toExpr)
-  | shift off cut e => return applyShift off cut (← e.toExpr)
+  | subst idx to e  => return applySubst idx (← toExpr to) (← toExpr e)
+  | shift off cut e => return applyShift off cut (← toExpr e)
 where
   applySubst (idx : Nat) (to : Expr) : Expr → Expr
     | .bvar i          => if i = idx then to else .bvar i
@@ -77,32 +77,13 @@ syntax "(" &"Rewrite" noWs rw_dir rw_src egg_expr ")" : egg_expr
 
 syntax egg_expr+ : egg_expl
 
-inductive ParseError where
-  | noSteps
-  | startContainsRw
-  | missingRw
-  | multipleRws
-  | nonDefeqProofRw
-  deriving Inhabited
-
-open ParseError in
-instance : Coe ParseError MessageData where
-  coe
-    | noSteps         => s!"{msgPrefix} no steps found"
-    | startContainsRw => s!"{msgPrefix} start contains a rewrite"
-    | missingRw       => s!"{msgPrefix} (non-start) step does not contain a rewrite"
-    | multipleRws     => s!"{msgPrefix} step contains multiple rewrites"
-    | nonDefeqProofRw => s!"{msgPrefix} step contains non-defeq type-level rewrite in proof"
-
-abbrev ParseStepM := ExceptT ParseError <| StateM (Option Rewrite.Info)
-
-partial def parseEggLevel : (TSyntax `egg_lvl) → ParseStepM Level
+private partial def parseLevel : (TSyntax `egg_lvl) → ParseStepM Level
   | `(egg_lvl|$n:num)                   => return n.getNat.toLevel
   | `(egg_lvl|(uvar $id))               => return .mvar (.fromUniqueIdx id.getNat)
   | `(egg_lvl|(param $n))               => return .param n.getId
-  | `(egg_lvl|(succ $lvl))              => return .succ (← parseEggLevel lvl)
-  | `(egg_lvl|(max $lvl₁ $lvl₂))        => return .max (← parseEggLevel lvl₁) (← parseEggLevel lvl₂)
-  | `(egg_lvl|(imax $lvl₁ $lvl₂))       => return .imax (← parseEggLevel lvl₁) (← parseEggLevel lvl₂)
+  | `(egg_lvl|(succ $lvl))              => return .succ (← parseLevel lvl)
+  | `(egg_lvl|(max $lvl₁ $lvl₂))        => return .max (← parseLevel lvl₁) (← parseLevel lvl₂)
+  | `(egg_lvl|(imax $lvl₁ $lvl₂))       => return .imax (← parseLevel lvl₁) (← parseLevel lvl₂)
   | `(egg_lvl|(Rewrite$dir $src $body)) => parseRw dir src body
   | _                                   => unreachable!
 where
@@ -112,20 +93,20 @@ where
     let info := parseRwSrc src
     let dir  := info.dir.merge (parseRwDir dir)
     set <| some { info with dir, pos? := none : Rewrite.Info }
-    parseEggLevel body
+    parseLevel body
 
-private abbrev ParseStepResult := Except ParseError <| EggExpression × (Option Rewrite.Info)
+private abbrev ParseStepResult := Except ParseError <| Expression × (Option Rewrite.Info)
 
-partial def parseEggExpr (stx : TSyntax `egg_expr) : ParseStepResult :=
+private partial def parseExpr (stx : TSyntax `egg_expr) : ParseStepResult :=
   let (e, info?) := go .root stx |>.run none
   return (← e, info?)
 where
-  go (pos : SubExpr.Pos) : (TSyntax `egg_expr) → ParseStepM EggExpression
+  go (pos : SubExpr.Pos) : (TSyntax `egg_expr) → ParseStepM Expression
     | `(egg_expr|(bvar $idx))              => return .bvar idx.getNat
     | `(egg_expr|(fvar $id))               => return .fvar (.fromUniqueIdx id.getNat)
     | `(egg_expr|(mvar $id))               => return .mvar (.fromUniqueIdx id.getNat)
-    | `(egg_expr|(sort $lvl))              => return .sort (← parseEggLevel lvl)
-    | `(egg_expr|(const $name $lvls*))     => return .const name.getId (← lvls.mapM parseEggLevel).toList
+    | `(egg_expr|(sort $lvl))              => return .sort (← parseLevel lvl)
+    | `(egg_expr|(const $name $lvls*))     => return .const name.getId (← lvls.mapM parseLevel).toList
     | `(egg_expr|(app $fn $arg))           => return .app (← go pos.pushAppFn fn) (← go pos.pushAppArg arg)
     | `(egg_expr|(λ $ty $body))            => return .lam (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(egg_expr|(∀ $ty $body))            => return .forall (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
@@ -137,7 +118,7 @@ where
     | `(egg_expr|(Rewrite$dir $src $body)) => parseRw dir src body pos
     | _                                    => unreachable!
 
-  parseProof (p : TSyntax `egg_expr) (pos : SubExpr.Pos) : ParseStepM EggExpression := do
+  parseProof (p : TSyntax `egg_expr) (pos : SubExpr.Pos) : ParseStepM Expression := do
     -- If `p` did not contain a rewrite, all is well and we return `e`. Otherwise, obtain the
     -- `rwInfo` and make sure it is a defeq rewrite. If not, we have a non-defeq type-level rewrite,
     -- which we cannot handle, yet.
@@ -148,7 +129,7 @@ where
     return e
 
   parseRw (dir : TSyntax `rw_dir) (src : TSyntax `rw_src) (body : TSyntax `egg_expr)
-      (pos : SubExpr.Pos) : ParseStepM EggExpression := do
+      (pos : SubExpr.Pos) : ParseStepM Expression := do
     unless (← get).isNone do throw .multipleRws
     let info := parseRwSrc src
     let dir  := info.dir.merge (parseRwDir dir)
@@ -158,10 +139,10 @@ where
 def parseEggExpl : (TSyntax `egg_expl) → MetaM Explanation
   | `(egg_expl|$steps:egg_expr*) => do
     let some start := steps[0]? | throwError ParseError.noSteps
-    let .ok (start, none) := parseEggExpr start | throwError ParseError.startContainsRw
+    let .ok (start, none) := parseExpr start | throwError ParseError.startContainsRw
     let mut tl : Array Step := #[]
     for step in steps[1:] do
-      match parseEggExpr step with
+      match parseExpr step with
       | .error e             => throwError e
       | .ok (_, none)        => throwError ParseError.missingRw
       | .ok (dst, some info) => tl := tl.push { info with dst := ← dst.toExpr }
