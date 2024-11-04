@@ -7,5 +7,5 @@ edition = "2021"
 crate-type = ["staticlib"]
 
 [dependencies]
-slotted-egraphs = { version = "=0.0.20", features = ["explanations"] }
+slotted-egraphs = { path = "/Users/marcus/Desktop/slotted-egraphs", features = ["explanations"] }
 libc = "0.2"

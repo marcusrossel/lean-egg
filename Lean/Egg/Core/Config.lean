@@ -12,6 +12,7 @@ def Normalization.noReduce : Normalization where
   natReduceRws  := false
 
 structure Encoding extends Normalization where
+  -- TODO: Currently, this option implicitly disables `retryWithShapes` as slotted cannot handle shapes, yet.
   slotted     := false
   eraseProofs := true
   -- TODO: Currently, this option implicitly disables defeq rewrites as they can not handle shapes, yet.
@@ -35,6 +36,8 @@ structure Backend where
   blockInvalidMatches := true
   shiftCapturedBVars  := true -- This option implies `blockInvalidMatches`.
   conditionSubgoals   := false
+  -- TODO: For slotted e-graphs, this option can be used to inspect the tree explanation by setting
+  --       this option to `false`.
   optimizeExpl        := true
   timeLimit           := 3
   nodeLimit           := 1000000000000000000

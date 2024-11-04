@@ -26,10 +26,6 @@ pub fn explain_congr(
     guides: Vec<String>, cfg: Config, _viz_path: Option<String>
 ) -> Result<(String, LeanEGraph, Report), Error> {    
     let mut egraph: LeanEGraph = EGraph::new();
-    
-    // TODO:
-    // egraph = egraph.with_explanations_enabled();
-    // if !cfg.optimize_expl { egraph = egraph.without_explanation_length_optimization() }
 
     let init_expr = RecExpr::parse(&init).map_err(|err| {
         Error::Init(format!("Failed to parse lhs of goal: {:?}\n\n  {}", err, init).to_string())
@@ -77,8 +73,18 @@ pub fn explain_congr(
     });
 
     if egraph.eq(&init_id, &goal_id) {
-        let expl = egraph.explain_equivalence(init_expr, goal_expr).to_flat_string(&egraph);
-        Ok((expl, egraph, report))
+        let expl = egraph.explain_equivalence(init_expr, goal_expr);
+
+        // HACK: For debugging purposes we're abusing the `optimize_expl` option to indicate whether 
+        //       the tree explanation should be returned instead of a flat explanation. A value of 
+        //       `false` indicates that the tree explanation should be returned.
+        if !cfg.optimize_expl {
+            let tree_expl = expl.to_string(&egraph);
+            Ok((tree_expl, egraph, report))
+        } else {
+            let flat_expl = expl.to_flat_string(&egraph);
+            Ok((flat_expl, egraph, report))
+        }
     } else {
         Ok(("".to_string(), egraph, report))
     }
