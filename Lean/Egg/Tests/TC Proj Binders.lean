@@ -60,6 +60,7 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs in
+set_option linter.unusedVariables false in
 set_option trace.egg.rewrites true in
 set_option egg.builtins false in
 set_option egg.genBetaRw false in

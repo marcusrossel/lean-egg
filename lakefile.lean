@@ -10,7 +10,7 @@ package egg where
 lean_lib Egg where
   precompileModules := true
 
-target importTarget pkg : FilePath := do
+target importTarget pkg : System.FilePath := do
   let oFile := pkg.buildDir / "c" / "ffi.o"
   let srcJob ← inputTextFile <| pkg.dir / "C" / "ffi.c"
   buildFileAfterDep oFile srcJob fun srcFile => do

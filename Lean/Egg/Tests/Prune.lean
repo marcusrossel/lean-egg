@@ -40,6 +40,7 @@ info: [egg.rewrites] Rewrites
           level: []
 -/
 #guard_msgs in
+set_option linter.unusedVariables false in
 set_option trace.egg.rewrites true in
 example (h₁ h₂ : 0 = 0) : 0 = 0 := by
   egg [h₁, h₂]
@@ -76,6 +77,7 @@ info: [egg.rewrites] Rewrites
           level: []
 -/
 #guard_msgs in
+set_option linter.unusedVariables false in
 set_option trace.egg.rewrites true in
 example (h : ∀ a b : Nat, a + b = b + a) : 0 = 0 := by
   egg [Nat.add_comm, h]
