@@ -36,10 +36,13 @@ lemma Module.not_mem_support_iff' :
   --rw [not_mem_support_iff, LocalizedModule.subsingleton_iff]
   --rfl
 
+set_option egg.timeLimit 100 in
+set_option egg.slotted true in
+set_option egg.reporting true in
 lemma Module.mem_support_iff' :
     p ∈ Module.support R M ↔ ∃ m : M, ∀ r ∉ p.asIdeal, r • m ≠ 0 := by
   -- inifinite loop?
-  --egg! [not_not , not_mem_support_iff']
-  rw [← @not_not (_ ∈ _), not_mem_support_iff']
-  push_neg
-  rfl
+  egg! [not_not , not_mem_support_iff']
+  --rw [← @not_not (_ ∈ _), not_mem_support_iff']
+  --push_neg
+  --rfl
