@@ -42,6 +42,7 @@ theorem IsMin.not_supPrime (ha : IsMin a) : ¬SupPrime a := fun h => h.1 ha
 set_option egg.reporting true
 set_option trace.egg true
 
+set_option egg.timeLimit 100 in
 theorem not_supIrred : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
   egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
   --rw [SupIrred, not_and_or]
@@ -54,7 +55,7 @@ theorem not_supPrime : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ �
 -- infinite loop?
   sorry
 
-set_option egg.slotted true in
+set_option egg.slotted true
 
 theorem not_supIrred' : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
   egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
@@ -65,8 +66,8 @@ theorem not_supIrred' : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b 
 
 theorem not_supPrime' : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ ¬a ≤ b ∧ ¬a ≤ c := by
  -- infinite loop?
-  --egg! [SupPrime, not_and_or]
-  sorry
+  egg! [SupPrime, not_and_or]
+  --sorry
 
 
 end SemilatticeSup
