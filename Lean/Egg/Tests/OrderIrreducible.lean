@@ -1,5 +1,3 @@
---import Mathlib.Data.Finset.Lattice
---import Mathlib.Tactic.PushNeg
 import Egg
 
 
