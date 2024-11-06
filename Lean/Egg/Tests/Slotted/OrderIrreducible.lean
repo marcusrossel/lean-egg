@@ -136,16 +136,16 @@ theorem not_supIrred : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b <
 
 -- egg explodes
 /-
-egg failed to prove the goal (reached iteration limit) -
-eqsat time: 71135ms
+egg failed to prove the goal (reached time limit) -
+eqsat time: 1540330ms
 -
-iters:      60
-nodes:      299477
-classes:    149021
+iters:      67
+nodes:      488401
+classes:    235193
 ⊢ binders: false
 -/
-set_option egg.timeLimit 300 in
-set_option egg.iterLimit 60 in
+set_option egg.timeLimit 600 in
+set_option egg.iterLimit 100 in
 set_option egg.slotted false in
 example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
   --egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
