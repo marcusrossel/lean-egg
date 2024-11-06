@@ -1,5 +1,5 @@
 --import Mathlib.Data.Finset.Lattice
-import Mathlib.Tactic.PushNeg
+--import Mathlib.Tactic.PushNeg
 import Egg
 
 
@@ -102,14 +102,21 @@ example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a 
   simp (config := { contextual := true }) only [@eq_comm _ _ a, ne_eq, and_congr_right_iff,
     sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
 
+-- Manual version: rw + simp
+example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
+  --egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
+  rw [SupIrred, PushNeg.not_and_or]
+  rw [ PushNeg.not_not_eq, PushNeg.not_forall_eq]
+  simp[ PushNeg.not_forall_eq]
+  rw [exists₂_congr]
+  simp (config := { contextual := true }) only [@eq_comm _ _ a, ne_eq, and_congr_right_iff,
+    sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
+
 -- Just simp won't work
 example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
-  simp (config := {contextual := true}) [SupIrred, not_and_or, exists₂_congr, eq_comm, @eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
+  simp (config := {contextual := true}) [SupIrred, PushNeg.not_and_or, exists₂_congr, eq_comm, @eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
   sorry
 
-set_option egg.timeLimit 100 in
-theorem not_supIrred : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
-  egg! [SupIrred, not_and_or, exists₂_congr, eq_comm, @eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
 
 
 theorem not_supPrime : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ ¬a ≤ b ∧ ¬a ≤ c := by
@@ -117,16 +124,49 @@ theorem not_supPrime : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ �
   -- infinite loop?
   sorry
 
-set_option egg.slotted true
-
-
-theorem not_supIrred' : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
-  egg! [SupIrred, not_and_or, exists₂_congr, eq_comm, @eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
-
+set_option egg.slotted true in
 theorem not_supPrime' : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ ¬a ≤ b ∧ ¬a ≤ c := by
  -- infinite loop?
-  egg! [SupPrime, not_and_or]
+  egg! [SupPrime, PushNeg.not_and_or]
   --sorry
 
+
+-- Isolating the issue: just the last step
+set_option egg.slotted true in
+example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
+  --egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
+  rw [SupIrred, PushNeg.not_and_or]
+  rw [ PushNeg.not_not_eq, PushNeg.not_forall_eq]
+  simp[ PushNeg.not_forall_eq]
+  rw [exists₂_congr]
+  egg! [@eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true, *]
+
+-- Isolating the issue: have exists₂_congr
+--set_option egg.iterLimit 3 in
+set_option egg.slotted true in
+example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
+  --egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
+  have  h : ∀ (a_1 b : α), a_1 ⊔ b = a ∧ ¬a_1 = a ∧ ¬b = a ↔ a_1 ⊔ b = a ∧ a_1 < a ∧ b < a  := by
+    simp (config := { contextual := true }) [@eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
+  egg! [SupIrred, exists₂_congr h]
+
+-- egg explodes
+/-
+egg failed to prove the goal (reached iteration limit) -
+eqsat time: 71135ms
+-
+iters:      60
+nodes:      299477
+classes:    149021
+⊢ binders: false
+-/
+set_option egg.timeLimit 300 in
+set_option egg.iterLimit 60 in
+set_option egg.slotted false in
+example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
+  --egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
+  have  h : ∀ (a_1 b : α), a_1 ⊔ b = a ∧ ¬a_1 = a ∧ ¬b = a ↔ a_1 ⊔ b = a ∧ a_1 < a ∧ b < a  := by
+    simp (config := { contextual := true }) [@eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
+  egg! [SupIrred, exists₂_congr h]
 
 end SemilatticeSup
