@@ -20,7 +20,7 @@ private inductive Expression where
 private abbrev ToExprM := StateT (Std.HashMap String Expr) MetaM
 
 private def ToExprM.mapBVar (bvarId : String) : ToExprM Expr := do
-  let some fvar := (← get)[bvarId]? | throwError "'Egg.Explanation.ToExprM.mapBVar' received loose bvar"
+  let some fvar := (← get)[bvarId]? | throwError s!"'Egg.Explanation.ToExprM.mapBVar' received loose bvar {bvarId}"
   return fvar
 
 private def ToExprM.withBinding (var : String) (type : Expr) (m : Expr → ToExprM α) : ToExprM α :=

@@ -67,7 +67,7 @@ where
     let some info ← getProjectionFnInfo? const | return s
     unless info.fromClass && s.args.size > info.numParams do return s
     let args := s.args[:info.numParams + 1].toArray
-    if args.back.isMVar || args.any (·.hasLooseBVars) then return s
+    if args.back!.isMVar || args.any (·.hasLooseBVars) then return s
     let proj := TcProj.mk const args lvls
     if s.covers proj
     then return s

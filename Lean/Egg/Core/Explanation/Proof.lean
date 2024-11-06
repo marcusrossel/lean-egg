@@ -41,7 +41,7 @@ def Proof.prove (prf : Proof) (cgr : Congr) : MetaM Expr := do
   let mut proof := first.proof
   for step in prf.steps[1:] do
     if !step.rw.isRefl then proof ← mkEqTrans proof step.proof
-  unless ← isDefEq prf.steps.back.rhs cgr.rhs do fail "final expression is not defeq to rhs of proof goal"
+  unless ← isDefEq prf.steps.back!.rhs cgr.rhs do fail "final expression is not defeq to rhs of proof goal"
   match cgr.rel with
   | .eq  => return proof
   | .iff => mkIffOfEq proof

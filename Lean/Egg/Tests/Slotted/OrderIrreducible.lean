@@ -124,13 +124,12 @@ theorem not_supPrime : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ �
   -- infinite loop
 set_option egg.slotted false in
 example : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ ¬a ≤ b ∧ ¬a ≤ c := by
-  --  egg! [SupPrime, not_and_or]
+  -- egg! [SupPrime, PushNeg.not_and_or]
   sorry
-
 
 set_option egg.slotted true in
 theorem not_supIrred : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
-  have  h : ∀ (a_1 b : α), a_1 ⊔ b = a ∧ ¬a_1 = a ∧ ¬b = a ↔ a_1 ⊔ b = a ∧ a_1 < a ∧ b < a  := by
+  have h : ∀ (a_1 b : α), a_1 ⊔ b = a ∧ ¬a_1 = a ∧ ¬b = a ↔ a_1 ⊔ b = a ∧ a_1 < a ∧ b < a := by
     simp (config := { contextual := true }) [@eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
   egg! [SupIrred, exists₂_congr h]
 
@@ -144,12 +143,11 @@ nodes:      488401
 classes:    235193
 ⊢ binders: false
 -/
-set_option egg.timeLimit 600 in
+set_option egg.timeLimit 2 in
 set_option egg.iterLimit 100 in
 set_option egg.slotted false in
 example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
-  --egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
-  have  h : ∀ (a_1 b : α), a_1 ⊔ b = a ∧ ¬a_1 = a ∧ ¬b = a ↔ a_1 ⊔ b = a ∧ a_1 < a ∧ b < a  := by
+  have h : ∀ (a_1 b : α), a_1 ⊔ b = a ∧ ¬a_1 = a ∧ ¬b = a ↔ a_1 ⊔ b = a ∧ a_1 < a ∧ b < a := by
     simp (config := { contextual := true }) [@eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
   egg! [SupIrred, exists₂_congr h]
 

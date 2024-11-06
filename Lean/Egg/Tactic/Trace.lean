@@ -42,7 +42,7 @@ nonrec def formatReport
     "nodes:      " ++ (format rep.nodeCount)  ++ "\n" ++
     "classes:    " ++ (format rep.classCount) ++ "\n" ++
     (if let some e := expl? then "expl steps: " ++ format e.steps.size ++ s!"\nbinder rws: {e.involvesBinderRewrites}" else "") ++
-    s!"⊢ binders: {goalContainsBinder}"
+    s!"\n⊢ binders: {goalContainsBinder}"
 
 nonrec def MVars.toMessageData (mvars : MVars) : MetaM MessageData := do
   let expr := format <| ← mvars.expr.toList.mapM (ppExpr <| Expr.mvar ·)

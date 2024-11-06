@@ -1,7 +1,7 @@
 use slotted_egraphs::*;
 use crate::lean_expr::*;
 use crate::analysis::*;
-use std::ops::*;
+// use std::ops::*;
 
 /*
 struct Op {
@@ -96,7 +96,7 @@ pub fn nat_lit_rws() -> Vec<LeanRewrite> {
     rws
 }
 
-
+/*
 fn u64_pow(lhs: u64, rhs: u64) -> u64 {
     lhs.pow(u32::try_from(rhs).unwrap())
 }
@@ -108,3 +108,4 @@ fn u64_div(lhs: u64, rhs: u64) -> u64 {
 fn u64_mod(lhs: u64, rhs: u64) -> u64 {
     if rhs == 0 { lhs } else { lhs % rhs }
 }
+     */
