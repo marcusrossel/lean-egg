@@ -1,11 +1,16 @@
 import Mathlib
 import Egg
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.PushNeg
 
 -- cast_smul_eq_nnqsmul
 namespace NNRat
 
+#print Nat.cast_smul_eq_nsmul
+
 variable (R S : Type*) [DivisionSemiring R] [CharZero R] [Semiring S] [Module ℚ≥0 S]
 
+#check Nat.cast_smul_eq_nsmul
 example [Module R S] (q : ℚ≥0) (a : S) : (q : R) • a = q • a := by
   refine MulAction.injective₀ (G₀ := ℚ≥0) (Nat.cast_ne_zero.2 q.den_pos.ne') ?_
   egg [
@@ -75,3 +80,37 @@ example (f : α ≃. β) (g : β ≃. γ) (a : α) : f.trans g a = none ↔ ∀ 
   ]
 
 end PEquiv
+
+namespace Mathlib.Tactic.PushNeg
+
+#check not_not_eq
+example : ¬ ¬ p = p := by
+exact Eq.mpr (id (Mathlib.Tactic.PushNeg.not_not_eq (p = p))) (Eq.refl p)
+
+section SemilatticeSup
+
+variable [SemilatticeSup α] {a b c : α}
+
+attribute [egg] Mathlib.Tactic.PushNeg.not_not_eq
+attribute [egg] Mathlib.Tactic.PushNeg.not_and_eq
+attribute [egg] Mathlib.Tactic.PushNeg.not_and_or_eq
+attribute [egg] Mathlib.Tactic.PushNeg.not_or_eq
+attribute [egg] Mathlib.Tactic.PushNeg.not_forall_eq
+attribute [egg] Mathlib.Tactic.PushNeg.not_exists_eq
+attribute [egg] Mathlib.Tactic.PushNeg.not_implies_eq
+attribute [egg] Mathlib.Tactic.PushNeg.not_ne_eq
+attribute [egg] Mathlib.Tactic.PushNeg.not_iff
+
+set_option egg.slotted true in
+example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
+  have  h : ∀ (a_1 b : α), a_1 ⊔ b = a ∧ ¬a_1 = a ∧ ¬b = a ↔ a_1 ⊔ b = a ∧ a_1 < a ∧ b < a  := by
+    simp (config := { contextual := true }) [@eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
+  egg! [SupIrred, exists₂_congr h]
+
+set_option egg.slotted false in
+example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
+  have  h : ∀ (a_1 b : α), a_1 ⊔ b = a ∧ ¬a_1 = a ∧ ¬b = a ↔ a_1 ⊔ b = a ∧ a_1 < a ∧ b < a  := by
+    simp (config := { contextual := true }) [@eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
+  egg! [SupIrred, exists₂_congr h]
+
+end SemilatticeSup
