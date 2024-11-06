@@ -1,6 +1,5 @@
 import Egg
 
-
 namespace PushNeg
 
 variable (p q : Prop) {α : Sort _} {β : Type _} (s : α → Prop)
@@ -117,33 +116,20 @@ example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a 
 
 
 
-theorem not_supPrime : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ ¬a ≤ b ∧ ¬a ≤ c := by
-  --  egg! [SupPrime, not_and_or]
-  -- infinite loop?
-  sorry
-
 set_option egg.slotted true in
-theorem not_supPrime' : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ ¬a ≤ b ∧ ¬a ≤ c := by
- -- infinite loop?
+theorem not_supPrime : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ ¬a ≤ b ∧ ¬a ≤ c := by
   egg! [SupPrime, PushNeg.not_and_or]
   --sorry
 
+  -- infinite loop
+set_option egg.slotted false in
+example : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ ¬a ≤ b ∧ ¬a ≤ c := by
+  --  egg! [SupPrime, not_and_or]
+  sorry
 
--- Isolating the issue: just the last step
-set_option egg.slotted true in
-example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
-  --egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
-  rw [SupIrred, PushNeg.not_and_or]
-  rw [ PushNeg.not_not_eq, PushNeg.not_forall_eq]
-  simp[ PushNeg.not_forall_eq]
-  rw [exists₂_congr]
-  egg! [@eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true, *]
 
--- Isolating the issue: have exists₂_congr
---set_option egg.iterLimit 3 in
 set_option egg.slotted true in
-example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
-  --egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
+theorem not_supIrred : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
   have  h : ∀ (a_1 b : α), a_1 ⊔ b = a ∧ ¬a_1 = a ∧ ¬b = a ↔ a_1 ⊔ b = a ∧ a_1 < a ∧ b < a  := by
     simp (config := { contextual := true }) [@eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
   egg! [SupIrred, exists₂_congr h]
