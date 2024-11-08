@@ -127,6 +127,7 @@ typedef struct config {
     _Bool  shapes;
     _Bool  block_invalid_matches;
     _Bool  shift_captured_bvars;
+    _Bool  union_semantics;
     _Bool  allow_unsat_conditions;
 } config;
 
@@ -149,6 +150,7 @@ structure Config where
   shapes               : Bool
   blockInvalidMatches  : Bool
   shiftCapturedBVars   : Bool
+  unionSemantics       : Bool
   allowUnsatConditions : Bool
 */
 lean_config config_from_lean_obj(lean_obj_arg cfg) {
@@ -168,7 +170,8 @@ lean_config config_from_lean_obj(lean_obj_arg cfg) {
             .shapes                 = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6), 
             .block_invalid_matches  = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7), 
             .shift_captured_bvars   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 8),  
-            .allow_unsat_conditions = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 9),  
+            .union_semantics        = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 9),
+            .allow_unsat_conditions = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 10),  
         }
     };
 }

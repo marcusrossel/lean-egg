@@ -22,6 +22,7 @@ protected structure Config where
   shapes               : Bool
   blockInvalidMatches  : Bool
   shiftCapturedBVars   : Bool
+  unionSemantics       : Bool
   allowUnsatConditions : Bool
 
 instance : Coe Config Request.Config where
@@ -38,6 +39,7 @@ instance : Coe Config Request.Config where
     shapes               := cfg.shapes
     blockInvalidMatches  := cfg.blockInvalidMatches
     shiftCapturedBVars   := cfg.shiftCapturedBVars
+    unionSemantics       := cfg.unionSemantics
     allowUnsatConditions := cfg.conditionSubgoals
   }
 

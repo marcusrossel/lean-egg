@@ -35,6 +35,7 @@ structure Gen where
 structure Backend where
   blockInvalidMatches := true
   shiftCapturedBVars  := true -- This option implies `blockInvalidMatches`.
+  unionSemantics      := true
   conditionSubgoals   := false
   -- TODO: For slotted e-graphs, this option can be used to inspect the tree explanation by setting
   --       this option to `false`.

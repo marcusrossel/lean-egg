@@ -3,8 +3,6 @@ use crate::lean_expr::*;
 use crate::analysis::*;
 use std::ops::*;
 
-
-
 struct ToSucc {
     nat_val: Var,
     shapes:  bool

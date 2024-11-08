@@ -24,11 +24,13 @@ pub struct Config {
     shapes:                 bool,
     block_invalid_matches:  bool,
     shift_captured_bvars:   bool,
+    union_semantics:        bool,
     allow_unsat_conditions: bool
 }
 
 pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Result<(String, LeanEGraph, Report), Error> {    
-    let mut egraph: LeanEGraph = Default::default();
+    let analysis = LeanAnalysis { union_semantics: cfg.union_semantics };
+    let mut egraph: LeanEGraph = EGraph::new(analysis);
     egraph = egraph.with_explanations_enabled();
     if !cfg.optimize_expl { egraph = egraph.without_explanation_length_optimization() }
 

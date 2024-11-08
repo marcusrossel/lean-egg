@@ -8,6 +8,6 @@ theorem thm : ∀ y x : Nat, (fun _ => (fun _ => x) x) y = x :=
 
 -- INVESTIGATE: It's expected that this proof fails (as the theorem is false). However, the e-graph
 --              in this example grows infinitely while generating larger and larger bvar indices.
---              How/why does that happen?
+--              How/why does that happen? It does not happen if we use intersection semantics.
 example : (fun x => (fun a => (fun a => a) a) 0) = (fun x => x) := by
   sorry -- egg [thm]

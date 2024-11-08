@@ -21,8 +21,9 @@ structure Modifier where
   genBetaRw           : Option Bool            := none
   genLevelRws         : Option Bool            := none
   explosion           : Option Bool            := none
-  shiftCapturedBVars  : Option Bool            := none
   blockInvalidMatches : Option Bool            := none
+  shiftCapturedBVars  : Option Bool            := none
+  unionSemantics      : Option Bool            := none
   conditionSubgoals   : Option Bool            := none
   optimizeExpl        : Option Bool            := none
   timeLimit           : Option Nat             := none
@@ -50,8 +51,9 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   genBetaRw           := mod.genBetaRw.getD cfg.genBetaRw
   genLevelRws         := mod.genLevelRws.getD cfg.genLevelRws
   explosion           := mod.explosion.getD cfg.explosion
-  shiftCapturedBVars  := mod.shiftCapturedBVars.getD cfg.shiftCapturedBVars
   blockInvalidMatches := mod.blockInvalidMatches.getD cfg.blockInvalidMatches
+  shiftCapturedBVars  := mod.shiftCapturedBVars.getD cfg.shiftCapturedBVars
+  unionSemantics      := mod.unionSemantics.getD cfg.unionSemantics
   conditionSubgoals   := mod.conditionSubgoals.getD cfg.conditionSubgoals
   optimizeExpl        := mod.optimizeExpl.getD cfg.optimizeExpl
   timeLimit           := mod.timeLimit.getD cfg.timeLimit

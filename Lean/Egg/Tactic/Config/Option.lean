@@ -56,6 +56,7 @@ register_egg_options
   explosion
   blockInvalidMatches
   shiftCapturedBVars "Note: Setting this to `true` also enables `egg.blockInvalidMatches`."
+  unionSemantics
   conditionSubgoals
   optimizeExpl
   timeLimit : Nat "The number of seconds allotted to equality saturation before it aborts. Note

@@ -12,17 +12,26 @@ pub struct LeanAnalysisData {
 }
 
 #[derive(Default)]
-pub struct LeanAnalysis;
+pub struct LeanAnalysis {
+    pub union_semantics: bool
+}
+
 impl Analysis<LeanExpr> for LeanAnalysis {
     type Data = LeanAnalysisData;
 
-    fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {       
+    fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge { 
         // `merge_max` prefers `Some` value over `None`. Note that if `to` and `from` both have nat values,
         // then they should have the *same* value as otherwise merging their e-classes indicates an invalid 
         // rewrite. The same applies for the `dir_val`s.
+        let loose_bvar_m = if self.union_semantics {
+            union_sets(&mut to.loose_bvars, from.loose_bvars)
+        } else {
+            intersect_sets(&mut to.loose_bvars, from.loose_bvars)
+        };
+
+        loose_bvar_m |
         egg::merge_max(&mut to.nat_val, from.nat_val) | 
         egg::merge_max(&mut to.dir_val, from.dir_val) | 
-        union_sets(&mut to.loose_bvars, from.loose_bvars) |
         egg::merge_max(&mut to.is_primitive, from.is_primitive)
     }
 
@@ -87,7 +96,7 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                 Self::Data { loose_bvars, ..Default::default() }
             },
             
-            LeanExpr::Shift([dir, off, cut, e]) => {
+            LeanExpr::Shift([dir, off, cut, e]) => {              
                 // Determine if we have a self-loop for the shift-node. If so, 
                 // the shift-node must be in an e-class where some node contains 
                 // no loose bvars. Thus, all other loose bvars which appear under 
@@ -115,6 +124,7 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                         loose_bvars.insert(b - off);
                     }
                 }
+
                 Self::Data { loose_bvars, ..Default::default() }
             },
 
