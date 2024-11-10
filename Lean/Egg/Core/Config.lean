@@ -60,6 +60,7 @@ structure Debug where
 
 structure _root_.Egg.Config extends Encoding, Gen, Backend, Debug where
   retryWithShapes := true
+  explLengthLimit := 1000
 
 -- TODO: Why aren't these coercions automatic?
 

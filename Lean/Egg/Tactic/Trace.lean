@@ -35,14 +35,14 @@ nonrec def formatReport
     (if let some e := expl? then format e.steps.size ++ s!",{e.involvesBinderRewrites}" else "-,-")
     ++ "," ++ s!"{goalContainsBinder}" ++ ")"
   else
-    (if let some d := totalDuration? then "\ntotal time: " ++ format d ++ "ms" else "-") ++ "\n" ++
+    (if let some d := totalDuration? then "\ntotal time: " ++ format d ++ "ms\n" else "") ++
     "eqsat time: " ++ (format <| (1000 * rep.time).toUInt64.toNat) ++ "ms\n" ++
-    (if let some d := proofDuration? then "proof time: " ++ format d ++ "ms" else "-") ++ "\n" ++
+    (if let some d := proofDuration? then "proof time: " ++ format d ++ "ms\n" else "") ++
     "iters:      " ++ (format rep.iterations) ++ "\n" ++
     "nodes:      " ++ (format rep.nodeCount)  ++ "\n" ++
     "classes:    " ++ (format rep.classCount) ++ "\n" ++
-    (if let some e := expl? then "expl steps: " ++ format e.steps.size ++ s!"\nbinder rws: {e.involvesBinderRewrites}" else "") ++
-    s!"\n⊢ binders: {goalContainsBinder}"
+    (if let some e := expl? then "expl steps: " ++ format e.steps.size ++ s!"\nbinder rws: {e.involvesBinderRewrites}\n" else "") ++
+    s!"⊢ binders:  {goalContainsBinder}"
 
 nonrec def MVars.toMessageData (mvars : MVars) : MetaM MessageData := do
   let expr := format <| ← mvars.expr.toList.mapM (ppExpr <| Expr.mvar ·)

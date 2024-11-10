@@ -113,7 +113,13 @@ structure Result where
   egraph : EGraph
   report : Result.Report
 
-def run (req : Request) (onFail : Result.Report → MetaM Result) : MetaM Result := do
+inductive Failure where
+  | backend
+  | explLength (len : Nat)
+
+def run
+    (req : Request) (explLengthLimit : Nat) (onFail : Result.Report → Failure → MetaM MessageData) :
+    MetaM Result := do
   let raw := runRaw req
   withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] raw.expl
   if "⚡️".isPrefixOf raw.expl then
@@ -121,9 +127,13 @@ def run (req : Request) (onFail : Result.Report → MetaM Result) : MetaM Result
   else
     let some report := raw.report? | throwError "egg: internal error: report is absent"
     if raw.expl.isEmpty then
-      onFail report
+      throwError ← onFail report .backend
     else
-      let some obj := raw.egraph? | throwError "egg: internal error: e-graph is absent"
-      let egraph := { obj, slotted := req.cfg.slotted }
-      let expl ← Explanation.Raw.parse { str := raw.expl, slotted := req.cfg.slotted }
-      return { expl, egraph, report }
+      let explLength := raw.expl.lineCount
+      if explLength > explLengthLimit then
+        throwError ← onFail report (.explLength explLength)
+      else
+        let some obj := raw.egraph? | throwError "egg: internal error: e-graph is absent"
+        let egraph := { obj, slotted := req.cfg.slotted }
+        let expl ← Explanation.Raw.parse { str := raw.expl, slotted := req.cfg.slotted }
+        return { expl, egraph, report }

@@ -13,6 +13,16 @@ partial def List.qsortM [Monad m] (comp : α → α → m Bool) [BEq α] : List 
     let (fst, lst) ← xs.partitionM fun t => comp t x
     return (← fst.qsortM comp) ++ [x] ++ (← lst.qsortM comp)
 
+partial def String.lineCount (s : String) : Nat :=
+  go 0 0
+where
+  go (pos : Pos) (count : Nat) : Nat :=
+    if s.atEnd pos then
+      count
+    else
+      let inc := if (s.get pos) == '\n' then 1 else 0
+      go (s.next pos) (count + inc)
+
 namespace Lean
 
 -- From https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Extending.20tacticSeqs/near/474553725

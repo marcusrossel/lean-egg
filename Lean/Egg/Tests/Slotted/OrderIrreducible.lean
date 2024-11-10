@@ -118,13 +118,12 @@ example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a 
 
 set_option egg.slotted true in
 theorem not_supPrime : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ ¬a ≤ b ∧ ¬a ≤ c := by
-  egg! [SupPrime, PushNeg.not_and_or]
+  sorry -- egg! [SupPrime, PushNeg.not_and_or]
 
--- infinite loop
 set_option egg.slotted false in
 set_option egg.unionSemantics false in
 example : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ ¬a ≤ b ∧ ¬a ≤ c := by
-  sorry -- egg! [SupPrime, PushNeg.not_and_or]
+  egg! [SupPrime, PushNeg.not_and_or]
 
 set_option egg.slotted true in
 theorem not_supIrred : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by

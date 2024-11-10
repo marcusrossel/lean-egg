@@ -98,10 +98,7 @@ where
     let (req, goalContainsBinder) ← Request.encoding' goal.toCongr rws facts guides cfg amb
     withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
     if let .beforeEqSat := cfg.exitPoint then return none
-    let result ← req.run fun failReport => do
-      let msg := s!"egg failed to prove the goal ({failReport.stopReason.description}) "
-      unless cfg.reporting do throwError msg
-      throwError msg ++ formatReport cfg.flattenReports failReport (goalContainsBinder := goalContainsBinder)
+    let result ← req.run cfg.explLengthLimit (onEqSatFailure cfg goalContainsBinder)
     if let .beforeProof := cfg.exitPoint then return none
     let beforeProof ← IO.monoMsNow
     match ← resultToProof result goal rws facts {amb, cfg} cfg.retryWithShapes with
@@ -109,6 +106,16 @@ where
       let proofTime := (← IO.monoMsNow) - beforeProof
       return some (prf, proofTime, result, goalContainsBinder)
     | .retryWithShapes => runEqSat goal rws facts guides { cfg with shapes := true } amb
+  onEqSatFailure (cfg : Config) (goalContainsBinder : Bool) (report : Request.Result.Report) :
+      Request.Failure → MetaM MessageData
+    | .backend => do
+      let msg := s!"egg failed to prove the goal ({report.stopReason.description}) "
+      unless cfg.reporting do return msg
+      return msg ++ formatReport cfg.flattenReports report (goalContainsBinder := goalContainsBinder)
+    | .explLength len => do
+      let msg := s!"egg found an explanation exceeding the length limit ({len} vs {cfg.explLengthLimit})\nYou can increase this limit using 'set_option egg.explLengthLimit <num>'.\n"
+      unless cfg.reporting do return msg
+      return msg ++ formatReport cfg.flattenReports report (goalContainsBinder := goalContainsBinder)
 
 syntax &"egg " egg_cfg_mod egg_premises (egg_base)? (egg_guides)? : tactic
 elab_rules : tactic
