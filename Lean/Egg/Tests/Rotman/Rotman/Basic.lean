@@ -1,12 +1,9 @@
 import Mathlib
 import Egg
 
--- These options need to be set due to bugs in β-reduction and proof erasure:
+set_option egg.timeLimit 300
+-- TODO: It seems proof erasure increases the time for proof reconstruction substantially.
 set_option egg.eraseProofs false
-set_option egg.genBetaRw false
-
-set_option egg.genGoalTcSpec true
-set_option egg.timeLimit 10
 
 -- From Rotman
 axiom proposition_1_14 (n r : Nat) : (n + 1).choose r = n.choose (r - 1) + n.choose r
@@ -51,13 +48,13 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
     calc (n + 1).choose r
       _ = (n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!) := by egg [proposition_1_14, hi h₁, hi h₂, h₃]
       _ = _ := Nat.cast_inj.mp <| by
-        egg calc [toReal, fromReal, add_comm, sub_add_cancel, mul_comm, mul_assoc, Real.Gamma_add_one; h₄, h₅, h₆]
+        egg calc [toReal, fromReal, add_comm, sub_add_cancel, sub_add_eq_add_sub, mul_comm, mul_assoc, mul_div_mul_left, _root_.div_mul_div_comm, _root_.add_div, Real.Gamma_add_one; h₄, h₅, h₆]
           ↑((n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!))
           _ = (n¡ / ((r - 1)¡ * (n - r + 1)¡) + n¡ / (r ¡ * (n - r)¡))
           _ = n¡ / ((r - 1)¡ * (n - r)¡) * (1 / (n - r + 1) + 1 / r)               with [div_mul_eq_div_mul_one_div, left_distrib (R := Real)]
-          _ = n¡ / ((r - 1)¡ * (n - r)¡) * ((r + (n - r + 1)) / (r * (n - r + 1))) with [_root_.add_div, mul_div_mul_left, mul_one]
-          _ = n¡ / ((r - 1)¡ * (n - r)¡) * ((n + 1) / (r * (n - r + 1)))           with [sub_add_eq_add_sub]
-          _ = (n + 1)¡ / (r¡ * (n + 1 - r)¡)                                       with [sub_add_eq_add_sub, _root_.div_mul_div_comm]
+          _ = n¡ / ((r - 1)¡ * (n - r)¡) * ((r + (n - r + 1)) / (r * (n - r + 1))) with [mul_one]
+          _ = n¡ / ((r - 1)¡ * (n - r)¡) * ((n + 1) / (r * (n - r + 1)))
+          _ = (n + 1)¡ / (r¡ * (n + 1 - r)¡)
           _ = ↑((n + 1)! / (r ! * (n + 1 - r)!))
 
 -- TODO: Could egg be a good tactic for converting between representations, assuming we can get the
