@@ -96,15 +96,21 @@ impl Applier<LeanExpr, LeanAnalysis> for BinderSubst {
     }
 }
 
-// We don't introduce substitution rules for constructors which can't contain bvars in the first place.
-// Instead, we make sure to never introduce substitution nodes over such constructors, á la
+// We try to reduce the number of introduced substitution rules á la
 // https://pldi23.sigplan.org/details/egraphs-2023-papers/12/Optimizing-Beta-Reduction-in-E-Graphs
+// TODO: Is this ok when using intersection semantics?
 pub fn subst_rws() -> Vec<LeanRewrite> {
     let mut rws = vec![];
-    rws.push(rewrite!("↦bvar"; "(↦ ?f ?t (bvar ?b))"   => { BVarSubst   { from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), bvar_idx : "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↦app";  "(↦ ?f ?t (app ?a ?b))" => { AppSubst    { from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), fun : "?a".parse().unwrap(), arg : "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↦λ";    "(↦ ?f ?t (λ ?a ?b))"   => { BinderSubst { binder: "λ".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), domain : "?a".parse().unwrap(), body : "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↦∀";    "(↦ ?f ?t (∀ ?a ?b))"   => { BinderSubst { binder: "∀".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), domain : "?a".parse().unwrap(), body : "?b".parse().unwrap() }}));
-    // TODO: Do we need substitution over the `proof` constructor, or can we ignore that for now as we disallow type-level rewrites anyway?
+    rws.push(rewrite!("↦bvar";  "(↦ ?f ?t (bvar ?b))"   => { BVarSubst   { from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), bvar_idx : "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↦app";   "(↦ ?f ?t (app ?a ?b))" => { AppSubst    { from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), fun : "?a".parse().unwrap(), arg : "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↦λ";     "(↦ ?f ?t (λ ?a ?b))"   => { BinderSubst { binder: "λ".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), domain : "?a".parse().unwrap(), body : "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↦∀";     "(↦ ?f ?t (∀ ?a ?b))"   => { BinderSubst { binder: "∀".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), domain : "?a".parse().unwrap(), body : "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↦fvar";  "(↦ ?f ?t (fvar ?x))"   => "(fvar ?x)"));
+    rws.push(rewrite!("↦mvar";  "(↦ ?f ?t (mvar ?x))"   => "(mvar ?x)"));
+    rws.push(rewrite!("↦sort";  "(↦ ?f ?t (sort ?x))"   => "(sort ?x)"));
+    // TODO: "↦const" - how do we match an unknown number of level arguments?
+    rws.push(rewrite!("↦lit";   "(↦ ?f ?t (lit ?x))"    => "(lit ?x)"));
+    // TODO: We don't propagate substitutions over erased proofs at the moment,
+    rws.push(rewrite!("↦proof"; "(↦ ?f ?t (proof ?x))"  => "(proof ?x)"));
     rws
 }

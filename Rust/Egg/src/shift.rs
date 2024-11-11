@@ -106,10 +106,17 @@ impl Applier<LeanExpr, LeanAnalysis> for BinderShift {
 // https://pldi23.sigplan.org/details/egraphs-2023-papers/12/Optimizing-Beta-Reduction-in-E-Graphs
 pub fn shift_rws() -> Vec<LeanRewrite> {
     let mut rws = vec![];
-    rws.push(rewrite!("↑bvar"; "(↑ ?d ?o ?c (bvar ?b))"   => { BVarShift   { dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), bvar_idx: "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↑app";  "(↑ ?d ?o ?c (app ?a ?b))" => { AppShift    { dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), fun: "?a".parse().unwrap(), arg: "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↑λ";    "(↑ ?d ?o ?c (λ ?a ?b))"   => { BinderShift { binder: "λ".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), domain: "?a".parse().unwrap(), body: "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↑∀";    "(↑ ?d ?o ?c (∀ ?a ?b))"   => { BinderShift { binder: "∀".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), domain: "?a".parse().unwrap(), body: "?b".parse().unwrap() }}));
-    // TODO: Do we need shifting over the `proof` constructor, or can we ignore that for now as we disallow type-level rewrites anyway?
+    rws.push(rewrite!("↑bvar";  "(↑ ?d ?o ?c (bvar ?b))"   => { BVarShift   { dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), bvar_idx: "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↑app";   "(↑ ?d ?o ?c (app ?a ?b))" => { AppShift    { dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), fun: "?a".parse().unwrap(), arg: "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↑λ";     "(↑ ?d ?o ?c (λ ?a ?b))"   => { BinderShift { binder: "λ".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), domain: "?a".parse().unwrap(), body: "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↑∀";     "(↑ ?d ?o ?c (∀ ?a ?b))"   => { BinderShift { binder: "∀".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), domain: "?a".parse().unwrap(), body: "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↑fvar";  "(↑ ?d ?o ?c (fvar ?x))"   => "(fvar ?x)"));
+    rws.push(rewrite!("↑mvar";  "(↑ ?d ?o ?c (mvar ?x))"   => "(mvar ?x)"));
+    rws.push(rewrite!("↑sort";  "(↑ ?d ?o ?c (sort ?x))"   => "(sort ?x)"));
+    // TODO: "↑const" - how do we match an unknown number of level arguments?
+    rws.push(rewrite!("↑lit";   "(↑ ?d ?o ?c (lit ?x))"    => "(lit ?x)"));
+    // TODO: We don't propagate shifts over erased proofs at the moment,
+    rws.push(rewrite!("↑proof"; "(↑ ?d ?o ?c (proof ?x))"  => "(proof ?x)"));
+ 
     rws
 }

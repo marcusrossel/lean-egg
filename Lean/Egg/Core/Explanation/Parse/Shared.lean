@@ -63,10 +63,20 @@ syntax "↦bvar"                               : fwd_rw_src
 syntax "↦app"                                : fwd_rw_src
 syntax "↦λ"                                  : fwd_rw_src
 syntax "↦∀"                                  : fwd_rw_src
+syntax "↦fvar"                               : fwd_rw_src
+syntax "↦mvar"                               : fwd_rw_src
+syntax "↦sort"                               : fwd_rw_src
+syntax "↦lit"                                : fwd_rw_src
+syntax "↦proof"                              : fwd_rw_src
 syntax "↑bvar"                               : fwd_rw_src
 syntax "↑app"                                : fwd_rw_src
 syntax "↑λ"                                  : fwd_rw_src
 syntax "↑∀"                                  : fwd_rw_src
+syntax "↑fvar"                               : fwd_rw_src
+syntax "↑mvar"                               : fwd_rw_src
+syntax "↑sort"                               : fwd_rw_src
+syntax "↑lit"                                : fwd_rw_src
+syntax "↑proof"                              : fwd_rw_src
 syntax "≡maxS"                               : fwd_rw_src
 syntax "≡max↔"                               : fwd_rw_src
 syntax "≡imax0"                              : fwd_rw_src
@@ -141,10 +151,20 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
   | `(fwd_rw_src|↦app)   => .subst .app
   | `(fwd_rw_src|↦λ)     => .subst .lam
   | `(fwd_rw_src|↦∀)     => .subst .forall
+  | `(fwd_rw_src|↦fvar)  => .subst .fvar
+  | `(fwd_rw_src|↦mvar)  => .subst .mvar
+  | `(fwd_rw_src|↦sort)  => .subst .sort
+  | `(fwd_rw_src|↦lit)   => .subst .lit
+  | `(fwd_rw_src|↦proof) => .subst .proof
   | `(fwd_rw_src|↑bvar)  => .shift .bvar
   | `(fwd_rw_src|↑app)   => .shift .app
   | `(fwd_rw_src|↑λ)     => .shift .lam
   | `(fwd_rw_src|↑∀)     => .shift .forall
+  | `(fwd_rw_src|↑fvar)  => .shift .fvar
+  | `(fwd_rw_src|↑mvar)  => .shift .mvar
+  | `(fwd_rw_src|↑sort)  => .shift .sort
+  | `(fwd_rw_src|↑lit)   => .shift .lit
+  | `(fwd_rw_src|↑proof) => .shift .proof
   | `(fwd_rw_src|≡maxS)  => .level .maxSucc
   | `(fwd_rw_src|≡max↔)  => .level .maxComm
   | `(fwd_rw_src|≡imax0) => .level .imaxZero

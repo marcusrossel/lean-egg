@@ -85,10 +85,6 @@ theorem left_lt_sup : a < a ⊔ b ↔ ¬b ≤ a := sorry
 theorem right_lt_sup : b < a ⊔ b ↔ ¬a ≤ b := sorry
   -- le_sup_right.lt_iff_ne.trans <| not_congr right_eq_sup
 
---set_option egg.timeLimit 10
-set_option egg.reporting true
-set_option trace.egg true
-
 -- Manual version: rw + simp
 example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
   --egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
@@ -114,11 +110,12 @@ example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a 
   simp (config := {contextual := true}) [SupIrred, PushNeg.not_and_or, exists₂_congr, eq_comm, @eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
   sorry
 
-
+set_option egg.reporting true
+set_option trace.egg true
 
 set_option egg.slotted true in
 theorem not_supPrime : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ ¬a ≤ b ∧ ¬a ≤ c := by
-  sorry -- egg! [SupPrime, PushNeg.not_and_or]
+  egg! [SupPrime, PushNeg.not_and_or]
 
 set_option egg.slotted false in
 set_option egg.unionSemantics false in
@@ -141,7 +138,7 @@ nodes:      488401
 classes:    235193
 ⊢ binders: false
 -/
-set_option egg.timeLimit 100 in
+set_option egg.timeLimit 20 in
 set_option egg.iterLimit 100 in
 set_option egg.slotted false in
 set_option egg.unionSemantics false in

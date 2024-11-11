@@ -42,6 +42,11 @@ inductive Source.SubstShift where
   | app
   | lam
   | forall
+  | fvar
+  | mvar
+  | sort
+  | lit
+  | proof
   deriving Inhabited, BEq, Hashable
 
 inductive Source where
@@ -98,6 +103,11 @@ def SubstShift.description : SubstShift → String
   | app     => "app"
   | lam     => "λ"
   | .forall => "∀"
+  | fvar    => "fvar"
+  | mvar    => "mvar"
+  | sort    => "sort"
+  | lit     => "lit"
+  | proof   => "proof"
 
 -- Note: It's important that we remove the whitespace from the list in the `.explosion` case,
 --       because otherwise egg adds quotes around the rule name.
