@@ -9,9 +9,8 @@ import Egg
 -- assumption is that e-class analysis values for nodes with self-loops are constructed by
 -- performing all of the potentially recursive calls to nested e-class analysis values until a fixed
 -- point is reached. For shift nodes with self-loops there is no fixed point.
--- We address both of these problems by detecting when a shift node has a self-loop, and in both
--- cases inhibiting the propagation of that shift to child nodes. I'm not sure if this is actually a
--- proper solution or just a bandaid.
+-- We address the latter problem by adding an arbitrary limit of 100 for cutting off loose bvar
+-- e-class analyses.
 --
 -- I used to following workaround for the lack of reliable printing to stdout from Rust:
 --

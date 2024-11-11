@@ -141,7 +141,7 @@ nodes:      488401
 classes:    235193
 ⊢ binders: false
 -/
-set_option egg.timeLimit 60 in
+set_option egg.timeLimit 100 in
 set_option egg.iterLimit 100 in
 set_option egg.slotted false in
 set_option egg.unionSemantics false in

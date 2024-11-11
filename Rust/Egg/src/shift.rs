@@ -11,16 +11,7 @@ struct BVarShift {
 
 impl Applier<LeanExpr, LeanAnalysis> for BVarShift {
 
-    fn apply_one(&self, egraph: &mut LeanEGraph, shift_class: Id, subst: &Subst, ast: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
-        // Determine if we have a self-loop for the shift-node. If so, the shift-node must be in an e-class 
-        // where some node contains no loose bvars. Thus, all other loose bvars which appear under the given
-        // e-class must be redundant. Thus, we don't propagate the shift at all, because otherwise we run into
-        // endless shifting.
-        egraph.rebuild();
-        let bvar = LeanExpr::BVar(subst[self.bvar_idx]);
-        let bvar_class = egraph.lookup(bvar).unwrap();
-        if egraph.find(shift_class) == egraph.find(bvar_class) { return vec![] };
-        
+    fn apply_one(&self, egraph: &mut LeanEGraph, _: Id, subst: &Subst, ast: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
         let dir_is_up = egraph[subst[self.dir]].data.dir_val.unwrap();
         let offset    = egraph[subst[self.offset]].data.nat_val.unwrap();
         let cutoff    = egraph[subst[self.cutoff]].data.nat_val.unwrap();
@@ -53,16 +44,7 @@ struct AppShift {
 
 impl Applier<LeanExpr, LeanAnalysis> for AppShift {
 
-    fn apply_one(&self, egraph: &mut LeanEGraph, shift_class: Id, subst: &Subst, ast: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
-        // Determine if we have a self-loop for the shift-node. If so, the shift-node must be in an e-class 
-        // where some node contains no loose bvars. Thus, all other loose bvars which appear under the given
-        // e-class must be redundant. Thus, we don't propagate the shift at all, because otherwise we run into
-        // endless shifting.
-        egraph.rebuild();
-        let app = LeanExpr::App([subst[self.fun], subst[self.arg]]);
-        let app_class = egraph.lookup(app).unwrap();
-        if egraph.find(shift_class) == egraph.find(app_class) { return vec![] };
-        
+    fn apply_one(&self, egraph: &mut LeanEGraph, _: Id, subst: &Subst, ast: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
         let fun_bvars = &egraph[subst[self.fun]].data.loose_bvars;
         let arg_bvars = &egraph[subst[self.arg]].data.loose_bvars;
         let cutoff    = &egraph[subst[self.cutoff]].data.nat_val.unwrap();
@@ -96,23 +78,7 @@ struct BinderShift {
 
 impl Applier<LeanExpr, LeanAnalysis> for BinderShift {
 
-    fn apply_one(&self, egraph: &mut LeanEGraph, shift_class: Id, subst: &Subst, ast: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
-        // Determine if we have a self-loop for the shift-node. If so, the shift-node must be in an e-class 
-        // where some node contains no loose bvars. Thus, all other loose bvars which appear under the given
-        // e-class must be redundant. Thus, we don't propagate the shift at all, because otherwise we run into
-        // endless shifting.
-        egraph.rebuild();
-        let binder = if self.binder == "λ" {
-            LeanExpr::Lam([subst[self.domain], subst[self.body]])
-        } else if self.binder == "∀" {
-            LeanExpr::Forall([subst[self.domain], subst[self.body]])
-        } else {
-            panic!("Unknown binder {}", self.binder)
-        };
-        
-        let binder_class = egraph.lookup(binder).unwrap();
-        if egraph.find(shift_class) == egraph.find(binder_class) { return vec![] };
-        
+    fn apply_one(&self, egraph: &mut LeanEGraph, _: Id, subst: &Subst, ast: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {       
         let domain_bvars = &egraph[subst[self.domain]].data.loose_bvars;
         let body_bvars   = &egraph[subst[self.body]].data.loose_bvars;
         let cutoff       = &egraph[subst[self.cutoff]].data.nat_val.unwrap();

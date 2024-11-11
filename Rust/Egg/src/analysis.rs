@@ -13,26 +13,30 @@ pub struct LeanAnalysisData {
 
 #[derive(Default)]
 pub struct LeanAnalysis {
-    pub union_semantics: bool
+    pub union_semantics: bool,
+}
+
+impl LeanAnalysis { 
+    pub fn loose_bvar_idx_limit() -> u64 { 100 }
 }
 
 impl Analysis<LeanExpr> for LeanAnalysis {
     type Data = LeanAnalysisData;
 
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge { 
-        // `merge_max` prefers `Some` value over `None`. Note that if `to` and `from` both have nat values,
-        // then they should have the *same* value as otherwise merging their e-classes indicates an invalid 
-        // rewrite. The same applies for the `dir_val`s.
         let loose_bvar_m = if self.union_semantics {
             union_sets(&mut to.loose_bvars, from.loose_bvars)
         } else {
             intersect_sets(&mut to.loose_bvars, from.loose_bvars)
         };
 
-        loose_bvar_m |
+        // `merge_max` prefers `Some` value over `None`. Note that if `to` and `from` both have nat 
+        // values, then they should have the *same* value as otherwise merging their e-classes 
+        // indicates an invalid rewrite. The same applies for the `dir_val`s.
         egg::merge_max(&mut to.nat_val, from.nat_val) | 
         egg::merge_max(&mut to.dir_val, from.dir_val) | 
-        egg::merge_max(&mut to.is_primitive, from.is_primitive)
+        egg::merge_max(&mut to.is_primitive, from.is_primitive) |
+        loose_bvar_m
     }
 
     fn make(egraph: &EGraph<LeanExpr, Self>, enode: &LeanExpr) -> Self::Data {      
@@ -96,25 +100,15 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                 Self::Data { loose_bvars, ..Default::default() }
             },
             
-            LeanExpr::Shift([dir, off, cut, e]) => {              
-                // Determine if we have a self-loop for the shift-node. If so, 
-                // the shift-node must be in an e-class where some node contains 
-                // no loose bvars. Thus, all other loose bvars which appear under 
-                // the given e-class must be redundant. Our current handling of 
-                // this situation is then to not add any shift-nodes to `e` in 
-                // `shift.rs`, so we also opt to not change the set of loose bvars 
-                // here. This might not be the correct approach.
-                if let Some(enode_class) = egraph.lookup(enode.clone()) {
-                    if egraph.find(enode_class) == egraph.find(*e) { 
-                        return Self::Data { loose_bvars: egraph[*e].data.loose_bvars.clone(), ..Default::default() }
-                    }
-                }
-
+            LeanExpr::Shift([dir, off, cut, e]) => { 
                 let &dir_is_up = &egraph[*dir].data.dir_val.unwrap();
                 let &off = &egraph[*off].data.nat_val.unwrap();
                 let &cut = &egraph[*cut].data.nat_val.unwrap();
                 let mut loose_bvars: HashSet<u64> = Default::default();
                 for &b in egraph[*e].data.loose_bvars.iter() {
+                    // TODO: Only do this when union semantics are active.
+                    if b > Self::loose_bvar_idx_limit() { continue; }
+
                     if b < cut {
                         loose_bvars.insert(b);
                     } else if dir_is_up {
