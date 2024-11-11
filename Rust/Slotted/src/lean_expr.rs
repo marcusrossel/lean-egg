@@ -28,6 +28,9 @@ pub enum LeanExpr {
     // Construct for proof erasure:
     Proof(AppliedId),
 
+    // Construct for small-step substitution:
+    Subst(Slot, AppliedId, AppliedId),  // (<var>, <expr>, <expr>)
+
     // Constructs for shape annotations:
     // Note, we don't encode the shape of non-function types explicitly and use `Str("*")`) for that 
     // instead.
@@ -40,10 +43,10 @@ impl Language for LeanExpr {
     fn all_slot_occurences_mut(&mut self) -> Vec<&mut Slot> { 
         let mut out = Vec::new();
         match self {
-            LeanExpr::Lam(x, t, b) | LeanExpr::Forall(x, t, b) => {
+            LeanExpr::Lam(x, e1, e2) | LeanExpr::Forall(x, e1, e2) | LeanExpr::Subst(x, e1, e2) => {
                 out.push(x);
-                out.extend(t.slots_mut());
-                out.extend(b.slots_mut());
+                out.extend(e1.slots_mut());
+                out.extend(e2.slots_mut());
             },
             LeanExpr::BVar(x) => {
                 out.push(x);
@@ -76,6 +79,11 @@ impl Language for LeanExpr {
             },
             LeanExpr::Proof(e) | LeanExpr::Shaped(_, e) => {
                 out.extend(e.slots_mut());
+            },
+            LeanExpr::Subst(x, e1, e2) => {
+                out.push(x);
+                out.extend(e1.slots_mut());
+                out.extend(e2.slots_mut());
             }
             _ => {}
         }
@@ -89,8 +97,8 @@ impl Language for LeanExpr {
             LeanExpr::Lit(i) | LeanExpr::Proof(i) => vec![i],  
 
             LeanExpr::Max(i1, i2) | LeanExpr::IMax(i1, i2) | LeanExpr::App(i1, i2) | 
-            LeanExpr::Lam(_, i1, i2) | LeanExpr::Forall(_, i1, i2) | LeanExpr::Fun(i1, i2) | 
-            LeanExpr::Shaped(i1, i2) => vec![i1, i2],  
+            LeanExpr::Lam(_, i1, i2) | LeanExpr::Forall(_, i1, i2) | LeanExpr::Subst(_, i1, i2) | 
+            LeanExpr::Fun(i1, i2) | LeanExpr::Shaped(i1, i2) => vec![i1, i2],  
             
             LeanExpr::Const(is) => {
                 let mut v = Vec::new();
@@ -120,6 +128,7 @@ impl Language for LeanExpr {
             LeanExpr::Forall(c1, c2, c3) => ("∀".to_string(), vec![Child::Slot(c1), Child::AppliedId(c2), Child::AppliedId(c3)]),
             LeanExpr::Lit(c)             => ("lit".to_string(), vec![Child::AppliedId(c)]),
             LeanExpr::Proof(c)           => ("proof".to_string(), vec![Child::AppliedId(c)]),
+            LeanExpr::Subst(c1, c2, c3)  => ("↦".to_string(), vec![Child::Slot(c1), Child::AppliedId(c2), Child::AppliedId(c3)]),
             LeanExpr::Fun(c1, c2)        => ("→".to_string(), vec![Child::AppliedId(c1), Child::AppliedId(c2)]),
             LeanExpr::Shaped(c1, c2)     => ("◇".to_string(), vec![Child::AppliedId(c1), Child::AppliedId(c2)]),
             LeanExpr::Const(cs)          => {
@@ -146,6 +155,7 @@ impl Language for LeanExpr {
             ("∀",     [Child::Slot(c1), Child::AppliedId(c2), Child::AppliedId(c3)]) => Some(LeanExpr::Forall(*c1, c2.clone(), c3.clone())), 
             ("lit",   [Child::AppliedId(c)])                                         => Some(LeanExpr::Lit(c.clone())),             
             ("proof", [Child::AppliedId(c)])                                         => Some(LeanExpr::Proof(c.clone())),     
+            ("↦",     [Child::Slot(c1), Child::AppliedId(c2), Child::AppliedId(c3)]) => Some(LeanExpr::Subst(*c1, c2.clone(), c3.clone())),     
             ("→",     [Child::AppliedId(c1), Child::AppliedId(c2)])                  => Some(LeanExpr::Fun(c1.clone(), c2.clone())),     
             ("◇",     [Child::AppliedId(c1), Child::AppliedId(c2)])                  => Some(LeanExpr::Shaped(c1.clone(), c2.clone())),     
             ("const", cs) => {

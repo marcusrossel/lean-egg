@@ -6,15 +6,20 @@ import Lean
 open Lean Meta Elab Tactic Std Format
 
 initialize registerTraceClass `egg
-initialize registerTraceClass `egg.config      (inherited := true)
-initialize registerTraceClass `egg.rewrites    (inherited := true)
-initialize registerTraceClass `egg.ambient     (inherited := true)
-initialize registerTraceClass `egg.encoded     (inherited := true)
-initialize registerTraceClass `egg.explanation (inherited := true)
-initialize registerTraceClass `egg.proof       (inherited := true)
-initialize registerTraceClass `egg.proof.term  (inherited := false)
+initialize registerTraceClass `egg.config            (inherited := true)
+initialize registerTraceClass `egg.rewrites          (inherited := true)
+initialize registerTraceClass `egg.ambient           (inherited := true)
+initialize registerTraceClass `egg.encoded           (inherited := true)
+initialize registerTraceClass `egg.explanation       (inherited := true)
+initialize registerTraceClass `egg.explanation.steps (inherited := true)
+initialize registerTraceClass `egg.proof             (inherited := true)
+initialize registerTraceClass `egg.proof.term        (inherited := false)
 
 namespace Egg
+
+def Direction.format : Direction → Format
+  | .forward  => "⇒"
+  | .backward => "⇐"
 
 def Explanation.involvesBinderRewrites (expl : Explanation) : Bool :=
   expl.steps.any (·.src.involvesBinders)
@@ -141,6 +146,13 @@ nonrec def Request.trace (req : Request) (cls : Name) : TacticM Unit := do
       for guide in req.guides do
         trace cls fun _ => guide
 
+nonrec def Explanation.trace (expl : Explanation) (cls : Name) : TacticM Unit := do
+  withTraceNode cls (fun _ => return "Explanation Steps") do
+    trace cls fun _ => m!"{expl.start}"
+    for step in expl.steps, idx in [:expl.steps.size] do
+      withTraceNode cls (fun _ => return m!"{idx}: {step.dst}") do
+        trace cls fun _ => m!"{step.src.description}({step.dir.format})"
+
 nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Proof") do
     for step in prf.steps, idx in [:prf.steps.size] do
@@ -149,16 +161,12 @@ nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
       | .defeq src =>
         if src.isNatLitConversion || src.isSubst then continue
         withTraceNode cls (fun _ => return step.rhs) do
-          trace cls fun _ => m!"{src.description}({dirFormat step.dir})"
+          trace cls fun _ => m!"{src.description}({step.dir.format})"
       | .rw rw _ =>
         if rw.src.containsTcProj then continue
         withTraceNode cls (fun _ => return step.rhs) do
-          traceM cls fun _ => return m!"{rw.src.description}({dirFormat step.dir}) {← rw.toCongr.toMessageData}"
+          traceM cls fun _ => return m!"{rw.src.description}({step.dir.format}) {← rw.toCongr.toMessageData}"
           trace  cls fun _ => step.proof
-where
-  dirFormat : Direction → Format
-    | .forward  => "⇒"
-    | .backward => "⇐"
 
 nonrec def MVars.Ambient.trace (amb : MVars.Ambient) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Ambient MVars") do

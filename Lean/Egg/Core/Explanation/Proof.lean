@@ -55,9 +55,9 @@ partial def Explanation.proof
   let mut current := expl.start
   let mut steps : Array Proof.Step := #[]
   let mut subgoals : Proof.Subgoals := []
-  for step in expl.steps do
+  for step in expl.steps, idx in [:expl.steps.size] do
     let next := step.dst
-    let (prf, sub) ← proofStep current next step.toInfo
+    let (prf, sub) ← proofStep idx current next step.toInfo
     steps    := steps.push prf
     subgoals := subgoals ++ sub
     current  := next
@@ -66,10 +66,11 @@ where
   fail {α} (msg : MessageData) : MetaM α := do
     throwError m!"egg failed to build proof: {msg}"
 
-  proofStep (current next : Expr) (rwInfo : Rewrite.Info) : MetaM (Proof.Step × Proof.Subgoals) := do
+  proofStep (idx : Nat) (current next : Expr) (rwInfo : Rewrite.Info) :
+      MetaM (Proof.Step × Proof.Subgoals) := do
     if rwInfo.src.isDefEq then
       let step := {
-        lhs := current, rhs := next, proof := ← mkReflStep current next rwInfo.toDescriptor,
+        lhs := current, rhs := next, proof := ← mkReflStep idx current next rwInfo.toDescriptor,
         rw := .defeq rwInfo.src, dir := rwInfo.dir
       }
       return (step, [])
@@ -77,7 +78,7 @@ where
     -- TODO: Can there be conditional rfl proofs?
     if ← isRflProof rw.proof then
       let step := {
-        lhs := current, rhs := next, proof := ← mkReflStep current next rwInfo.toDescriptor,
+        lhs := current, rhs := next, proof := ← mkReflStep idx current next rwInfo.toDescriptor,
         rw := .rw rw (isRefl := true), dir := rwInfo.dir
       }
       return (step, [])
@@ -91,9 +92,9 @@ where
     }
     return (step, subgoals)
 
-  mkReflStep (current next : Expr) (rw : Rewrite.Descriptor) : MetaM Expr := do
+  mkReflStep (idx : Nat) (current next : Expr) (rw : Rewrite.Descriptor) : MetaM Expr := do
     unless ← isDefEq current next do
-      fail s!"unification failure for proof by reflexivity with rw {rw.src.description}"
+      fail s!"unification failure for proof by reflexivity with rw {rw.src.description} (step {idx})"
     mkEqRefl next
 
   mkCongrStep (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) (facts : Array (Option Fact)) :

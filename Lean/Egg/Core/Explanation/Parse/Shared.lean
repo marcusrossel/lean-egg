@@ -68,6 +68,7 @@ syntax "↦mvar"                               : fwd_rw_src
 syntax "↦sort"                               : fwd_rw_src
 syntax "↦lit"                                : fwd_rw_src
 syntax "↦proof"                              : fwd_rw_src
+syntax "↦|"                                  : fwd_rw_src
 syntax "↑bvar"                               : fwd_rw_src
 syntax "↑app"                                : fwd_rw_src
 syntax "↑λ"                                  : fwd_rw_src
@@ -156,6 +157,7 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
   | `(fwd_rw_src|↦sort)  => .subst .sort
   | `(fwd_rw_src|↦lit)   => .subst .lit
   | `(fwd_rw_src|↦proof) => .subst .proof
+  | `(fwd_rw_src|↦|)     => .abortSubst
   | `(fwd_rw_src|↑bvar)  => .shift .bvar
   | `(fwd_rw_src|↑app)   => .shift .app
   | `(fwd_rw_src|↑λ)     => .shift .lam

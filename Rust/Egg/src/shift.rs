@@ -101,9 +101,9 @@ impl Applier<LeanExpr, LeanAnalysis> for BinderShift {
     }
 }
 
-// We don't introduce shifting rules for constructors which can't contain bvars in the first place.
-// Instead, we make sure to never introduce shifting nodes over such constructors, á la
+// We try to reduce the number of introduced shifting rules á la
 // https://pldi23.sigplan.org/details/egraphs-2023-papers/12/Optimizing-Beta-Reduction-in-E-Graphs
+// TODO: Is this ok when using intersection semantics?
 pub fn shift_rws() -> Vec<LeanRewrite> {
     let mut rws = vec![];
     rws.push(rewrite!("↑bvar";  "(↑ ?d ?o ?c (bvar ?b))"   => { BVarShift   { dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), bvar_idx: "?b".parse().unwrap() }}));
@@ -117,6 +117,5 @@ pub fn shift_rws() -> Vec<LeanRewrite> {
     rws.push(rewrite!("↑lit";   "(↑ ?d ?o ?c (lit ?x))"    => "(lit ?x)"));
     // TODO: We don't propagate shifts over erased proofs at the moment,
     rws.push(rewrite!("↑proof"; "(↑ ?d ?o ?c (proof ?x))"  => "(proof ?x)"));
- 
     rws
 }

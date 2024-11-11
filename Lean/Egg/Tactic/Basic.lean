@@ -99,6 +99,7 @@ where
     withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
     if let .beforeEqSat := cfg.exitPoint then return none
     let result ← req.run cfg.explLengthLimit (onEqSatFailure cfg goalContainsBinder)
+    result.expl.trace `egg.explanation.steps
     if let .beforeProof := cfg.exitPoint then return none
     let beforeProof ← IO.monoMsNow
     match ← resultToProof result goal rws facts {amb, cfg} cfg.retryWithShapes with

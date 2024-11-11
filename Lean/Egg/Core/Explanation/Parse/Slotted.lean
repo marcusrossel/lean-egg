@@ -15,22 +15,42 @@ private inductive Expression where
   | forall (var : String) (ty body : Expression)
   | lit    (l : Literal)
   | proof  (prop : Expression)
+  | subst  (var : String) (to e : Expression)
   deriving Inhabited
 
-private abbrev ToExprM := StateT (Std.HashMap String Expr) MetaM
+private structure ToExprM.State where
+  bvars  : Std.HashMap String Expr
+  substs : Std.HashMap String Expr
+
+private abbrev ToExprM := StateT ToExprM.State MetaM
 
 private def ToExprM.mapBVar (bvarId : String) : ToExprM Expr := do
-  let some fvar := (← get)[bvarId]? | throwError s!"'Egg.Explanation.ToExprM.mapBVar' received loose bvar {bvarId}"
-  return fvar
+  let { bvars, substs } ← get
+  if let some subst := substs[bvarId]? then
+    return subst
+  else if let some fvar := bvars[bvarId]? then
+    return fvar
+  else
+    throwError s!"'Egg.Explanation.ToExprM.mapBVar' received loose bvar {bvarId}"
 
 private def ToExprM.withBinding (var : String) (type : Expr) (m : Expr → ToExprM α) : ToExprM α :=
   withLocalDecl (.mkStr1 var) .default type fun fvar => do
-    modify (·.insert var fvar)
-    m fvar
+    let bvars := (← get).bvars
+    modify fun s => { s with bvars := s.bvars.insert var fvar }
+    let result ← m fvar
+    modify fun s => { s with bvars }
+    return result
+
+private def ToExprM.withSubst (var : String) (e : Expr) (m : ToExprM α) : ToExprM α := do
+  let substs := (← get).substs
+  modify fun s => { s with substs := s.substs.insert var e }
+  let result ← m
+  modify fun s => { s with substs }
+  return result
 
 open ToExprM in
 private def Expression.toExpr (e : Expression) : MetaM Expr :=
-  Prod.fst <$> (go e).run ∅
+  Prod.fst <$> (go e).run {  bvars := ∅, substs := ∅ }
 where
   go : Expression → ToExprM Expr
   | bvar id             => mapBVar id
@@ -43,6 +63,7 @@ where
   | .forall var ty body => do withBinding var (← go ty) fun fvar => do mkForallFVars #[fvar] (← go body)
   | lit l               => return .lit l
   | proof prop          => do mkFreshExprMVar (← toExpr prop)
+  | subst var to e      => do withSubst var (← go to) do go e
 
 declare_syntax_cat slot
 declare_syntax_cat slotted_lvl
@@ -72,6 +93,7 @@ syntax "(" &"λ" slot slotted_expr slotted_expr ")"        : slotted_expr
 syntax "(" &"∀" slot slotted_expr slotted_expr ")"        : slotted_expr
 syntax "(" &"lit" lit ")"                                 : slotted_expr
 syntax "(" &"proof" slotted_expr ")"                      : slotted_expr
+syntax "(" &"↦" slot slotted_expr slotted_expr ")"        : slotted_expr
 syntax "(" &"Rewrite" noWs rw_dir rw_src slotted_expr ")" : slotted_expr
 
 syntax slotted_expr+ : slotted_expl
@@ -116,6 +138,7 @@ where
     | `(slotted_expr|(∀ $var $ty $body))       => return .forall (parseSlot var) (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(slotted_expr|(lit $l))                 => return .lit (parseLit l)
     | `(slotted_expr|(proof $p))               => return .proof (← parseProof p pos)
+    | `(slotted_expr|(↦ $var $to $e))          => return .subst (parseSlot var) (← go pos to) (← go pos e)
     | `(slotted_expr|(Rewrite$dir $src $body)) => parseRw dir src body pos
     | _                                        => unreachable!
 

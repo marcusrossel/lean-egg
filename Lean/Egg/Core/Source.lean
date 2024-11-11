@@ -60,6 +60,7 @@ inductive Source where
   | explosion (src : Source) (dir : Direction) (loc : List Nat)
   | natLit (src : Source.NatLit)
   | subst (src : Source.SubstShift)
+  | abortSubst
   | shift (src : Source.SubstShift)
   | eta
   | beta
@@ -123,6 +124,7 @@ def description : Source → String
   | explosion src dir loc   => s!"{src.description}💥{dir.description}{(toString loc).replace " " ""}"
   | natLit src              => src.description
   | subst src               => s!"↦{src.description}"
+  | abortSubst              => "↦|"
   | shift src               => s!"↑{src.description}"
   | eta                     => "≡η"
   | beta                    => "≡β"
@@ -139,8 +141,8 @@ def isRewrite : Source → Bool
   | _              => true
 
 def isDefEq : Source → Bool
-  | natLit _ | eta | beta | level _ | subst _ | shift _ => true
-  | _                                                   => false
+  | natLit _ | eta | beta | level _ | subst _ | abortSubst | shift _ => true
+  | _                                                                => false
 
 def containsTcProj : Source → Bool
   | tcProj ..     => true
@@ -148,13 +150,13 @@ def containsTcProj : Source → Bool
   | _             => false
 
 def isNatLitConversion : Source → Bool
-  | .natLit .zero | .natLit .toSucc | .natLit .ofSucc => true
-  | _                                                 => false
+  | natLit .zero | natLit .toSucc | natLit .ofSucc => true
+  | _                                              => false
 
 def isSubst : Source → Bool
-  | .subst _ => true
-  | _        => false
+  | subst _ | abortSubst => true
+  | _                    => false
 
 def involvesBinders : Source → Bool
-  | .subst _ | .shift _ | .eta | .beta => true
-  | _                                  => false
+  | subst _ | abortSubst | shift _ | eta | beta => true
+  | _                                           => false
