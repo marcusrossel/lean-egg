@@ -25,12 +25,15 @@ structure Gen where
   genTcProjRws  := true
   genTcSpecRws  := true
   genGoalTcSpec := true
-  genNatLitRws  := true
-  genEtaRw      := true
-  genBetaRw     := true
-  genLevelRws   := true
   explosion     := false
   deriving BEq
+
+structure DefEq where
+  natLit    := true
+  eta       := true
+  etaExpand := false
+  beta      := true
+  levels    := true
 
 structure Backend where
   blockInvalidMatches := true
@@ -58,7 +61,7 @@ structure Debug where
   vizPath   := (none : Option String)
   deriving BEq
 
-structure _root_.Egg.Config extends Encoding, Gen, Backend, Debug where
+structure _root_.Egg.Config extends Encoding, DefEq, Gen, Backend, Debug where
   retryWithShapes := true
   explLengthLimit := 1000
 
@@ -70,5 +73,5 @@ instance : Coe Encoding Normalization where
 instance : Coe Config Encoding where
   coe := toEncoding
 
-instance : Coe Config Gen where
-  coe := toGen
+instance : Coe Config DefEq where
+  coe := toDefEq

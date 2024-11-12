@@ -49,10 +49,10 @@ register_egg_options
   genTcProjRws
   genTcSpecRws
   genGoalTcSpec
-  genNatLitRws
-  genEtaRw
-  genBetaRw
-  genLevelRws
+  natLit
+  eta
+  beta
+  levels
   explosion
   blockInvalidMatches
   shiftCapturedBVars "Note: Setting this to `true` also enables `egg.blockInvalidMatches`."

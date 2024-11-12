@@ -19,8 +19,6 @@ example [Module R S] (q : ℚ≥0) (a : S) : (q : R) • a = q • a := by
     Nat.cast_smul_eq_nsmul
   ]
 
--- TODO: This saturates in slotted? I'm guessing there's something wrong with the saturation
---       condition/progress measure.
 set_option egg.slotted true in
 example [Module R S] (q : ℚ≥0) (a : S) : (q : R) • a = q • a := by
   refine MulAction.injective₀ (G₀ := ℚ≥0) (Nat.cast_ne_zero.2 q.den_pos.ne') ?_

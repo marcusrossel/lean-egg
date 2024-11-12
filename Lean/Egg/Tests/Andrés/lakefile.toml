@@ -6,7 +6,7 @@ defaultTargets = ["«Andrés»"]
 [[require]]
 name    = "mathlib"
 scope   = "leanprover-community"
-version = "git#v4.13.0"
+version = "git#v4.14.0-rc1"
 
 [[require]]
 name = "egg"

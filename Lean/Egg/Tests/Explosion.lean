@@ -1,11 +1,11 @@
 import Egg
 
-set_option egg.genEtaRw false
-set_option egg.genBetaRw false
+set_option egg.eta false
+set_option egg.beta false
 set_option egg.genTcProjRws false
 set_option egg.genGoalTcSpec false
 set_option egg.builtins false
-set_option egg.genNatLitRws false
+set_option egg.natLit false
 
 set_option egg.explosion true
 

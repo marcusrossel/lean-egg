@@ -2,7 +2,7 @@ import Egg
 
 -- Tests involving conversions between `Nat.zero` and `Nat.succ _` and `.lit (.natVal _)`.
 
-set_option egg.genNatLitRws true
+set_option egg.natLit true
 
 example : 0 = Nat.zero := by
   egg
@@ -66,7 +66,7 @@ example : 12345 % 67890 = 12345 := by
 example : 12345 % 0 = 12345 := by
   egg
 
-set_option egg.genNatLitRws false in
+set_option egg.natLit false in
 set_option egg.natReduceRws false in
 /-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in

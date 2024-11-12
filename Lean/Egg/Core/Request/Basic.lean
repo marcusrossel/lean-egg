@@ -15,10 +15,10 @@ protected structure Config where
   timeLimit            : Nat
   nodeLimit            : Nat
   iterLimit            : Nat
-  genNatLitRws         : Bool
-  genEtaRw             : Bool
-  genBetaRw            : Bool
-  genLevelRws          : Bool
+  natLit         : Bool
+  eta             : Bool
+  beta            : Bool
+  levels          : Bool
   shapes               : Bool
   blockInvalidMatches  : Bool
   shiftCapturedBVars   : Bool
@@ -32,10 +32,10 @@ instance : Coe Config Request.Config where
     timeLimit            := cfg.timeLimit
     nodeLimit            := cfg.nodeLimit
     iterLimit            := cfg.iterLimit
-    genNatLitRws         := cfg.genNatLitRws
-    genEtaRw             := cfg.genEtaRw
-    genBetaRw            := cfg.genBetaRw
-    genLevelRws          := cfg.genLevelRws
+    natLit         := cfg.natLit
+    eta             := cfg.eta
+    beta            := cfg.beta
+    levels          := cfg.levels
     shapes               := cfg.shapes
     blockInvalidMatches  := cfg.blockInvalidMatches
     shiftCapturedBVars   := cfg.shiftCapturedBVars

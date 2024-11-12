@@ -7,7 +7,7 @@ example (h : ∀ x y : Nat, x = y ↔ y = x) : (∀ x y : Nat, x = y) ↔ (∀ a
 -- We have to disable β-reduction as part of normalization, as otherwise `thm₁,₂` are useless, and
 -- disable β-reduction in egg, as this interferes with the test cases.
 set_option egg.betaReduceRws false
-set_option egg.genBetaRw false
+set_option egg.beta false
 
 -- This theorem is only applicable in the forward direction.
 theorem thm₁ : ∀ x y : Nat, (x, y).fst = (fun _ => x) (nat_lit 1) :=

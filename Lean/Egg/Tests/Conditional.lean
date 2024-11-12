@@ -101,9 +101,9 @@ info: [egg.rewrites] Rewrites
 #guard_msgs(info, drop error) in
 set_option egg.genTcProjRws false in
 set_option egg.builtins false in
-set_option egg.genBetaRw false in
-set_option egg.genEtaRw false in
-set_option egg.genNatLitRws false in
+set_option egg.beta false in
+set_option egg.eta false in
+set_option egg.natLit false in
 set_option egg.builtins false in
 example (l₁ l₂ : List Nat) (h : ∀ (α : Type) (l₁ l₂ : List α), l₁ = l₂) : l₁ = l₂ := by
   set_option trace.egg.rewrites true in egg [h]

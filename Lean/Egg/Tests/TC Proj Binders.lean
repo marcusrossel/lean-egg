@@ -63,8 +63,8 @@ info: [egg.rewrites] Rewrites
 set_option linter.unusedVariables false in
 set_option trace.egg.rewrites true in
 set_option egg.builtins false in
-set_option egg.genBetaRw false in
-set_option egg.genEtaRw false in
-set_option egg.genNatLitRws false in
+set_option egg.beta false in
+set_option egg.eta false in
+set_option egg.natLit false in
 example (x : Nat) (h : ∀ (_ : x * y = z), z = z) : x = x := by
   egg [h]

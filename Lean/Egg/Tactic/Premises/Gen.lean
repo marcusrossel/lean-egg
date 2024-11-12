@@ -17,7 +17,7 @@ namespace Egg.Premises
 
 private def tracePremises
     (basic : WithSyntax Rewrites) (tagged builtins tc ex pruned : Rewrites)
-    (facts : WithSyntax Facts) (cfg : Config.Gen) : TacticM Unit := do
+    (facts : WithSyntax Facts) (cfg : Config.DefEq) : TacticM Unit := do
   let cls := `egg.rewrites
   withTraceNode cls (fun _ => return "Rewrites") do
     withTraceNode cls (fun _ => return m!"Basic ({basic.elems.size})") do basic.elems.trace basic.stxs cls
@@ -28,9 +28,9 @@ private def tracePremises
     withTraceNode cls (fun _ => return m!"Hypotheses ({facts.elems.size})") do
       facts.elems.trace facts.stxs cls
     withTraceNode cls (fun _ => return "Definitional") do
-      if cfg.genBetaRw    then Lean.trace cls fun _ => "β-Reduction"
-      if cfg.genEtaRw     then Lean.trace cls fun _ => "η-Reduction"
-      if cfg.genNatLitRws then Lean.trace cls fun _ => "Natural Number Literals"
+      if cfg.beta    then Lean.trace cls fun _ => "β-Reduction"
+      if cfg.eta     then Lean.trace cls fun _ => "η-Reduction"
+      if cfg.natLit then Lean.trace cls fun _ => "Natural Number Literals"
     withTraceNode cls (fun _ => return m!"Pruned ({pruned.size})") do pruned.trace #[] cls
 
 partial def gen

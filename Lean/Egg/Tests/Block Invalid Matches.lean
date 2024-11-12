@@ -9,8 +9,8 @@ set_option egg.shiftCapturedBVars false
 -- any way, so we disable them.
 set_option egg.betaReduceRws false
 set_option egg.etaReduceRws false
-set_option egg.genBetaRw false
-set_option egg.genEtaRw false
+set_option egg.beta false
+set_option egg.eta false
 
 -- These tests cover Condition (1) of (in-)valid matches.
 section «Condition 1»

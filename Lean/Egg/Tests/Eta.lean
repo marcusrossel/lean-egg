@@ -1,10 +1,10 @@
 import Egg
 
 -- Note: We disable β-reduction as it can also solve many of these cases without η-reduction.
-set_option egg.genEtaRw true
-set_option egg.genBetaRw false
+set_option egg.eta true
+set_option egg.beta false
 
-set_option egg.genEtaRw false in
+set_option egg.eta false in
 /-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 example : (fun x => Nat.succ x) = Nat.succ := by
@@ -44,7 +44,7 @@ example : id (eta 2 Nat.succ Nat) = id Nat.succ := by
 example : (eta 50 Nat.succ Nat) = Nat.succ := by
   egg
 
-set_option egg.genEtaRw false in
+set_option egg.eta false in
 /-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 example (a : Nat) (h : ∀ b : Nat, b.succ.add a = 0) : (10 |> fun x => Nat.succ x).add a = 0 := by

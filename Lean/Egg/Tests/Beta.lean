@@ -1,6 +1,6 @@
 import Egg
 
-set_option egg.genBetaRw true
+set_option egg.beta true
 
 example : (fun x => x) 0 = 0 := by
   egg
