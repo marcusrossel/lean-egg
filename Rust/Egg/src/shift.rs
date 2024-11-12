@@ -117,5 +117,6 @@ pub fn shift_rws() -> Vec<LeanRewrite> {
     rws.push(rewrite!("↑lit";   "(↑ ?d ?o ?c (lit ?x))"    => "(lit ?x)"));
     // TODO: We don't propagate shifts over erased proofs at the moment,
     rws.push(rewrite!("↑proof"; "(↑ ?d ?o ?c (proof ?x))"  => "(proof ?x)"));
+    rws.push(rewrite!("↑_";     "(↑ ?d ?o ?c _)"           => "_"));
     rws
 }

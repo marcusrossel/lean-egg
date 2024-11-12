@@ -68,6 +68,7 @@ syntax "↦mvar"                               : fwd_rw_src
 syntax "↦sort"                               : fwd_rw_src
 syntax "↦lit"                                : fwd_rw_src
 syntax "↦proof"                              : fwd_rw_src
+syntax "↦_"                                  : fwd_rw_src
 syntax "↦|"                                  : fwd_rw_src
 syntax "↑bvar"                               : fwd_rw_src
 syntax "↑app"                                : fwd_rw_src
@@ -78,11 +79,13 @@ syntax "↑mvar"                               : fwd_rw_src
 syntax "↑sort"                               : fwd_rw_src
 syntax "↑lit"                                : fwd_rw_src
 syntax "↑proof"                              : fwd_rw_src
+syntax "↑_"                                  : fwd_rw_src
 syntax "≡maxS"                               : fwd_rw_src
 syntax "≡max↔"                               : fwd_rw_src
 syntax "≡imax0"                              : fwd_rw_src
 syntax "≡imaxS"                              : fwd_rw_src
 syntax "≡η"                                  : fwd_rw_src
+syntax "≡η+"                                 : fwd_rw_src
 syntax "≡β"                                  : fwd_rw_src
 syntax "≡0"                                  : fwd_rw_src
 syntax "≡→S"                                 : fwd_rw_src
@@ -107,12 +110,12 @@ syntax "-" num : shift_offset
 def parseLit : (TSyntax `lit) → Literal
   | `(lit|$n:num) => .natVal n.getNat
   | `(lit|$s:str) => .strVal s.getString
-  | _                 => unreachable!
+  | _             => unreachable!
 
 def parseShiftOffset : (TSyntax `shift_offset) → Int
   | `(shift_offset|+ $n:num) => n.getNat
   | `(shift_offset|- $n:num) => -n.getNat
-  | _                            => unreachable!
+  | _                        => unreachable!
 
 def parseRwDir : (TSyntax `rw_dir) → Direction
   | `(rw_dir|=>) => .forward
@@ -124,14 +127,14 @@ private def parsTcSpecSrc : (TSyntax `tc_spec_src) → Source.TcSpec
   | `(tc_spec_src|←) => .dir .backward
   | `(tc_spec_src|?) => .cond
   | `(tc_spec_src|⊢) => .goalType
-  | _                    => unreachable!
+  | _                => unreachable!
 
 private def parseTcProjLocation : (TSyntax `tc_proj_loc) → Source.TcProjLocation
   | `(tc_proj_loc|▪)        => .root
   | `(tc_proj_loc|◂)        => .left
   | `(tc_proj_loc|▸)        => .right
   | `(tc_proj_loc|$n:num ?) => .cond n.getNat
-  | _                           => unreachable!
+  | _                       => unreachable!
 
 private def parseBasicFwdRwSrc : (TSyntax `basic_fwd_rw_src) → Source
   | `(basic_fwd_rw_src|#$idx$[/$eqn?]?) => .explicit idx.getNat (eqn?.map TSyntax.getNat)
@@ -140,12 +143,12 @@ private def parseBasicFwdRwSrc : (TSyntax `basic_fwd_rw_src) → Source
   | `(basic_fwd_rw_src|⊢)               => .goal
   | `(basic_fwd_rw_src|↣$idx)           => .guide idx.getNat
   | `(basic_fwd_rw_src|◯$idx)           => .builtin idx.getNat
-  | _                                       => unreachable!
+  | _                                   => unreachable!
 
 private def parseTcExtension (src : Source) : (TSyntax `tc_extension) → Source
   | `(tc_extension|[$loc$pos,$dep]) => .tcProj src (parseTcProjLocation loc) pos.getNat dep.getNat
   | `(tc_extension|<$tcSpecsrc>)    => .tcSpec src (parsTcSpecSrc tcSpecsrc)
-  | _                                   => unreachable!
+  | _                               => unreachable!
 
 private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
   | `(fwd_rw_src|↦bvar)  => .subst .bvar
@@ -157,7 +160,8 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
   | `(fwd_rw_src|↦sort)  => .subst .sort
   | `(fwd_rw_src|↦lit)   => .subst .lit
   | `(fwd_rw_src|↦proof) => .subst .proof
-  | `(fwd_rw_src|↦|)     => .abortSubst
+  | `(fwd_rw_src|↦_)     => .subst .unknown
+  | `(fwd_rw_src|↦|)     => .subst .abort
   | `(fwd_rw_src|↑bvar)  => .shift .bvar
   | `(fwd_rw_src|↑app)   => .shift .app
   | `(fwd_rw_src|↑λ)     => .shift .lam
@@ -167,11 +171,13 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
   | `(fwd_rw_src|↑sort)  => .shift .sort
   | `(fwd_rw_src|↑lit)   => .shift .lit
   | `(fwd_rw_src|↑proof) => .shift .proof
+  | `(fwd_rw_src|↑_)     => .shift .unknown
   | `(fwd_rw_src|≡maxS)  => .level .maxSucc
   | `(fwd_rw_src|≡max↔)  => .level .maxComm
   | `(fwd_rw_src|≡imax0) => .level .imaxZero
   | `(fwd_rw_src|≡imaxS) => .level .imaxSucc
-  | `(fwd_rw_src|≡η)     => .eta
+  | `(fwd_rw_src|≡η)     => .eta false
+  | `(fwd_rw_src|≡η+)    => .eta true
   | `(fwd_rw_src|≡β)     => .beta
   | `(fwd_rw_src|≡0)     => .natLit .zero
   | `(fwd_rw_src|≡→S)    => .natLit .toSucc

@@ -14,10 +14,15 @@ pub struct Config {
     time_limit:             usize,
     node_limit:             usize,
     iter_limit:             usize, 
-    gen_nat_lit_rws:        bool, 
-    gen_eta_rw:             bool,
-    gen_beta_rw:            bool,
-    gen_level_rws:          bool,
+    nat_lit:                bool, 
+    eta:                    bool,
+    eta_expand:             bool,
+    beta:                   bool,
+    levels:                 bool,
+    shapes:                 bool,
+    block_invalid_matches:  bool,
+    shift_captured_bvars:   bool,
+    union_semantics:        bool,
     allow_unsat_conditions: bool
 }
 
@@ -57,10 +62,11 @@ pub fn explain_congr(
         Ok(r)    => rws = r,
         Err(err) => return Err(Error::Rewrite(err.to_string()))
     }
-    if cfg.gen_nat_lit_rws { rws.append(&mut nat_lit_rws()) }
-    if cfg.gen_eta_rw      { rws.push(eta_reduction_rw()) }
-    if cfg.gen_beta_rw     { rws.append(&mut beta_reduction_rws(/*small_step:*/false)) }
-    if cfg.gen_level_rws   { rws.append(&mut level_rws()) }
+    if cfg.nat_lit    { rws.append(&mut nat_lit_rws()) }
+    if cfg.eta        { rws.push(eta_reduction_rw()) }
+    if cfg.eta_expand { rws.push(eta_expansion_rw()) }
+    if cfg.beta       { rws.append(&mut beta_reduction_rws(/*small_step:*/false)) }
+    if cfg.levels     { rws.append(&mut level_rws()) }
 
     let i = init_id.clone();
     let g = goal_id.clone();

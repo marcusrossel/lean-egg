@@ -36,6 +36,9 @@ define_language! {
         // Note, we don't encode the shape of non-function types explicitly and use `Str("*")`) for that instead.
         "→" = Fun([Id; 2]),         // (<shape>, <shape>)
         "◇" = Shaped([Id; 2]),      // (<shape>, <expr>)
+
+        // Construct for unknown terms (this is used in η-expansion):
+        "_" = Unknown,        
     }
 }
 

@@ -21,7 +21,7 @@ impl Analysis<LeanExpr> for LeanAnalysis {
             LeanExpr::Nat(n) => Self { nat_val: Some(*n), is_primitive: true },
             
             LeanExpr::Str(_) | LeanExpr::UVar(_) | LeanExpr::Param(_) | LeanExpr::Succ(_) | 
-            LeanExpr::Max(_, _) | LeanExpr::IMax(_, _) => 
+            LeanExpr::Max(_, _) | LeanExpr::IMax(_, _) | LeanExpr::Unknown => 
                 Self { is_primitive: true, ..Default::default() },
 
             _ => Default::default()

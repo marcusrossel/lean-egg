@@ -16,6 +16,7 @@ private inductive Expression where
   | lit    (l : Literal)
   | proof  (prop : Expression)
   | subst  (var : String) (to e : Expression)
+  | unknown
   deriving Inhabited
 
 private structure ToExprM.State where
@@ -64,6 +65,7 @@ where
   | lit l               => return .lit l
   | proof prop          => do mkFreshExprMVar (← toExpr prop)
   | subst var to e      => do withSubst var (← go to) do go e
+  | unknown             => mkFreshExprMVar none
 
 declare_syntax_cat slot
 declare_syntax_cat slotted_lvl
@@ -94,6 +96,7 @@ syntax "(" &"∀" slot slotted_expr slotted_expr ")"        : slotted_expr
 syntax "(" &"lit" lit ")"                                 : slotted_expr
 syntax "(" &"proof" slotted_expr ")"                      : slotted_expr
 syntax "(" &"↦" slot slotted_expr slotted_expr ")"        : slotted_expr
+syntax &"_"                                               : slotted_expr
 syntax "(" &"Rewrite" noWs rw_dir rw_src slotted_expr ")" : slotted_expr
 
 syntax slotted_expr+ : slotted_expl
@@ -139,6 +142,7 @@ where
     | `(slotted_expr|(lit $l))                 => return .lit (parseLit l)
     | `(slotted_expr|(proof $p))               => return .proof (← parseProof p pos)
     | `(slotted_expr|(↦ $var $to $e))          => return .subst (parseSlot var) (← go pos to) (← go pos e)
+    | `(slotted_expr|_)                        => return .unknown
     | `(slotted_expr|(Rewrite$dir $src $body)) => parseRw dir src body pos
     | _                                        => unreachable!
 

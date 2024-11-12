@@ -41,8 +41,6 @@ theorem inv_one : (1 : G)⁻¹ = 1 := by group
 
 theorem inv_one' : rudify (1 : G)⁻¹ = 1 := by group
 
-set_option egg.timeLimit 10
-
 theorem inv_mul : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
 

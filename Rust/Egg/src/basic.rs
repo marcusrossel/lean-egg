@@ -17,10 +17,11 @@ pub struct Config {
     time_limit:             usize,
     node_limit:             usize,
     iter_limit:             usize, 
-    gen_nat_lit_rws:        bool, 
-    gen_eta_rw:             bool,
-    gen_beta_rw:            bool,
-    gen_level_rws:          bool,
+    nat_lit:                bool, 
+    eta:                    bool,
+    eta_expand:             bool,
+    beta:                   bool,
+    levels:                 bool,
     shapes:                 bool,
     block_invalid_matches:  bool,
     shift_captured_bvars:   bool,
@@ -56,10 +57,11 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
         Ok(r)    => rws = r,
         Err(err) => return Err(Error::Rewrite(err.to_string()))
     }
-    if cfg.gen_nat_lit_rws { rws.append(&mut nat_lit_rws(cfg.shapes)) }
-    if cfg.gen_eta_rw      { rws.push(eta_reduction_rw()) }
-    if cfg.gen_beta_rw     { rws.push(beta_reduction_rw()) }
-    if cfg.gen_level_rws   { rws.append(&mut level_rws()) }
+    if cfg.nat_lit    { rws.append(&mut nat_lit_rws(cfg.shapes)) }
+    if cfg.eta        { rws.push(eta_reduction_rw()) }
+    if cfg.eta_expand { rws.push(eta_expansion_rw()) }
+    if cfg.beta       { rws.push(beta_reduction_rw()) }
+    if cfg.levels     { rws.append(&mut level_rws()) }
     // TODO: Only add these rws if on of the following is active: beta, eta, bvar index correction. Anything else?
     rws.append(&mut subst_rws());
     rws.append(&mut shift_rws());

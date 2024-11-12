@@ -6,3 +6,7 @@ pub fn eta_reduction_rw() -> LeanRewrite {
         !subst["f"].slots().contains(&Slot::numeric(0))
     })
 }
+
+pub fn eta_expansion_rw() -> LeanRewrite {
+    Rewrite::new("≡η+", "?e", "(λ $0 _ (app ?e (bvar $0)))")
+}

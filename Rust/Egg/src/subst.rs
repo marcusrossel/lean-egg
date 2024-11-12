@@ -112,5 +112,6 @@ pub fn subst_rws() -> Vec<LeanRewrite> {
     rws.push(rewrite!("↦lit";   "(↦ ?f ?t (lit ?x))"    => "(lit ?x)"));
     // TODO: We don't propagate substitutions over erased proofs at the moment,
     rws.push(rewrite!("↦proof"; "(↦ ?f ?t (proof ?x))"  => "(proof ?x)"));
+    rws.push(rewrite!("↦_";     "(↦ ?f ?t _)"           => "_"));
     rws
 }

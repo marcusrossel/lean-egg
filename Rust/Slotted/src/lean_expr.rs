@@ -36,6 +36,9 @@ pub enum LeanExpr {
     // instead.
     Fun(AppliedId, AppliedId),          // (<shape>, <shape>)
     Shaped(AppliedId, AppliedId),       // (<shape>, <expr>)
+
+    // Construct for unknown terms (this is used in η-expansion):
+    Unknown,       
 }
 
 impl Language for LeanExpr {
@@ -131,6 +134,7 @@ impl Language for LeanExpr {
             LeanExpr::Subst(c1, c2, c3)  => ("↦".to_string(), vec![Child::Slot(c1), Child::AppliedId(c2), Child::AppliedId(c3)]),
             LeanExpr::Fun(c1, c2)        => ("→".to_string(), vec![Child::AppliedId(c1), Child::AppliedId(c2)]),
             LeanExpr::Shaped(c1, c2)     => ("◇".to_string(), vec![Child::AppliedId(c1), Child::AppliedId(c2)]),
+            LeanExpr::Unknown            => ("_".to_string(), vec![]),
             LeanExpr::Const(cs)          => {
                 let mut is = Vec::new();
                 for c in cs.iter() { is.push(Child::AppliedId(c.clone())); }
@@ -158,6 +162,7 @@ impl Language for LeanExpr {
             ("↦",     [Child::Slot(c1), Child::AppliedId(c2), Child::AppliedId(c3)]) => Some(LeanExpr::Subst(*c1, c2.clone(), c3.clone())),     
             ("→",     [Child::AppliedId(c1), Child::AppliedId(c2)])                  => Some(LeanExpr::Fun(c1.clone(), c2.clone())),     
             ("◇",     [Child::AppliedId(c1), Child::AppliedId(c2)])                  => Some(LeanExpr::Shaped(c1.clone(), c2.clone())),     
+            ("_",     [])                                                            => Some(LeanExpr::Unknown),     
             ("const", cs) => {
                 let mut is = vec![];
                 for c in cs.iter() {

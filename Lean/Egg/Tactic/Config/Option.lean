@@ -51,6 +51,7 @@ register_egg_options
   genGoalTcSpec
   natLit
   eta
+  etaExpand
   beta
   levels
   explosion

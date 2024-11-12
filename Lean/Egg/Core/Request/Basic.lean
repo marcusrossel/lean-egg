@@ -15,10 +15,11 @@ protected structure Config where
   timeLimit            : Nat
   nodeLimit            : Nat
   iterLimit            : Nat
-  natLit         : Bool
-  eta             : Bool
-  beta            : Bool
-  levels          : Bool
+  natLit               : Bool
+  eta                  : Bool
+  etaExpand            : Bool
+  beta                 : Bool
+  levels               : Bool
   shapes               : Bool
   blockInvalidMatches  : Bool
   shiftCapturedBVars   : Bool
@@ -32,10 +33,11 @@ instance : Coe Config Request.Config where
     timeLimit            := cfg.timeLimit
     nodeLimit            := cfg.nodeLimit
     iterLimit            := cfg.iterLimit
-    natLit         := cfg.natLit
-    eta             := cfg.eta
-    beta            := cfg.beta
-    levels          := cfg.levels
+    natLit               := cfg.natLit
+    eta                  := cfg.eta
+    etaExpand            := cfg.etaExpand
+    beta                 := cfg.beta
+    levels               := cfg.levels
     shapes               := cfg.shapes
     blockInvalidMatches  := cfg.blockInvalidMatches
     shiftCapturedBVars   := cfg.shiftCapturedBVars

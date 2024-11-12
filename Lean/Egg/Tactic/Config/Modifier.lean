@@ -18,6 +18,7 @@ structure Modifier where
   genGoalTcSpec       : Option Bool            := none
   natLit              : Option Bool            := none
   eta                 : Option Bool            := none
+  etaExpand           : Option Bool            := none
   beta                : Option Bool            := none
   levels              : Option Bool            := none
   explosion           : Option Bool            := none
@@ -49,6 +50,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   genGoalTcSpec       := mod.genGoalTcSpec.getD cfg.genGoalTcSpec
   natLit              := mod.natLit.getD cfg.natLit
   eta                 := mod.eta.getD cfg.eta
+  etaExpand           := mod.etaExpand.getD cfg.etaExpand
   beta                := mod.beta.getD cfg.beta
   levels              := mod.levels.getD cfg.levels
   explosion           := mod.explosion.getD cfg.explosion

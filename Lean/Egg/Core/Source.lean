@@ -47,6 +47,8 @@ inductive Source.SubstShift where
   | sort
   | lit
   | proof
+  | unknown
+  | abort
   deriving Inhabited, BEq, Hashable
 
 inductive Source where
@@ -60,9 +62,8 @@ inductive Source where
   | explosion (src : Source) (dir : Direction) (loc : List Nat)
   | natLit (src : Source.NatLit)
   | subst (src : Source.SubstShift)
-  | abortSubst
   | shift (src : Source.SubstShift)
-  | eta
+  | eta (expansion : Bool)
   | beta
   | level (src : Source.Level)
   | builtin (idx : Nat)
@@ -109,6 +110,8 @@ def SubstShift.description : SubstShift → String
   | sort    => "sort"
   | lit     => "lit"
   | proof   => "proof"
+  | unknown => "_"
+  | abort   => "|"
 
 -- Note: It's important that we remove the whitespace from the list in the `.explosion` case,
 --       because otherwise egg adds quotes around the rule name.
@@ -124,9 +127,9 @@ def description : Source → String
   | explosion src dir loc   => s!"{src.description}💥{dir.description}{(toString loc).replace " " ""}"
   | natLit src              => src.description
   | subst src               => s!"↦{src.description}"
-  | abortSubst              => "↦|"
   | shift src               => s!"↑{src.description}"
-  | eta                     => "≡η"
+  | eta false               => s!"≡η"
+  | eta true                => s!"≡η+"
   | beta                    => "≡β"
   | level src               => src.description
   | builtin idx             => s!"◯{idx}"
@@ -141,8 +144,8 @@ def isRewrite : Source → Bool
   | _              => true
 
 def isDefEq : Source → Bool
-  | natLit _ | eta | beta | level _ | subst _ | abortSubst | shift _ => true
-  | _                                                                => false
+  | natLit _ | eta _ | beta | level _ | subst _ | shift _ => true
+  | _                                                   => false
 
 def containsTcProj : Source → Bool
   | tcProj ..     => true
@@ -154,9 +157,9 @@ def isNatLitConversion : Source → Bool
   | _                                              => false
 
 def isSubst : Source → Bool
-  | subst _ | abortSubst => true
-  | _                    => false
+  | subst _ => true
+  | _       => false
 
 def involvesBinders : Source → Bool
-  | subst _ | abortSubst | shift _ | eta | beta => true
-  | _                                           => false
+  | subst _ | shift _ | eta _ | beta => true
+  | _                                => false

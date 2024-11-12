@@ -120,10 +120,11 @@ typedef struct config {
     size_t time_limit;
     size_t node_limit;
     size_t iter_limit;
-    _Bool  gen_nat_lit_rws;
-    _Bool  gen_eta_rw;
-    _Bool  gen_beta_rw;
-    _Bool  gen_level_rws;
+    _Bool  nat_lit;
+    _Bool  eta;
+    _Bool  eta_expand;
+    _Bool  beta;
+    _Bool  levels;
     _Bool  shapes;
     _Bool  block_invalid_matches;
     _Bool  shift_captured_bvars;
@@ -143,10 +144,11 @@ structure Config where
   timeLimit            : Nat
   nodeLimit            : Nat
   iterLimit            : Nat
-  genNatLitRws         : Bool
-  genEtaRw             : Bool
-  genBetaRw            : Bool
-  genLevelRws          : Bool
+  natLit               : Bool
+  eta                  : Bool
+  etaExpand            : Bool
+  beta                 : Bool
+  levels               : Bool
   shapes               : Bool
   blockInvalidMatches  : Bool
   shiftCapturedBVars   : Bool
@@ -163,15 +165,16 @@ lean_config config_from_lean_obj(lean_obj_arg cfg) {
             .time_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 0)),
             .node_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 1)),
             .iter_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 2)),  
-            .gen_nat_lit_rws        = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 2),  
-            .gen_eta_rw             = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 3),  
-            .gen_beta_rw            = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 4),  
-            .gen_level_rws          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 5),  
-            .shapes                 = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6), 
-            .block_invalid_matches  = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7), 
-            .shift_captured_bvars   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 8),  
-            .union_semantics        = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 9),
-            .allow_unsat_conditions = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 10),  
+            .nat_lit                = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 2),  
+            .eta                    = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 3),  
+            .eta_expand             = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 4),  
+            .beta                   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 5),  
+            .levels                 = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6),  
+            .shapes                 = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7), 
+            .block_invalid_matches  = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 8), 
+            .shift_captured_bvars   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 9),  
+            .union_semantics        = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 10),
+            .allow_unsat_conditions = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 11),  
         }
     };
 }

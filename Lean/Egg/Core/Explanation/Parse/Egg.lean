@@ -17,6 +17,7 @@ private inductive Expression where
   | proof  (prop : Expression)
   | subst  (idx : Nat) (to e : Expression)
   | shift  (offset : Int) (cutoff : Nat) (e : Expression)
+  | unknown
   deriving Inhabited
 
 private def Expression.toExpr : Expression → MetaM Expr
@@ -32,6 +33,7 @@ private def Expression.toExpr : Expression → MetaM Expr
   | proof prop      => do mkFreshExprMVar (← toExpr prop)
   | subst idx to e  => return applySubst idx (← toExpr to) (← toExpr e)
   | shift off cut e => return applyShift off cut (← toExpr e)
+  | unknown         => mkFreshExprMVar none
 where
   applySubst (idx : Nat) (to : Expr) : Expr → Expr
     | .bvar i          => if i = idx then to else .bvar i
@@ -73,6 +75,7 @@ syntax "(" &"proof" egg_expr ")"                      : egg_expr
 syntax "(" &"↦" num egg_expr egg_expr ")"             : egg_expr
 syntax "(" &"↑" shift_offset num egg_expr ")"         : egg_expr
 syntax "(" "◇" shape egg_expr ")"                     : egg_expr
+syntax &"_"                                           : egg_expr
 syntax "(" &"Rewrite" noWs rw_dir rw_src egg_expr ")" : egg_expr
 
 syntax egg_expr+ : egg_expl
@@ -115,6 +118,7 @@ where
     | `(egg_expr|(↦ $idx $to $e))          => return .subst idx.getNat (← go pos to) (← go pos e)
     | `(egg_expr|(↑ $off $cut $e))         => return .shift (parseShiftOffset off) cut.getNat (← go pos e)
     | `(egg_expr|(◇ $_ $e))                => go pos e
+    | `(egg_expr|_)                        => return .unknown
     | `(egg_expr|(Rewrite$dir $src $body)) => parseRw dir src body pos
     | _                                    => unreachable!
 
