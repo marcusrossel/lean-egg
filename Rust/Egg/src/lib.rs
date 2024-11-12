@@ -3,6 +3,7 @@ use egg::*;
 use core::ffi::c_char;
 use core::ffi::CStr;
 use std::ffi::CString;
+use std::ptr::null;
 use libc::c_double;
 use std::str::FromStr;
 use basic::*;
@@ -28,6 +29,12 @@ mod valid_match;
 fn c_str_to_string(c_str: *const c_char) -> String {
     let str = unsafe { CStr::from_ptr(c_str) };
     String::from_utf8_lossy(str.to_bytes()).to_string()
+}
+
+// TODO: I think this is a memory leak right now.
+fn string_to_c_str(str: String) -> *const c_char {
+    let expl_c_str = CString::new(str).expect("conversion of Rust-string to C-string failed");
+    expl_c_str.into_raw()
 }
 
 #[repr(C)]
@@ -155,17 +162,19 @@ pub struct CReport {
     egraph_nodes:   usize,
     egraph_classes: usize,
     total_time:     c_double,
+    rw_stats:       *const c_char,
 }
 
 impl CReport {
 
-    fn from_report(r: Report) -> CReport {
+    fn from_report(r: Report, rw_stats: String) -> CReport {
         CReport {
             iterations:     r.iterations,
             stop_reason:    CStopReason::from_stop_reason(r.stop_reason),
             egraph_nodes:   r.egraph_nodes,
             egraph_classes: r.egraph_classes,
             total_time:     r.total_time,
+            rw_stats:       string_to_c_str(rw_stats),
         }
     }
 
@@ -176,6 +185,7 @@ impl CReport {
             egraph_nodes:   0,
             egraph_classes: 0,
             total_time:     0.0,
+            rw_stats:       null(),
         }
     }
 }
@@ -202,33 +212,25 @@ pub extern "C" fn egg_explain_congr(
     let guides = guides.to_vec();
     let facts  = facts.to_vec();
 
-    // Note: The `into_raw`s below are important, as otherwise Rust deallocates the string.
-    // TODO: I think this is a memory leak right now.
-
     let rw_templates = rws.to_templates();
     if let Err(rws_err) = rw_templates { 
-        let rws_err_c_str = CString::new(rws_err.to_string()).expect("conversion of error message to C-string failed");
-        return EqsatResult { expl: rws_err_c_str.into_raw(), graph: None, report: CReport::none() }
+        return EqsatResult { expl: string_to_c_str(rws_err.to_string()), graph: None, report: CReport::none() }
     }
     let rw_templates = rw_templates.unwrap();
 
-    let viz_path_c_str = unsafe { CStr::from_ptr(viz_path_ptr) };
-    let raw_viz_path = String::from_utf8_lossy(viz_path_c_str.to_bytes()).to_string();
+    let raw_viz_path = c_str_to_string(viz_path_ptr);
     let viz_path = if raw_viz_path.is_empty() { None } else { Some(raw_viz_path) };
 
     let res = explain_congr(init, goal, rw_templates, facts, guides, cfg, viz_path);
     if let Err(res_err) = res {
-        let res_err_c_str = CString::new(res_err.to_string()).expect("conversion of error message to C-string failed");
-        return EqsatResult { expl: res_err_c_str.into_raw(), graph: None, report: CReport::none() }
+        return EqsatResult { expl: string_to_c_str(res_err.to_string()), graph: None, report: CReport::none() }
     }
-    let (expl, egraph, report) = res.unwrap();
-
-    let expl_c_str = CString::new(expl).expect("conversion of explanation to C-string failed");
+    let ExplainedCongr { expl, egraph, report, rw_stats } = res.unwrap();
 
     return EqsatResult {
-        expl: expl_c_str.into_raw(),
+        expl: string_to_c_str(expl),
         graph: Some(Box::new(egraph)),
-        report: CReport::from_report(report) 
+        report: CReport::from_report(report, rw_stats) 
     }
 }
 
@@ -247,10 +249,9 @@ pub unsafe extern "C" fn egg_query_equiv(
     if egraph.find(init_id) == egraph.find(goal_id) {
         let mut expl = egraph.explain_equivalence(&init, &goal);
         let expl_str = expl.get_flat_string();
-        let expl_c_str = CString::new(expl_str.to_string()).expect("conversion of explanation to C-string failed");
-        expl_c_str.into_raw()
+        string_to_c_str(expl_str)
     } else {
-        CString::new("").unwrap().into_raw()
+        string_to_c_str("".to_string())
     }
 }
 

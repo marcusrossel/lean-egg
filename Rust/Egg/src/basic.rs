@@ -5,6 +5,7 @@ use crate::result::*;
 use crate::analysis::*;
 use crate::beta::*;
 use crate::eta::*;
+use crate::lean_expr::*;
 use crate::levels::*;
 use crate::nat_lit::*;
 use crate::rewrite::*;
@@ -29,7 +30,14 @@ pub struct Config {
     allow_unsat_conditions: bool
 }
 
-pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Result<(String, LeanEGraph, Report), Error> {    
+pub struct ExplainedCongr {
+    pub expl:     String,
+    pub egraph:   LeanEGraph,
+    pub report:   Report,
+    pub rw_stats: String   
+}
+
+pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Result<ExplainedCongr, Error> {    
     let analysis = LeanAnalysis { union_semantics: cfg.union_semantics };
     let mut egraph: LeanEGraph = EGraph::new(analysis);
     egraph = egraph.with_explanations_enabled();
@@ -62,7 +70,8 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
     if cfg.eta_expand { rws.push(eta_expansion_rw()) }
     if cfg.beta       { rws.push(beta_reduction_rw()) }
     if cfg.levels     { rws.append(&mut level_rws()) }
-    // TODO: Only add these rws if on of the following is active: beta, eta, bvar index correction. Anything else?
+    // TODO: Only add these rws if one of the following is active: beta, eta, eta-expansion, 
+    //       bvar index correction. Anything else?
     rws.append(&mut subst_rws());
     rws.append(&mut shift_rws());
 
@@ -84,12 +93,39 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
         .run(&rws);
 
     let report = runner.report();
+    let rw_stats = collect_rw_stats(&runner);
 
     if runner.egraph.find(init_id) == runner.egraph.find(goal_id) {
         let mut expl = runner.explain_equivalence(&init_expr, &goal_expr);
         let expl_str = expl.get_flat_string();
-        Ok((expl_str, runner.egraph, report))
+        Ok(ExplainedCongr { expl: expl_str, egraph: runner.egraph, report, rw_stats })
     } else {
-        Ok(("".to_string(), runner.egraph, report))
+        Ok(ExplainedCongr { expl: "".to_string(), egraph: runner.egraph, report, rw_stats })
     }
+}
+
+fn collect_rw_stats(runner: &Runner<LeanExpr, LeanAnalysis>) -> String {
+    let mut stats: HashMap<String, usize> = Default::default();
+    let mut longest_rw: usize = 0;
+
+    for iter in &runner.iterations {
+        for (rw, count) in &iter.applied {
+            let rw_str    = rw.to_string();
+            let normal_rw = rw_str.strip_suffix("-rev").unwrap_or(&rw_str);
+            longest_rw = longest_rw.max(normal_rw.chars().count());
+
+            let current   = stats.get(normal_rw).unwrap_or(&0);
+            stats.insert(normal_rw.to_string(), current + count);
+        }
+    }
+    
+    let mut entries: Vec<_> = stats.iter().collect();
+    entries.sort_by(|l, r| l.0.cmp(r.0));
+    
+    entries.iter().map(|e| {
+        let padding = 1 + longest_rw - e.0.chars().count();
+        format!("{}:{}{}", e.0, " ".repeat(padding), e.1)
+    })
+    .collect::<Vec<_>>()
+    .join("\n")
 }

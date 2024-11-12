@@ -2,6 +2,7 @@ use slotted_egraphs::*;
 use core::ffi::c_char;
 use core::ffi::CStr;
 use std::ffi::CString;
+use std::ptr::null;
 use libc::c_double;
 use basic::*;
 use analysis::*;
@@ -22,6 +23,12 @@ mod rewrite;
 fn c_str_to_string(c_str: *const c_char) -> String {
     let str = unsafe { CStr::from_ptr(c_str) };
     String::from_utf8_lossy(str.to_bytes()).to_string()
+}
+
+// TODO: I think this is a memory leak right now.
+fn string_to_c_str(str: String) -> *const c_char {
+    let expl_c_str = CString::new(str).expect("conversion of Rust-string to C-string failed");
+    expl_c_str.into_raw()
 }
 
 #[repr(C)]
@@ -148,6 +155,7 @@ pub struct CReport {
     egraph_nodes:   usize,
     egraph_classes: usize,
     total_time:     c_double,
+    rw_stats:       *const c_char,
 }
 
 impl CReport {
@@ -159,6 +167,7 @@ impl CReport {
             egraph_nodes:   r.egraph_nodes,
             egraph_classes: r.egraph_classes,
             total_time:     r.total_time,
+            rw_stats:       string_to_c_str("".to_string()),
         }
     }
 
@@ -169,6 +178,7 @@ impl CReport {
             egraph_nodes:   0,
             egraph_classes: 0,
             total_time:     0.0,
+            rw_stats:       null(),
         }
     }
 }
@@ -200,8 +210,7 @@ pub extern "C" fn slotted_explain_congr(
 
     let rw_templates = rws.to_templates();
     if let Err(rws_err) = rw_templates { 
-        let rws_err_c_str = CString::new(rws_err.to_string()).expect("conversion of error message to C-string failed");
-        return EqsatResult { expl: rws_err_c_str.into_raw(), graph: None, report: CReport::none() }
+        return EqsatResult { expl: string_to_c_str(rws_err.to_string()), graph: None, report: CReport::none() }
     }
     let rw_templates = rw_templates.unwrap();
 
@@ -211,15 +220,12 @@ pub extern "C" fn slotted_explain_congr(
 
     let res = explain_congr(init, goal, rw_templates, facts, guides, cfg, viz_path);
     if let Err(res_err) = res {
-        let res_err_c_str = CString::new(res_err.to_string()).expect("conversion of error message to C-string failed");
-        return EqsatResult { expl: res_err_c_str.into_raw(), graph: None, report: CReport::none() }
+        return EqsatResult { expl: string_to_c_str(res_err.to_string()), graph: None, report: CReport::none() }
     }
     let (expl, egraph, report) = res.unwrap();
 
-    let expl_c_str = CString::new(expl).expect("conversion of explanation to C-string failed");
-
     return EqsatResult {
-        expl: expl_c_str.into_raw(),
+        expl: string_to_c_str(expl),
         graph: Some(Box::new(egraph)),
         report: CReport::from_report(report) 
     }
@@ -239,10 +245,9 @@ pub unsafe extern "C" fn slotted_query_equiv(
 
     if egraph.eq(&init_id, &goal_id) {
         let expl = egraph.explain_equivalence(init, goal).to_flat_string(&egraph);
-        let expl_c_str = CString::new(expl).expect("conversion of explanation to C-string failed");
-        expl_c_str.into_raw()
+        string_to_c_str(expl)
     } else {
-        CString::new("").unwrap().into_raw()
+        string_to_c_str("".to_string())
     }
 }
 

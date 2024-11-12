@@ -99,6 +99,7 @@ structure Result.Report where
   nodeCount:   Nat
   classCount:  Nat
   time:        Float
+  rwStats:     String
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 private structure Result.Raw where
