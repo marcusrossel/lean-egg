@@ -111,7 +111,6 @@ example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a 
   sorry
 
 set_option egg.reporting true
-set_option trace.egg true
 
 set_option egg.slotted true in
 theorem not_supPrime : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ ¬a ≤ b ∧ ¬a ≤ c := by
@@ -138,8 +137,7 @@ nodes:      488401
 classes:    235193
 ⊢ binders: false
 -/
-set_option egg.timeLimit 20 in
-set_option egg.iterLimit 100 in
+set_option egg.timeLimit 40000 in
 set_option egg.slotted false in
 set_option egg.unionSemantics false in
 example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by

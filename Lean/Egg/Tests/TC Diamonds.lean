@@ -48,6 +48,10 @@ infixl:65 (priority := high) " * " => mul
 
 theorem test [Ring α] (a b : α) : a + b = b + a := by
   egg!
+
+theorem just_nested [Ring α] (a : α) : (a + zero) * one = a := by
+ egg!
+
 /--
 error: egg failed to prove the goal (reached time limit)
 -/
@@ -100,6 +104,9 @@ infixl:65 (priority := high) " * " => mul
 
 theorem test [Ring α] (a b : α) : a + b = b + a := by
   egg!
+
+theorem just_nested [Ring α] (a : α) : (a + zero) * one = a := by
+ egg!
 
 theorem combine_classes [Ring α] (a b c : α) (h : b + c = one) : (a + (b + neg b)) * (b + c) = a := by
  egg! [h]
