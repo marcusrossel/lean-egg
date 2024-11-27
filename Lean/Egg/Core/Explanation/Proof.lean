@@ -63,8 +63,9 @@ partial def Explanation.proof
     current  := next
   return { steps, subgoals }
 where
-  fail {α} (msg : MessageData) : MetaM α := do
-    throwError m!"egg failed to build proof: {msg}"
+  fail {α} (msg : MessageData) (step? : Option Nat := none) : MetaM α := do
+    let step := step?.map (s!" step {·}") |>.getD ""
+    throwError m!"egg failed to build proof{step}: {msg}"
 
   proofStep (idx : Nat) (current next : Expr) (rwInfo : Rewrite.Info) :
       MetaM (Proof.Step × Proof.Subgoals) := do
@@ -74,7 +75,7 @@ where
         rw := .defeq rwInfo.src, dir := rwInfo.dir
       }
       return (step, [])
-    let some rw := rws.find? rwInfo.src | fail s!"unknown rewrite {rwInfo.src.description}"
+    let some rw := rws.find? rwInfo.src | fail s!"unknown rewrite {rwInfo.src.description}" idx
     -- TODO: Can there be conditional rfl proofs?
     if ← isRflProof rw.proof then
       let step := {
@@ -84,8 +85,8 @@ where
       return (step, [])
     let facts ← rwInfo.facts.mapM fun src? => do
       let some src := src? | pure none
-      facts.find? (·.src == src) |>.getDM <| fail m!"explanation references unknown fact {src}"
-    let (prf, subgoals) ← mkCongrStep current next rwInfo.pos?.get! (← rw.forDir rwInfo.dir) facts
+      facts.find? (·.src == src) |>.getDM <| fail m!"explanation references unknown fact {src}" idx
+    let (prf, subgoals) ← mkCongrStep idx current next rwInfo.pos?.get! (← rw.forDir rwInfo.dir) facts
     let step := {
       lhs := current, rhs := next, proof := prf,
       rw := .rw rw (isRefl := false), dir := rwInfo.dir
@@ -94,24 +95,26 @@ where
 
   mkReflStep (idx : Nat) (current next : Expr) (rw : Rewrite.Descriptor) : MetaM Expr := do
     unless ← isDefEq current next do
-      fail s!"unification failure for proof by reflexivity with rw {rw.src.description} (step {idx})"
+      fail s!"unification failure for proof by reflexivity with rw {rw.src.description}" idx
     mkEqRefl next
 
-  mkCongrStep (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) (facts : Array (Option Fact)) :
-      MetaM (Expr × Proof.Subgoals) := do
+  mkCongrStep
+      (idx : Nat) (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite)
+      (facts : Array (Option Fact)) : MetaM (Expr × Proof.Subgoals) := do
     let mvc := (← getMCtx).mvarCounter
-    let (lhs, rhs, subgoals) ← placeCHoles current next pos rw facts
+    let (lhs, rhs, subgoals) ← placeCHoles idx current next pos rw facts
     try return (← (← mkCongrOf 0 mvc lhs rhs).eq, subgoals)
-    catch err => fail m!"'mkCongrOf' failed with\n  {err.toMessageData}"
+    catch err => fail m!"'mkCongrOf' failed with\n  {err.toMessageData}" idx
 
-  placeCHoles (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) (facts : Array (Option Fact)) :
-      MetaM (Expr × Expr × Proof.Subgoals) := do
+  placeCHoles
+      (idx : Nat) (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite)
+      (facts : Array (Option Fact)) : MetaM (Expr × Expr × Proof.Subgoals) := do
     replaceSubexprs (root₁ := current) (root₂ := next) (p := pos) fun lhs rhs => do
       -- It's necessary that we create the fresh rewrite (that is, create the fresh mvars) in *this*
       -- local context as otherwise the mvars can't unify with variables under binders.
       let rw ← rw.fresh
-      unless ← isDefEq lhs rw.lhs do fail m!"unification failure for LHS of rewrite {rw.src.description}:\n  {lhs}\nvs\n  {rw.lhs}\nin\n  {current}\nand\n  {next}"
-      unless ← isDefEq rhs rw.rhs do fail m!"unification failure for RHS of rewrite {rw.src.description}:\n  {rhs}\nvs\n  {rw.rhs}\nin\n  {current}\nand\n  {next}"
+      unless ← isDefEq lhs rw.lhs do failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs.expr current next idx
+      unless ← isDefEq rhs rw.rhs do failIsDefEq "RHS" rw.src rhs rw.rhs rw.mvars.rhs.expr current next idx
       let mut subgoals := []
       let conds := rw.conds.filter (!·.isProven)
       for cond in conds, fact? in facts do
@@ -121,7 +124,7 @@ where
           else
             if let some condProof ← mkConditionSubproof fact cond.type then
               if ← isDefEq cond.expr condProof then continue
-            fail m!"condition {cond.type} of rewrite {rw.src.description} could not be proven"
+            fail m!"condition {cond.type} of rewrite {rw.src.description} could not be proven" idx
         else
           subgoals := subgoals.concat cond.expr.mvarId!
       let proof ← rw.eqProof
@@ -130,6 +133,20 @@ where
         ← mkCHole (forLhs := false) rhs proof,
         subgoals
       )
+
+  failIsDefEq
+      {α} (side : String) (src : Source) (expr rwExpr : Expr) (rwExprMVars : MVarIdSet)
+      (current next : Expr) (idx : Nat) : MetaM α := do
+    let expr   ← instantiateMVars expr
+    let rwExpr ← instantiateMVars rwExpr
+    let mut assigned := []
+    let mut readOnlyOrSynthOpaque := []
+    let mut types := "\n"
+    for mvar in rwExprMVars do
+      if ← mvar.isAssignedOrDelayedAssigned then assigned := assigned.concat mvar
+      if ← mvar.isReadOnlyOrSyntheticOpaque then readOnlyOrSynthOpaque := readOnlyOrSynthOpaque.concat mvar
+      types := types ++ s!"  {← ppExpr (.mvar mvar)}: {← ppExpr <| ← mvar.getType}\n"
+    fail m!"unification failure for {side} of rewrite {src.description}:\n\n  {expr}\nvs\n  {rwExpr}\nin\n  {current}\nand\n  {next}\n\n• Types: {types}• (Delay) Assigned MVars: {assigned}\n• Read Only Or Synthetic Opaque MVars: {readOnlyOrSynthOpaque}" idx
 
   mkConditionSubproof (fact : Fact) (cond : Expr) : MetaM (Option Expr) := do
     let rawExpl := egraph.run (← Request.Equiv.encoding fact.type cond ctx)

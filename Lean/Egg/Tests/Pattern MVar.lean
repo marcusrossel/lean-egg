@@ -15,6 +15,31 @@ example (f : Nat → Nat → Nat) : (f 1) x = (f (nat_lit 1)) (x + 0) := by
 example (f : Nat → Nat → Nat) : (f 1) x = (f 1) (x + (nat_lit 0)) := by
   egg [h]
 
+/--
+error: egg failed to build proof step 2: unification failure for LHS of rewrite #0:
+
+  HAdd.hAdd (x + 0)
+vs
+  ?m.2213 (?m.2216 + 0)
+in
+  f 1 (x + 0 + 0)
+and
+  f 1 (x + 0)
+
+• Types: ⏎
+  ?m.2213: Nat → Nat
+  ?m.2216: Nat
+• (Delay) Assigned MVars: []
+• Read Only Or Synthetic Opaque MVars: []
+-/
+#guard_msgs in
+set_option egg.retryWithShapes false in
+example (f : Nat → Nat → Nat) : (f 1) x = (f 1) (x + 0) := by
+  -- The explanation is broken because `?m.2213 : Nat → Nat` is being matched against
+  -- `HAdd.hAdd : Nat → Nat → Nat`. That is, the types don't match.
+  egg [h]
+
+set_option egg.shapes true in
 example (f : Nat → Nat → Nat) : (f 1) x = (f 1) (x + 0) := by
   egg [h]
 

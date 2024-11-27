@@ -5,7 +5,8 @@ import Egg
 -- shown when setting `exitPoint := some .beforeProof`.
 
 /--
-error: egg failed to build proof: unification failure for LHS of rewrite #0:
+error: egg failed to build proof step 0: unification failure for LHS of rewrite #0:
+
   Nat.add
 vs
   ?m.279
@@ -13,6 +14,11 @@ in
   Nat.add
 and
   ()
+
+• Types: ⏎
+  ?m.279: Unit
+• (Delay) Assigned MVars: []
+• Read Only Or Synthetic Opaque MVars: []
 -/
 #guard_msgs in
 set_option egg.retryWithShapes false in

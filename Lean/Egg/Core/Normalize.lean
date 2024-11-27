@@ -24,12 +24,12 @@ where
     | .forallE n ty b i => do
       withLocalDecl n i (← go ty) fun fvar => do
         mkForallFVars #[fvar] (← go <| b.instantiate1 fvar)
-    | e@(.letE ..)    => do go (← zetaReduce e)
-    | .proj ty ctor b => do go (← expandProj ty ctor b)
-    | e               => return e
+    | e@(.letE ..)   => do go (← zetaReduce e)
+    | .proj ty idx b => do go (← expandProj ty idx b)
+    | e              => return e
 
-  expandProj (ty : Name) (ctor : Nat) (b : Expr) : MetaM Expr := do
-    let some field := (getStructureFields (← getEnv) ty)[ctor]?
+  expandProj (ty : Name) (idx : Nat) (b : Expr) : MetaM Expr := do
+    let some field := (getStructureFields (← getEnv) ty)[idx]?
       | throwError "'Egg.normalize' failed to reduce proj"
     mkProjection b field
 

@@ -12,17 +12,6 @@ theorem iff_iff_and_or_not_and_not : (a ↔ b) ↔ a ∧ b ∨ ¬a ∧ ¬b :=
   @Decidable.iff_iff_and_or_not_and_not a b (Classical.propDecidable b)
 @[simp] theorem not_not : ¬¬a ↔ a := @Decidable.not_not a (Classical.propDecidable a)
 
-@[egg] theorem not_not_eq : (¬ ¬ p) = p := propext Classical.not_not
-@[egg] theorem not_and_eq : (¬ (p ∧ q)) = (p → ¬ q) := propext not_and
-@[egg] theorem not_and_or_eq : (¬ (p ∧ q)) = (¬ p ∨ ¬ q) := propext not_and_or
-@[egg] theorem not_or_eq : (¬ (p ∨ q)) = (¬ p ∧ ¬ q) := propext not_or
-@[egg] theorem not_forall_eq : (¬ ∀ x, s x) = (∃ x, ¬ s x) := propext not_forall
-@[egg] theorem not_exists_eq : (¬ ∃ x, s x) = (∀ x, ¬ s x) := propext not_exists
-@[egg] theorem not_implies_eq : (¬ (p → q)) = (p ∧ ¬ q) := propext Classical.not_imp
-@[egg] theorem not_ne_eq (x y : α) : (¬ (x ≠ y)) = (x = y) := ne_eq x y ▸ not_not_eq _
-@[egg] theorem not_iff : (¬ (p ↔ q)) = ((p ∧ ¬ q) ∨ (¬ p ∧ q)) := propext <|
-  _root_.not_iff.trans <| iff_iff_and_or_not_and_not.trans <| by rw [not_not, or_comm]
-
 end PushNeg
 
 section SemilatticeSup
@@ -89,8 +78,8 @@ theorem right_lt_sup : b < a ⊔ b ↔ ¬a ≤ b := sorry
 example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
   --egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
   rw [SupIrred, PushNeg.not_and_or]
-  rw [ PushNeg.not_not_eq, PushNeg.not_forall_eq]
-  simp[ PushNeg.not_forall_eq]
+  rw [ PushNeg.not_not, PushNeg.not_forall]
+  simp[ PushNeg.not_forall]
   rw [exists₂_congr]
   simp (config := { contextual := true }) only [@eq_comm _ _ a, ne_eq, and_congr_right_iff,
     sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
@@ -99,8 +88,8 @@ example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a 
 example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
   --egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
   rw [SupIrred, PushNeg.not_and_or]
-  rw [ PushNeg.not_not_eq, PushNeg.not_forall_eq]
-  simp[ PushNeg.not_forall_eq]
+  rw [ PushNeg.not_not, PushNeg.not_forall]
+  simp[ PushNeg.not_forall]
   rw [exists₂_congr]
   simp (config := { contextual := true }) only [@eq_comm _ _ a, ne_eq, and_congr_right_iff,
     sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
@@ -110,23 +99,29 @@ example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a 
   simp (config := {contextual := true}) [SupIrred, PushNeg.not_and_or, exists₂_congr, eq_comm, @eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
   sorry
 
-set_option egg.reporting true
-set_option trace.egg true
+open PushNeg
 
 set_option egg.slotted true in
+set_option egg.reporting true in
 theorem not_supPrime : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ ¬a ≤ b ∧ ¬a ≤ c := by
-  egg! [SupPrime, PushNeg.not_and_or]
+  egg [not_not, not_and, not_and_or, not_or, not_imp, not_forall, not_exists, SupPrime]
 
+/--
+error: egg found an explanation exceeding the length limit (6391 vs 1000)
+You can increase this limit using 'set_option egg.explLengthLimit <num>'.
+-/
+#guard_msgs in
 set_option egg.slotted false in
 set_option egg.unionSemantics false in
 example : ¬SupPrime a ↔ IsMin a ∨ ∃ b c, a ≤ b ⊔ c ∧ ¬a ≤ b ∧ ¬a ≤ c := by
-  egg! [SupPrime, PushNeg.not_and_or]
+  egg [not_not, not_and, not_and_or, not_or, not_imp, not_forall, not_exists, SupPrime]
 
 set_option egg.slotted true in
+set_option egg.reporting true in
 theorem not_supIrred : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
-  have h : ∀ (a_1 b : α), a_1 ⊔ b = a ∧ ¬a_1 = a ∧ ¬b = a ↔ a_1 ⊔ b = a ∧ a_1 < a ∧ b < a := by
-    simp (config := { contextual := true }) [@eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
-  egg! [SupIrred, exists₂_congr h]
+  have h x y : x ⊔ y = a ∧ ¬x = a ∧ ¬y = a ↔ x ⊔ y = a ∧ x < a ∧ y < a := by
+    simp +contextual [eq_comm (b := a), sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup]
+  egg [not_not, not_and, not_and_or, not_or, not_imp, not_forall, not_exists, SupIrred, exists₂_congr h]
 
 -- egg explodes
 /-
@@ -138,13 +133,14 @@ nodes:      488401
 classes:    235193
 ⊢ binders: false
 -/
-set_option egg.timeLimit 20 in
+set_option egg.timeLimit 100 in
 set_option egg.iterLimit 100 in
 set_option egg.slotted false in
 set_option egg.unionSemantics false in
+set_option egg.reporting true in
 example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
-  have h : ∀ (a_1 b : α), a_1 ⊔ b = a ∧ ¬a_1 = a ∧ ¬b = a ↔ a_1 ⊔ b = a ∧ a_1 < a ∧ b < a := by
-    simp (config := { contextual := true }) [@eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
-  egg! [SupIrred, exists₂_congr h]
+  have h x y : x ⊔ y = a ∧ ¬x = a ∧ ¬y = a ↔ x ⊔ y = a ∧ x < a ∧ y < a := by
+    simp +contextual [eq_comm (b := a), sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup]
+  egg [not_not, not_and, not_and_or, not_or, not_imp, not_forall, not_exists, SupIrred, exists₂_congr h]
 
 end SemilatticeSup
