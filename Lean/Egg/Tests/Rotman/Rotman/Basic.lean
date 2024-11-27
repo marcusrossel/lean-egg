@@ -56,11 +56,3 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
           _ = n¡ / ((r - 1)¡ * (n - r)¡) * ((n + 1) / (r * (n - r + 1)))
           _ = (n + 1)¡ / (r¡ * (n + 1 - r)¡)
           _ = ↑((n + 1)! / (r ! * (n + 1 - r)!))
-
--- TODO: Could egg be a good tactic for converting between representations, assuming we can get the
---       required condition subgoals as output? Problem is that this doesn't even work:
---
---set_option trace.egg true in
--- set_option egg.genGoalTcSpec true in
--- example (a b : Nat) : ↑(a + b) = (a : Real) + b := by
---   egg [cast_add]
