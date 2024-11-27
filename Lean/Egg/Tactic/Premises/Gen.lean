@@ -41,7 +41,7 @@ partial def gen
   let (basic, basicStxs, pruned₁) ← prune basic basicStxs (remove := tagged)
   let builtins ← if cfg.builtins then Rewrites.builtins { cfg with amb } else pure #[]
   let (builtins, _, pruned₂) ← prune builtins (remove := tagged ++ basic)
-  let tc ← genTcRws (basic ++ builtins) facts.elems -- Note: We check the config in `genTcRws`.
+  let tc ← genTcRws (tagged ++ basic ++ builtins) facts.elems -- Note: We check the config in `genTcRws`.
   let (tc, _, pruned₃) ← prune tc (remove := tagged ++ basic ++ builtins)
   let ex ← if cfg.explosion then genExplosions basic else pure #[]
   let (ex, _, pruned₄) ← prune ex (remove := tagged ++ basic ++ builtins ++ tc)

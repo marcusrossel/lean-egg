@@ -1,5 +1,9 @@
--- Inspired by: Wieser, Eric. "Multiple-inheritance hazards in dependently-typed algebraic hierarchies." International Conference on Intelligent Computer Mathematics. Cham: Springer Nature Switzerland, 2023.
 import Egg
+
+-- Inspired by:
+-- Wieser, Eric. "Multiple-inheritance hazards in dependently-typed algebraic hierarchies."
+-- International Conference on Intelligent Computer Mathematics.
+-- Cham: Springer Nature Switzerland, 2023.
 
 namespace Nested
 
@@ -44,7 +48,8 @@ attribute [egg] Semiring.mul_zero
 open AddCommMonoid AddCommGroup Semiring Ring
 
 infixl:65 (priority := high) " + " => add
-infixl:65 (priority := high) " * " => mul
+infixl:70 (priority := high) " * " => mul
+prefix:75 (priority := high) "-"   => Ring.neg
 
 theorem test [Ring α] (a b : α) : a + b = b + a := by
   egg!
@@ -52,17 +57,12 @@ theorem test [Ring α] (a b : α) : a + b = b + a := by
 theorem just_nested [Ring α] (a : α) : (a + zero) * one = a := by
  egg!
 
-/--
-error: egg failed to prove the goal (reached time limit)
--/
-#guard_msgs in
-theorem combine_classes [Ring α] (a b c : α) (h : b + c = one) : (a + (b + Ring.neg b)) * (b + c) = a := by
- egg! [h]
+theorem combine_classes [Ring α] (a b c : α) (h : b + c = one) : (a + (b + -b)) * (b + c) = a := by
+  egg! [h]
 
 end Nested
 
 namespace Flat
-
 
 class Ring (α : Type _) where
   add : α → α → α
@@ -99,16 +99,16 @@ attribute [egg] Ring.mul_zero
 open Ring
 
 infixl:65 (priority := high) " + " => add
-prefix:65 (priority := high) " - " => neg
-infixl:65 (priority := high) " * " => mul
+infixl:70 (priority := high) " * " => mul
+prefix:75 (priority := high) "-"   => neg
 
 theorem test [Ring α] (a b : α) : a + b = b + a := by
   egg!
 
 theorem just_nested [Ring α] (a : α) : (a + zero) * one = a := by
- egg!
+  egg!
 
-theorem combine_classes [Ring α] (a b c : α) (h : b + c = one) : (a + (b + neg b)) * (b + c) = a := by
- egg! [h]
+theorem combine_classes [Ring α] (a b c : α) (h : b + c = one) : (a + (b + -b)) * (b + c) = a := by
+  egg! [h]
 
 end Flat
