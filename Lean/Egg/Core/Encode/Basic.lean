@@ -38,6 +38,10 @@ where
           let prop ← normalize (← Meta.inferType e) .noReduce
           let enc ← withoutShapes do go prop
           pure s!"(proof {enc})"
+        else if let some cls ← needsInstErasure? e then
+          let cls ← normalize cls .noReduce
+          let enc ← withoutShapes do go cls
+          pure s!"(inst {enc})"
         else
           core e
       if (← config).shapes then

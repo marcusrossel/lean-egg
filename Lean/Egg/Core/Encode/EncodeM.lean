@@ -45,6 +45,17 @@ def bvarName? (id : FVarId) : EncodeM (Option String) := do
 def needsProofErasure (e : Expr) : EncodeM Bool := do
   (return (← config).eraseProofs) <&&> Meta.isProof e
 
+open Meta in
+def needsInstErasure? (e : Expr) : EncodeM (Option Expr) := do
+  unless (← config).eraseTCInstances do return none
+  let ty ← inferType e
+  -- Note: `isClass?` does not require the type operator to be fully applied. That is, if `ty` is
+  --       `Inhabited` instead of `Inhabited Nat`, `isClass?` will still succeed. This shouldn't
+  --       pose a problem though as long as we traverse terms top-down during encoding. That is, as
+  --       long as we always encounter `Inhabited Nat` before we would encounter just `Inhabited`.
+  unless (← isClass? ty).isSome do return none
+  return ty
+
 def withCache (e : Expr) (m : EncodeM Expression) : EncodeM Expression := do
   let s ← get
   if let some enc := s.cache[e]? then

@@ -29,7 +29,7 @@ macro "rudify " lhs:term:51 " = " rhs:term : term => `(
   (fun (x : G → G) (_ : α) => x) (fun _ => $rhs)
 )
 
-set_option egg.timeLimit 5
+set_option egg.timeLimit 10
 
 theorem inv_mul_cancel_left : a⁻¹ * (a * b) = b := by group
 
