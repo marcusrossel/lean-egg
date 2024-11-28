@@ -25,8 +25,9 @@ define_language! {
         "∀"     = Forall([Id; 2]),  // (<expr>, <expr>)
         "lit"   = Lit(Id),          // (Nat | Str)
 
-        // Construct for proof erasure:
+        // Constructs for erasure:
         "proof" = Proof(Id),        // (<expr>)
+        "inst"  = Inst(Id),         // (<expr>)
 
         // Constructs for small-step substitution:
         "↦" = Subst([Id; 3]),       // (Nat, <expr>, <expr>)

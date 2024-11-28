@@ -122,8 +122,11 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                 Self::Data { loose_bvars, ..Default::default() }
             },
 
-            LeanExpr::Shaped([_, e]) | LeanExpr::Proof(e)  =>
-                Self::Data { loose_bvars: egraph[*e].data.loose_bvars.clone(), ..Default::default() },
+            LeanExpr::Shaped([_, e]) | LeanExpr::Proof(e) | LeanExpr::Inst(e) =>
+                Self::Data { 
+                    loose_bvars: egraph[*e].data.loose_bvars.clone(), 
+                    ..Default::default() 
+                },
 
             _ => Default::default()
         }

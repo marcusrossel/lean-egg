@@ -21,6 +21,6 @@ fn subst_rws() -> Vec<LeanRewrite> {
     rws.push(Rewrite::new_if("↦|", "(↦ $x ?z ?e)", "?e", |subst, _| { 
         !subst["e"].slots().contains(&Slot::named("x"))
     }));
-    // TODO: We don't propagate substitutions over erased proofs at the moment,
+    // TODO: We don't propagate substitutions over erased terms at the moment.
     rws
 }

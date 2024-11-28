@@ -110,8 +110,9 @@ pub fn subst_rws() -> Vec<LeanRewrite> {
     rws.push(rewrite!("↦sort";  "(↦ ?f ?t (sort ?x))"   => "(sort ?x)"));
     // TODO: "↦const" - how do we match an unknown number of level arguments?
     rws.push(rewrite!("↦lit";   "(↦ ?f ?t (lit ?x))"    => "(lit ?x)"));
-    // TODO: We don't propagate substitutions over erased proofs at the moment,
+    // TODO: We don't propagate substitutions over erased terms at the moment.
     rws.push(rewrite!("↦proof"; "(↦ ?f ?t (proof ?x))"  => "(proof ?x)"));
+    rws.push(rewrite!("↦inst";  "(↦ ?f ?t (inst ?x))"   => "(inst ?x)"));
     rws.push(rewrite!("↦_";     "(↦ ?f ?t _)"           => "_"));
     rws
 }

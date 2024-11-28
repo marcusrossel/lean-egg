@@ -115,8 +115,9 @@ pub fn shift_rws() -> Vec<LeanRewrite> {
     rws.push(rewrite!("↑sort";  "(↑ ?d ?o ?c (sort ?x))"   => "(sort ?x)"));
     // TODO: "↑const" - how do we match an unknown number of level arguments?
     rws.push(rewrite!("↑lit";   "(↑ ?d ?o ?c (lit ?x))"    => "(lit ?x)"));
-    // TODO: We don't propagate shifts over erased proofs at the moment,
+    // TODO: We don't propagate shifts over erased terms at the moment.
     rws.push(rewrite!("↑proof"; "(↑ ?d ?o ?c (proof ?x))"  => "(proof ?x)"));
+    rws.push(rewrite!("↑inst";  "(↑ ?d ?o ?c (inst ?x))"   => "(inst ?x)"));
     rws.push(rewrite!("↑_";     "(↑ ?d ?o ?c _)"           => "_"));
     rws
 }
