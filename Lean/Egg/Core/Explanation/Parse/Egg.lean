@@ -15,6 +15,7 @@ private inductive Expression where
   | forall (ty body : Expression)
   | lit    (l : Literal)
   | proof  (prop : Expression)
+  | inst   (cls : Expression)
   | subst  (idx : Nat) (to e : Expression)
   | shift  (offset : Int) (cutoff : Nat) (e : Expression)
   | unknown
@@ -31,6 +32,7 @@ private def Expression.toExpr : Expression → MetaM Expr
   | .forall ty body => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
   | lit l           => return .lit l
   | proof prop      => do mkFreshExprMVar (← toExpr prop)
+  | inst cls        => do mkFreshExprMVar (← toExpr cls)
   | subst idx to e  => return applySubst idx (← toExpr to) (← toExpr e)
   | shift off cut e => return applyShift off cut (← toExpr e)
   | unknown         => mkFreshExprMVar none
@@ -72,6 +74,7 @@ syntax "(" &"λ" egg_expr egg_expr ")"                 : egg_expr
 syntax "(" &"∀" egg_expr egg_expr ")"                 : egg_expr
 syntax "(" &"lit" lit ")"                             : egg_expr
 syntax "(" &"proof" egg_expr ")"                      : egg_expr
+syntax "(" &"inst" egg_expr ")"                       : egg_expr
 syntax "(" &"↦" num egg_expr egg_expr ")"             : egg_expr
 syntax "(" &"↑" shift_offset num egg_expr ")"         : egg_expr
 syntax "(" "◇" shape egg_expr ")"                     : egg_expr
@@ -114,7 +117,8 @@ where
     | `(egg_expr|(λ $ty $body))            => return .lam (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(egg_expr|(∀ $ty $body))            => return .forall (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(egg_expr|(lit $l))                 => return .lit (parseLit l)
-    | `(egg_expr|(proof $p))               => return .proof (← parseProof p pos)
+    | `(egg_expr|(proof $p))               => return .proof (← parseTypeOfErased p pos)
+    | `(egg_expr|(inst $c))                => return .inst (← parseTypeOfErased c pos)
     | `(egg_expr|(↦ $idx $to $e))          => return .subst idx.getNat (← go pos to) (← go pos e)
     | `(egg_expr|(↑ $off $cut $e))         => return .shift (parseShiftOffset off) cut.getNat (← go pos e)
     | `(egg_expr|(◇ $_ $e))                => go pos e
@@ -122,14 +126,14 @@ where
     | `(egg_expr|(Rewrite$dir $src $body)) => parseRw dir src body pos
     | _                                    => unreachable!
 
-  parseProof (p : TSyntax `egg_expr) (pos : SubExpr.Pos) : ParseStepM Expression := do
-    -- If `p` did not contain a rewrite, all is well and we return `e`. Otherwise, obtain the
+  parseTypeOfErased (t : TSyntax `egg_expr) (pos : SubExpr.Pos) : ParseStepM Expression := do
+    -- If `t` did not contain a rewrite, all is well and we return `e`. Otherwise, obtain the
     -- `rwInfo` and make sure it is a defeq rewrite. If not, we have a non-defeq type-level rewrite,
     -- which we cannot handle, yet.
-    let rwIsOutsideProof := (← get).isSome
-    let e ← go pos p
+    let rwIsOutsideType := (← get).isSome
+    let e ← go pos t
     if let some rwInfo ← get then
-      unless rwIsOutsideProof || rwInfo.src.isDefEq do throw .nonDefeqProofRw
+      unless rwIsOutsideType || rwInfo.src.isDefEq do throw .nonDefeqTypeRw
     return e
 
   parseRw (dir : TSyntax `rw_dir) (src : TSyntax `rw_src) (body : TSyntax `egg_expr)

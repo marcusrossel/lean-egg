@@ -47,6 +47,7 @@ inductive Source.SubstShift where
   | sort
   | lit
   | proof
+  | inst
   | unknown
   | abort
   deriving Inhabited, BEq, Hashable
@@ -110,6 +111,7 @@ def SubstShift.description : SubstShift → String
   | sort    => "sort"
   | lit     => "lit"
   | proof   => "proof"
+  | inst    => "inst"
   | unknown => "_"
   | abort   => "|"
 
@@ -145,7 +147,7 @@ def isRewrite : Source → Bool
 
 def isDefEq : Source → Bool
   | natLit _ | eta _ | beta | level _ | subst _ | shift _ => true
-  | _                                                   => false
+  | _                                                     => false
 
 def containsTcProj : Source → Bool
   | tcProj ..     => true

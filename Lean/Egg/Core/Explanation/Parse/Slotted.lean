@@ -15,6 +15,7 @@ private inductive Expression where
   | forall (var : String) (ty body : Expression)
   | lit    (l : Literal)
   | proof  (prop : Expression)
+  | inst   (cls : Expression)
   | subst  (var : String) (to e : Expression)
   | unknown
   deriving Inhabited
@@ -64,6 +65,7 @@ where
   | .forall var ty body => do withBinding var (← go ty) fun fvar => do mkForallFVars #[fvar] (← go body)
   | lit l               => return .lit l
   | proof prop          => do mkFreshExprMVar (← toExpr prop)
+  | inst cls            => do mkFreshExprMVar (← toExpr cls)
   | subst var to e      => do withSubst var (← go to) do go e
   | unknown             => mkFreshExprMVar none
 
@@ -95,6 +97,7 @@ syntax "(" &"λ" slot slotted_expr slotted_expr ")"        : slotted_expr
 syntax "(" &"∀" slot slotted_expr slotted_expr ")"        : slotted_expr
 syntax "(" &"lit" lit ")"                                 : slotted_expr
 syntax "(" &"proof" slotted_expr ")"                      : slotted_expr
+syntax "(" &"inst" slotted_expr ")"                       : slotted_expr
 syntax "(" &"↦" slot slotted_expr slotted_expr ")"        : slotted_expr
 syntax &"_"                                               : slotted_expr
 syntax "(" &"Rewrite" noWs rw_dir rw_src slotted_expr ")" : slotted_expr
@@ -140,20 +143,21 @@ where
     | `(slotted_expr|(λ $var $ty $body))       => return .lam (parseSlot var) (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(slotted_expr|(∀ $var $ty $body))       => return .forall (parseSlot var) (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(slotted_expr|(lit $l))                 => return .lit (parseLit l)
-    | `(slotted_expr|(proof $p))               => return .proof (← parseProof p pos)
+    | `(slotted_expr|(proof $p))               => return .proof (← parseTypeOfErased p pos)
+    | `(slotted_expr|(inst $c))                => return .inst (← parseTypeOfErased c pos)
     | `(slotted_expr|(↦ $var $to $e))          => return .subst (parseSlot var) (← go pos to) (← go pos e)
     | `(slotted_expr|_)                        => return .unknown
     | `(slotted_expr|(Rewrite$dir $src $body)) => parseRw dir src body pos
     | _                                        => unreachable!
 
-  parseProof (p : TSyntax `slotted_expr) (pos : SubExpr.Pos) : ParseStepM Expression := do
-    -- If `p` did not contain a rewrite, all is well and we return `e`. Otherwise, obtain the
+  parseTypeOfErased (t : TSyntax `slotted_expr) (pos : SubExpr.Pos) : ParseStepM Expression := do
+    -- If `t` did not contain a rewrite, all is well and we return `e`. Otherwise, obtain the
     -- `rwInfo` and make sure it is a defeq rewrite. If not, we have a non-defeq type-level rewrite,
     -- which we cannot handle, yet.
-    let rwIsOutsideProof := (← get).isSome
-    let e ← go pos p
+    let rwIsOutsideType := (← get).isSome
+    let e ← go pos t
     if let some rwInfo ← get then
-      unless rwIsOutsideProof || rwInfo.src.isDefEq do throw .nonDefeqProofRw
+      unless rwIsOutsideType || rwInfo.src.isDefEq do throw .nonDefeqTypeRw
     return e
 
   parseRw (dir : TSyntax `rw_dir) (src : TSyntax `rw_src) (body : TSyntax `slotted_expr)

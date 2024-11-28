@@ -68,6 +68,7 @@ syntax "↦mvar"                               : fwd_rw_src
 syntax "↦sort"                               : fwd_rw_src
 syntax "↦lit"                                : fwd_rw_src
 syntax "↦proof"                              : fwd_rw_src
+syntax "↦inst"                               : fwd_rw_src
 syntax "↦_"                                  : fwd_rw_src
 syntax "↦|"                                  : fwd_rw_src
 syntax "↑bvar"                               : fwd_rw_src
@@ -79,6 +80,7 @@ syntax "↑mvar"                               : fwd_rw_src
 syntax "↑sort"                               : fwd_rw_src
 syntax "↑lit"                                : fwd_rw_src
 syntax "↑proof"                              : fwd_rw_src
+syntax "↑inst"                               : fwd_rw_src
 syntax "↑_"                                  : fwd_rw_src
 syntax "≡maxS"                               : fwd_rw_src
 syntax "≡max↔"                               : fwd_rw_src
@@ -160,6 +162,7 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
   | `(fwd_rw_src|↦sort)  => .subst .sort
   | `(fwd_rw_src|↦lit)   => .subst .lit
   | `(fwd_rw_src|↦proof) => .subst .proof
+  | `(fwd_rw_src|↦inst)  => .subst .inst
   | `(fwd_rw_src|↦_)     => .subst .unknown
   | `(fwd_rw_src|↦|)     => .subst .abort
   | `(fwd_rw_src|↑bvar)  => .shift .bvar
@@ -171,6 +174,7 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
   | `(fwd_rw_src|↑sort)  => .shift .sort
   | `(fwd_rw_src|↑lit)   => .shift .lit
   | `(fwd_rw_src|↑proof) => .shift .proof
+  | `(fwd_rw_src|↑inst)  => .shift .inst
   | `(fwd_rw_src|↑_)     => .shift .unknown
   | `(fwd_rw_src|≡maxS)  => .level .maxSucc
   | `(fwd_rw_src|≡max↔)  => .level .maxComm
@@ -214,7 +218,7 @@ inductive ParseError where
   | startContainsRw
   | missingRw
   | multipleRws
-  | nonDefeqProofRw
+  | nonDefeqTypeRw
   deriving Inhabited
 
 def ParseError.msgPrefix :=
@@ -227,6 +231,6 @@ instance : Coe ParseError MessageData where
     | startContainsRw => s!"{msgPrefix} start contains a rewrite"
     | missingRw       => s!"{msgPrefix} (non-start) step does not contain a rewrite"
     | multipleRws     => s!"{msgPrefix} step contains multiple rewrites"
-    | nonDefeqProofRw => s!"{msgPrefix} step contains non-defeq type-level rewrite in proof"
+    | nonDefeqTypeRw  => s!"{msgPrefix} step contains non-defeq type-level rewrite in proof or inst"
 
 abbrev ParseStepM := ExceptT ParseError <| StateM (Option Rewrite.Info)
