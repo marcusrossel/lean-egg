@@ -23,12 +23,39 @@ example : ⁅x - y, m⁆ = ⁅x, m⁆ - ⁅y, m⁆ := by
 example : ⁅x, m - n⁆ = ⁅x, m⁆ - ⁅x, n⁆ := by
   simp only [sub_eq_add_neg, lie_add, lie_neg]
 
+set_option egg.eraseTCInstances true
 
 example : ⁅-x, m⁆ = -⁅x, m⁆ := by
-  egg [sub_eq_zero, sub_neg_eq_add, add_lie, neg_add_cancel, zero_lie]
+    conv =>
+      tactic =>
+        calc
+          ⁅-x, m⁆ = -⁅x, m⁆
+          _ = (⁅-x, m⁆ - -⁅x, m⁆ = 0) := by egg [neg_add_cancel, zero_lie, sub_eq_zero, sub_neg_eq_add, add_lie]
+    refine
+      by egg [neg_add_cancel, zero_lie, sub_eq_zero, sub_neg_eq_add, add_lie]
 
+/--
+error: egg failed to prove the goal (saturated)
+-/
+#guard_msgs in
+example : ⁅-x, m⁆ = -⁅x, m⁆ := by
+  egg [neg_add_cancel, zero_lie, sub_eq_zero, sub_neg_eq_add, add_lie]
+
+/--
+error: egg failed to prove the goal (saturated)
+-/
+#guard_msgs in
 example : ⁅x, -m⁆ = -⁅x, m⁆ := by
   egg [sub_eq_zero, sub_neg_eq_add, lie_add, neg_add_cancel, lie_zero]
+
+example : ⁅x, -m⁆ = -⁅x, m⁆ := by
+    conv =>
+      tactic =>
+        calc
+          ⁅x, -m⁆ = -⁅x, m⁆
+          _ = (⁅x, -m⁆ - -⁅x, m⁆ = 0) := by egg [sub_eq_zero, sub_neg_eq_add, lie_add, neg_add_cancel, lie_zero]
+    refine
+      by egg [sub_eq_zero, sub_neg_eq_add, lie_add, neg_add_cancel, lie_zero]
 
 example : ⁅x - y, m⁆ = ⁅x, m⁆ - ⁅y, m⁆ := by
   egg [sub_eq_add_neg, add_lie, neg_lie]
