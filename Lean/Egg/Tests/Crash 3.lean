@@ -5,7 +5,9 @@ import Egg
 -- result the calls to `union_instantiations` in the `LeanApplier` would crash, because the
 -- substitution resulting from e-matching was incomplete.
 
-/-- error: egg received invalid explanation: step contains non-defeq type-level rewrite in proof -/
+/--
+error: egg received invalid explanation: step contains non-defeq type-level rewrite in proof or type class instance
+-/
 #guard_msgs in
 set_option egg.eraseProofs true in
 theorem Array.extract_extract {s1 e2 e1 s2 : Nat} {a : Array α} (h : s1 + e2 ≤ e1) :

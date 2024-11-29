@@ -231,6 +231,6 @@ instance : Coe ParseError MessageData where
     | startContainsRw => s!"{msgPrefix} start contains a rewrite"
     | missingRw       => s!"{msgPrefix} (non-start) step does not contain a rewrite"
     | multipleRws     => s!"{msgPrefix} step contains multiple rewrites"
-    | nonDefeqTypeRw  => s!"{msgPrefix} step contains non-defeq type-level rewrite in proof or inst"
+    | nonDefeqTypeRw  => s!"{msgPrefix} step contains non-defeq type-level rewrite in proof or type class instance"
 
 abbrev ParseStepM := ExceptT ParseError <| StateM (Option Rewrite.Info)
