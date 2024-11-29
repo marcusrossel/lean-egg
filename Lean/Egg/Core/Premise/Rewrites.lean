@@ -22,16 +22,16 @@ structure Condition where
   -- These are the mvars of `type`.
   mvars : MVars
 
--- Condition can become proven during type class specialization. We still need to keep these
+-- Conditions can become proven during type class specialization. We still need to keep these
 -- conditions in order to use their `expr` during proof reconstruction. Proven conditions are not
--- encoded and thus transparent to the backend though.
+-- encoded and thus transparent to the backend.
 def Condition.isProven (cond : Condition) : Bool :=
   !cond.expr.isMVar
 
-def Condition.instantiateMVars (cond : Condition) : MetaM Condition := do
+nonrec def Condition.instantiateMVars (cond : Condition) : MetaM Condition := do
   return { cond with
-    expr  := ← Lean.instantiateMVars cond.expr
-    type  := ← Lean.instantiateMVars cond.type
+    expr  := ← instantiateMVars cond.expr
+    type  := ← instantiateMVars cond.type
     mvars := ← cond.mvars.removeAssigned
   }
 
@@ -44,12 +44,14 @@ structure _root_.Egg.Rewrite extends Congr where
   mvars : Rewrite.MVars
   deriving Inhabited
 
-structure Config extends Config.Normalization where
-  amb         : MVars.Ambient
-  eraseProofs : Bool
+structure Config extends Config.Normalization, Config.Erasure where
+  amb : MVars.Ambient
 
 instance : Coe Config Config.Normalization where
   coe := Config.toNormalization
+
+instance : Coe Config Config.Erasure where
+  coe := Config.toErasure
 
 partial def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
     MetaM (Option Rewrite) := do
@@ -63,8 +65,8 @@ partial def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize :
     else
       return none
   let proof := mkAppN proof args
-  let mLhs := (← MVars.collect cgr.lhs cfg.eraseProofs).remove cfg.amb
-  let mRhs := (← MVars.collect cgr.rhs cfg.eraseProofs).remove cfg.amb
+  let mLhs := (← MVars.collect cgr.lhs cfg).remove cfg.amb
+  let mRhs := (← MVars.collect cgr.rhs cfg).remove cfg.amb
   let conds ← collectConds args mLhs mRhs
   return some { cgr with proof, src, conds, mvars.lhs := mLhs, mvars.rhs := mRhs }
 where
@@ -75,14 +77,17 @@ where
   -- Thus, we handle proof terms specially in `MVars.collect` by collecting both the proof term
   -- mvars and the corresponding proposition mvars. We then make sure to add the proof term mvars to
   -- the `noCond` set, even when proof erasure is active.
+  --
+  -- The same logic applies to type class instance erasure.
   collectConds (args : Array Expr) (mLhs mRhs : Egg.MVars) : MetaM (Array Rewrite.Condition) := do
     let mut conds := #[]
     let mut noCond ← typeMVarClosure (mLhs.expr.merge mRhs.expr)
-    if cfg.eraseProofs then noCond := noCond.merge mLhs.proof |>.merge mRhs.proof
+    if cfg.eraseProofs      then noCond := noCond.merge mLhs.proof |>.merge mRhs.proof
+    if cfg.eraseTCInstances then noCond := noCond.merge mLhs.inst  |>.merge mRhs.inst
     for arg in args do
       if noCond.contains arg.mvarId! then continue
       let ty ← arg.mvarId!.getType
-      let mvars := (← MVars.collect ty cfg.eraseProofs).remove cfg.amb
+      let mvars := (← MVars.collect ty cfg).remove cfg.amb
       conds := conds.push { expr := arg, type := ty, mvars }
     return conds
   typeMVarClosure (init : MVarIdSet) : MetaM MVarIdSet := do
@@ -93,7 +98,7 @@ where
       let m := nextTodo?.get h
       todos := todos.erase m
       closure := closure.insert m
-      todos := todos.merge (← MVars.collect (← m.getType) cfg.eraseProofs).expr
+      todos := todos.merge (← MVars.collect (← m.getType) cfg).expr
       nextTodo? := todos.min
     return closure
 
@@ -136,7 +141,7 @@ where
     let mut subst := init
     let mut conds := #[]
     for cond in rw.conds do
-      let (_, s) ← (← MVars.collect cond.expr (proofErasure := false)).fresh (init := subst)
+      let (_, s) ← (← MVars.collect cond.expr .noErase).fresh (init := subst)
       let (mvars, s) ← cond.mvars.fresh (init := s)
       conds := conds.push { expr := s.apply cond.expr, type := s.apply cond.type, mvars }
       subst := s

@@ -30,3 +30,4 @@ def remove (mvars : MVars) (amb : Ambient) : MVars where
   lvl   := mvars.lvl.filter (!amb.lvl.contains ·)
   tc    := mvars.tc.filter (!amb.expr.contains ·)
   proof := mvars.proof.filter (!amb.expr.contains ·)
+  inst  := mvars.inst.filter (!amb.expr.contains ·)

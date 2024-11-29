@@ -34,10 +34,16 @@ def fresh (mvars : MVars) (init : Subst := {}) : MetaM (MVars × Subst) := do
   let (lvlVars, lvlSubst) ← freshLvls mvars.lvl init.lvl
   let tcVars := mvars.tc.map exprSubst.fwd.get!
   let (proofVars, exprSubst) ← freshExprs mvars.proof exprSubst
+  let (instVars, exprSubst) ← freshExprs mvars.inst exprSubst
   let subst := { expr := exprSubst, lvl := lvlSubst }
   assignFreshExprMVarTypes exprVars subst
   assignFreshExprMVarTypes proofVars subst
-  return ({ expr := exprVars, lvl := lvlVars, tc := tcVars, proof := proofVars }, subst)
+  assignFreshExprMVarTypes instVars subst
+  let mvars := {
+    expr := exprVars, lvl := lvlVars, tc := tcVars,
+    proof := proofVars, inst := instVars
+  }
+  return (mvars, subst)
 where
   freshExprs (src : MVarIdSet) (subst : Subst.Expr) : MetaM (MVarIdSet × Subst.Expr) := do
     let mut vars : MVarIdSet := {}
@@ -76,6 +82,6 @@ where
       var.setType freshType
 
 def freshExpr (var : MVarId) (init : Subst) : MetaM (MVarId × Subst) := do
-  let mvars : MVars := { expr := .singleton var }
+  let mvars := { (∅ : MVars) with expr := .singleton var }
   let (fsh, subst) ← mvars.fresh init
   return (fsh.expr.toArray[0]!, subst)

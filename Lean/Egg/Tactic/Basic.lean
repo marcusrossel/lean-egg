@@ -15,12 +15,12 @@ open Lean Meta Elab Tactic
 namespace Egg
 
 -- TODO: We should also consider the level mvars of all `Fact`s.
-private def collectAmbientMVars (goal : Goal) (guides : Guides) (proofErasure : Bool) :
+private def collectAmbientMVars (goal : Goal) (guides : Guides) (cfg : Config.Erasure) :
     MetaM MVars.Ambient := do
   let expr ← MVars.Ambient.Expr.get
-  let goalLvl := (← MVars.collect (← goal.expr) proofErasure).lvl
+  let goalLvl := (← MVars.collect (← goal.expr) cfg).lvl
   let guidesLvl ← guides.foldlM (init := ∅) fun res g =>
-    return res.merge (← MVars.collect g.expr proofErasure).lvl
+    return res.merge (← MVars.collect g.expr cfg).lvl
   return { expr, lvl := goalLvl.merge guidesLvl }
 
 private inductive Proof? where
@@ -51,7 +51,7 @@ private def resultToProof
   return .proof prf
 where
   catchLooseMVars (prf : Expr) (amb : MVars.Ambient) (subgoals : List MVarId) : MetaM Unit := do
-    let mvars ← MVars.collect prf (proofErasure := false)
+    let mvars ← MVars.collect prf .noErase
     for mvar in mvars.expr do
       unless subgoals.contains mvar || amb.expr.contains mvar do
         throwError m!"egg: final proof contains expression mvar {Expr.mvar mvar}"
@@ -77,7 +77,7 @@ where
     let goal ← Goal.gen goal base
     goal.id.withContext do
       let guides := (← guides.mapM Guides.parseGuides).getD #[]
-      let amb ← collectAmbientMVars goal guides cfg.eraseProofs
+      let amb ← collectAmbientMVars goal guides cfg.toErasure
       amb.trace `egg.ambient
       -- We increase the mvar context depth, so that ambient mvars aren't unified during proof
       -- reconstruction. Note that this also means that we can't assign the `goal` mvar here.

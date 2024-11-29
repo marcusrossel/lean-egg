@@ -25,6 +25,9 @@ where
 
 namespace Lean
 
+def Meta.isTCInstance (e : Expr) : MetaM Bool :=
+  return (← isClass? <| ← inferType e).isSome
+
 -- From https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Extending.20tacticSeqs/near/474553725
 open Elab Parser Tactic in
 def mkTacticSeqPrepend (t : TSyntax `tactic) : TSyntax ``tacticSeq → TermElabM (TSyntax ``tacticSeq)
