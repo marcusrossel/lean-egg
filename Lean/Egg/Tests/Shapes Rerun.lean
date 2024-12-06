@@ -17,7 +17,7 @@ and
 
 • Types: ⏎
   ?m.279: Unit
-• (Delay) Assigned MVars: []
+
 • Read Only Or Synthetic Opaque MVars: []
 -/
 #guard_msgs in

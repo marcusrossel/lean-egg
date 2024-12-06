@@ -29,7 +29,7 @@ and
 • Types: ⏎
   ?m.2213: Nat → Nat
   ?m.2216: Nat
-• (Delay) Assigned MVars: []
+
 • Read Only Or Synthetic Opaque MVars: []
 -/
 #guard_msgs in

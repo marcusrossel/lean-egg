@@ -61,6 +61,7 @@ partial def Explanation.proof
     steps    := steps.push prf
     subgoals := subgoals ++ sub
     current  := next
+  for step in steps do synthLingeringTcErasureMVars step.rhs
   return { steps, subgoals }
 where
   fail {α} (msg : MessageData) (step? : Option Nat := none) : MetaM α := do
@@ -114,6 +115,15 @@ where
       -- local context as otherwise the mvars can't unify with variables under binders.
       let rw ← rw.fresh
       unless ← isDefEq lhs rw.lhs do failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs.expr current next idx
+      /- TODO: Remove?
+        let lhsType ← inferType lhs
+        let rwLhsType ← inferType rw.lhs
+        let _ ← isDefEq lhsType rwLhsType
+        synthLingeringTcErasureMVars lhs
+        synthLingeringTcErasureMVars rw.lhs
+        unless ← isDefEq lhs rw.lhs do
+          failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs.expr current next idx
+      -/
       unless ← isDefEq rhs rw.rhs do failIsDefEq "RHS" rw.src rhs rw.rhs rw.mvars.rhs.expr current next idx
       let mut subgoals := []
       let conds := rw.conds.filter (!·.isProven)
@@ -139,14 +149,12 @@ where
       (current next : Expr) (idx : Nat) : MetaM α := do
     let expr   ← instantiateMVars expr
     let rwExpr ← instantiateMVars rwExpr
-    let mut assigned := []
     let mut readOnlyOrSynthOpaque := []
     let mut types := "\n"
     for mvar in rwExprMVars do
-      if ← mvar.isAssignedOrDelayedAssigned then assigned := assigned.concat mvar
       if ← mvar.isReadOnlyOrSyntheticOpaque then readOnlyOrSynthOpaque := readOnlyOrSynthOpaque.concat mvar
       types := types ++ s!"  {← ppExpr (.mvar mvar)}: {← ppExpr <| ← mvar.getType}\n"
-    fail m!"unification failure for {side} of rewrite {src.description}:\n\n  {expr}\nvs\n  {rwExpr}\nin\n  {current}\nand\n  {next}\n\n• Types: {types}• (Delay) Assigned MVars: {assigned}\n• Read Only Or Synthetic Opaque MVars: {readOnlyOrSynthOpaque}" idx
+    fail m!"unification failure for {side} of rewrite {src.description}:\n\n  {expr}\nvs\n  {rwExpr}\nin\n  {current}\nand\n  {next}\n\n• Types: {types}\n• Read Only Or Synthetic Opaque MVars: {readOnlyOrSynthOpaque}" idx
 
   mkConditionSubproof (fact : Fact) (cond : Expr) : MetaM (Option Expr) := do
     let rawExpl := egraph.run (← Request.Equiv.encoding fact.type cond ctx)
@@ -155,3 +163,16 @@ where
     let proof ← expl.proof rws facts egraph ctx
     let factEqCond ← proof.prove { lhs := fact.type, rhs := cond, rel := .eq }
     mkEqMP factEqCond fact.proof
+
+  synthLingeringTcErasureMVars (e : Expr) : MetaM Unit := do
+    let mvars := (← instantiateMVars e).collectMVars {} |>.result
+    for mvar in mvars do
+      let type ← mvar.getType
+      unless (← isClass? type).isSome do continue
+      let inst? ← do
+        if let some inst ← findLocalDeclWithType? type
+        then pure <| some (.fvar inst)
+        else optional (synthInstance type)
+      let some inst := inst? | continue
+      unless ← isDefEq (.mvar mvar) inst do
+        throwError "egg: internal error in 'Egg.Proof.Explanation.proof.synthLingeringTcErasureMVars'"
