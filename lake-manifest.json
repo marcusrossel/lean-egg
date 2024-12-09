@@ -5,7 +5,7 @@
    "type": "git",
    "subDir": null,
    "scope": "nomeata",
-   "rev": "dbc14d28fad2b090158ad60e490da9067b4519be",
+   "rev": "ec3743a033ccbcf54cc5fd0157c87342099d9120",
    "name": "calcify",
    "manifestFile": "lake-manifest.json",
    "inputRev": "master",
