@@ -21,8 +21,8 @@ info: [egg.encoded] Encoded
     [egg.encoded] LHS: (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (app (◇ (→ * (→ * (→ * *))) (app (◇ (→ * (→ * (→ * (→ * *)))) (app (◇ (→ * (→ * (→ * (→ * (→ * *))))) (app (◇ (→ * (→ * (→ * (→ * (→ * (→ * *)))))) (const "HAdd.hAdd" 0 0 0)) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (const "instHAdd" 0)) (◇ * (const "Nat")))) (◇ * (const "instAddNat")))))) (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (app (◇ (→ * (→ * (→ * *))) (const "OfNat.ofNat" 0)) (◇ * (const "Nat")))) (◇ * (lit 0)))) (◇ * (app (◇ (→ * *) (const "instOfNatNat")) (◇ * (lit 0)))))))) (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (app (◇ (→ * (→ * (→ * *))) (const "OfNat.ofNat" 0)) (◇ * (const "Nat")))) (◇ * (lit 1)))) (◇ * (app (◇ (→ * *) (const "instOfNatNat")) (◇ * (lit 1))))))))
     [egg.encoded] RHS: (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (app (◇ (→ * (→ * (→ * *))) (app (◇ (→ * (→ * (→ * (→ * *)))) (app (◇ (→ * (→ * (→ * (→ * (→ * *))))) (app (◇ (→ * (→ * (→ * (→ * (→ * (→ * *)))))) (const "HAdd.hAdd" 0 0 0)) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (const "instHAdd" 0)) (◇ * (const "Nat")))) (◇ * (const "instAddNat")))))) (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (app (◇ (→ * (→ * (→ * *))) (const "OfNat.ofNat" 0)) (◇ * (const "Nat")))) (◇ * (lit 1)))) (◇ * (app (◇ (→ * *) (const "instOfNatNat")) (◇ * (lit 1)))))))) (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (app (◇ (→ * (→ * (→ * *))) (const "OfNat.ofNat" 0)) (◇ * (const "Nat")))) (◇ * (lit 0)))) (◇ * (app (◇ (→ * *) (const "instOfNatNat")) (◇ * (lit 0))))))))
   [egg.encoded] #0(⇔)
-    [egg.encoded] LHS: (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (app (◇ (→ * (→ * (→ * *))) (app (◇ (→ * (→ * (→ * (→ * *)))) (app (◇ (→ * (→ * (→ * (→ * (→ * *))))) (app (◇ (→ * (→ * (→ * (→ * (→ * (→ * *)))))) (const "HAdd.hAdd" 0 0 0)) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (const "instHAdd" 0)) (◇ * (const "Nat")))) (◇ * (const "instAddNat")))))) (◇ * ?350))) (◇ * ?351)))
-    [egg.encoded] RHS: (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (app (◇ (→ * (→ * (→ * *))) (app (◇ (→ * (→ * (→ * (→ * *)))) (app (◇ (→ * (→ * (→ * (→ * (→ * *))))) (app (◇ (→ * (→ * (→ * (→ * (→ * (→ * *)))))) (const "HAdd.hAdd" 0 0 0)) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (const "instHAdd" 0)) (◇ * (const "Nat")))) (◇ * (const "instAddNat")))))) (◇ * ?351))) (◇ * ?350)))
+    [egg.encoded] LHS: (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (app (◇ (→ * (→ * (→ * *))) (app (◇ (→ * (→ * (→ * (→ * *)))) (app (◇ (→ * (→ * (→ * (→ * (→ * *))))) (app (◇ (→ * (→ * (→ * (→ * (→ * (→ * *)))))) (const "HAdd.hAdd" 0 0 0)) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (const "instHAdd" 0)) (◇ * (const "Nat")))) (◇ * (const "instAddNat")))))) (◇ * ?354))) (◇ * ?355)))
+    [egg.encoded] RHS: (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (app (◇ (→ * (→ * (→ * *))) (app (◇ (→ * (→ * (→ * (→ * *)))) (app (◇ (→ * (→ * (→ * (→ * (→ * *))))) (app (◇ (→ * (→ * (→ * (→ * (→ * (→ * *)))))) (const "HAdd.hAdd" 0 0 0)) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (const "instHAdd" 0)) (◇ * (const "Nat")))) (◇ * (const "instAddNat")))))) (◇ * ?355))) (◇ * ?354)))
     [egg.encoded] No Conditions
 -/
 #guard_msgs in
@@ -72,7 +72,7 @@ end Basic
 
 section Binders
 
-example : (fun x : Nat => 0) = (fun x => 0 + 0) := by
+example : (fun _ : Nat => 0) = (fun _ => 0 + 0) := by
   egg [Nat.add_zero]
 
 example : (fun x => x) = (fun x => x + 0) := by

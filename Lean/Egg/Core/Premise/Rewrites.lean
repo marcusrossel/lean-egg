@@ -171,4 +171,4 @@ abbrev Rewrites := Array Rewrite
 -- TODO: This is unnecessarilly inefficient during proof reconstruction, so at some point we may
 --       want to redefine `Rewrites` using a better suited data structure.
 def Rewrites.find? (rws : Rewrites) (src : Source) : Option Rewrite :=
-  Array.find? rws (·.src == src)
+  Array.find? (·.src == src) rws
