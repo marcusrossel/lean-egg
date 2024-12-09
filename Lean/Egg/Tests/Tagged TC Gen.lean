@@ -20,13 +20,13 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] □0(⇔)
       [egg.rewrites] z = z
       [egg.rewrites] LHS MVars
-          expr:  [?α, ?c]
+          expr:  [?c, ?α]
           class: [?c]
-          level: [?u.71]
+          level: [?u.81]
       [egg.rewrites] RHS MVars
-          expr:  [?α, ?c]
+          expr:  [?c, ?α]
           class: [?c]
-          level: [?u.71]
+          level: [?u.81]
   [egg.rewrites] Generated (3)
     [egg.rewrites] □0<⊢>(⇔)
       [egg.rewrites] z = z

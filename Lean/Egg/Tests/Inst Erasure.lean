@@ -3,8 +3,8 @@ import Egg
 /--
 info: [egg.encoded] Encoded
   [egg.encoded] Goal
-    [egg.encoded] LHS: (app (app (app (app (app (app (const "HAdd.hAdd" 0 0 0) (const "Nat")) (const "Nat")) (const "Nat")) (inst (app (app (app (const "HAdd" 0 0 0) (const "Nat")) (const "Nat")) (const "Nat")))) (fvar 62)) (fvar 62))
-    [egg.encoded] RHS: (app (app (app (app (app (app (const "HAdd.hAdd" 0 0 0) (const "Nat")) (const "Nat")) (const "Nat")) (inst (app (app (app (const "HAdd" 0 0 0) (const "Nat")) (const "Nat")) (const "Nat")))) (fvar 62)) (fvar 62))
+    [egg.encoded] LHS: (app (app (app (app (app (app (const "HAdd.hAdd" 0 0 0) (const "Nat")) (const "Nat")) (const "Nat")) (inst (app (app (app (const "HAdd" 0 0 0) (const "Nat")) (const "Nat")) (const "Nat")))) (fvar 65)) (fvar 65))
+    [egg.encoded] RHS: (app (app (app (app (app (app (const "HAdd.hAdd" 0 0 0) (const "Nat")) (const "Nat")) (const "Nat")) (inst (app (app (app (const "HAdd" 0 0 0) (const "Nat")) (const "Nat")) (const "Nat")))) (fvar 65)) (fvar 65))
 -/
 #guard_msgs(info) in
 set_option trace.egg.encoded true in

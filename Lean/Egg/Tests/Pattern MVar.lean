@@ -20,15 +20,15 @@ error: egg failed to build proof step 2: unification failure for LHS of rewrite 
 
   HAdd.hAdd (x + 0)
 vs
-  ?m.2213 (?m.2216 + 0)
+  ?m.2234 (?m.2231 + 0)
 in
   f 1 (x + 0 + 0)
 and
   f 1 (x + 0)
 
 • Types: ⏎
-  ?m.2213: Nat → Nat
-  ?m.2216: Nat
+  ?m.2234: Nat → Nat
+  ?m.2231: Nat
 
 • Read Only Or Synthetic Opaque MVars: []
 -/
