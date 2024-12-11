@@ -76,7 +76,7 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
                 let mut r = rule.as_str().to_string(); r.push_str("!?");
                 rule = Symbol::from(r);
             } else if eval_eq_condition(&cond, graph, subst) {
-                let mut r = rule.as_str().to_string(); r.push_str("!@");
+                let mut r = rule.as_str().to_string(); r.push_str("!=");
                 rule = Symbol::from(r);
             } else {
                 return vec![]

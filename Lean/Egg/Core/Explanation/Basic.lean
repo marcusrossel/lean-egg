@@ -14,7 +14,7 @@ namespace Rewrite
 structure Descriptor where
   src   : Source
   dir   : Direction
-  facts : Array (Option Source)
+  facts : Array Source.Fact
   deriving Inhabited
 
 structure Info extends Descriptor where

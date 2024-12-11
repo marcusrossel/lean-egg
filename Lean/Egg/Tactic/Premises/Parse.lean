@@ -84,13 +84,13 @@ private def Premise.Mk?.rewrite (cfg : Rewrite.Config) : Premise.Mk? Rewrite :=
   (Rewrite.from? · · · cfg)
 
 private def Premise.Mk.fact : Premise.Mk Fact :=
-  fun proof type src => Fact.from proof type (.fact src)
+  fun proof type src => Fact.from proof type src
 
 private def Premise.Mk?.fact : Premise.Mk? Fact :=
-  fun proof type src => Fact.from proof type (.fact src)
+  fun proof type src => Fact.from proof type src
 
 private def Premises.explicit
-    (prem : Term) (idx : Nat) (mk : Premise.Mk α) (mkSrc : Nat → Option Nat → Source := .explicit) :
+    (prem : Term) (idx : Nat) (mk : Premise.Mk α) (mkSrc : Nat → Option Nat → Source) :
     TacticM <| WithSyntax (Array α) := do
   match ← Premise.Raw.elab prem with
   | .single e type? => return { elems := #[(← make e type? none)], stxs := #[prem] }
@@ -110,11 +110,12 @@ where
 -- Note: We need to filter out auxiliary declaration and implementation details, as they are not
 --       visible in the proof context and, for example, contain the declaration being defined itself
 --       (to enable recursive calls). See https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/local.20context.20without.20current.20decl
-private def Premises.star (stx : Syntax) (mk : Premise.Mk? α) : TacticM <| WithSyntax (Array α) := do
+private def Premises.star (stx : Syntax) (mk : Premise.Mk? α) (mkSrc : FVarId → Source) :
+    TacticM <| WithSyntax (Array α) := do
   let mut result : WithSyntax (Array α) := ∅
   for decl in ← getLCtx do
     if decl.isImplementationDetail || decl.isAuxDecl then continue
-    let src := Source.star decl.fvarId
+    let src := mkSrc decl.fvarId
     if let some prem ← mk decl.toExpr decl.type src then
       result := result.push prem stx
   return result
@@ -126,23 +127,30 @@ structure Premises where
 def Premises.elab (cfg : Rewrite.Config) : (TSyntax `egg_premises) → TacticM Premises
   | `(egg_premises|) => return {}
   | `(egg_premises|[$rws,* $[; $facts?,*]?]) => do
-    let mut result := { rws := ← go rws (Premise.Mk.rewrite · cfg) (Premise.Mk?.rewrite cfg) }
+    let mut result := {
+      rws := ← go rws (Premise.Mk.rewrite · cfg) (Premise.Mk?.rewrite cfg) .explicit .star
+    }
     if let some facts := facts? then
-      result := { result with facts := ← go facts (fun _ => Premise.Mk.fact) Premise.Mk?.fact }
+      let mkExplicitSrc idx _ := .fact (.explicit idx)
+      let mkStarSrc id := .fact (.star id)
+      result := { result with
+        facts := ← go facts (fun _ => Premise.Mk.fact) Premise.Mk?.fact mkExplicitSrc mkStarSrc
+      }
     return result
   | _ => throwUnsupportedSyntax
 where
-  go {α} (prems : Array <| TSyntax `egg_premise) (mk : Syntax → Premise.Mk α) (mk? : Premise.Mk? α) :
+  go {α} (prems : Array <| TSyntax `egg_premise) (mk : Syntax → Premise.Mk α) (mk? : Premise.Mk? α)
+      (mkExplicitSrc : Nat → Option Nat → Source) (mkStarSrc : FVarId → Source) :
       TacticM <| WithSyntax (Array α) := do
     let mut result : WithSyntax (Array α) := {}
     let mut noStar := true
     for prem in prems, idx in [:prems.size] do
       match prem with
-      | `(egg_premise|$prem:term) => result := result ++ (← explicit prem idx <| mk prem)
+      | `(egg_premise|$prem:term) => result := result ++ (← explicit prem idx (mk prem) mkExplicitSrc)
       | `(egg_premise|*%$tk) =>
         unless noStar do throwErrorAt tk "duplicate '*'"
         noStar := false
-        result := result ++ (← star tk mk?)
+        result := result ++ (← star tk mk? mkStarSrc)
       | _ => throwUnsupportedSyntax
     return result
 

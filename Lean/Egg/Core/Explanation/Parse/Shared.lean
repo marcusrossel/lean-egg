@@ -101,8 +101,10 @@ syntax "≡/"                                  : fwd_rw_src
 syntax str                                   : fwd_rw_src
 -- syntax "≡%"                               : fwd_rw_src
 
-syntax "!?"           : fact_src
-syntax "!" fwd_rw_src : fact_src
+syntax "!?"          : fact_src
+syntax "!="          : fact_src
+syntax "!#" noWs num : fact_src
+syntax "!*" noWs num : fact_src
 
 syntax fwd_rw_src (noWs "-rev")? fact_src* : rw_src
 
@@ -200,10 +202,12 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
     .explosion (parseBasicFwdRwSrc src) .backward (idxs.getElems.map (·.getNat)).toList
   | _ => unreachable!
 
-private def parseFactSrc : (TSyntax `fact_src) → Option Source
-  | `(fact_src|!?)             => none
-  | `(fact_src|!$f:fwd_rw_src) => some <| .fact (parseFwdRwSrc f)
-  | _                          => unreachable!
+private def parseFactSrc : (TSyntax `fact_src) → Source.Fact
+  | `(fact_src|!?)     => .postponed
+  | `(fact_src|!=)     => .equality
+  | `(fact_src|!#$idx) => .explicit idx.getNat
+  | `(fact_src|!*$idx) => .star (.fromUniqueIdx idx.getNat)
+  | _                  => unreachable!
 
 def parseRwSrc : (TSyntax `rw_src) → Rewrite.Descriptor
   | `(rw_src|$fwdSrc:fwd_rw_src$[-rev%$rev]?$[$facts]*) =>

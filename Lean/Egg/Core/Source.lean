@@ -52,12 +52,19 @@ inductive Source.SubstShift where
   | abort
   deriving Inhabited, BEq, Hashable
 
+inductive Source.Fact where
+  | explicit (idx : Nat)
+  | star (id : FVarId)
+  | equality
+  | postponed
+  deriving Inhabited, BEq, Hashable
+
 inductive Source where
   | goal
   | guide (idx : Nat)
   | explicit (idx : Nat) (eqn? : Option Nat)
   | star (id : FVarId)
-  | fact (src : Source)
+  | fact (src : Source.Fact)
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos) (depth : Nat)
   | tcSpec (src : Source) (spec : Source.TcSpec)
   | explosion (src : Source) (dir : Direction) (loc : List Nat)
@@ -114,6 +121,12 @@ def SubstShift.description : SubstShift → String
   | inst    => "inst"
   | unknown => "_"
   | abort   => "|"
+
+def Fact.description : Fact → String
+  | explicit idx => s!"#{idx}"
+  | star id      => s!"*{id.uniqueIdx!}"
+  | equality     => "="
+  | postponed    => "?"
 
 -- Note: It's important that we remove the whitespace from the list in the `.explosion` case,
 --       because otherwise egg adds quotes around the rule name.
