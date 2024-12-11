@@ -75,8 +75,11 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             } else if self.allow_unsat_conditions {
                 let mut r = rule.as_str().to_string(); r.push_str("!?");
                 rule = Symbol::from(r);
+            } else if eval_eq_condition(&cond, graph, subst) {
+                let mut r = rule.as_str().to_string(); r.push_str("!@");
+                rule = Symbol::from(r);
             } else {
-                return vec![] 
+                return vec![]
             }
         }
 
@@ -92,4 +95,34 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             if did_union { vec![from] } else { vec![] }
         }
     }
+}
+
+fn eval_eq_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &Subst) -> bool {
+    // check whether `cond` is an equality condition.
+    // "(app (app (app (const 'Eq' ?univ...) ?t) ?a) ?b)"
+    //  ^i1  ^i2  ^i3  ^i4    ^i5  ^i6       ^i7 ^i8 ^i9
+
+    let ast = &cond.ast;
+    let i1 = Id::from(ast.as_ref().len() - 1);
+    let ENodeOrVar::ENode(LeanExpr::App([i2, i9])) = &ast[i1] else { return false };
+    let ENodeOrVar::ENode(LeanExpr::App([i3, i8_])) = &ast[*i2] else { return false };
+    let ENodeOrVar::ENode(LeanExpr::App([i4, _i7])) = &ast[*i3] else { return false };
+    let ENodeOrVar::ENode(LeanExpr::Const(b)) = &ast[*i4] else { return false };
+    let [i5, ..] =  &**b else { return false };
+    let ENodeOrVar::ENode(LeanExpr::Str(string)) = &ast[*i5] else { return false };
+    let "Eq" = &**string else { return false };
+
+    let mut sub_expr = |i: Id| -> Id {
+        // pa == ast[0..i]
+        let mut pa = PatternAst::default();
+        for x in ast.as_ref().iter().take(usize::from(i) + 1) {
+            pa.add(x.clone());
+        }
+
+        graph.add_instantiation(&pa, subst)
+    };
+
+    let (a, b) = (sub_expr(*i8_), sub_expr(*i9));
+
+    graph.find(a) == graph.find(b)
 }
