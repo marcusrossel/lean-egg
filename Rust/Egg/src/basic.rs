@@ -53,15 +53,14 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
         egraph.add_expr(&expr);
     }
 
-    let mut fact_map: HashMap<Id, String> = Default::default();
     for (name, expr) in facts {
         let expr = expr.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
         let class = egraph.add_expr(&expr);
-        fact_map.insert(class, name);
+        egraph[class].data.fact = Some(name.to_string());
     }
 
     let mut rws;
-    match templates_to_rewrites(rw_templates, fact_map, cfg.block_invalid_matches, cfg.shift_captured_bvars, cfg.allow_unsat_conditions) {
+    match templates_to_rewrites(rw_templates, cfg.block_invalid_matches, cfg.shift_captured_bvars, cfg.allow_unsat_conditions) {
         Ok(r)    => rws = r,
         Err(err) => return Err(Error::Rewrite(err.to_string()))
     }

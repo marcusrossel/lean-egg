@@ -15,7 +15,6 @@ pub struct RewriteTemplate {
 
 pub fn templates_to_rewrites(
     templates: Vec<RewriteTemplate>, 
-    facts: HashMap<Id, String>, 
     block_invalid_matches: bool, 
     shift_captured_bvars: bool, 
     allow_unsat_conditions: bool
@@ -23,7 +22,7 @@ pub fn templates_to_rewrites(
     let mut result: Vec<LeanRewrite> = vec![];
     for template in templates {
         let applier = LeanApplier { 
-            rhs: template.rhs, conds: template.conds, facts: facts.clone(), 
+            rhs: template.rhs, conds: template.conds, 
             block_invalid_matches, shift_captured_bvars, allow_unsat_conditions 
         };
         match Rewrite::new(template.name, template.lhs, applier) {
@@ -37,7 +36,6 @@ pub fn templates_to_rewrites(
 struct LeanApplier {
     pub rhs: Pattern<LeanExpr>,
     pub conds: Vec<Pattern<LeanExpr>>,
-    pub facts: HashMap<Id, String>,
     pub block_invalid_matches: bool,
     pub shift_captured_bvars: bool,
     pub allow_unsat_conditions: bool
@@ -66,10 +64,7 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             // Note: If we don't find a fact matching `id`, this might just be because the fact id isn't canonical. 
             //       Thus, in the `else if` branch we also check whether there exists a fact id whose canonicalization
             //       matches `id`.
-            if let Some(fact_name) = self.facts.get(&id) {
-                let mut r = rule.as_str().to_string(); r.push_str(&fact_name);
-                rule = Symbol::from(r);
-            } else if let Some((_, fact_name)) = self.facts.iter().find(|(&f_id, _)| graph.find(f_id) == id) { 
+            if let Some(fact_name) = &graph[id].data.fact {
                 let mut r = rule.as_str().to_string(); r.push_str(&fact_name);
                 rule = Symbol::from(r);
             } else if self.allow_unsat_conditions {
