@@ -2,11 +2,15 @@ import Egg
 
 -- These test check that redundant rewrites are pruned.
 
+-- TODO: Add a macro to turn off all defeqs.
 set_option egg.genTcProjRws false
 set_option egg.builtins false
 set_option egg.beta false
 set_option egg.eta false
 set_option egg.natLit false
+set_option egg.levels false
+set_option egg.eraseProofs false
+set_option egg.eraseTCInstances false
 
 /--
 info: [egg.rewrites] Rewrites
@@ -22,9 +26,10 @@ info: [egg.rewrites] Rewrites
           class: []
           level: []
   [egg.rewrites] Tagged (0)
-  [egg.rewrites] Generated (0)
-  [egg.rewrites] Exploded (0)
   [egg.rewrites] Builtin (0)
+  [egg.rewrites] Split Nested (0)
+  [egg.rewrites] Type Class (0)
+  [egg.rewrites] Explosion (0)
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (1)
@@ -59,9 +64,10 @@ info: [egg.rewrites] Rewrites
           class: []
           level: []
   [egg.rewrites] Tagged (0)
-  [egg.rewrites] Generated (0)
-  [egg.rewrites] Exploded (0)
   [egg.rewrites] Builtin (0)
+  [egg.rewrites] Split Nested (0)
+  [egg.rewrites] Type Class (0)
+  [egg.rewrites] Explosion (0)
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (1)

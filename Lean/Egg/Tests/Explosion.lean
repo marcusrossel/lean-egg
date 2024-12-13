@@ -6,6 +6,9 @@ set_option egg.genTcProjRws false
 set_option egg.genGoalTcSpec false
 set_option egg.builtins false
 set_option egg.natLit false
+set_option egg.levels false
+set_option egg.eraseProofs false
+set_option egg.eraseTCInstances false
 
 set_option egg.explosion true
 
@@ -16,9 +19,10 @@ variable (f : Nat → Nat → Nat)
 info: [egg.rewrites] Rewrites
   [egg.rewrites] Basic (0)
   [egg.rewrites] Tagged (0)
-  [egg.rewrites] Generated (0)
-  [egg.rewrites] Exploded (0)
   [egg.rewrites] Builtin (0)
+  [egg.rewrites] Split Nested (0)
+  [egg.rewrites] Type Class (0)
+  [egg.rewrites] Explosion (0)
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
@@ -43,9 +47,10 @@ info: [egg.rewrites] Rewrites
           class: []
           level: []
   [egg.rewrites] Tagged (0)
-  [egg.rewrites] Generated (0)
-  [egg.rewrites] Exploded (0)
   [egg.rewrites] Builtin (0)
+  [egg.rewrites] Split Nested (0)
+  [egg.rewrites] Type Class (0)
+  [egg.rewrites] Explosion (0)
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
@@ -70,9 +75,10 @@ info: [egg.rewrites] Rewrites
           class: []
           level: []
   [egg.rewrites] Tagged (0)
-  [egg.rewrites] Generated (0)
-  [egg.rewrites] Exploded (0)
   [egg.rewrites] Builtin (0)
+  [egg.rewrites] Split Nested (0)
+  [egg.rewrites] Type Class (0)
+  [egg.rewrites] Explosion (0)
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
@@ -89,17 +95,18 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] f ?x ?y = f ?y ?x
       [egg.rewrites] LHS MVars
-          expr:  [?y, ?x]
+          expr:  [?x, ?y]
           class: []
           level: []
       [egg.rewrites] RHS MVars
-          expr:  [?y, ?x]
+          expr:  [?x, ?y]
           class: []
           level: []
   [egg.rewrites] Tagged (0)
-  [egg.rewrites] Generated (0)
-  [egg.rewrites] Exploded (0)
   [egg.rewrites] Builtin (0)
+  [egg.rewrites] Split Nested (0)
+  [egg.rewrites] Type Class (0)
+  [egg.rewrites] Explosion (0)
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
@@ -124,29 +131,30 @@ info: [egg.rewrites] Rewrites
           class: []
           level: []
   [egg.rewrites] Tagged (0)
-  [egg.rewrites] Generated (0)
-  [egg.rewrites] Exploded (2)
+  [egg.rewrites] Builtin (0)
+  [egg.rewrites] Split Nested (0)
+  [egg.rewrites] Type Class (0)
+  [egg.rewrites] Explosion (2)
     [egg.rewrites] #0💥→[3](⇔)
-      [egg.rewrites] f ?m.272 ?m.272 = f a ?m.272
+      [egg.rewrites] f ?m.269 ?m.269 = f a ?m.269
       [egg.rewrites] LHS MVars
-          expr:  [?m.272]
+          expr:  [?m.269]
           class: []
           level: []
       [egg.rewrites] RHS MVars
-          expr:  [?m.272]
+          expr:  [?m.269]
           class: []
           level: []
     [egg.rewrites] #0💥→[4](⇔)
-      [egg.rewrites] f ?m.281 ?m.281 = f b ?m.281
+      [egg.rewrites] f ?m.278 ?m.278 = f b ?m.278
       [egg.rewrites] LHS MVars
-          expr:  [?m.281]
+          expr:  [?m.278]
           class: []
           level: []
       [egg.rewrites] RHS MVars
-          expr:  [?m.281]
+          expr:  [?m.278]
           class: []
           level: []
-  [egg.rewrites] Builtin (0)
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)

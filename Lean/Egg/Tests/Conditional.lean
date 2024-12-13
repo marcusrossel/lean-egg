@@ -50,7 +50,7 @@ example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
 example (h₁ : ∀ p, p ∧ p) (h₂ : (∀ p, p ∧ p) → q = True) : q = True := by
   egg [h₂; h₁]
 
-/-- error: egg does not currently support rewrites with unbound conditions (expression) -/
+/-- error: egg: rewrite #0 contains an unbound condition (expression) -/
 #guard_msgs in
 example (h₁ : Prop) (h₂ : ∀ p : Prop, p → 1 = id 1) : 1 = id 1 := by
   egg [h₂; h₁]
@@ -58,7 +58,7 @@ example (h₁ : Prop) (h₂ : ∀ p : Prop, p → 1 = id 1) : 1 = id 1 := by
 class Fix (α : Type) where
   fix : ∀ (f : α → α) (a : α), f a = a
 
-/-- error: egg does not currently support rewrites with unbound conditions (expression) -/
+/-- error: egg: rewrite #0 contains an unbound condition (expression) -/
 #guard_msgs in
 example [inst : Fix Nat] (f : Nat → Nat) (a : Nat) : f a = a := by
   egg [Fix.fix]
@@ -86,9 +86,10 @@ info: [egg.rewrites] Rewrites
           class: []
           level: []
   [egg.rewrites] Tagged (0)
-  [egg.rewrites] Generated (0)
-  [egg.rewrites] Exploded (0)
   [egg.rewrites] Builtin (0)
+  [egg.rewrites] Split Nested (0)
+  [egg.rewrites] Type Class (0)
+  [egg.rewrites] Explosion (0)
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
@@ -100,6 +101,9 @@ set_option egg.beta false in
 set_option egg.eta false in
 set_option egg.natLit false in
 set_option egg.builtins false in
+set_option egg.levels false in
+set_option egg.eraseProofs false in
+set_option egg.eraseTCInstances false in
 example (l₁ l₂ : List Nat) (h : ∀ (α : Type) (l₁ l₂ : List α), l₁ = l₂) : l₁ = l₂ := by
   set_option trace.egg.rewrites true in egg [h]
 

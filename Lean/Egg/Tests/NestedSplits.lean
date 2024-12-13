@@ -19,7 +19,8 @@ info: [egg.rewrites] Rewrites
           class: []
           level: []
   [egg.rewrites] Tagged (0)
-  [egg.rewrites] Generated (2)
+  [egg.rewrites] Builtin (0)
+  [egg.rewrites] Split Nested (2)
     [egg.rewrites] #0⁅→⁆(⇔)
       [egg.rewrites] c = d
       [egg.rewrites] Conditions
@@ -44,8 +45,8 @@ info: [egg.rewrites] Rewrites
           expr:  []
           class: []
           level: []
-  [egg.rewrites] Exploded (0)
-  [egg.rewrites] Builtin (0)
+  [egg.rewrites] Type Class (0)
+  [egg.rewrites] Explosion (0)
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
@@ -56,6 +57,9 @@ set_option egg.builtins false in
 set_option egg.beta false in
 set_option egg.eta false in
 set_option egg.natLit false in
+set_option egg.levels false in
+set_option egg.eraseProofs false in
+set_option egg.eraseTCInstances false in
 set_option egg.genTcProjRws false in
 example (h : (a = b) ↔ (c = d)) : 0 = 0 := by
   egg [h]

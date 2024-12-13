@@ -31,6 +31,7 @@ import Egg.Core.Congr
 import Egg.Core.MVars.Ambient
 import Egg.Core.MVars.Basic
 import Egg.Core.MVars.Subst
+import Egg.Core.Gen.Tagged
 import Egg.Core.Gen.Explosion
 import Egg.Core.Gen.Builtins
 import Egg.Core.Gen.NestedSplits

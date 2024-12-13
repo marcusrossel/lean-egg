@@ -27,7 +27,9 @@ info: [egg.rewrites] Rewrites
           expr:  [?c, ?α]
           class: [?c]
           level: [?u.81]
-  [egg.rewrites] Generated (3)
+  [egg.rewrites] Builtin (0)
+  [egg.rewrites] Split Nested (0)
+  [egg.rewrites] Type Class (3)
     [egg.rewrites] □0<⊢>(⇔)
       [egg.rewrites] z = z
       [egg.rewrites] LHS MVars
@@ -58,17 +60,20 @@ info: [egg.rewrites] Rewrites
           expr:  []
           class: []
           level: []
-  [egg.rewrites] Exploded (0)
-  [egg.rewrites] Builtin (0)
+  [egg.rewrites] Explosion (0)
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
-    [egg.rewrites] β-Reduction
-    [egg.rewrites] η-Reduction
-    [egg.rewrites] Natural Number Literals
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs in
 set_option trace.egg.rewrites true in
 set_option egg.builtins false in
+set_option egg.builtins false in
+set_option egg.beta false in
+set_option egg.eta false in
+set_option egg.natLit false in
+set_option egg.levels false in
+set_option egg.eraseProofs false in
+set_option egg.eraseTCInstances false in
 example : Nat.zero = Nat.zero := by
   egg!

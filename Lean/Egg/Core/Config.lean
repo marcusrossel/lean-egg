@@ -37,7 +37,7 @@ structure Gen where
   explosion       := false
   deriving BEq
 
-structure DefEq where
+structure DefEq extends Erasure where
   natLit    := true
   eta       := true
   etaExpand := false

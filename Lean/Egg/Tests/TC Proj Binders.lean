@@ -32,7 +32,9 @@ info: [egg.rewrites] Rewrites
           class: []
           level: []
   [egg.rewrites] Tagged (0)
-  [egg.rewrites] Generated (2)
+  [egg.rewrites] Builtin (0)
+  [egg.rewrites] Split Nested (0)
+  [egg.rewrites] Type Class (2)
     [egg.rewrites] #0[0?69632,0](⇔)
       [egg.rewrites] HMul.hMul = Mul.mul
       [egg.rewrites] LHS MVars
@@ -53,8 +55,7 @@ info: [egg.rewrites] Rewrites
           expr:  []
           class: []
           level: []
-  [egg.rewrites] Exploded (0)
-  [egg.rewrites] Builtin (0)
+  [egg.rewrites] Explosion (0)
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
@@ -66,5 +67,8 @@ set_option egg.builtins false in
 set_option egg.beta false in
 set_option egg.eta false in
 set_option egg.natLit false in
+set_option egg.levels false in
+set_option egg.eraseProofs false in
+set_option egg.eraseTCInstances false in
 example (x : Nat) (h : ∀ (_ : x * y = z), z = z) : x = x := by
   egg [h]
