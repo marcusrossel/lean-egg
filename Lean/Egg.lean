@@ -33,6 +33,7 @@ import Egg.Core.MVars.Basic
 import Egg.Core.MVars.Subst
 import Egg.Core.Gen.Explosion
 import Egg.Core.Gen.Builtins
+import Egg.Core.Gen.NestedSplits
 import Egg.Core.Gen.TcProjs
 import Egg.Core.Gen.TcSpecs
 import Egg.Core.Normalize

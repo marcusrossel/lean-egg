@@ -25,6 +25,14 @@ def Rel.mkSymm (proof : Expr) : Rel → MetaM Expr
   | eq  => mkEqSymm proof
   | iff => mkAppM ``Iff.symm #[proof]
 
+def Rel.mkMP (proof : Expr) : Rel → MetaM Expr
+  | eq  => mkAppM ``Eq.mp #[proof]
+  | iff => mkAppM ``Iff.mp #[proof]
+
+def Rel.mkMPR (proof : Expr) : Rel → MetaM Expr
+  | eq  => mkAppM ``Eq.mpr #[proof]
+  | iff => mkAppM ``Iff.mpr #[proof]
+
 def expr (cgr : Congr) : MetaM Expr := do
   match cgr.rel with
   | .eq  => mkEq cgr.lhs cgr.rhs

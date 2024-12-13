@@ -28,12 +28,13 @@ structure Encoding extends Normalization, Erasure where
   deriving BEq
 
 structure Gen where
-  builtins      := true
-  basket?       := (none : Option Lean.Name)
-  genTcProjRws  := true
-  genTcSpecRws  := true
-  genGoalTcSpec := true
-  explosion     := false
+  builtins        := true
+  basket?         := (none : Option Lean.Name)
+  genTcProjRws    := true
+  genTcSpecRws    := true
+  genGoalTcSpec   := true
+  genNestedSplits := true
+  explosion       := false
   deriving BEq
 
 structure DefEq where

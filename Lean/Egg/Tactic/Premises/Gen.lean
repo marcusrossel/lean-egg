@@ -2,6 +2,7 @@ import Egg.Core.Gen.Builtins
 import Egg.Core.Gen.TcProjs
 import Egg.Core.Gen.TcSpecs
 import Egg.Core.Gen.Explosion
+import Egg.Core.Gen.NestedSplits
 import Egg.Tactic.Premises.Parse
 import Egg.Tactic.Trace
 import Egg.Tactic.Tags
@@ -16,13 +17,13 @@ namespace Egg.Premises
 -- TODO: Perform pruning during generation, not after.
 
 private def tracePremises
-    (basic : WithSyntax Rewrites) (tagged builtins tc ex pruned : Rewrites)
+    (basic : WithSyntax Rewrites) (tagged builtins gen ex pruned : Rewrites)
     (facts : WithSyntax Facts) (cfg : Config.DefEq) : TacticM Unit := do
   let cls := `egg.rewrites
   withTraceNode cls (fun _ => return "Rewrites") do
     withTraceNode cls (fun _ => return m!"Basic ({basic.elems.size})") do basic.elems.trace basic.stxs cls
     withTraceNode cls (fun _ => return m!"Tagged ({tagged.size})") do tagged.trace #[] cls
-    withTraceNode cls (fun _ => return m!"Generated ({tc.size})") do tc.trace #[] cls
+    withTraceNode cls (fun _ => return m!"Generated ({gen.size})") do gen.trace #[] cls
     withTraceNode cls (fun _ => return m!"Exploded ({ex.size})") do ex.trace #[] cls
     withTraceNode cls (fun _ => return m!"Builtin ({builtins.size})") do builtins.trace #[] cls
     withTraceNode cls (fun _ => return m!"Hypotheses ({facts.elems.size})") do
@@ -36,19 +37,42 @@ private def tracePremises
 partial def gen
     (goal : Congr) (ps : TSyntax `egg_premises) (guides : Guides) (cfg : Config)
     (amb : MVars.Ambient) : TacticM (Rewrites × Facts) := do
+  let mut all := #[]
+  let mut pruned := #[]
+
   let tagged ← genTagged cfg amb
+  all := all ++ tagged
+
   let ⟨⟨basic, basicStxs⟩, facts⟩ ← Premises.elab { cfg with amb } ps
-  let (basic, basicStxs, pruned₁) ← prune basic basicStxs (remove := tagged)
+  let (basic, basicStxs, p) ← prune basic basicStxs (remove := all)
+  all    := all ++ basic
+  pruned := pruned ++ p
+
   let builtins ← if cfg.builtins then Rewrites.builtins { cfg with amb } else pure #[]
-  let (builtins, _, pruned₂) ← prune builtins (remove := tagged ++ basic)
-  let tc ← genTcRws (tagged ++ basic ++ builtins) facts.elems -- Note: We check the config in `genTcRws`.
-  let (tc, _, pruned₃) ← prune tc (remove := tagged ++ basic ++ builtins)
-  let ex ← if cfg.explosion then genExplosions basic else pure #[]
-  let (ex, _, pruned₄) ← prune ex (remove := tagged ++ basic ++ builtins ++ tc)
-  tracePremises ⟨basic, basicStxs⟩ tagged builtins tc ex (pruned₁ ++ pruned₂ ++ pruned₃ ++ pruned₄) facts cfg
-  let rws := tagged ++ basic ++ builtins ++ tc ++ ex
-  catchInvalidConditionals rws
-  return (rws, facts.elems)
+  let (builtins, _, p) ← prune builtins (remove := all)
+  all    := all ++ builtins
+  pruned := pruned ++ p
+
+  let tc ← genTcRws all facts.elems -- Note: We check the config in `genTcRws`.
+  let (tc, _, p) ← prune tc (remove := all)
+  all    := all ++ tc
+  pruned := pruned ++ p
+
+  let ex ← if cfg.explosion then genExplosions all else pure #[]
+  let (ex, _, p) ← prune ex (remove := all)
+  all    := all ++ ex
+  pruned := pruned ++ p
+
+  -- TODO: Generated splits could again be suitable for type class rewrites and explosion. So at
+  --       some point we should add splitting and explosion into the type class fixed point loop.
+  let splits ← if cfg.genNestedSplits then genNestedSplits all { cfg with amb } else pure #[]
+  let (splits, _, p) ← prune splits (remove := all)
+  all    := all ++ splits
+  pruned := pruned ++ p
+
+  tracePremises ⟨basic, basicStxs⟩ tagged builtins (tc ++ splits) ex pruned facts cfg
+  catchInvalidConditionals all
+  return (all, facts.elems)
 where
   genTagged (cfg : Config) (amb : MVars.Ambient) : TacticM Rewrites := do
     let some _ := cfg.basket? | return #[]

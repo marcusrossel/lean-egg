@@ -15,7 +15,8 @@ declare_syntax_cat tc_proj
 declare_syntax_cat tc_spec_src
 declare_syntax_cat tc_spec
 declare_syntax_cat tc_extension
-declare_syntax_cat explosion
+declare_syntax_cat nested_split_extension
+declare_syntax_cat explosion_extension
 declare_syntax_cat fwd_rw_src
 declare_syntax_cat fact_src
 declare_syntax_cat rw_src
@@ -54,52 +55,57 @@ syntax tc_spec : tc_extension
 
 -- TODO: For some reason separating out the `←` and `→` into their own syntax category caused
 --       problems.
-syntax "💥→[" num,* "]" : explosion
-syntax "💥←[" num,* "]" : explosion
 
-syntax basic_fwd_rw_src (noWs tc_extension)* : fwd_rw_src
-syntax basic_fwd_rw_src noWs explosion       : fwd_rw_src
-syntax "↦bvar"                               : fwd_rw_src
-syntax "↦app"                                : fwd_rw_src
-syntax "↦λ"                                  : fwd_rw_src
-syntax "↦∀"                                  : fwd_rw_src
-syntax "↦fvar"                               : fwd_rw_src
-syntax "↦mvar"                               : fwd_rw_src
-syntax "↦sort"                               : fwd_rw_src
-syntax "↦lit"                                : fwd_rw_src
-syntax "↦proof"                              : fwd_rw_src
-syntax "↦inst"                               : fwd_rw_src
-syntax "↦_"                                  : fwd_rw_src
-syntax "↦|"                                  : fwd_rw_src
-syntax "↑bvar"                               : fwd_rw_src
-syntax "↑app"                                : fwd_rw_src
-syntax "↑λ"                                  : fwd_rw_src
-syntax "↑∀"                                  : fwd_rw_src
-syntax "↑fvar"                               : fwd_rw_src
-syntax "↑mvar"                               : fwd_rw_src
-syntax "↑sort"                               : fwd_rw_src
-syntax "↑lit"                                : fwd_rw_src
-syntax "↑proof"                              : fwd_rw_src
-syntax "↑inst"                               : fwd_rw_src
-syntax "↑_"                                  : fwd_rw_src
-syntax "≡maxS"                               : fwd_rw_src
-syntax "≡max↔"                               : fwd_rw_src
-syntax "≡imax0"                              : fwd_rw_src
-syntax "≡imaxS"                              : fwd_rw_src
-syntax "≡η"                                  : fwd_rw_src
-syntax "≡η+"                                 : fwd_rw_src
-syntax "≡β"                                  : fwd_rw_src
-syntax "≡0"                                  : fwd_rw_src
-syntax "≡→S"                                 : fwd_rw_src
-syntax "≡S→"                                 : fwd_rw_src
-syntax "≡+"                                  : fwd_rw_src
-syntax "≡-"                                  : fwd_rw_src
-syntax "≡*"                                  : fwd_rw_src
-syntax "≡^"                                  : fwd_rw_src
-syntax "≡/"                                  : fwd_rw_src
+syntax "⁅→⁆" : nested_split_extension
+syntax "⁅←⁆" : nested_split_extension
+
+syntax "💥→[" num,* "]" : explosion_extension
+syntax "💥←[" num,* "]" : explosion_extension
+
+syntax basic_fwd_rw_src (noWs tc_extension)*        : fwd_rw_src
+syntax basic_fwd_rw_src noWs explosion_extension    : fwd_rw_src
+syntax basic_fwd_rw_src noWs nested_split_extension : fwd_rw_src
+syntax "↦bvar"                                      : fwd_rw_src
+syntax "↦app"                                       : fwd_rw_src
+syntax "↦λ"                                         : fwd_rw_src
+syntax "↦∀"                                         : fwd_rw_src
+syntax "↦fvar"                                      : fwd_rw_src
+syntax "↦mvar"                                      : fwd_rw_src
+syntax "↦sort"                                      : fwd_rw_src
+syntax "↦lit"                                       : fwd_rw_src
+syntax "↦proof"                                     : fwd_rw_src
+syntax "↦inst"                                      : fwd_rw_src
+syntax "↦_"                                         : fwd_rw_src
+syntax "↦|"                                         : fwd_rw_src
+syntax "↑bvar"                                      : fwd_rw_src
+syntax "↑app"                                       : fwd_rw_src
+syntax "↑λ"                                         : fwd_rw_src
+syntax "↑∀"                                         : fwd_rw_src
+syntax "↑fvar"                                      : fwd_rw_src
+syntax "↑mvar"                                      : fwd_rw_src
+syntax "↑sort"                                      : fwd_rw_src
+syntax "↑lit"                                       : fwd_rw_src
+syntax "↑proof"                                     : fwd_rw_src
+syntax "↑inst"                                      : fwd_rw_src
+syntax "↑_"                                         : fwd_rw_src
+syntax "≡maxS"                                      : fwd_rw_src
+syntax "≡max↔"                                      : fwd_rw_src
+syntax "≡imax0"                                     : fwd_rw_src
+syntax "≡imaxS"                                     : fwd_rw_src
+syntax "≡η"                                         : fwd_rw_src
+syntax "≡η+"                                        : fwd_rw_src
+syntax "≡β"                                         : fwd_rw_src
+syntax "≡0"                                         : fwd_rw_src
+syntax "≡→S"                                        : fwd_rw_src
+syntax "≡S→"                                        : fwd_rw_src
+syntax "≡+"                                         : fwd_rw_src
+syntax "≡-"                                         : fwd_rw_src
+syntax "≡*"                                         : fwd_rw_src
+syntax "≡^"                                         : fwd_rw_src
+syntax "≡/"                                         : fwd_rw_src
 -- WORKAROUND: https://egraphs.zulipchat.com/#narrow/stream/375765-egg.2Fegglog/topic/.25.20in.20rule.20name
-syntax str                                   : fwd_rw_src
--- syntax "≡%"                               : fwd_rw_src
+syntax str                                          : fwd_rw_src
+-- syntax "≡%"                                      : fwd_rw_src
 
 syntax "!?"          : fact_src
 syntax "!="          : fact_src
@@ -200,6 +206,8 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
     .explosion (parseBasicFwdRwSrc src) .forward (idxs.getElems.map (·.getNat)).toList
   | `(fwd_rw_src|$src:basic_fwd_rw_src💥←[$idxs:num,*]) =>
     .explosion (parseBasicFwdRwSrc src) .backward (idxs.getElems.map (·.getNat)).toList
+  | `(fwd_rw_src|$src:basic_fwd_rw_src⁅→⁆) => .nestedSplit (parseBasicFwdRwSrc src) .forward
+  | `(fwd_rw_src|$src:basic_fwd_rw_src⁅←⁆) => .nestedSplit (parseBasicFwdRwSrc src) .backward
   | _ => unreachable!
 
 private def parseFactSrc : (TSyntax `fact_src) → Source.Fact
