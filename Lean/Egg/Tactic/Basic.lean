@@ -5,7 +5,7 @@ import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Base
 import Egg.Tactic.Goal
 import Egg.Tactic.Guides
-import Egg.Tactic.Premises.Gen
+import Egg.Tactic.Premises.Gen.Basic
 import Egg.Tactic.Trace
 import Egg.Tactic.Calcify
 import Lean

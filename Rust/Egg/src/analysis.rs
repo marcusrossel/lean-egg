@@ -7,9 +7,9 @@ use crate::util::*;
 pub struct LeanAnalysisData {
     pub nat_val:      Option<u64>,
     pub dir_val:      Option<bool>,
-    pub loose_bvars:  HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
-    pub is_primitive: bool,         // A class is primitive if it represents a `Nat`, `Str` or universe level e-node.
-    pub fact: Option<String>,       // If this e-class came from a lean `fact` like "H2"
+    pub loose_bvars:  HashSet<u64>,   // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
+    pub is_primitive: bool,           // A class is primitive if it represents a `Nat`, `Str` or universe level e-node.
+    pub fact:         Option<String>, // A class has an associated fact, if it contains a term which we know is proven in Lean.
 }
 
 #[derive(Default)]

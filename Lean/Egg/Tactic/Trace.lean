@@ -130,6 +130,16 @@ nonrec def Config.trace (cfg : Config) (cls : Name) : TacticM Unit := do
       trace cls fun _ => m!"Exit Point: {cfg.exitPoint.format}"
       trace cls fun _ => m!"E-Graph Visualization Export Path: {cfg.vizPath.getD "None"}"
 
+nonrec def Config.DefEq.trace (cfg : Config.DefEq) (cls : Name) : TacticM Unit := do
+  withTraceNode cls (fun _ => return "Definitional") do
+    if cfg.beta             then Lean.trace cls fun _ => "β-Reduction"
+    if cfg.eta              then Lean.trace cls fun _ => "η-Reduction"
+    if cfg.etaExpand        then Lean.trace cls fun _ => "η-Expansion"
+    if cfg.natLit           then Lean.trace cls fun _ => "Natural Number Literals"
+    if cfg.levels           then Lean.trace cls fun _ => "Universe Levels"
+    if cfg.eraseProofs      then Lean.trace cls fun _ => "Proof Irrelevance"
+    if cfg.eraseTCInstances then Lean.trace cls fun _ => "Type Class Instances"
+
 nonrec def Request.trace (req : Request) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Goal") do
     trace cls fun _ => m!"LHS: {req.lhs}"

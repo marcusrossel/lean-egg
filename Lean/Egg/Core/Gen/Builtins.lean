@@ -22,3 +22,8 @@ def builtins (cfg : Rewrite.Config) : MetaM Rewrites := do
     let rw? ← Rewrite.from? val type (.builtin idx) cfg
     rws := rws.push rw?.get!
   return rws
+
+end Rewrites
+
+def genBuiltins (cfg : Config) (amb : MVars.Ambient) : MetaM Rewrites := do
+  if cfg.builtins then Rewrites.builtins { cfg with amb } else return #[]

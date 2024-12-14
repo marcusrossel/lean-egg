@@ -76,6 +76,7 @@ private def genGoalTypeSpecialization
   let (spec, changed) ← genSpecialization rw (missing.merge conds) norm
   return if changed then spec else none
 
+-- Goal type specialization is only run if the given `goalType?` is not `none`.
 def genTcSpecializations
     (targets : Rewrites) (norm : Config.Normalization) (goalType? : Option Expr) :
     MetaM Rewrites := do

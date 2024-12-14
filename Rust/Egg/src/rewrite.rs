@@ -61,9 +61,6 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
         for cond in self.conds.clone() {
             let id = graph.add_instantiation(&cond.ast, subst);
             
-            // Note: If we don't find a fact matching `id`, this might just be because the fact id isn't canonical. 
-            //       Thus, in the `else if` branch we also check whether there exists a fact id whose canonicalization
-            //       matches `id`.
             if let Some(fact_name) = &graph[id].data.fact {
                 let mut r = rule.as_str().to_string(); r.push_str(&fact_name);
                 rule = Symbol::from(r);
@@ -99,13 +96,13 @@ fn eval_eq_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &S
 
     let ast = &cond.ast;
     let i1 = Id::from(ast.as_ref().len() - 1);
-    let ENodeOrVar::ENode(LeanExpr::App([i2, i9])) = &ast[i1] else { return false };
+    let ENodeOrVar::ENode(LeanExpr::App([i2, i9]))  = &ast[i1]  else { return false };
     let ENodeOrVar::ENode(LeanExpr::App([i3, i8_])) = &ast[*i2] else { return false };
     let ENodeOrVar::ENode(LeanExpr::App([i4, _i7])) = &ast[*i3] else { return false };
-    let ENodeOrVar::ENode(LeanExpr::Const(b)) = &ast[*i4] else { return false };
-    let [i5, ..] =  &**b else { return false };
-    let ENodeOrVar::ENode(LeanExpr::Str(string)) = &ast[*i5] else { return false };
-    let "Eq" = &**string else { return false };
+    let ENodeOrVar::ENode(LeanExpr::Const(b))       = &ast[*i4] else { return false };
+    let [i5, ..]                                    = &**b      else { return false };
+    let ENodeOrVar::ENode(LeanExpr::Str(string))    = &ast[*i5] else { return false };
+    let "Eq"                                        = &**string else { return false };
 
     let mut sub_expr = |i: Id| -> Id {
         // pa == ast[0..i]
@@ -118,6 +115,5 @@ fn eval_eq_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &S
     };
 
     let (a, b) = (sub_expr(*i8_), sub_expr(*i9));
-
     graph.find(a) == graph.find(b)
 }

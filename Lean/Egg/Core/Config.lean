@@ -32,7 +32,7 @@ structure Gen where
   basket?         := (none : Option Lean.Name)
   genTcProjRws    := true
   genTcSpecRws    := true
-  genGoalTcSpec   := true
+  genGoalTcSpec   := true -- This option requires `genTcSpecRws` to be true.
   genNestedSplits := true
   explosion       := false
   deriving BEq
@@ -84,3 +84,6 @@ instance : Coe Config Encoding where
 
 instance : Coe Config DefEq where
   coe := toDefEq
+
+instance : Coe Config Gen where
+  coe := toGen
