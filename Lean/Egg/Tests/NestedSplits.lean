@@ -1,4 +1,5 @@
 import Egg
+open scoped Egg
 
 set_option egg.genNestedSplits true
 
@@ -48,13 +49,8 @@ info: [egg.rewrites] Rewrites
 -/
 #guard_msgs(info) in
 set_option trace.egg.rewrites true in
+egg_no_defeq in
 set_option egg.builtins false in
-set_option egg.beta false in
-set_option egg.eta false in
-set_option egg.natLit false in
-set_option egg.levels false in
-set_option egg.eraseProofs false in
-set_option egg.eraseTCInstances false in
 set_option egg.genTcProjRws false in
 example (h : (a = b) ↔ (c = d)) : 0 = 0 := by
   egg [h]

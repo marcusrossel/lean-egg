@@ -5,6 +5,7 @@ import Egg.Tactic.Premises.Gen.Derived
 import Egg.Tactic.Premises.Parse
 import Egg.Tactic.Config.Option
 import Egg.Tactic.Config.Modifier
+import Egg.Tactic.Config.NoDefEq
 import Egg.Tactic.Base
 import Egg.Tactic.Tags
 import Egg.Tactic.Calcify

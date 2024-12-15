@@ -1,4 +1,5 @@
 import Egg
+open scoped Egg
 
 /-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
@@ -93,15 +94,9 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs(info, drop error) in
+egg_no_defeq in
 set_option egg.genTcProjRws false in
 set_option egg.builtins false in
-set_option egg.beta false in
-set_option egg.eta false in
-set_option egg.natLit false in
-set_option egg.builtins false in
-set_option egg.levels false in
-set_option egg.eraseProofs false in
-set_option egg.eraseTCInstances false in
 example (l₁ l₂ : List Nat) (h : ∀ (α : Type) (l₁ l₂ : List α), l₁ = l₂) : l₁ = l₂ := by
   set_option trace.egg.rewrites true in egg [h]
 

@@ -1,4 +1,5 @@
 import Egg
+open scoped Egg
 
 -- TODO: This should generate a type class projection reduction from HAdd.hAdd to Add.add.
 --       It doesn't because `α` and the `inst : Add α` are bvars.
@@ -58,15 +59,9 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
-#guard_msgs in
-set_option linter.unusedVariables false in
+#guard_msgs(info) in
 set_option trace.egg.rewrites true in
+egg_no_defeq in
 set_option egg.builtins false in
-set_option egg.beta false in
-set_option egg.eta false in
-set_option egg.natLit false in
-set_option egg.levels false in
-set_option egg.eraseProofs false in
-set_option egg.eraseTCInstances false in
 example (x : Nat) (h : ∀ (_ : x * y = z), z = z) : x = x := by
   egg [h]

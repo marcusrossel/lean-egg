@@ -1,16 +1,11 @@
 import Egg
+open scoped Egg
 
 -- These test check that redundant rewrites are pruned.
 
--- TODO: Add a macro to turn off all defeqs.
+egg_no_defeq
 set_option egg.genTcProjRws false
 set_option egg.builtins false
-set_option egg.beta false
-set_option egg.eta false
-set_option egg.natLit false
-set_option egg.levels false
-set_option egg.eraseProofs false
-set_option egg.eraseTCInstances false
 
 /--
 info: [egg.rewrites] Rewrites
