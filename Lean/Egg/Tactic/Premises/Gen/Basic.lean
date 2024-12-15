@@ -11,9 +11,6 @@ open Lean Meta Elab Tactic
 
 namespace Egg.Premises
 
--- TODO: Remove the distinction between the different kinds of auto-generated rewrite categories.
---       Just have one `auto` category. Then see what follows from that.
-
 def gen
     (goal : Congr) (ps : TSyntax `egg_premises) (guides : Guides) (cfg : Config)
     (amb : MVars.Ambient) : TacticM (Rewrites × Facts) := do

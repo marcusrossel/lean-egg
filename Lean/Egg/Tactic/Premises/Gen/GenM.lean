@@ -117,13 +117,14 @@ def generate' (cat : RewriteCategory) (g : GenM Premises) : GenM Unit := do
   let { rws := ⟨new, stxs⟩, facts } ← g
   addFacts facts
   let mut (new, stx) ← prune new (if stxs.isEmpty then none else stxs)
+  let cls := `egg.rewrites
   if let .derived := cat then
     let inv ← catchInvalidConditionals new (throw := false)
     new := new.filter fun n => !inv.any (n.src == ·.src)
     addPruned inv
-    withTraceNode `egg.rewrites (fun _ => return m!"{cat.title} ({new.size})") do (Rewrites.trace new) #[] `egg.rewrites
+    withTraceNode cls (fun _ => return m!"{cat.title} ({new.size})") do (Rewrites.trace new) #[] cls
   else
-    withTraceNode `egg.rewrites (fun _ => return m!"{cat.title} ({new.size})") do new.trace stx `egg.rewrites
+    withTraceNode cls (fun _ => return m!"{cat.title} ({new.size})") do new.trace stx cls
     _ ← catchInvalidConditionals new (throw := true)
   set cat new
   addAll new

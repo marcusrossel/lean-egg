@@ -99,16 +99,17 @@ open DerivedM
 --       For example, tc proj and explosion might easily loop.
 partial def genDerived
     (goal : Congr) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Config)
-    (amb : MVars.Ambient) : TacticM Rewrites :=
-  DerivedM.run do
-    addInitialTcProjs
+    (amb : MVars.Ambient) : TacticM Rewrites := do
+  let all ← DerivedM.run do
     add' (cat? := none) rws
+    addInitialTcProjs
     let goalType? ← do if cfg.genGoalTcSpec then pure <| some (← goal.type) else pure none
     while !(← isDone cfg) do core goalType?
+  return all[rws.size:]
 where
   addInitialTcProjs : DerivedM Unit := do
     unless cfg.genTcProjRws do return
-    let targets := goal.tcProjTargets .goal ++ facts.tcProjTargets ++ guides.tcProjTargets
+    let targets := rws.tcProjTargets ++ goal.tcProjTargets .goal ++ guides.tcProjTargets ++ facts.tcProjTargets
     let (rws, cover) ← genTcProjReductions targets (covered := ∅) { cfg with amb }
     add .tcProj rws
     setTcProjCover cover

@@ -87,11 +87,9 @@ info: [egg.rewrites] Rewrites
           level: []
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
-  [egg.rewrites] Split Nested (0)
-  [egg.rewrites] Type Class (0)
-  [egg.rewrites] Explosion (0)
-  [egg.rewrites] Hypotheses (0)
+  [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
+  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs(info, drop error) in

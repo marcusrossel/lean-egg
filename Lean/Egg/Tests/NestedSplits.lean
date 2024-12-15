@@ -3,9 +3,6 @@ import Egg
 set_option egg.genNestedSplits true
 
 /--
-warning: unused variable `h`
-note: this linter can be disabled with `set_option linter.unusedVariables false`
----
 info: [egg.rewrites] Rewrites
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇔): h
@@ -20,7 +17,7 @@ info: [egg.rewrites] Rewrites
           level: []
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
-  [egg.rewrites] Split Nested (2)
+  [egg.rewrites] Derived (2)
     [egg.rewrites] #0⁅→⁆(⇔)
       [egg.rewrites] c = d
       [egg.rewrites] Conditions
@@ -45,13 +42,11 @@ info: [egg.rewrites] Rewrites
           expr:  []
           class: []
           level: []
-  [egg.rewrites] Type Class (0)
-  [egg.rewrites] Explosion (0)
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
+  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
-#guard_msgs in
+#guard_msgs(info) in
 set_option trace.egg.rewrites true in
 set_option egg.builtins false in
 set_option egg.beta false in

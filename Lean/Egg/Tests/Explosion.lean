@@ -20,11 +20,9 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Basic (0)
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
-  [egg.rewrites] Split Nested (0)
-  [egg.rewrites] Type Class (0)
-  [egg.rewrites] Explosion (0)
-  [egg.rewrites] Hypotheses (0)
+  [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
+  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs in
@@ -48,11 +46,9 @@ info: [egg.rewrites] Rewrites
           level: []
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
-  [egg.rewrites] Split Nested (0)
-  [egg.rewrites] Type Class (0)
-  [egg.rewrites] Explosion (0)
-  [egg.rewrites] Hypotheses (0)
+  [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
+  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs in
@@ -76,11 +72,9 @@ info: [egg.rewrites] Rewrites
           level: []
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
-  [egg.rewrites] Split Nested (0)
-  [egg.rewrites] Type Class (0)
-  [egg.rewrites] Explosion (0)
-  [egg.rewrites] Hypotheses (0)
+  [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
+  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs in
@@ -104,11 +98,9 @@ info: [egg.rewrites] Rewrites
           level: []
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
-  [egg.rewrites] Split Nested (0)
-  [egg.rewrites] Type Class (0)
-  [egg.rewrites] Explosion (0)
-  [egg.rewrites] Hypotheses (0)
+  [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
+  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs in
@@ -132,31 +124,29 @@ info: [egg.rewrites] Rewrites
           level: []
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
-  [egg.rewrites] Split Nested (0)
-  [egg.rewrites] Type Class (0)
-  [egg.rewrites] Explosion (2)
+  [egg.rewrites] Derived (2)
     [egg.rewrites] #0💥→[3](⇔)
-      [egg.rewrites] f ?m.269 ?m.269 = f a ?m.269
+      [egg.rewrites] f ?m.263 ?m.263 = f a ?m.263
       [egg.rewrites] LHS MVars
-          expr:  [?m.269]
+          expr:  [?m.263]
           class: []
           level: []
       [egg.rewrites] RHS MVars
-          expr:  [?m.269]
+          expr:  [?m.263]
           class: []
           level: []
     [egg.rewrites] #0💥→[4](⇔)
-      [egg.rewrites] f ?m.278 ?m.278 = f b ?m.278
+      [egg.rewrites] f ?m.272 ?m.272 = f b ?m.272
       [egg.rewrites] LHS MVars
-          expr:  [?m.278]
+          expr:  [?m.272]
           class: []
           level: []
       [egg.rewrites] RHS MVars
-          expr:  [?m.278]
+          expr:  [?m.272]
           class: []
           level: []
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
+  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs in

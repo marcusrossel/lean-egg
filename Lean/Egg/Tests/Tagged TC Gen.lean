@@ -28,8 +28,7 @@ info: [egg.rewrites] Rewrites
           class: [?c]
           level: [?u.81]
   [egg.rewrites] Builtin (0)
-  [egg.rewrites] Split Nested (0)
-  [egg.rewrites] Type Class (3)
+  [egg.rewrites] Derived (3)
     [egg.rewrites] □0<⊢>(⇔)
       [egg.rewrites] z = z
       [egg.rewrites] LHS MVars
@@ -60,9 +59,8 @@ info: [egg.rewrites] Rewrites
           expr:  []
           class: []
           level: []
-  [egg.rewrites] Explosion (0)
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Definitional
+  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs in
