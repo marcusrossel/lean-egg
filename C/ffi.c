@@ -384,7 +384,7 @@ structure Result.Raw where
   egraph? : Option EGraph
   report? : Option Report
 */
-lean_obj_res run_eqsat_request(lean_obj_arg req) {
+lean_obj_res run_eqsat_request_impl(lean_obj_arg req) {
     eqsat_result result = run_eqsat_request_core(req);
     lean_object* expl   = lean_mk_string(result.expl);
     lean_object* graph  = egraph_to_lean(result.graph, result.slotted);
@@ -408,6 +408,16 @@ lean_obj_res run_eqsat_request(lean_obj_arg req) {
 
     return lean_result;
 }
+
+lean_object* run_eqsat_request(lean_obj_arg x_1, lean_object* x_2, lean_object* x_3, lean_object* x_4, lean_object* x_5, lean_object* x_6) {
+    lean_obj_res res = run_eqsat_request_impl(x_1);
+    lean_object* x_7; lean_object* x_8;
+    x_8 = lean_alloc_ctor(0, 2, 0);
+    lean_ctor_set(x_8, 0, res);
+    lean_ctor_set(x_8, 1, x_6);
+    return x_8;
+}
+
 
 extern const char* egg_query_equiv(
     egg_egraph graph,
