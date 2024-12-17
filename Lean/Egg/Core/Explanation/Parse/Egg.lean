@@ -103,7 +103,7 @@ where
 
 private abbrev ParseStepResult := Except ParseError <| Expression × (Option Rewrite.Info)
 
-private partial def parseExpr (stx : TSyntax `egg_expr) : ParseStepResult :=
+partial def parseExpr (stx : TSyntax `egg_expr) : ParseStepResult :=
   let (e, info?) := go .root stx |>.run none
   return (← e, info?)
 where
