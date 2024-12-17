@@ -129,7 +129,27 @@ fn eval_eq_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &S
 }
 
 fn eval_tc_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &Subst, e: *const c_void) -> bool {
+    // TODO i is unused
+    let i = graph.add_instantiation(&cond.ast, subst);
+
+    let ast = &cond.ast;
+
+    let mut sub_expr = |i: Id| -> Id {
+        // pa == ast[0..i]
+        let mut pa = PatternAst::default();
+        for x in ast.as_ref().iter().take(usize::from(i) + 1) {
+            pa.add(x.clone());
+        }
+
+        graph.add_instantiation(&pa, subst)
+    };
+
+    let i1 = Id::from(ast.as_ref().len() - 1);
+    let ENodeOrVar::ENode(LeanExpr::Inst(ty_id)) = &ast[i1] else { return false };
+    let ty = sub_expr(*ty_id);
+
+    let s = ty.to_string();
     unsafe {
-        handle_type_class_inst(e, "".as_ptr(), 0) == 0
+        handle_type_class_inst(e, s.as_ptr(), s.len() as _) == 0
     }
 }
