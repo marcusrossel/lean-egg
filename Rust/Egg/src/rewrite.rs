@@ -103,53 +103,37 @@ fn eval_eq_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &S
     // check whether `cond` is an equality condition.
     // "(app (app (app (const 'Eq' ?univ...) ?t) ?a) ?b)"
     //  ^i1  ^i2  ^i3  ^i4    ^i5  ^i6       ^i7 ^i8 ^i9
+    let i = graph.add_instantiation(&cond.ast, subst);
+    let ast = graph.id_to_expr(i);
 
-    let ast = &cond.ast;
     let i1 = Id::from(ast.as_ref().len() - 1);
-    let ENodeOrVar::ENode(LeanExpr::App([i2, i9]))  = &ast[i1]  else { return false };
-    let ENodeOrVar::ENode(LeanExpr::App([i3, i8_])) = &ast[*i2] else { return false };
-    let ENodeOrVar::ENode(LeanExpr::App([i4, _i7])) = &ast[*i3] else { return false };
-    let ENodeOrVar::ENode(LeanExpr::Const(b))       = &ast[*i4] else { return false };
+    let LeanExpr::App([i2, i9])  = &ast[i1]  else { return false };
+    let LeanExpr::App([i3, i8_]) = &ast[*i2] else { return false };
+    let LeanExpr::App([i4, _i7]) = &ast[*i3] else { return false };
+    let LeanExpr::Const(b)       = &ast[*i4] else { return false };
     let [i5, ..]                                    = &**b      else { return false };
-    let ENodeOrVar::ENode(LeanExpr::Str(string))    = &ast[*i5] else { return false };
+    let LeanExpr::Str(string)    = &ast[*i5] else { return false };
     let "Eq"                                        = &**string else { return false };
 
-    let mut sub_expr = |i: Id| -> Id {
-        // pa == ast[0..i]
-        let mut pa = PatternAst::default();
-        for x in ast.as_ref().iter().take(usize::from(i) + 1) {
-            pa.add(x.clone());
-        }
-
-        graph.add_instantiation(&pa, subst)
-    };
-
-    let (a, b) = (sub_expr(*i8_), sub_expr(*i9));
-    graph.find(a) == graph.find(b)
+    let (a, b) = (sub_expr(&ast, *i8_), sub_expr(&ast, *i9));
+    graph.lookup_expr(&a) == graph.lookup_expr(&b)
 }
 
 fn eval_tc_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &Subst, e: *const c_void) -> bool {
-    // TODO i is unused
     let i = graph.add_instantiation(&cond.ast, subst);
-
-    let ast = &cond.ast;
-
-    let mut sub_expr = |i: Id| -> Id {
-        // pa == ast[0..i]
-        let mut pa = PatternAst::default();
-        for x in ast.as_ref().iter().take(usize::from(i) + 1) {
-            pa.add(x.clone());
-        }
-
-        graph.add_instantiation(&pa, subst)
-    };
+    let ast = graph.id_to_expr(i);
 
     let i1 = Id::from(ast.as_ref().len() - 1);
-    let ENodeOrVar::ENode(LeanExpr::Inst(ty_id)) = &ast[i1] else { return false };
-    let ty = sub_expr(*ty_id);
+    let LeanExpr::Inst(ty_id) = &ast[i1] else { return false };
+    let ty = sub_expr(&ast, *ty_id);
 
     let s = ty.to_string();
     unsafe {
         handle_type_class_inst(e, s.as_ptr(), s.len() as _) == 0
     }
+}
+
+fn sub_expr(ast: &RecExpr<LeanExpr>, i: Id) -> RecExpr<LeanExpr> {
+    let v: Vec<_> = ast.as_ref()[0..=usize::from(i)].iter().cloned().collect();
+    RecExpr::from(v)
 }
