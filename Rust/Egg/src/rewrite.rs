@@ -130,7 +130,7 @@ fn eval_tc_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &S
     let mut s = ty.to_string();
     s.push('\0');
     unsafe {
-        handle_type_class_inst(e, s.as_ptr()) == 1
+        handle_type_class_inst(e, s.as_ptr()) > 0
     }
 }
 
