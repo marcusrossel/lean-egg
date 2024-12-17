@@ -1,8 +1,6 @@
 use analysis::LeanEGraph;
 use egg::*;
-use core::ffi::c_char;
-use core::ffi::CStr;
-use std::ffi::CString;
+use std::ffi::{c_char, CStr, CString, c_int};
 use std::ptr::null;
 use libc::c_double;
 use std::str::FromStr;
@@ -258,4 +256,8 @@ pub unsafe extern "C" fn egg_query_equiv(
 #[no_mangle]
 pub unsafe extern "C" fn egg_free_egraph(egraph: *mut LeanEGraph) {
     if !egraph.is_null() { drop(Box::from_raw(egraph)); }
+}
+
+extern "C" {
+    fn handle_type_class_inst(x: *const u8, length: c_int) -> c_int;
 }

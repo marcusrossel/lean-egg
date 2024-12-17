@@ -418,7 +418,6 @@ lean_object* run_eqsat_request(lean_obj_arg x_1, lean_object* x_2, lean_object* 
     return x_8;
 }
 
-
 extern const char* egg_query_equiv(
     egg_egraph graph,
     const char* init, 

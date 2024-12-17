@@ -5,6 +5,7 @@ use crate::lean_expr::*;
 use crate::analysis::*;
 use crate::bvar_correction::*;
 use crate::valid_match::*;
+use crate::handle_type_class_inst;
 
 pub struct RewriteTemplate {
     pub name:  String,
@@ -70,6 +71,9 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             } else if eval_eq_condition(&cond, graph, subst) {
                 let mut r = rule.as_str().to_string(); r.push_str("!=");
                 rule = Symbol::from(r);
+            } else if eval_tc_condition(&cond, graph, subst) {
+                let mut r = rule.as_str().to_string(); r.push_str("!%");
+                rule = Symbol::from(r);
             } else {
                 return vec![]
             }
@@ -116,4 +120,10 @@ fn eval_eq_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &S
 
     let (a, b) = (sub_expr(*i8_), sub_expr(*i9));
     graph.find(a) == graph.find(b)
+}
+
+fn eval_tc_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &Subst) -> bool {
+    unsafe {
+        handle_type_class_inst("".as_ptr(), 0) == 0
+    }
 }
