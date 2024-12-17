@@ -260,5 +260,5 @@ pub unsafe extern "C" fn egg_free_egraph(egraph: *mut LeanEGraph) {
 }
 
 extern "C" {
-    fn handle_type_class_inst(e: *const c_void, x: *const u8, length: c_int) -> c_int;
+    fn handle_type_class_inst(e: *const c_void, x: *const u8) -> c_int;
 }

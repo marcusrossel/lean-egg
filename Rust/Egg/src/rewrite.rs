@@ -127,9 +127,10 @@ fn eval_tc_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &S
     let LeanExpr::Inst(ty_id) = &ast[i1] else { return false };
     let ty = sub_expr(&ast, *ty_id);
 
-    let s = ty.to_string();
+    let mut s = ty.to_string();
+    s.push('\0');
     unsafe {
-        handle_type_class_inst(e, s.as_ptr(), s.len() as _) == 0
+        handle_type_class_inst(e, s.as_ptr()) == 1
     }
 }
 
