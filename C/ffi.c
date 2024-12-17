@@ -1,5 +1,6 @@
 #include <lean/lean.h>
 #include <stdio.h>
+#include "ffi.h"
 
 size_t nat_from_lean_obj(lean_obj_arg nat) {
     assert(lean_is_scalar(nat));
@@ -319,7 +320,8 @@ extern egg_result egg_explain_congr(
     facts_array facts, 
     str_array guides, 
     config cfg,
-    const char* viz_path
+    const char* viz_path,
+    void* e
 );
 
 extern slotted_result slotted_explain_congr(
@@ -342,7 +344,7 @@ structure Egg.Request where
   vizPath : String
   cfg     : Request.Config
 */
-eqsat_result run_eqsat_request_core(lean_obj_arg req) {
+eqsat_result run_eqsat_request_core(lean_obj_arg req, env* e) {
     const char* lhs      = lean_string_cstr(lean_ctor_get(req, 0));
     const char* rhs      = lean_string_cstr(lean_ctor_get(req, 1));
     rws_array rws        = rewrites_from_lean_obj(lean_ctor_get(req, 2));
@@ -361,7 +363,7 @@ eqsat_result run_eqsat_request_core(lean_obj_arg req) {
             .rep     = res.rep,
         };
     } else {
-        egg_result res = egg_explain_congr(lhs, rhs, rws, facts, guides, cfg.rust_config, viz_path);
+        egg_result res = egg_explain_congr(lhs, rhs, rws, facts, guides, cfg.rust_config, viz_path, e);
         result = (eqsat_result) {
             .slotted = false,
             .expl    = res.expl,
@@ -384,8 +386,8 @@ structure Result.Raw where
   egraph? : Option EGraph
   report? : Option Report
 */
-lean_obj_res run_eqsat_request_impl(lean_obj_arg req) {
-    eqsat_result result = run_eqsat_request_core(req);
+lean_obj_res run_eqsat_request_impl(lean_obj_arg req, env* e) {
+    eqsat_result result = run_eqsat_request_core(req, e);
     lean_object* expl   = lean_mk_string(result.expl);
     lean_object* graph  = egraph_to_lean(result.graph, result.slotted);
     lean_object* rep    = report_to_lean(result.rep);
@@ -410,7 +412,14 @@ lean_obj_res run_eqsat_request_impl(lean_obj_arg req) {
 }
 
 lean_object* run_eqsat_request(lean_obj_arg x_1, lean_object* x_2, lean_object* x_3, lean_object* x_4, lean_object* x_5, lean_object* x_6) {
-    lean_obj_res res = run_eqsat_request_impl(x_1);
+    env e = {
+        .x_1 = x_2,
+        .x_2 = x_3,
+        .x_3 = x_4,
+        .x_4 = x_5,
+        .x_5 = x_6,
+    };
+    lean_obj_res res = run_eqsat_request_impl(x_1, &e);
     lean_object* x_7; lean_object* x_8;
     x_8 = lean_alloc_ctor(0, 2, 0);
     lean_ctor_set(x_8, 0, res);

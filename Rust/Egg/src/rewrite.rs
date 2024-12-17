@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use egg::*;
+use std::ffi::c_void;
 use crate::result::*;
 use crate::lean_expr::*;
 use crate::analysis::*;
@@ -18,13 +19,14 @@ pub fn templates_to_rewrites(
     templates: Vec<RewriteTemplate>, 
     block_invalid_matches: bool, 
     shift_captured_bvars: bool, 
-    allow_unsat_conditions: bool
+    allow_unsat_conditions: bool,
+    e: *const c_void
 ) -> Res<Vec<LeanRewrite>> {
     let mut result: Vec<LeanRewrite> = vec![];
     for template in templates {
         let applier = LeanApplier { 
             rhs: template.rhs, conds: template.conds, 
-            block_invalid_matches, shift_captured_bvars, allow_unsat_conditions 
+            block_invalid_matches, shift_captured_bvars, allow_unsat_conditions, e,
         };
         match Rewrite::new(template.name, template.lhs, applier) {
             Ok(rw)   => result.push(rw),
@@ -34,12 +36,16 @@ pub fn templates_to_rewrites(
     Ok(result)
 }
 
+unsafe impl Send for LeanApplier {}
+unsafe impl Sync for LeanApplier {}
+
 struct LeanApplier {
     pub rhs: Pattern<LeanExpr>,
     pub conds: Vec<Pattern<LeanExpr>>,
     pub block_invalid_matches: bool,
     pub shift_captured_bvars: bool,
-    pub allow_unsat_conditions: bool
+    pub allow_unsat_conditions: bool,
+    pub e: *const c_void,
 }
 
 impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
@@ -71,7 +77,7 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             } else if eval_eq_condition(&cond, graph, subst) {
                 let mut r = rule.as_str().to_string(); r.push_str("!=");
                 rule = Symbol::from(r);
-            } else if eval_tc_condition(&cond, graph, subst) {
+            } else if eval_tc_condition(&cond, graph, subst, self.e) {
                 let mut r = rule.as_str().to_string(); r.push_str("!%");
                 rule = Symbol::from(r);
             } else {
@@ -122,8 +128,8 @@ fn eval_eq_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &S
     graph.find(a) == graph.find(b)
 }
 
-fn eval_tc_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &Subst) -> bool {
+fn eval_tc_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &Subst, e: *const c_void) -> bool {
     unsafe {
-        handle_type_class_inst("".as_ptr(), 0) == 0
+        handle_type_class_inst(e, "".as_ptr(), 0) == 0
     }
 }

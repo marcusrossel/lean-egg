@@ -1,5 +1,6 @@
 use std::time::Duration;
 use std::collections::HashMap;
+use std::ffi::c_void;
 use egg::*;
 use crate::result::*;
 use crate::analysis::*;
@@ -37,7 +38,7 @@ pub struct ExplainedCongr {
     pub rw_stats: String   
 }
 
-pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, guides: Vec<String>, cfg: Config, viz_path: Option<String>) -> Result<ExplainedCongr, Error> {    
+pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, guides: Vec<String>, cfg: Config, viz_path: Option<String>, e: *const c_void) -> Result<ExplainedCongr, Error> {    
     let analysis = LeanAnalysis { union_semantics: cfg.union_semantics };
     let mut egraph: LeanEGraph = EGraph::new(analysis);
     egraph = egraph.with_explanations_enabled();
@@ -60,7 +61,7 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
     }
 
     let mut rws;
-    match templates_to_rewrites(rw_templates, cfg.block_invalid_matches, cfg.shift_captured_bvars, cfg.allow_unsat_conditions) {
+    match templates_to_rewrites(rw_templates, cfg.block_invalid_matches, cfg.shift_captured_bvars, cfg.allow_unsat_conditions, e) {
         Ok(r)    => rws = r,
         Err(err) => return Err(Error::Rewrite(err.to_string()))
     }
