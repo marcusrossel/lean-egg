@@ -23,9 +23,9 @@ private partial def exprReferencesMVar (e : Expr) (m : MVarId) : MetaM Bool := d
     | _ => pure ()
     exprReferencesMVar (← inferType e) m
 
-private partial def genExplosionsForRw (rw : Rewrite) : MetaM Rewrites := do
-  let missingOnLhs := rw.mvars.rhs.expr.subtract rw.mvars.lhs.expr
-  let missingOnRhs := rw.mvars.lhs.expr.subtract rw.mvars.rhs.expr
+private partial def genExplosionsForRw (rw : Rewrite) (cfg : Config.Erasure) : MetaM Rewrites := do
+  let missingOnLhs := (rw.mvars.rhs.visibleExpr cfg).subtract (rw.mvars.lhs.visibleExpr cfg)
+  let missingOnRhs := (rw.mvars.lhs.visibleExpr cfg).subtract (rw.mvars.rhs.visibleExpr cfg)
   return (← genDir .forward  missingOnLhs) ++ (← genDir .backward missingOnRhs)
 where
   genDir (dir : Direction) (missing : MVarIdSet) : MetaM Rewrites := do
@@ -40,16 +40,16 @@ where
     let mut explosions : Rewrites := #[]
     while minIdx < lctx.decls.size do
       let (fresh, subst) ← rw.freshWithSubst
-      let m := subst.expr.fwd[m]!
+      let m := subst.expr[m]!
       let some (fvar, idx) ← findLocalDeclWithTypeMinIdx? (← m.getType) minIdx | break
       minIdx := idx + 1
       unless ← isDefEq (.mvar m) (.fvar fvar) do throwError "egg: internal error in explosion gen"
       let fresh ← fresh.instantiateMVars
       let miss := miss.filterMap fun i =>
-        let i' := subst.expr.fwd[i]!
+        let i' := subst.expr[i]!
         if fresh.mvars.lhs.expr.contains i' || fresh.mvars.rhs.expr.contains i' then i' else none
       explosions := explosions ++ (← core fresh dir miss <| loc ++ [minIdx])
     return explosions
 
-def genExplosions (targets : Rewrites) : MetaM Rewrites := do
-  targets.foldlM (init := #[]) fun acc rw => return acc ++ (← genExplosionsForRw rw)
+def genExplosions (targets : Rewrites) (cfg : Config.Erasure) : MetaM Rewrites := do
+  targets.foldlM (init := #[]) fun acc rw => return acc ++ (← genExplosionsForRw rw cfg)

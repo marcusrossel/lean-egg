@@ -50,11 +50,22 @@ nonrec def formatReport
     s!"⊢ binders:  {goalContainsBinder}" ++
     (if rep.rwStats.isEmpty then "" else s!"\nrw stats:\n{rep.rwStats}")
 
+def MVars.Property.toMessageData : MVars.Property → MessageData
+  | .inTarget       => m!".inTarget"
+  | .isTcInst       => m!".isTcInst"
+  | .inTcInstTerm   => m!".inTcInstTerm"
+  | .inErasedTcInst => m!".inErasedTcInst"
+  | .inProofTerm    => m!".inProofTerm"
+  | .inErasedProof  => m!".inErasedProof"
+
+def MVars.Properties.toMessageData (ps : MVars.Properties) : MessageData :=
+  ps.toList.map Property.toMessageData
+
 nonrec def MVars.toMessageData (mvars : MVars) : MetaM MessageData := do
-  let expr := format <| ← mvars.expr.toList.mapM (ppExpr <| Expr.mvar ·)
-  let tc   := format <| ← mvars.tc.toList.mapM   (ppExpr <| Expr.mvar ·)
-  let lvl  := format <|   mvars.lvl.toList.map   (Level.mvar ·)
-  return "expr:  " ++ expr ++ "\n" ++ "class: " ++ tc ++ "\n" ++ "level: " ++ lvl
+  let mut data := []
+  for (mvar, ps) in mvars.expr do data := data.concat m!"{← ppExpr <| .mvar mvar}: {ps.toMessageData}"
+  for (mvar, ps) in mvars.lvl  do data := data.concat m!"{Level.mvar mvar}: {ps.toMessageData}"
+  return data
 
 def Directions.format : Directions → Format
   | .none     => "∅"
@@ -69,8 +80,9 @@ def Congr.Rel.format : Congr.Rel → Format
 def Congr.toMessageData (cgr : Congr) : MetaM MessageData :=
   return (← ppExpr cgr.lhs) ++ " " ++ cgr.rel.format ++ " " ++ (← ppExpr cgr.rhs)
 
-def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) : TacticM Unit := do
-  let mut header := m!"{rw.src.description}({rw.validDirs.format})"
+def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cfg : Config.Erasure) (cls : Name) :
+    TacticM Unit := do
+  let mut header := m!"{rw.src.description}({rw.validDirs cfg |>.format})"
   if let some stx := stx? then header := m!"{header}: {stx}"
   withTraceNode cls (fun _ => return header) do
     traceM cls fun _ => rw.toCongr.toMessageData
@@ -85,10 +97,11 @@ def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) : TacticM U
     traceM cls fun _ => return m!"LHS MVars\n{← rw.mvars.lhs.toMessageData}"
     traceM cls fun _ => return m!"RHS MVars\n{← rw.mvars.rhs.toMessageData}"
 
-def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cls : Name) : TacticM Unit := do
+def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cfg : Config.Erasure) (cls : Name) :
+    TacticM Unit := do
   for rw in rws, idx in [:rws.size] do
     let stx? := stx[idx]? >>= fun s => if s.getAtomVal == "*" then none else s
-    rw.trace stx? cls
+    rw.trace stx? cfg cls
 
 nonrec def Fact.trace (f : Fact) (stx : Syntax) (cls : Name) : TacticM Unit := do
   trace cls fun _ => m!"{f.src.description}: {stx} : {f.type}"

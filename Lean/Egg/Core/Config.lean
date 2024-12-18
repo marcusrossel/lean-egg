@@ -14,7 +14,7 @@ def Normalization.noReduce : Normalization where
 structure Erasure where
   eraseProofs      := true
   eraseTCInstances := false
-  deriving BEq
+  deriving Inhabited, BEq
 
 def Erasure.noErase : Erasure where
   eraseProofs      := false

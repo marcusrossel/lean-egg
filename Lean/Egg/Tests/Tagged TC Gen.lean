@@ -21,45 +21,33 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] □0(⇔)
       [egg.rewrites] z = z
       [egg.rewrites] LHS MVars
-          expr:  [?c, ?α]
-          class: [?c]
-          level: [?u.81]
+          [?α: [.inErasedTcInst, .inTarget],
+           ?c: [.inTcInstTerm, .isTcInst, .inTarget],
+           ?u.80: [.inErasedTcInst, .inTarget]]
       [egg.rewrites] RHS MVars
-          expr:  [?c, ?α]
-          class: [?c]
-          level: [?u.81]
+          [?α: [.inErasedTcInst, .inTarget],
+           ?c: [.inTcInstTerm, .isTcInst, .inTarget],
+           ?u.80: [.inErasedTcInst, .inTarget]]
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (3)
     [egg.rewrites] □0<⊢>(⇔)
       [egg.rewrites] z = z
       [egg.rewrites] LHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
       [egg.rewrites] RHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
     [egg.rewrites] □0<⊢>[◂16,0](⇔)
       [egg.rewrites] z = 0
       [egg.rewrites] LHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
       [egg.rewrites] RHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
     [egg.rewrites] □0<⊢>[◂16,1](⇔)
       [egg.rewrites] 0 = 0
       [egg.rewrites] LHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
       [egg.rewrites] RHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
   [egg.rewrites] Definitional
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)

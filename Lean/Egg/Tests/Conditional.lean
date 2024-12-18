@@ -79,13 +79,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(∅): h
       [egg.rewrites] ?l₁ = ?l₂
       [egg.rewrites] LHS MVars
-          expr:  [?l₁]
-          class: []
-          level: []
+          [?l₁: [.inTarget]]
       [egg.rewrites] RHS MVars
-          expr:  [?l₂]
-          class: []
-          level: []
+          [?l₂: [.inTarget]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
@@ -95,10 +91,11 @@ info: [egg.rewrites] Rewrites
 -/
 #guard_msgs(info, drop error) in
 egg_no_defeq in
+set_option trace.egg.rewrites true in
 set_option egg.genTcProjRws false in
 set_option egg.builtins false in
 example (l₁ l₂ : List Nat) (h : ∀ (α : Type) (l₁ l₂ : List α), l₁ = l₂) : l₁ = l₂ := by
-  set_option trace.egg.rewrites true in egg [h]
+  egg [h]
 
 /- TODO:
 Example of a sensible theorem (rewrite) with an unbound condition: `Nat.zero_lt_of_lt`

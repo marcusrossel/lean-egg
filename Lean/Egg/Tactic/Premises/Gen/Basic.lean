@@ -19,11 +19,11 @@ def gen
     let cls := `egg.rewrites
     cfg.toDefEq.trace cls
     withTraceNode cls (fun _ => return m!"Hypotheses ({facts.elems.size})") do facts.elems.trace facts.stxs cls
-    withTraceNode cls (fun _ => return m!"Pruned ({pruned.size})") do pruned.trace #[] cls
+    withTraceNode cls (fun _ => return m!"Pruned ({pruned.size})") do pruned.trace #[] cfg.toErasure cls
     return (all, facts.elems)
 where
   core : GenM Unit := open GenM in do
-    generate' .basic    do Premises.elab { cfg with amb } ps
-    generate  .tagged   do genTagged cfg amb
-    generate  .builtins do genBuiltins cfg amb
-    generate  .derived  do genDerived goal (← all) (← GenM.facts).elems guides cfg amb
+    generate' .basic    cfg.toErasure do Premises.elab { cfg with amb } ps
+    generate  .tagged   cfg.toErasure do genTagged cfg amb
+    generate  .builtins cfg.toErasure do genBuiltins cfg amb
+    generate  .derived  cfg.toErasure do genDerived goal (← all) (← GenM.facts).elems guides cfg amb

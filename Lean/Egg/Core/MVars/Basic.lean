@@ -1,158 +1,106 @@
 import Egg.Lean
 import Egg.Core.Config
 import Lean
-open Lean Meta
 
-namespace Egg
+open Lean hiding HashMap HashSet
+open Meta
+open Std (HashMap HashSet)
 
--- PROBLEM: The point of the `tc` mvars is to know which type class instance mvars exist in a term,
---          so that we can generate specializations. When there's no erasure, this is
---          quite simply a subset of `expr`.
---          When proof erasure is active, we don't collect any of the type class instance mvars in
---          the proof term, and instead *do* collect those appearing in the erasure term (the
---          proof's type).
---          When type class instance erasure is active, we don't collect any of the type class
---          instance mvars in the type class instance term, and instead *do* collect those appearing
---          in the erasure term (the type class instance's type).
---          In the latter case we run into the problem that this behavior entails that `tc = ∅` when
---          type class instance erasure is active, which in turn means that we don't get any type
---          class specialization rewrites.
+namespace Egg.MVars
 
-structure MVars where
-  expr : MVarIdSet
-  lvl : LMVarIdSet
-  -- The subset of `expr` of mvars whose type is a type class.
-  tc : MVarIdSet
-  -- The set of mvars which appear in proof terms. This is only populated if `MVars.collect` is
-  -- called with `proofErasure := true`. Note that it is not necessarily (and likely not) a subset
-  -- of `expr`, as inserting an mvar into this set does not mean that it is inserted into `expr`.
-  proof : MVarIdSet
-  -- The set of mvars which appear in type class instances. This is only populated if
-  -- `MVars.collect` is called with `tcInstanceErasure := true`. Note that it is not necessarily
-  -- (and likely not) a subset of `expr`, as inserting an mvar into this set does not mean that it
-  -- is inserted into `expr`.
-  inst : MVarIdSet
+/-
+1. An mvar is `inTarget` if it appears explicitly in the given expression. For example, this holds
+   for `?m` in `f (?m + 1)`.
+2. An mvar `isTcInst` if its type is a type class. For example, this holds for `?i` in
+   `@Add Nat ?i`.
+3. An mvar is `inTcInstTerm` if it appears explicitly in a term whose type is a type class. For
+   example, this holds for both `?t` and `?i` in `@instHAdd ?t ?i`.
+4. An mvar is `inErasedTcInst` if it appears explicitly in the type of a term whose type is a type
+   class. For example, this holds for `?t` but not for `?i` in `@instHAdd ?t ?i`. The type of this
+   instance is `HAdd ?t ?t ?t`.
+5. An mvar is `inProofTerm` if it appears explicitly in a term whose type is a proposition. For
+   example, this holds for `?m` and `?n` in `Nat.add_comm ?m ?n`.
+6. An mvar is `inErasedProof` if it appears explicitly in the type of a term whose type is a
+   proposition. For example, this holds for `?m` and `?n` in `Nat.add_comm ?m ?n`. The type of this
+   proof is `?m + ?n = ?n + ?m`.
+
+A commonly required composite property is whether an mvar will appear in the final encoded term. We
+say that such an mvar is "visible". Visibility depends on Properties 1, 3, 4, 5 and 6, as well as
+the erasure configuration. The visibility property is used for the following:
+* To implement explosion.
+* To determine the valid directions of a rewrite.
+* To determine which mvars are conditions of a rewrite.
+* To determine whether a given condition of a conditional rewrite is unbounded.
+
+Other use cases of properties are:
+* To determine which mvars are conditions of a rewrite, we also need to use Properties 3 and 5.
+* Type class specialization needs Property 2.
+-/
+inductive Property where
+  | inTarget
+  | isTcInst
+  | inTcInstTerm
+  | inErasedTcInst
+  | inProofTerm
+  | inErasedProof
+  deriving BEq, Hashable
+
+abbrev Properties := HashSet Property
+
+namespace Properties
+
+def containsErased (ps : Properties) : Bool :=
+  ps.any fun
+    | .inErasedProof | .inErasedTcInst => true
+    | _                                => false
+
+def isVisible (ps : Properties) (cfg : Config.Erasure) : Bool :=
+  let tcInstErasureVisibility := ps.contains .inErasedTcInst && cfg.eraseTCInstances
+  let proofErasureVisibility  := ps.contains .inErasedProof  && cfg.eraseProofs
+  let basicVisibility :=
+    ps.contains .inTarget
+    && !(ps.contains .inProofTerm  && cfg.eraseProofs)
+    && !(ps.contains .inTcInstTerm && cfg.eraseTCInstances)
+  basicVisibility || tcInstErasureVisibility || proofErasureVisibility
+
+def insertIf (ps : Properties) (condition : Bool) (p : Property) : Properties :=
+  if condition then ps.insert p else ps
+
+end Properties
+
+structure _root_.Egg.MVars where
+  expr : HashMap  MVarId Properties := ∅
+  lvl  : HashMap LMVarId Properties := ∅
   deriving Inhabited
 
--- Note: We use an `EmptyCollection` instead of giving each field a default value of `∅` so we see
---       where code breaks when we add new fields (e.g. in `merge` below).
-instance : EmptyCollection MVars where
-  emptyCollection := ⟨∅, ∅, ∅, ∅, ∅⟩
+def visibleExpr (mvars : MVars) (cfg : Config.Erasure) : MVarIdSet :=
+  mvars.expr.fold (init := ∅) fun result m ps =>
+    if ps.isVisible cfg then result.insert m else result
 
-private def MVars.insertIfTCInstance (mvars : MVars) (id : MVarId) : MetaM MVars := do
-  if ← Meta.isTCInstance (.mvar id)
-  then return { mvars with tc := mvars.tc.insert id }
-  else return mvars
+def visibleLevel (mvars : MVars) (cfg : Config.Erasure) : LMVarIdSet :=
+  mvars.lvl.fold (init := ∅) fun result m ps =>
+    if ps.isVisible cfg then result.insert m else result
 
-private structure MVarCollectionState where
-  visitedExprs : ExprSet  := {}
-  visitedLvls  : LevelSet := {}
-  mvars        : MVars    := {}
+def tcInsts (mvars : MVars) : MVarIdSet :=
+  mvars.expr.fold (init := ∅) fun result m ps =>
+    if ps.contains .isTcInst then result.insert m else result
 
-inductive ErasureTarget? where
-  | proof
-  | inst
-  | none
+def inTarget (mvars : MVars) : MVarIdSet :=
+  mvars.expr.fold (init := ∅) fun result m ps =>
+    if ps.contains .inTarget then result.insert m else result
 
-private partial def collectMVars (e : Expr) (s : MVarCollectionState) (cfg : Config.Erasure) :
-    MetaM MVarCollectionState := do
-  if ← (return cfg.eraseProofs) <&&> (Meta.isProof e) then
-    let s' ← core (insideErased := .proof) e s
-    core (insideErased := .none) (← inferType e) s'
-  else if ← (return cfg.eraseTCInstances) <&&> (Meta.isTCInstance e) then
-    let s' ← core (insideErased := .inst) e s
-    core (insideErased := .none) (← inferType e) s'
-  else
-    core (insideErased := .none) e s
-where
-  core (insideErased : ErasureTarget?) : Expr → MVarCollectionState → MetaM MVarCollectionState
-    | .mvar id =>
-      visitMVar insideErased id
-    | .const _ lvls =>
-      (return visitConst insideErased lvls ·)
-    | .sort lvl =>
-      (return visitSort insideErased lvl ·)
-    | .proj _ _ e | .mdata _ e =>
-      visit insideErased e
-    | .forallE _ e₁ e₂ _ | .lam _ e₁ e₂ _ | .app e₁ e₂ =>
-      (withLocalDecl .anonymous .default e₁ fun fvar =>
-        (visit insideErased e₁ >=> visit insideErased (e₂.instantiate #[fvar])) ·)
-    | .letE _ e₁ e₂ e₃ _ =>
-      (withLocalDecl .anonymous .default e₁ fun fvar =>
-        (visit insideErased e₁ >=> visit insideErased e₂ >=> visit insideErased (e₃.instantiate #[fvar])) ·)
-    | _ => pure
+def insertExpr (mvars : MVars) (m : MVarId) (ps : Properties) : MVars :=
+  { mvars with expr := mvars.expr.alter m (ps.union <| ·.getD ∅) }
 
-  visit (insideErased : ErasureTarget?) (e : Expr) (s : MVarCollectionState) :
-      MetaM MVarCollectionState :=
-    if !e.hasMVar || s.visitedExprs.contains e then
-      return s
-    else
-      let s' := { s with visitedExprs := s.visitedExprs.insert e }
-      match insideErased with
-      | .none  => collectMVars e s' cfg
-      | target => core (insideErased := target) e s'
-
-  visitMVar (insideErased : ErasureTarget?) (id : MVarId) (s : MVarCollectionState) :
-      MetaM MVarCollectionState := do
-    match insideErased with
-    | .proof => return { s with mvars.proof := s.mvars.proof.insert id }
-    | .inst  => return { s with mvars.inst := s.mvars.inst.insert id }
-    | .none  =>
-      let s := { s with mvars.expr := s.mvars.expr.insert id }
-      return { s with mvars := ← s.mvars.insertIfTCInstance id }
-
-  visitConst (erasing : ErasureTarget?) (lvls : List Level) (s : MVarCollectionState) :
-      MVarCollectionState :=
-    -- We only consider the levels in non-erased expressions, as erased expressions' levels won't
-    -- appear in the final expression. Instead, their types' levels will, which is covered when we
-    -- do this traversal for the erased expressions' types.
-    match erasing with
-    | .proof | .inst => s
-    | .none => Id.run do
-      let mut s := s
-      for lvl in lvls do
-        if s.visitedLvls.contains lvl then
-          continue
-        else
-          s := { s with
-            mvars.lvl := lvl.collectMVars s.mvars.lvl
-            visitedLvls := s.visitedLvls.insert lvl
-          }
-      return s
-
-  visitSort (erasing : ErasureTarget?) (lvl : Level) (s : MVarCollectionState) :
-      MVarCollectionState :=
-    -- We only consider the levels in non-erased expressions, as erased expressions' levels won't
-    -- appear in the final expression. Instead, their types' levels will, which is covered when we
-    -- do this traversal for the erased expressions' types.
-    match erasing with
-    | .proof | .inst => s
-    | .none =>
-      if s.visitedLvls.contains lvl then
-        s
-      else
-        { s with
-          mvars.lvl := lvl.collectMVars s.mvars.lvl
-          visitedLvls := s.visitedLvls.insert lvl
-        }
-
-namespace MVars
-
-def collect (e : Expr) (cfg : Config.Erasure) : MetaM MVars :=
-  MVarCollectionState.mvars <$> collectMVars e {} cfg
+def insertLevel (mvars : MVars) (m : LMVarId) (ps : Properties) : MVars :=
+  { mvars with lvl := mvars.lvl.alter m (ps.union <| ·.getD ∅) }
 
 def merge (vars₁ vars₂ : MVars) : MVars where
-  expr  := vars₁.expr.merge vars₂.expr
-  lvl   := vars₁.lvl.merge vars₂.lvl
-  tc    := vars₁.tc.merge vars₂.tc
-  proof := vars₁.proof.merge vars₂.proof
-  inst  := vars₁.inst.merge vars₂.inst
+  expr  := vars₁.expr.merge vars₂.expr .union
+  lvl   := vars₁.lvl.merge  vars₂.lvl  .union
 
-def removeAssigned (mvars : MVars) : MetaM MVars := do
+def removeAssigned (mvars : MVars) : MetaM MVars :=
   return {
-    expr  := ← mvars.expr.filterM  fun var => return !(← var.isAssigned)
-    lvl   := ← mvars.lvl.filterM   fun var => return !(← isLevelMVarAssigned var)
-    tc    := ← mvars.tc.filterM    fun var => return !(← var.isAssigned)
-    proof := ← mvars.proof.filterM fun var => return !(← var.isAssigned)
-    inst  := ← mvars.inst.filterM  fun var => return !(← var.isAssigned)
+    expr := ← mvars.expr.filterM fun var => return !(← var.isAssigned)
+    lvl  := ← mvars.lvl.filterM  fun var => return !(← isLevelMVarAssigned var)
   }

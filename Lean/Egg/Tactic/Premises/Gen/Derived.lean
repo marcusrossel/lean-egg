@@ -118,9 +118,9 @@ where
     generate cfg .splits do
       genNestedSplits (← todo .splits) { cfg with amb }
     generate cfg .explosion do
-      genExplosions (← todo .explosion)
+      genExplosions (← todo .explosion) cfg.toErasure
     generate cfg .tcSpec do
-      genTcSpecializations (← todo .tcSpec) cfg goalType?
+      genTcSpecializations (← todo .tcSpec) cfg.toNormalization cfg.toErasure goalType?
     generate cfg .tcProj do
       let targets := (← todo .tcProj).tcProjTargets
       let (rws, cover) ← genTcProjReductions targets (← tcProjCover) { cfg with amb }

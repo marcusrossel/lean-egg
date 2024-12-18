@@ -42,9 +42,6 @@ def expr (cgr : Congr) : MetaM Expr := do
 def type (cgr : Congr) : MetaM Expr :=
   inferType cgr.lhs
 
--- Note: We need to instantiate mvars to reduce redundant (level) mvars which are created during
---       `forallMetaTelescope`.
---       Cf. https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/MVar.20Inclusion.20Implies.20LMVar.20Inclusion.3F
 def from? (type : Expr) : MetaM (Option Congr) := do
   let type ← normalize type .noReduce
   if let some (_, lhs, rhs) := type.eq? then

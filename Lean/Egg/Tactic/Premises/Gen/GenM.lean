@@ -113,7 +113,7 @@ private def prune (rws : Rewrites) (stx? : Option (Array Syntax) := none) :
   addPruned pruned
   return (keep, keepStx)
 
-def generate' (cat : RewriteCategory) (g : GenM Premises) : GenM Unit := do
+def generate' (cat : RewriteCategory) (cfg : Config.Erasure) (g : GenM Premises) : GenM Unit := do
   let { rws := ⟨new, stxs⟩, facts } ← g
   addFacts facts
   let mut (new, stx) ← prune new (if stxs.isEmpty then none else stxs)
@@ -122,9 +122,9 @@ def generate' (cat : RewriteCategory) (g : GenM Premises) : GenM Unit := do
     let inv ← catchInvalidConditionals new (throw := false)
     new := new.filter fun n => !inv.any (n.src == ·.src)
     addPruned inv
-    withTraceNode cls (fun _ => return m!"{cat.title} ({new.size})") do (Rewrites.trace new) #[] cls
+    withTraceNode cls (fun _ => return m!"{cat.title} ({new.size})") do (Rewrites.trace new) #[] cfg cls
   else
-    withTraceNode cls (fun _ => return m!"{cat.title} ({new.size})") do new.trace stx cls
+    withTraceNode cls (fun _ => return m!"{cat.title} ({new.size})") do new.trace stx cfg cls
     _ ← catchInvalidConditionals new (throw := true)
   set cat new
   addAll new
@@ -136,18 +136,18 @@ where
       nextRw := false
       for cond in rw.conds do
         if nextRw then break
-        for m in cond.mvars.expr do
-          unless rw.mvars.lhs.expr.contains m || rw.mvars.rhs.expr.contains m do
+        for m in cond.mvars.visibleExpr cfg do
+          unless (rw.mvars.lhs.visibleExpr cfg).contains m ||  (rw.mvars.rhs.visibleExpr cfg).contains m do
             if throw
             then throwError m!"egg: rewrite {rw.src} contains an unbound condition (expression)"
             else remove := remove.push rw; nextRw := true; break
         if nextRw then break
-        for m in cond.mvars.lvl do
-          unless rw.mvars.lhs.lvl.contains m || rw.mvars.rhs.lvl.contains m do
+        for m in cond.mvars.visibleLevel cfg do
+          unless (rw.mvars.lhs.visibleLevel cfg).contains m || (rw.mvars.rhs.visibleLevel cfg).contains m do
             if throw
             then throwError m!"egg: rewrite {rw.src} contains an unbound condition (level)"
             else remove := remove.push rw; nextRw := true; break
     return remove
 
-def generate (cat : RewriteCategory) (g : GenM Rewrites) : GenM Unit := do
-  generate' cat do return { rws.elems := ← g, rws.stxs := #[], facts := ⟨#[], #[]⟩ }
+def generate (cat : RewriteCategory) (cfg : Config.Erasure) (g : GenM Rewrites) : GenM Unit := do
+  generate' cat cfg do return { rws.elems := ← g, rws.stxs := #[], facts := ⟨#[], #[]⟩ }

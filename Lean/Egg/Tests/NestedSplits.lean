@@ -9,13 +9,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] a = b ↔ c = d
       [egg.rewrites] LHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
       [egg.rewrites] RHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (2)
@@ -24,25 +20,17 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] Conditions
         [egg.rewrites] a = b
       [egg.rewrites] LHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
       [egg.rewrites] RHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
     [egg.rewrites] #0⁅←⁆(⇔)
       [egg.rewrites] a = b
       [egg.rewrites] Conditions
         [egg.rewrites] c = d
       [egg.rewrites] LHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
       [egg.rewrites] RHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
   [egg.rewrites] Definitional
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)

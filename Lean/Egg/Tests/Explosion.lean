@@ -33,13 +33,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] true = false
       [egg.rewrites] LHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
       [egg.rewrites] RHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
@@ -59,13 +55,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] f ?x ?y = f ?y ?x
       [egg.rewrites] LHS MVars
-          expr:  [?y, ?x]
-          class: []
-          level: []
+          [?y: [.inTarget], ?x: [.inTarget]]
       [egg.rewrites] RHS MVars
-          expr:  [?y, ?x]
-          class: []
-          level: []
+          [?y: [.inTarget], ?x: [.inTarget]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
@@ -85,13 +77,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] f ?x ?y = f ?y ?x
       [egg.rewrites] LHS MVars
-          expr:  [?x, ?y]
-          class: []
-          level: []
+          [?x: [.inTarget], ?y: [.inTarget]]
       [egg.rewrites] RHS MVars
-          expr:  [?x, ?y]
-          class: []
-          level: []
+          [?x: [.inTarget], ?y: [.inTarget]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
@@ -111,36 +99,24 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇐): h
       [egg.rewrites] f ?x ?x = f ?y ?x
       [egg.rewrites] LHS MVars
-          expr:  [?x]
-          class: []
-          level: []
+          [?x: [.inTarget]]
       [egg.rewrites] RHS MVars
-          expr:  [?x, ?y]
-          class: []
-          level: []
+          [?x: [.inTarget], ?y: [.inTarget]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (2)
     [egg.rewrites] #0💥→[3](⇔)
-      [egg.rewrites] f ?m.263 ?m.263 = f a ?m.263
+      [egg.rewrites] f ?m.243 ?m.243 = f a ?m.243
       [egg.rewrites] LHS MVars
-          expr:  [?m.263]
-          class: []
-          level: []
+          [?m.243: [.inTarget]]
       [egg.rewrites] RHS MVars
-          expr:  [?m.263]
-          class: []
-          level: []
+          [?m.243: [.inTarget]]
     [egg.rewrites] #0💥→[4](⇔)
-      [egg.rewrites] f ?m.272 ?m.272 = f b ?m.272
+      [egg.rewrites] f ?m.252 ?m.252 = f b ?m.252
       [egg.rewrites] LHS MVars
-          expr:  [?m.272]
-          class: []
-          level: []
+          [?m.252: [.inTarget]]
       [egg.rewrites] RHS MVars
-          expr:  [?m.272]
-          class: []
-          level: []
+          [?m.252: [.inTarget]]
   [egg.rewrites] Definitional
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)

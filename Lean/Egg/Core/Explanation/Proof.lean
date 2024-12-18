@@ -125,7 +125,7 @@ where
       -- It's necessary that we create the fresh rewrite (that is, create the fresh mvars) in *this*
       -- local context as otherwise the mvars can't unify with variables under binders.
       let rw ← rw.fresh
-      unless ← isDefEq lhs rw.lhs do failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs.expr current next idx
+      unless ← isDefEq lhs rw.lhs do failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs current next idx
       /- TODO: Remove?
         let lhsType ← inferType lhs
         let rwLhsType ← inferType rw.lhs
@@ -135,7 +135,7 @@ where
         unless ← isDefEq lhs rw.lhs do
           failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs.expr current next idx
       -/
-      unless ← isDefEq rhs rw.rhs do failIsDefEq "RHS" rw.src rhs rw.rhs rw.mvars.rhs.expr current next idx
+      unless ← isDefEq rhs rw.rhs do failIsDefEq "RHS" rw.src rhs rw.rhs rw.mvars.rhs current next idx
       let mut subgoals := []
       let conds := rw.conds.filter (!·.isProven)
       for cond in conds, fact in facts do
@@ -162,13 +162,14 @@ where
       )
 
   failIsDefEq
-      {α} (side : String) (src : Source) (expr rwExpr : Expr) (rwExprMVars : MVarIdSet)
+      {α} (side : String) (src : Source) (expr rwExpr : Expr) (rwMVars : MVars)
       (current next : Expr) (idx : Nat) : MetaM α := do
     let expr   ← instantiateMVars expr
     let rwExpr ← instantiateMVars rwExpr
     let mut readOnlyOrSynthOpaque := []
     let mut types := "\n"
-    for mvar in rwExprMVars do
+    -- TODO: Improve this by showing the MVars.Properties of mvars.
+    for mvar in rwMVars.expr.keys do
       if ← mvar.isReadOnlyOrSyntheticOpaque then readOnlyOrSynthOpaque := readOnlyOrSynthOpaque.concat mvar
       types := types ++ s!"  {← ppExpr (.mvar mvar)}: {← ppExpr <| ← mvar.getType}\n"
     fail m!"unification failure for {side} of rewrite {src.description}:\n\n  {expr}\nvs\n  {rwExpr}\nin\n  {current}\nand\n  {next}\n\n• Types: {types}\n• Read Only Or Synthetic Opaque MVars: {readOnlyOrSynthOpaque}" idx
