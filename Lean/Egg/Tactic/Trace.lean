@@ -51,12 +51,12 @@ nonrec def formatReport
     (if rep.rwStats.isEmpty then "" else s!"\nrw stats:\n{rep.rwStats}")
 
 def MVars.Property.toMessageData : MVars.Property → MessageData
-  | .inTarget       => m!".inTarget"
-  | .isTcInst       => m!".isTcInst"
-  | .inTcInstTerm   => m!".inTcInstTerm"
-  | .inErasedTcInst => m!".inErasedTcInst"
-  | .inProofTerm    => m!".inProofTerm"
-  | .inErasedProof  => m!".inErasedProof"
+  | .unconditionallyVisible => m!".unconditionallyVisible"
+  | .isTcInst               => m!".isTcInst"
+  | .inTcInstTerm           => m!".inTcInstTerm"
+  | .inErasedTcInst         => m!".inErasedTcInst"
+  | .inProofTerm            => m!".inProofTerm"
+  | .inErasedProof          => m!".inErasedProof"
 
 def MVars.Properties.toMessageData (ps : MVars.Properties) : MessageData :=
   ps.toList.map Property.toMessageData

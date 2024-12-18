@@ -21,13 +21,13 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] □0(⇔)
       [egg.rewrites] z = z
       [egg.rewrites] LHS MVars
-          [?α: [.inErasedTcInst, .inTarget],
-           ?c: [.inTcInstTerm, .isTcInst, .inTarget],
-           ?u.80: [.inErasedTcInst, .inTarget]]
+          [?α: [.inErasedTcInst, .unconditionallyVisible],
+           ?c: [.inTcInstTerm, .isTcInst],
+           ?u.80: [.inErasedTcInst, .unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?α: [.inErasedTcInst, .inTarget],
-           ?c: [.inTcInstTerm, .isTcInst, .inTarget],
-           ?u.80: [.inErasedTcInst, .inTarget]]
+          [?α: [.inErasedTcInst, .unconditionallyVisible],
+           ?c: [.inTcInstTerm, .isTcInst],
+           ?u.80: [.inErasedTcInst, .unconditionallyVisible]]
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (3)
     [egg.rewrites] □0<⊢>(⇔)

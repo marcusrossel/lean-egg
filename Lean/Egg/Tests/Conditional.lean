@@ -79,9 +79,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(∅): h
       [egg.rewrites] ?l₁ = ?l₂
       [egg.rewrites] LHS MVars
-          [?l₁: [.inTarget]]
+          [?l₁: [.unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?l₂: [.inTarget]]
+          [?l₂: [.unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)

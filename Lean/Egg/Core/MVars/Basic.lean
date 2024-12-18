@@ -9,8 +9,8 @@ open Std (HashMap HashSet)
 namespace Egg.MVars
 
 /-
-1. An mvar is `inTarget` if it appears explicitly in the given expression. For example, this holds
-   for `?m` in `f (?m + 1)`.
+1. An mvar is `unconditionallyVisible` if it appears explicitly in the given expression, but not in
+   a type class instance or proof term. For example, this holds for `?m` in `f (?m + 1)`.
 2. An mvar `isTcInst` if its type is a type class. For example, this holds for `?i` in
    `@Add Nat ?i`.
 3. An mvar is `inTcInstTerm` if it appears explicitly in a term whose type is a type class. For
@@ -33,11 +33,11 @@ the erasure configuration. The visibility property is used for the following:
 * To determine whether a given condition of a conditional rewrite is unbounded.
 
 Other use cases of properties are:
-* To determine which mvars are conditions of a rewrite, we also need to use Properties 3 and 5.
+* To determine which mvars are conditions of a rewrite, we also need to use Properties 1, 3 and 5.
 * Type class specialization needs Property 2.
 -/
 inductive Property where
-  | inTarget
+  | unconditionallyVisible
   | isTcInst
   | inTcInstTerm
   | inErasedTcInst
@@ -49,19 +49,17 @@ abbrev Properties := HashSet Property
 
 namespace Properties
 
-def containsErased (ps : Properties) : Bool :=
-  ps.any fun
-    | .inErasedProof | .inErasedTcInst => true
-    | _                                => false
-
 def isVisible (ps : Properties) (cfg : Config.Erasure) : Bool :=
-  let tcInstErasureVisibility := ps.contains .inErasedTcInst && cfg.eraseTCInstances
-  let proofErasureVisibility  := ps.contains .inErasedProof  && cfg.eraseProofs
-  let basicVisibility :=
-    ps.contains .inTarget
-    && !(ps.contains .inProofTerm  && cfg.eraseProofs)
-    && !(ps.contains .inTcInstTerm && cfg.eraseTCInstances)
-  basicVisibility || tcInstErasureVisibility || proofErasureVisibility
+  ps.contains .unconditionallyVisible
+  || (ps.contains .inTcInstTerm   && !cfg.eraseTCInstances)
+  || (ps.contains .inErasedTcInst && cfg.eraseTCInstances)
+  || (ps.contains .inProofTerm    && !cfg.eraseProofs)
+  || (ps.contains .inErasedProof  && cfg.eraseProofs)
+
+def inTarget (ps : Properties) : Bool :=
+  ps.contains .unconditionallyVisible
+  || ps.contains .inProofTerm
+  || ps.contains .inTcInstTerm
 
 def insertIf (ps : Properties) (condition : Bool) (p : Property) : Properties :=
   if condition then ps.insert p else ps
@@ -87,7 +85,7 @@ def tcInsts (mvars : MVars) : MVarIdSet :=
 
 def inTarget (mvars : MVars) : MVarIdSet :=
   mvars.expr.fold (init := ∅) fun result m ps =>
-    if ps.contains .inTarget then result.insert m else result
+    if ps.inTarget then result.insert m else result
 
 def insertExpr (mvars : MVars) (m : MVarId) (ps : Properties) : MVars :=
   { mvars with expr := mvars.expr.alter m (ps.union <| ·.getD ∅) }

@@ -35,13 +35,13 @@ private def collectMVar (mvar : MVarId) : CollectionM Unit := do
   modify fun s =>
     let ps := s.active
       |>.insertIf isTcInst .isTcInst
-      |>.insertIf (!s.active.containsErased) .inTarget
+      |>.insertIf s.active.isEmpty .unconditionallyVisible
     { s with mvars := s.mvars.insertExpr mvar ps }
 
 private def collectLMVar (lmvar : LMVarId) : CollectionM Unit := do
   if (← amb).lvl.contains lmvar then return
   modify fun s =>
-    let ps := s.active.insertIf (!s.active.containsErased) .inTarget
+    let ps := s.active.insertIf s.active.isEmpty .unconditionallyVisible
     { s with mvars := s.mvars.insertLevel lmvar ps }
 
 private def collectLevel (lvl : Level) : CollectionM Unit := do
