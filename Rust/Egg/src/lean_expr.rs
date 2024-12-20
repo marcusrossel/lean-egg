@@ -41,7 +41,7 @@ define_language! {
         // Construct for unknown terms (this is used in η-expansion):
         "_" = Unknown,        
     }
-}
+} 
 
 impl LeanExpr {
 

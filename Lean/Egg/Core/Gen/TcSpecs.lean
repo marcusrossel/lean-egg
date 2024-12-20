@@ -4,8 +4,16 @@ open Lean Meta
 
 namespace Egg
 
-private def Rewrite.tcConditionMVars (rw : Rewrite) : MVarIdSet :=
-  rw.conds.foldl (init := ∅) (·.union ·.mvars.tcInsts)
+def Rewrite.Condition.typeClassInstanceMVar? (cond : Condition) : MetaM (Option MVarId) := do
+  if cond.expr.isMVar && (← isClass? cond.type).isSome
+  then return cond.expr.mvarId!
+  else return none
+
+private def Rewrite.tcConditionMVars (rw : Rewrite) : MetaM MVarIdSet :=
+  rw.conds.foldlM (init := ∅) fun cs c => do
+    if let some m ← c.typeClassInstanceMVar?
+    then return cs.insert m
+    else return cs
 
 -- Important: This function expects the given rewrite to be fresh.
 private partial def genSpecialization
@@ -48,12 +56,12 @@ where
     unless !missing.isEmpty do return none
     let (freshRw, subst) ← rw.freshWithSubst (src := .tcSpec rw.src <| .dir dir)
     let freshMissing := missing.map subst.expr.get!
-    let conds := freshRw.tcConditionMVars
+    let conds ← freshRw.tcConditionMVars
     let (spec, _) ← genSpecialization freshRw (freshMissing.union conds) norm
     return if (spec.validDirs cfg).contains dir then spec else none
   genCondSpecOnly : MetaM (Option Rewrite) := do
     let freshRw ← rw.fresh (src := .tcSpec rw.src .cond)
-    let conds := freshRw.tcConditionMVars
+    let conds ← freshRw.tcConditionMVars
     let (spec, changed) ← genSpecialization freshRw conds norm
     return if changed then spec else none
 
@@ -64,7 +72,7 @@ private def genGoalTypeSpecialization
     return none
   rw ← rw.instantiateMVars
   let missing := rw.mvars.lhs.tcInsts.union rw.mvars.rhs.tcInsts
-  let conds := rw.tcConditionMVars
+  let conds ← rw.tcConditionMVars
   let (spec, changed) ← genSpecialization rw (missing.union conds) norm
   return if changed then spec else none
 

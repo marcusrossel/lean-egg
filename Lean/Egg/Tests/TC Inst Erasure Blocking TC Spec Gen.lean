@@ -16,25 +16,30 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇒): h
       [egg.rewrites] -?x = ?x
       [egg.rewrites] LHS MVars
-          [?inst: [.inTcInstTerm, .isTcInst], ?x: [.unconditionallyVisible]]
+          [?x: [.unconditionallyVisible], ?inst: [.inTcInstTerm, .isTcInst]]
       [egg.rewrites] RHS MVars
           [?x: [.unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (1)
     [egg.rewrites] #0<←>(⇔)
-      [egg.rewrites] -?m.38 = ?m.38
+      [egg.rewrites] -?m.50 = ?m.50
       [egg.rewrites] LHS MVars
-          [?m.38: [.unconditionallyVisible]]
+          [?m.50: [.unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m.38: [.unconditionallyVisible]]
+          [?m.50: [.unconditionallyVisible]]
   [egg.rewrites] Definitional
   [egg.rewrites] Hypotheses (0)
-  [egg.rewrites] Pruned (0)
+  [egg.rewrites] Pruned (1)
+    [egg.rewrites] #0<⊢>(⇔)
+      [egg.rewrites] -?m.57 = ?m.57
+      [egg.rewrites] LHS MVars
+          [?m.57: [.unconditionallyVisible]]
+      [egg.rewrites] RHS MVars [?m.57: [.unconditionallyVisible]]
 -/
 #guard_msgs(info) in
 set_option egg.eraseTCInstances false in
-example (h : ∀ [inst : Neg Int] (x : Int), @Neg.neg Int inst x = x) : true = true := by
+example (h : ∀ [inst : Neg Int] (x : Int), @Neg.neg Int inst x = x) : (0 : Int) = (0 : Int) := by
   egg [h]
 
 /--
@@ -43,24 +48,33 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] -?x = ?x
       [egg.rewrites] LHS MVars
-          [?x: [.unconditionallyVisible], ?inst: [.inTcInstTerm, .isTcInst]]
+          [?inst: [.inTcInstTerm, .isTcInst], ?x: [.unconditionallyVisible]]
       [egg.rewrites] RHS MVars
           [?x: [.unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (1)
     [egg.rewrites] #0<←>(⇔)
-      [egg.rewrites] -?m.86 = ?m.86
+      [egg.rewrites] -?m.123 = ?m.123
       [egg.rewrites] LHS MVars
-          [?m.86: [.unconditionallyVisible]]
+          [?m.123: [.unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m.86: [.unconditionallyVisible]]
+          [?m.123: [.unconditionallyVisible]]
   [egg.rewrites] Definitional
     [egg.rewrites] Type Class Instances
   [egg.rewrites] Hypotheses (0)
-  [egg.rewrites] Pruned (0)
+  [egg.rewrites] Pruned (1)
+    [egg.rewrites] #0<⊢>(⇔)
+      [egg.rewrites] -?m.130 = ?m.130
+      [egg.rewrites] LHS MVars
+          [?m.130: [.unconditionallyVisible]]
+      [egg.rewrites] RHS MVars [?m.130: [.unconditionallyVisible]]
 -/
 #guard_msgs(info) in
 set_option egg.eraseTCInstances true in
-example (h : ∀ [inst : Neg Int] (x : Int), @Neg.neg Int inst x = x) : true = true := by
+example (h : ∀ [inst : Neg Int] (x : Int), @Neg.neg Int inst x = x) : (0 : Int) = (0 : Int) := by
   egg [h]
+
+-- BUG: Goal type specialization should generate a rewrite here.
+example (h : ∀ (α) [inst : Neg α] (x : α), @Neg.neg α inst x = x) : (0 : Int) = (0 : Int) := by
+  sorry -- egg [h]
