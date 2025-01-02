@@ -1,4 +1,5 @@
 import Lean
+import Std
 
 def List.replicateM [Monad m] (count : Nat) (f : m α) : m (List α) := do
   let mut result := []
@@ -23,7 +24,50 @@ where
       let inc := if (s.get pos) == '\n' then 1 else 0
       go (s.next pos) (count + inc)
 
+namespace Std.HashMap
+
+variable [BEq α] [Hashable α]
+
+def merge (m₁ m₂ : HashMap α β) (combine : β → β → β) : HashMap α β := Id.run do
+  let mut m := m₁
+  for (a, b) in m₂ do
+    m := m₁.alter a fun b'? =>
+      if let some b' := b'? then combine b' b else b
+  return m₁
+
+def filterM [Monad m] (map : HashMap α β) (keep : α → m Bool) : m (HashMap α β) :=
+  map.foldM (init := map) fun result a _ => do
+    if ← keep a then return result else return result.erase a
+
+end Std.HashMap
+
 namespace Lean
+
+/-
+This terminates because the types of mvars aren't simply mvars again:
+```
+#eval do
+  let m ← mkFreshExprMVar none
+  logInfo m -- ?m.3
+  let m ← m.mvarId!.getType
+  logInfo m -- ?m.2
+  let .sort m ← m.mvarId!.getType | failure
+  logInfo m -- ?u.1
+```
+-/
+partial def MVarIdSet.typeMVarClosure (init ignore : MVarIdSet) : MetaM MVarIdSet := do
+  let mut closure : MVarIdSet := ∅
+  let mut todos := init
+  let mut nextTodo? := todos.min
+  while h : nextTodo?.isSome do
+    let m := nextTodo?.get h
+    todos := todos.erase m
+    unless ignore.contains m do
+      closure := closure.insert m
+      let { result, .. } := (← m.getType).collectMVars {}
+      for r in result do todos := todos.insert r
+    nextTodo? := todos.min
+  return closure
 
 def Meta.isTCInstance (e : Expr) : MetaM Bool :=
   return (← isClass? <| ← inferType e).isSome
@@ -72,9 +116,6 @@ def LMVarId.fromUniqueIdx (idx : Nat) : LMVarId :=
   { name := .num (.str .anonymous "_uniq") idx }
 
 deriving instance BEq, Hashable for SubExpr.Pos
-
-def RBTree.merge (t₁ t₂ : RBTree α cmp) : RBTree α cmp :=
-  t₁.mergeBy (fun _ _ _ => .unit) t₂
 
 def RBTree.filterM [Monad m] (t : RBTree α cmp) (keep : α → m Bool) : m (RBTree α cmp) :=
   t.foldM (init := t) fun res a => return if ← keep a then res else res.erase a

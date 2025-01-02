@@ -18,7 +18,7 @@ def Rewrite.encode (rw : Rewrite) (ctx : EncodingCtx) : MetaM Encoded :=
     name  := rw.src.description
     lhs   := ← Egg.encode rw.lhs ctx
     rhs   := ← Egg.encode rw.rhs ctx
-    dirs  := rw.validDirs
+    dirs  := rw.validDirs ctx.cfg.toErasure
     conds := ← rw.conds.filterMapM fun c => if c.isProven then return none else Egg.encode c.type ctx
   }
 

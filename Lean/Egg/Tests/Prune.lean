@@ -13,13 +13,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): h₁
       [egg.rewrites] 0 = 0
       [egg.rewrites] LHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
       [egg.rewrites] RHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
@@ -29,13 +25,8 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #1(⇔)
       [egg.rewrites] 0 = 0
       [egg.rewrites] LHS MVars
-          expr:  []
-          class: []
-          level: []
-      [egg.rewrites] RHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
+      [egg.rewrites] RHS MVars []
 -/
 #guard_msgs in
 set_option linter.unusedVariables false in
@@ -49,13 +40,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): Nat.add_comm
       [egg.rewrites] ?n + ?m = ?m + ?n
       [egg.rewrites] LHS MVars
-          expr:  [?m, ?n]
-          class: []
-          level: []
+          [?m: [.unconditionallyVisible], ?n: [.unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          expr:  [?m, ?n]
-          class: []
-          level: []
+          [?m: [.unconditionallyVisible], ?n: [.unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
@@ -65,13 +52,8 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #1(⇔)
       [egg.rewrites] ?a + ?b = ?b + ?a
       [egg.rewrites] LHS MVars
-          expr:  [?a, ?b]
-          class: []
-          level: []
-      [egg.rewrites] RHS MVars
-          expr:  [?a, ?b]
-          class: []
-          level: []
+          [?b: [.unconditionallyVisible], ?a: [.unconditionallyVisible]]
+      [egg.rewrites] RHS MVars [?b: [.unconditionallyVisible], ?a: [.unconditionallyVisible]]
 -/
 #guard_msgs in
 set_option linter.unusedVariables false in

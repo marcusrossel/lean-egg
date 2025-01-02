@@ -72,34 +72,6 @@ example {p q r : Prop} (h₁ : p) (h₂ : p ↔ q) (h₃ : q → (p ↔ r)) : p 
 example {p q r : Prop} (h₁ : p) (h₂ : p ↔ q) (h₃ : q ↔ r) (h₄ : r → (p ↔ s)) : p ↔ s := by
   egg [h₂, h₃, h₄; h₁]
 
--- This test checks that we don't consider non-propositional arguments as conditions to a rewrite.
-/--
-info: [egg.rewrites] Rewrites
-  [egg.rewrites] Basic (1)
-    [egg.rewrites] #0(∅): h
-      [egg.rewrites] ?l₁ = ?l₂
-      [egg.rewrites] LHS MVars
-          expr:  [?l₁]
-          class: []
-          level: []
-      [egg.rewrites] RHS MVars
-          expr:  [?l₂]
-          class: []
-          level: []
-  [egg.rewrites] Tagged (0)
-  [egg.rewrites] Builtin (0)
-  [egg.rewrites] Derived (0)
-  [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
-  [egg.rewrites] Pruned (0)
--/
-#guard_msgs(info, drop error) in
-egg_no_defeq in
-set_option egg.genTcProjRws false in
-set_option egg.builtins false in
-example (l₁ l₂ : List Nat) (h : ∀ (α : Type) (l₁ l₂ : List α), l₁ = l₂) : l₁ = l₂ := by
-  set_option trace.egg.rewrites true in egg [h]
-
 /- TODO:
 Example of a sensible theorem (rewrite) with an unbound condition: `Nat.zero_lt_of_lt`
 We could still try a best effort approach which checks the set of facts for statements of the

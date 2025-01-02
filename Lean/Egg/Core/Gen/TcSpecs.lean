@@ -43,10 +43,10 @@ where
       return none
 
 private def genTcSpecializationsForRw
-    (rw : Rewrite) (norm : Config.Normalization) : MetaM Rewrites := do
+    (rw : Rewrite) (norm : Config.Normalization) (cfg : Config.Erasure) : MetaM Rewrites := do
   let mut specs : Rewrites := #[]
-  let missingOnLhs := rw.mvars.rhs.tc.subtract rw.mvars.lhs.tc
-  let missingOnRhs := rw.mvars.lhs.tc.subtract rw.mvars.rhs.tc
+  let missingOnLhs := rw.mvars.rhs.tcInsts.subtract rw.mvars.lhs.tcInsts
+  let missingOnRhs := rw.mvars.lhs.tcInsts.subtract rw.mvars.rhs.tcInsts
   if let some fwd ← genDir .forward  missingOnLhs then specs := specs.push fwd
   if let some bwd ← genDir .backward missingOnRhs then specs := specs.push bwd
   if specs.isEmpty then if let some c ← genCondSpecOnly then specs := specs.push c
@@ -55,10 +55,10 @@ where
   genDir (dir : Direction) (missing : MVarIdSet) : MetaM (Option Rewrite) := do
     unless !missing.isEmpty do return none
     let (freshRw, subst) ← rw.freshWithSubst (src := .tcSpec rw.src <| .dir dir)
-    let freshMissing := missing.map subst.expr.fwd.get!
+    let freshMissing := missing.map subst.expr.get!
     let conds ← freshRw.tcConditionMVars
-    let (spec, _) ← genSpecialization freshRw (freshMissing.merge conds) norm
-    return if spec.validDirs.contains dir then spec else none
+    let (spec, _) ← genSpecialization freshRw (freshMissing.union conds) norm
+    return if (spec.validDirs cfg).contains dir then spec else none
   genCondSpecOnly : MetaM (Option Rewrite) := do
     let freshRw ← rw.fresh (src := .tcSpec rw.src .cond)
     let conds ← freshRw.tcConditionMVars
@@ -71,18 +71,18 @@ private def genGoalTypeSpecialization
   unless ← isDefEq (← inferType rw.lhs) goalType <&&> isDefEq (← inferType rw.rhs) goalType do
     return none
   rw ← rw.instantiateMVars
-  let missing := rw.mvars.lhs.tc.merge rw.mvars.rhs.tc
-  let conds    ← rw.tcConditionMVars
-  let (spec, changed) ← genSpecialization rw (missing.merge conds) norm
+  let missing := rw.mvars.lhs.tcInsts.union rw.mvars.rhs.tcInsts
+  let conds ← rw.tcConditionMVars
+  let (spec, changed) ← genSpecialization rw (missing.union conds) norm
   return if changed then spec else none
 
 -- Goal type specialization is only run if the given `goalType?` is not `none`.
 def genTcSpecializations
-    (targets : Rewrites) (norm : Config.Normalization) (goalType? : Option Expr) :
-    MetaM Rewrites := do
+    (targets : Rewrites) (norm : Config.Normalization) (cfg : Config.Erasure)
+    (goalType? : Option Expr) : MetaM Rewrites := do
   let mut result := #[]
   for rw in targets do
-    result := result ++ (← genTcSpecializationsForRw rw norm)
+    result := result ++ (← genTcSpecializationsForRw rw norm cfg)
   if let some goalType := goalType? then
     for rw in targets do
       if let some spec ← genGoalTypeSpecialization rw goalType norm then

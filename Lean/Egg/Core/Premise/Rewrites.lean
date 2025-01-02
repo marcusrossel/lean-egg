@@ -1,6 +1,6 @@
 import Egg.Core.Directions
 import Egg.Core.MVars.Subst
-import Egg.Core.MVars.Ambient
+import Egg.Core.MVars.Collect
 import Egg.Core.Normalize
 import Egg.Core.Congr
 import Egg.Core.Source
@@ -65,49 +65,33 @@ partial def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize :
     else
       return none
   let proof := mkAppN proof args
-  let mLhs := (← MVars.collect cgr.lhs cfg).remove cfg.amb
-  let mRhs := (← MVars.collect cgr.rhs cfg).remove cfg.amb
+  let mLhs  ← MVars.collect cgr.lhs cfg.amb
+  let mRhs  ← MVars.collect cgr.rhs cfg.amb
   let conds ← collectConds args mLhs mRhs
   return some { cgr with proof, src, conds, mvars.lhs := mLhs, mvars.rhs := mRhs }
 where
-  -- The interaction between proof erasure and conditional rewrites is somewhat finicky. Without
-  -- proof erasure, a hypothesis `h` of a rewrite is not considered a precondition if it appears in
-  -- the rewrite's equation. Naively, proof erasure breaks this as it erases `h` from the equation
-  -- (which thus becomes a precondition, even when it is completely determined by the equation).
-  -- Thus, we handle proof terms specially in `MVars.collect` by collecting both the proof term
-  -- mvars and the corresponding proposition mvars. We then make sure to add the proof term mvars to
-  -- the `noCond` set, even when proof erasure is active.
-  --
-  -- The same logic applies to type class instance erasure.
-  collectConds (args : Array Expr) (mLhs mRhs : Egg.MVars) : MetaM (Array Rewrite.Condition) := do
+  collectConds (args : Array Expr) (mLhs mRhs : MVars) : MetaM (Array Rewrite.Condition) := do
     let mut conds := #[]
-    let mut noCond ← typeMVarClosure (mLhs.expr.merge mRhs.expr)
-    if cfg.eraseProofs      then noCond := noCond.merge mLhs.proof |>.merge mRhs.proof
-    if cfg.eraseTCInstances then noCond := noCond.merge mLhs.inst  |>.merge mRhs.inst
+    -- Even when erasure is active, we still do not consider the mvars contained in erased terms to
+    -- be conditions. Thus, we start by considering all mvars in the target as non-conditions and
+    -- take their type mvar closure. This closure will necessarily contain the mvars contained in
+    -- the types of erased terms, which therefore don't need to be added separately (as in,
+    -- contingent upon the erasure configuration).
+    let inTarget : MVarIdSet := mLhs.inTarget.union mRhs.inTarget
+    let mut noCond ← inTarget.typeMVarClosure (ignore := cfg.amb.expr)
     for arg in args do
       if noCond.contains arg.mvarId! then continue
       let ty ← arg.mvarId!.getType
-      let mvars := (← MVars.collect ty cfg).remove cfg.amb
+      let mvars ← MVars.collect ty cfg.amb
       conds := conds.push { expr := arg, type := ty, mvars }
     return conds
-  typeMVarClosure (init : MVarIdSet) : MetaM MVarIdSet := do
-    let mut closure : MVarIdSet := ∅
-    let mut todos := init
-    let mut nextTodo? := todos.min
-    while h : nextTodo?.isSome do
-      let m := nextTodo?.get h
-      todos := todos.erase m
-      closure := closure.insert m
-      todos := todos.merge (← MVars.collect (← m.getType) cfg).expr
-      nextTodo? := todos.min
-    return closure
 
 def isConditional (rw : Rewrite) : Bool :=
   !rw.conds.isEmpty
 
-def validDirs (rw : Rewrite) : Directions :=
-  let exprDirs := Directions.satisfyingSuperset rw.mvars.lhs.expr rw.mvars.rhs.expr
-  let lvlDirs  := Directions.satisfyingSuperset rw.mvars.lhs.lvl rw.mvars.rhs.lvl
+def validDirs (rw : Rewrite) (cfg : Config.Erasure) : Directions :=
+  let exprDirs := Directions.satisfyingSuperset (rw.mvars.lhs.visibleExpr cfg) (rw.mvars.rhs.visibleExpr cfg)
+  let lvlDirs  := Directions.satisfyingSuperset (rw.mvars.lhs.visibleLevel cfg) (rw.mvars.rhs.visibleLevel cfg)
   exprDirs.meet lvlDirs
 
 -- Returns the same rewrite but with its type and proof potentially flipped to match the given
@@ -141,7 +125,7 @@ where
     let mut subst := init
     let mut conds := #[]
     for cond in rw.conds do
-      let (_, s) ← (← MVars.collect cond.expr .noErase).fresh (init := subst)
+      let (_, s) ← (← MVars.collect cond.expr ∅).fresh (init := subst)
       let (mvars, s) ← cond.mvars.fresh (init := s)
       conds := conds.push { expr := s.apply cond.expr, type := s.apply cond.type, mvars }
       subst := s

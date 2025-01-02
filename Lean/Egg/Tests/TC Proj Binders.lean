@@ -25,36 +25,24 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] Conditions
         [egg.rewrites] x * y = z
       [egg.rewrites] LHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
       [egg.rewrites] RHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (2)
     [egg.rewrites] #0[0?69632,0](⇔)
       [egg.rewrites] HMul.hMul = Mul.mul
       [egg.rewrites] LHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
       [egg.rewrites] RHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
     [egg.rewrites] #0[0?69632,1](⇔)
       [egg.rewrites] Mul.mul = Nat.mul
       [egg.rewrites] LHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
       [egg.rewrites] RHS MVars
-          expr:  []
-          class: []
-          level: []
+          []
   [egg.rewrites] Definitional
   [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)

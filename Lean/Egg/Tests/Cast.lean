@@ -11,6 +11,7 @@ example (a b : Nat) [C R] : Nat.cast (a + b) = (a : R) + b := by
 
 instance : C Int where
 
+set_option trace.egg true in
 example (a b : Nat) : Nat.cast (a + b) = (a : Int) + b := by
   egg [cast_add]
 

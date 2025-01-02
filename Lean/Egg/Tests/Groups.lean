@@ -27,6 +27,7 @@ theorem inv_mul_cancel_left : a⁻¹ * (a * b) = b := by group
 
 theorem mul_inv_cancel_left : a * (a⁻¹ * b) = b := by group
 
+set_option trace.egg true in
 theorem inv_one : (1 : G)⁻¹ = 1 := by group
 
 theorem inv_mul : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
