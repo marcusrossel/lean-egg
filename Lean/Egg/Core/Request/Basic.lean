@@ -109,7 +109,7 @@ private structure Result.Raw where
   deriving Inhabited
 
 @[extern "run_eqsat_request"]
-private opaque runRaw (req : Request) : Result.Raw
+private opaque runRaw (req : Request) : MetaM Result.Raw
 
 structure Result where
   expl   : Explanation
@@ -123,7 +123,7 @@ inductive Failure where
 def run
     (req : Request) (explLengthLimit : Nat) (onFail : Result.Report → Failure → MetaM MessageData) :
     MetaM Result := do
-  let raw := runRaw req
+  let raw ← runRaw req
   withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] raw.expl
   if "⚡️".isPrefixOf raw.expl then
     throwError s!"egg backend failed:\n  {raw.expl}"

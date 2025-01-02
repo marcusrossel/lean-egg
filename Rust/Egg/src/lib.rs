@@ -1,8 +1,6 @@
 use analysis::LeanEGraph;
 use egg::*;
-use core::ffi::c_char;
-use core::ffi::CStr;
-use std::ffi::CString;
+use std::ffi::{c_char, CStr, CString, c_void};
 use std::ptr::null;
 use libc::c_double;
 use std::str::FromStr;
@@ -205,7 +203,8 @@ pub extern "C" fn egg_explain_congr(
     facts: CFactsArray, 
     guides: CStringArray, 
     cfg: Config,
-    viz_path_ptr: *const c_char
+    viz_path_ptr: *const c_char,
+    e: *const c_void,
 ) -> EqsatResult {
     let init   = c_str_to_string(init_str_ptr);
     let goal   = c_str_to_string(goal_str_ptr);
@@ -221,7 +220,7 @@ pub extern "C" fn egg_explain_congr(
     let raw_viz_path = c_str_to_string(viz_path_ptr);
     let viz_path = if raw_viz_path.is_empty() { None } else { Some(raw_viz_path) };
 
-    let res = explain_congr(init, goal, rw_templates, facts, guides, cfg, viz_path);
+    let res = explain_congr(init, goal, rw_templates, facts, guides, cfg, viz_path, e);
     if let Err(res_err) = res {
         return EqsatResult { expl: string_to_c_str(res_err.to_string()), graph: None, report: CReport::none() }
     }
@@ -258,4 +257,8 @@ pub unsafe extern "C" fn egg_query_equiv(
 #[no_mangle]
 pub unsafe extern "C" fn egg_free_egraph(egraph: *mut LeanEGraph) {
     if !egraph.is_null() { drop(Box::from_raw(egraph)); }
+}
+
+extern "C" {
+    fn is_synthable(env: *const c_void, tc_type_str: *const u8) -> bool;
 }
