@@ -3,24 +3,33 @@ import Egg.Core.Premise.Rewrites
 import Lean
 open Lean
 
-namespace Egg
+namespace Egg.Rewrite
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
-structure Rewrite.Encoded where
+structure Encoded where
   name  : String
   lhs   : Expression
   rhs   : Expression
   dirs  : Directions
   conds : Array Expression
 
-def Rewrite.encode (rw : Rewrite) (ctx : EncodingCtx) : MetaM Encoded :=
+def Condition.encode? (c : Rewrite.Condition) (ctx : EncodingCtx) : MetaM (Option Expression) := do
+  unless !c.isProven do return none
+  let type ← encode c.type ctx
+  match c.kind with
+  | .proof  => return s!"(proof {type})"
+  | .tcInst => return s!"(inst {type})"
+
+def encode (rw : Rewrite) (ctx : EncodingCtx) : MetaM Encoded :=
   return {
     name  := rw.src.description
     lhs   := ← Egg.encode rw.lhs ctx
     rhs   := ← Egg.encode rw.rhs ctx
     dirs  := rw.validDirs ctx.cfg.toErasure
-    conds := ← rw.conds.filterMapM fun c => if c.isProven then return none else Egg.encode c.type ctx
+    conds := ← rw.conds.filterMapM (Condition.encode? · ctx)
   }
+
+end Rewrite
 
 namespace Rewrites
 
