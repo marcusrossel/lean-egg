@@ -83,11 +83,13 @@ private def Premise.Mk.rewrite (stx : Syntax) (cfg : Rewrite.Config) : Premise.M
 private def Premise.Mk?.rewrite (cfg : Rewrite.Config) : Premise.Mk? Rewrite :=
   (Rewrite.from? · · · cfg)
 
-private def Premise.Mk.fact : Premise.Mk Fact :=
-  fun proof type src => Fact.from proof type src
+private def Premise.Mk.fact (stx : Syntax) : Premise.Mk Fact :=
+  fun proof type src => do
+    (← Fact.from? proof type src).getDM <|
+      throwErrorAt stx m!"egg requires facts to be proofs or type class instances"
 
 private def Premise.Mk?.fact : Premise.Mk? Fact :=
-  fun proof type src => Fact.from proof type src
+  (Fact.from? · · ·)
 
 private def Premises.explicit
     (prem : Term) (idx : Nat) (mk : Premise.Mk α) (mkSrc : Nat → Option Nat → Source) :
@@ -134,7 +136,7 @@ def Premises.elab (cfg : Rewrite.Config) : (TSyntax `egg_premises) → TacticM P
       let mkExplicitSrc idx _ := .fact (.explicit idx)
       let mkStarSrc id := .fact (.star id)
       result := { result with
-        facts := ← go facts (fun _ => Premise.Mk.fact) Premise.Mk?.fact mkExplicitSrc mkStarSrc
+        facts := ← go facts Premise.Mk.fact Premise.Mk?.fact mkExplicitSrc mkStarSrc
       }
     return result
   | _ => throwUnsupportedSyntax

@@ -3,17 +3,33 @@ import Egg.Core.Normalize
 import Lean
 open Lean
 
-namespace Egg
+namespace Egg.Fact
+
+inductive Kind where
+  | proof
+  | tcInst
+
+def Kind.forType? (ty : Expr) : MetaM (Option Fact.Kind) := do
+  if ← Meta.isProp ty then
+    return some .proof
+  else if (← Meta.isClass? ty).isSome then
+    return some .tcInst
+  else
+    return none
 
 -- Note: We don't create `Fact`s directly, but use `Fact.from` instead.
-structure Fact where
+structure _root_.Egg.Fact where
   private mk ::
+  kind  : Kind
   proof : Expr
   type  : Expr
   src   : Source
 
-def Fact.«from» (proof : Expr) (type : Expr) (src : Source) : MetaM Fact := do
+def from? (proof : Expr) (type : Expr) (src : Source) : MetaM (Option Fact) := do
   let type ← normalize type .noReduce
-  return { src, type, proof }
+  let some kind ← Kind.forType? type | return none
+  return some { kind, src, type, proof }
+
+end Fact
 
 abbrev Facts := Array Fact

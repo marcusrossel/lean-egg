@@ -1,6 +1,7 @@
 import Egg.Core.Directions
 import Egg.Core.MVars.Subst
 import Egg.Core.MVars.Collect
+import Egg.Core.Premise.Facts
 import Egg.Core.Normalize
 import Egg.Core.Congr
 import Egg.Core.Source
@@ -14,20 +15,8 @@ protected structure MVars where
   rhs : MVars
   deriving Inhabited
 
-inductive Condition.Kind where
-  | proof
-  | tcInst
-
-def Condition.Kind.forType? (ty : Expr) : MetaM (Option Condition.Kind) := do
-  if ← Meta.isProp ty then
-    return some .proof
-  else if (← Meta.isClass? ty).isSome then
-    return some .tcInst
-  else
-    return none
-
 structure Condition where
-  kind  : Condition.Kind
+  kind  : Fact.Kind
   -- Without instantiation, this `expr` is an mvar. When instantiated, the condition is considered
   -- proven.
   expr  : Expr
@@ -96,7 +85,7 @@ where
       if noCond.contains arg.mvarId! then continue
       let ty ← arg.mvarId!.getType
       let mvars ← MVars.collect ty cfg.amb
-      let some kind ← Condition.Kind.forType? ty
+      let some kind ← Fact.Kind.forType? ty
         | throwError m!"Rewrite {src} requires condition of type '{ty}' which is neither a proof nor an instance."
       conds := conds.push { kind, expr := arg, type := ty, mvars }
     return conds
