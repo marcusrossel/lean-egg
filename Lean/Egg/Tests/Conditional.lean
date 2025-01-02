@@ -71,9 +71,3 @@ example {p q r : Prop} (h₁ : p) (h₂ : p ↔ q) (h₃ : q → (p ↔ r)) : p 
 -- This test checks that multiple rewriting of facts is handled correctly.
 example {p q r : Prop} (h₁ : p) (h₂ : p ↔ q) (h₃ : q ↔ r) (h₄ : r → (p ↔ s)) : p ↔ s := by
   egg [h₂, h₃, h₄; h₁]
-
-/- TODO:
-Example of a sensible theorem (rewrite) with an unbound condition: `Nat.zero_lt_of_lt`
-We could still try a best effort approach which checks the set of facts for statements of the
-form of the partially substituted condition.
--/
