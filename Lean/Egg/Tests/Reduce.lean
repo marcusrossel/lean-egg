@@ -29,8 +29,8 @@ def R := true = false
 example (h : R) : true = false := by
   egg [h]
 
-def S := ∀ _ : Nat, R
+def S := ∀ _ : 0 = 0, R
 
 -- Checks that we can "see through" definitions in rewrites where the body is not an equality.
 example (h : S) : R := by
-  egg [h; 0]
+  egg [h]
