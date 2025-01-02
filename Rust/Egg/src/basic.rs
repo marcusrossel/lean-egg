@@ -38,42 +38,11 @@ pub struct ExplainedCongr {
     pub rw_stats: String   
 }
 
-pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, guides: Vec<String>, cfg: Config, viz_path: Option<String>, e: *const c_void) -> Result<ExplainedCongr, Error> {    
-    let analysis = LeanAnalysis { union_semantics: cfg.union_semantics };
-    let mut egraph: LeanEGraph = EGraph::new(analysis);
-    egraph = egraph.with_explanations_enabled();
-    if !cfg.optimize_expl { egraph = egraph.without_explanation_length_optimization() }
+pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, guides: Vec<String>, cfg: Config, viz_path: Option<String>, env: *const c_void) -> Result<ExplainedCongr, Error> {    
+    let Initialized { egraph, init_id, init_expr, goal_id, goal_expr } = 
+        mk_initial_egraph(init, goal, facts, guides, &cfg)?;
 
-    let init_expr = init.parse().map_err(|e : RecExprParseError<_>| Error::Init(e.to_string()))?;
-    let goal_expr = goal.parse().map_err(|e : RecExprParseError<_>| Error::Goal(e.to_string()))?;
-    let init_id = egraph.add_expr(&init_expr);
-    let goal_id = egraph.add_expr(&goal_expr);
-
-    for guide in guides {
-        let expr = guide.parse().map_err(|e : RecExprParseError<_>| Error::Guide(e.to_string()))?;
-        egraph.add_expr(&expr);
-    }
-
-    for (name, expr) in facts {
-        let expr = expr.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
-        let class = egraph.add_expr(&expr);
-        egraph[class].data.fact = Some(name.to_string());
-    }
-
-    let mut rws;
-    match templates_to_rewrites(rw_templates, cfg.block_invalid_matches, cfg.shift_captured_bvars, cfg.allow_unsat_conditions, e) {
-        Ok(r)    => rws = r,
-        Err(err) => return Err(Error::Rewrite(err.to_string()))
-    }
-    if cfg.nat_lit    { rws.append(&mut nat_lit_rws(cfg.shapes)) }
-    if cfg.eta        { rws.push(eta_reduction_rw()) }
-    if cfg.eta_expand { rws.push(eta_expansion_rw()) }
-    if cfg.beta       { rws.push(beta_reduction_rw()) }
-    if cfg.levels     { rws.append(&mut level_rws()) }
-    // TODO: Only add these rws if one of the following is active: beta, eta, eta-expansion, 
-    //       bvar index correction. Anything else?
-    rws.append(&mut subst_rws());
-    rws.append(&mut shift_rws());
+    let rws = mk_rewrites(rw_templates, &cfg, env)?;
 
     let mut runner = Runner::default()
         .with_egraph(egraph)
@@ -102,6 +71,70 @@ pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTempla
     } else {
         Ok(ExplainedCongr { expl: "".to_string(), egraph: runner.egraph, report, rw_stats })
     }
+}
+
+struct Initialized {
+    egraph: LeanEGraph,
+    init_id: Id,
+    init_expr: RecExpr<LeanExpr>,
+    goal_id: Id,
+    goal_expr: RecExpr<LeanExpr>
+}
+
+fn mk_initial_egraph(
+    init: String, goal: String, facts: Vec<(String, String)>, guides: Vec<String>, cfg: &Config
+) -> Result<Initialized, Error> {
+    let analysis = LeanAnalysis { union_semantics: cfg.union_semantics };
+    let mut egraph: LeanEGraph = EGraph::new(analysis);
+
+    // Enables explanations.
+    egraph = egraph.with_explanations_enabled();
+    if !cfg.optimize_expl { egraph = egraph.without_explanation_length_optimization() }
+
+    // Adds `True` as a fact to the e-graph.
+    let true_fact: RecExpr<LeanExpr> = "(fact (const \"True\"))".parse()
+        .expect("Failed to parse '(fact (const \"True\"))'.");
+    egraph.add_expr(&true_fact); 
+
+    // Adds the LHS and RHS of the goal we're trying to prove to the e-graph.
+    let init_expr = init.parse().map_err(|e : RecExprParseError<_>| Error::Init(e.to_string()))?;
+    let goal_expr = goal.parse().map_err(|e : RecExprParseError<_>| Error::Goal(e.to_string()))?;
+    let init_id = egraph.add_expr(&init_expr);
+    let goal_id = egraph.add_expr(&goal_expr);
+
+    // Adds the guide terms to the e-graph.
+    for guide in guides {
+        let expr = guide.parse().map_err(|e : RecExprParseError<_>| Error::Guide(e.to_string()))?;
+        egraph.add_expr(&expr);
+    }
+
+    // TODO: Add propositional facts to the e-class of `True`.
+    for (name, expr) in facts {
+        let expr = expr.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
+        let class = egraph.add_expr(&expr);
+        egraph[class].data.fact = Some(name.to_string());
+    }
+
+    Ok(Initialized { egraph, init_id, init_expr, goal_id, goal_expr })
+}
+
+fn mk_rewrites(rw_templates: Vec<RewriteTemplate>, cfg: &Config, env: *const c_void) -> Result<Vec<LeanRewrite>, Error> {
+    let mut rws;
+    match templates_to_rewrites(rw_templates, cfg.block_invalid_matches, cfg.shift_captured_bvars, cfg.allow_unsat_conditions, env) {
+        Ok(r)    => rws = r,
+        Err(err) => return Err(Error::Rewrite(err.to_string()))
+    }
+    if cfg.nat_lit    { rws.append(&mut nat_lit_rws(cfg.shapes)) }
+    if cfg.eta        { rws.push(eta_reduction_rw()) }
+    if cfg.eta_expand { rws.push(eta_expansion_rw()) }
+    if cfg.beta       { rws.push(beta_reduction_rw()) }
+    if cfg.levels     { rws.append(&mut level_rws()) }
+    // TODO: Only add these rws if one of the following is active: beta, eta, eta-expansion, 
+    //       bvar index correction. Anything else?
+    rws.append(&mut subst_rws());
+    rws.append(&mut shift_rws());
+    
+    Ok(rws)
 }
 
 fn collect_rw_stats(runner: &Runner<LeanExpr, LeanAnalysis>) -> String {

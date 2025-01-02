@@ -114,5 +114,7 @@ pub fn subst_rws() -> Vec<LeanRewrite> {
     rws.push(rewrite!("↦proof"; "(↦ ?f ?t (proof ?x))"  => "(proof ?x)"));
     rws.push(rewrite!("↦inst";  "(↦ ?f ?t (inst ?x))"   => "(inst ?x)"));
     rws.push(rewrite!("↦_";     "(↦ ?f ?t _)"           => "_"));
+    // Note: We don't handle the propagation of substitutions over facts, as a substitution should 
+    //       never even be applied to a fact.
     rws
 }

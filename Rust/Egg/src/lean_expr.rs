@@ -26,8 +26,14 @@ define_language! {
         "lit"   = Lit(Id),          // (Nat | Str)
 
         // Constructs for erasure:
+        // Note that we also use these constructors to tag rewrite conditions (depending on whether
+        // it's a type class or propositional condition).
         "proof" = Proof(Id),        // (<expr>)
         "inst"  = Inst(Id),         // (<expr>)
+
+        // Construct for marking the e-class of facts syntactically. That is, we always expect to
+        // have exactly one e-node `fact <i>` with `i` denoting the e-class of `const "True"`.
+        "fact" = Fact(Id),
 
         // Constructs for small-step substitution:
         "↦" = Subst([Id; 3]),       // (Nat, <expr>, <expr>)
@@ -38,7 +44,7 @@ define_language! {
         "→" = Fun([Id; 2]),         // (<shape>, <shape>)
         "◇" = Shaped([Id; 2]),      // (<shape>, <expr>)
 
-        // Construct for unknown terms (this is used in η-expansion):
+        // Construct for unknown terms (this is used when reifying equality and for η-expansion):
         "_" = Unknown,        
     }
 } 

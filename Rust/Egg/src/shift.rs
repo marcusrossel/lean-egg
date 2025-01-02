@@ -119,5 +119,7 @@ pub fn shift_rws() -> Vec<LeanRewrite> {
     rws.push(rewrite!("↑proof"; "(↑ ?d ?o ?c (proof ?x))"  => "(proof ?x)"));
     rws.push(rewrite!("↑inst";  "(↑ ?d ?o ?c (inst ?x))"   => "(inst ?x)"));
     rws.push(rewrite!("↑_";     "(↑ ?d ?o ?c _)"           => "_"));
+    // Note: We don't handle the propagation of shifts over facts, as a shift should never even be
+    //       applied to a fact.
     rws
 }
