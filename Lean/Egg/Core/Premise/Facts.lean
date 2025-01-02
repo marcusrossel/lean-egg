@@ -17,7 +17,7 @@ def Kind.forType? (ty : Expr) : MetaM (Option Fact.Kind) := do
   else
     return none
 
--- Note: We don't create `Fact`s directly, but use `Fact.from` instead.
+-- Note: We don't create `Fact`s directly, but use `Fact.from?` instead.
 structure _root_.Egg.Fact where
   private mk ::
   kind  : Kind

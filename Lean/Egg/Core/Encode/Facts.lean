@@ -12,8 +12,12 @@ structure Fact.Encoded where
 
 abbrev Facts.Encoded := Array Fact.Encoded
 
+def Fact.encode (fact : Fact) (ctx : EncodingCtx) : MetaM Fact.Encoded := do
+  let type ← Egg.encode fact.type ctx
+  let expr := match fact.kind with
+    | .proof  => s!"(proof {type})"
+    | .tcInst => s!"(inst {type})"
+  return { name := fact.src.description, expr }
+
 def Facts.encode (facts : Facts) (ctx : EncodingCtx) : MetaM Facts.Encoded :=
-  facts.mapM fun fact => return {
-      name := fact.src.description,
-      expr := ← Egg.encode fact.type ctx
-    }
+  facts.mapM (Fact.encode · ctx)
