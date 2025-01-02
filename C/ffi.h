@@ -1,7 +1,7 @@
-typedef struct {
-    void* x_1;
-    void* x_2;
-    void* x_3;
-    void* x_4;
-    void* x_5;
+typedef struct env {
+    void* x1;
+    void* x2;
+    void* x3;
+    void* x4;
+    void* x5;
 } env;

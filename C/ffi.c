@@ -411,20 +411,19 @@ lean_obj_res run_eqsat_request_impl(lean_obj_arg req, env* e) {
     return lean_result;
 }
 
-lean_object* run_eqsat_request(lean_obj_arg x_1, lean_object* x_2, lean_object* x_3, lean_object* x_4, lean_object* x_5, lean_object* x_6) {
+lean_obj_res run_eqsat_request(lean_obj_arg req, lean_object* x1, lean_object* x2, lean_object* x3, lean_object* x4, lean_object* x5) {
     env e = {
-        .x_1 = x_2,
-        .x_2 = x_3,
-        .x_3 = x_4,
-        .x_4 = x_5,
-        .x_5 = x_6,
+        .x1 = x1,
+        .x2 = x2,
+        .x3 = x3,
+        .x4 = x4,
+        .x5 = x5,
     };
-    lean_obj_res res = run_eqsat_request_impl(x_1, &e);
-    lean_object* x_7; lean_object* x_8;
-    x_8 = lean_alloc_ctor(0, 2, 0);
-    lean_ctor_set(x_8, 0, res);
-    lean_ctor_set(x_8, 1, x_6);
-    return x_8;
+    lean_object* res = run_eqsat_request_impl(req, &e);
+    lean_object* metam_state = lean_alloc_ctor(0, 2, 0);
+    lean_ctor_set(metam_state, 0, res);
+    lean_ctor_set(metam_state, 1, x5);
+    return metam_state;
 }
 
 extern const char* egg_query_equiv(

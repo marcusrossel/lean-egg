@@ -1,6 +1,6 @@
 use analysis::LeanEGraph;
 use egg::*;
-use std::ffi::{c_char, CStr, CString, c_int, c_void};
+use std::ffi::{c_char, CStr, CString, c_void};
 use std::ptr::null;
 use libc::c_double;
 use std::str::FromStr;
@@ -260,5 +260,5 @@ pub unsafe extern "C" fn egg_free_egraph(egraph: *mut LeanEGraph) {
 }
 
 extern "C" {
-    fn handle_type_class_inst(e: *const c_void, x: *const u8) -> c_int;
+    fn is_synthable(env: *const c_void, tc_type_str: *const u8) -> bool;
 }

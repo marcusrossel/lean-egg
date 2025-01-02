@@ -6,7 +6,7 @@ use crate::lean_expr::*;
 use crate::analysis::*;
 use crate::bvar_correction::*;
 use crate::valid_match::*;
-use crate::handle_type_class_inst;
+use crate::is_synthable;
 
 pub struct RewriteTemplate {
     pub name:  String,
@@ -71,14 +71,14 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             if let Some(fact_name) = &graph[id].data.fact {
                 let mut r = rule.as_str().to_string(); r.push_str(&fact_name);
                 rule = Symbol::from(r);
-            } else if self.allow_unsat_conditions {
-                let mut r = rule.as_str().to_string(); r.push_str("!?");
-                rule = Symbol::from(r);
             } else if eval_eq_condition(&cond, graph, subst) {
                 let mut r = rule.as_str().to_string(); r.push_str("!=");
                 rule = Symbol::from(r);
             } else if eval_tc_condition(&cond, graph, subst, self.e) {
                 let mut r = rule.as_str().to_string(); r.push_str("!%");
+                rule = Symbol::from(r);
+            } else if self.allow_unsat_conditions {
+                let mut r = rule.as_str().to_string(); r.push_str("!?");
                 rule = Symbol::from(r);
             } else {
                 return vec![]
@@ -111,9 +111,9 @@ fn eval_eq_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &S
     let LeanExpr::App([i3, i8_]) = &ast[*i2] else { return false };
     let LeanExpr::App([i4, _i7]) = &ast[*i3] else { return false };
     let LeanExpr::Const(b)       = &ast[*i4] else { return false };
-    let [i5, ..]                                    = &**b      else { return false };
+    let [i5, ..]                 = &**b      else { return false };
     let LeanExpr::Str(string)    = &ast[*i5] else { return false };
-    let "Eq"                                        = &**string else { return false };
+    let "Eq"                     = &**string else { return false };
 
     let (a, b) = (sub_expr(&ast, *i8_), sub_expr(&ast, *i9));
     graph.lookup_expr(&a) == graph.lookup_expr(&b)
@@ -129,9 +129,7 @@ fn eval_tc_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &S
 
     let mut s = ty.to_string();
     s.push('\0');
-    unsafe {
-        handle_type_class_inst(e, s.as_ptr()) > 0
-    }
+    unsafe { is_synthable(e, s.as_ptr()) }
 }
 
 fn sub_expr(ast: &RecExpr<LeanExpr>, i: Id) -> RecExpr<LeanExpr> {

@@ -1,18 +1,21 @@
 #include <lean/lean.h>
 #include "ffi.h"
 
-extern lean_object* is_synthable(
+extern lean_obj_res lean_is_synthable(
     lean_obj_arg ty_str,
     lean_obj_arg x1,
     lean_obj_arg x2,
     lean_obj_arg x3,
     lean_obj_arg x4,
-    lean_obj_arg x5,
+    lean_obj_arg x5
 );
 
-int handle_type_class_inst(env* e, const char* x) {
-    lean_object* o = is_synthable(x, e.x_1, e.x_2, e.x_3, e.x_4, e.x_5);
-    // lean_object* state = lean_ctor_get(o, 0);
-    uint8_t b = lean_ctor_get_uint8(o, sizeof(void*));
-    return b;
+_Bool is_synthable(env* e, const char* str) {
+    lean_obj_res ty_str = lean_mk_string(str);
+    lean_obj_res s = lean_is_synthable(ty_str, e->x1, e->x2, e->x3, e->x4, e->x5);
+    // The layout of `s` consists of one object and one boolean.
+    // TODO: Is `IO.RealWorld` a scalar?
+    size_t scalar_base_offset = 1 * sizeof(void*);
+    uint8_t result = lean_ctor_get_uint8(s, scalar_base_offset + 0);
+    return result != 0;
 }
