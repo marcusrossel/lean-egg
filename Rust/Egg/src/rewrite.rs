@@ -64,29 +64,24 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             }
         }
 
+        // Checks for satisfaction of rewrite conditions, and aborts if any is not satisfied.
         let mut rule = rule;
         for cond in self.conds.clone() {
-            let id = graph.add_instantiation(&cond.ast, subst);
-            
-            if let Some(fact_name) = &graph[id].data.fact {
-                let mut r = rule.as_str().to_string(); r.push_str(&fact_name);
-                rule = Symbol::from(r);
-            } else if eval_eq_condition(&cond, graph, subst) {
-                let mut r = rule.as_str().to_string(); r.push_str("!=");
-                rule = Symbol::from(r);
-            } else if eval_tc_condition(&cond, graph, subst, self.e) {
-                let mut r = rule.as_str().to_string(); r.push_str("!%");
+            if let Some(fact) = fact_for_cond(cond, graph, subst) {
+                let mut r = rule.as_str().to_string(); r.push_str(&fact);
                 rule = Symbol::from(r);
             } else if self.allow_unsat_conditions {
                 let mut r = rule.as_str().to_string(); r.push_str("!?");
                 rule = Symbol::from(r);
             } else {
+                // TODO: Is it correct to return the empty vec here? We did potentially change
+                //       the egraph by adding conditions' instantiations.
                 return vec![]
             }
         }
 
-        // A substitution needs no shifting if it does not map any variables to e-classes containing loose bvars.
-        // This is the case exactly when `var_depths` is empty.
+        // A substitution needs no shifting if it does not map any variables to e-classes containing 
+        // loose bvars. This is the case exactly when `var_depths` is empty.
         if self.shift_captured_bvars && !var_depths.clone().unwrap().is_empty() {
             let shifted_rhs = correct_bvar_indices(&self.rhs, var_depths.unwrap(), graph);
             let (from, did_union) = graph.union_instantiations(searcher_ast, &shifted_rhs, subst, rule);
@@ -96,6 +91,33 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             let (from, did_union) = graph.union_instantiations(searcher_ast, &self.rhs.ast, subst, rule);
             if did_union { vec![from] } else { vec![] }
         }
+    }
+}
+
+fn fact_for_cond(cond: Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &Subst) -> Option<String> {
+    let id = graph.add_instantiation(&cond.ast, subst);
+    let ast = graph.id_to_expr(id);
+    let head = Id::from(ast.as_ref().len() - 1);
+    
+    match &ast[head] {
+        LeanExpr::Proof(prop) => {
+            // TODO: We can't determine how this fact was proven, can we?
+            if graph.lookup(LeanExpr::Fact(*prop)).is_some() {
+                Some("!∀".to_string())
+            } else if true {
+                // TODO: Since we don't *completely* reify equalities (we erase the type and 
+                // universe) we still need special handling for equality conditions.
+                todo!()
+            } else {
+                // TODO: Is it correct to return the empty vec here? We did potentially change
+                //       the egraph by adding the condition's instantiation.
+                None
+            }
+        },
+        LeanExpr::Inst(class) => {
+            todo!()
+        },
+        _ => None
     }
 }
 

@@ -1,3 +1,4 @@
+use std::str::pattern::Pattern;
 use std::time::Duration;
 use std::collections::HashMap;
 use std::ffi::c_void;
@@ -91,11 +92,6 @@ fn mk_initial_egraph(
     egraph = egraph.with_explanations_enabled();
     if !cfg.optimize_expl { egraph = egraph.without_explanation_length_optimization() }
 
-    // Adds `True` as a fact to the e-graph.
-    let true_fact: RecExpr<LeanExpr> = "(fact (const \"True\"))".parse()
-        .expect("Failed to parse '(fact (const \"True\"))'.");
-    egraph.add_expr(&true_fact); 
-
     // Adds the LHS and RHS of the goal we're trying to prove to the e-graph.
     let init_expr = init.parse().map_err(|e : RecExprParseError<_>| Error::Init(e.to_string()))?;
     let goal_expr = goal.parse().map_err(|e : RecExprParseError<_>| Error::Goal(e.to_string()))?;
@@ -108,11 +104,29 @@ fn mk_initial_egraph(
         egraph.add_expr(&expr);
     }
 
-    // TODO: Add propositional facts to the e-class of `True`.
+    // Adds `True` to the e-graph.
+    let true_expr = "(const \"True\")".parse().unwrap();
+    let true_id = egraph.add_expr(&true_expr);
+
+    // Marks `True` as a fact.
+    let true_fact = format!("(const {})", true_expr).parse().unwrap();
+    egraph.add_expr(&true_fact); 
+
+    // Adds explicitly provided facts to the e-graph.
     for (name, expr) in facts {
-        let expr = expr.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
-        let class = egraph.add_expr(&expr);
-        egraph[class].data.fact = Some(name.to_string());
+        if let Some(e) = "(proof ".strip_prefix_of(&expr) {
+            // Adds propositional facts to the e-class of `True`.
+            let proof_str = ")".strip_suffix_of(e).unwrap();
+            let prop: RecExpr<LeanExpr> = proof_str.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
+            let prop_id = egraph.add_expr(&prop);
+            egraph.union_trusted(true_id, prop_id, "FACT");
+        } else if let Some(e) = "(inst ".strip_prefix_of(&expr) {
+            let inst_str = ")".strip_suffix_of(e);
+            let inst: RecExpr<LeanExpr> = e.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
+            todo!();
+        } else {
+            return Err(Error::Fact(name.to_string()))
+        }
     }
 
     Ok(Initialized { egraph, init_id, init_expr, goal_id, goal_expr })

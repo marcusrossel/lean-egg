@@ -7,9 +7,8 @@ use crate::util::*;
 pub struct LeanAnalysisData {
     pub nat_val:      Option<u64>,
     pub dir_val:      Option<bool>,
-    pub loose_bvars:  HashSet<u64>,   // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
-    pub is_primitive: bool,           // A class is primitive if it represents a `Nat`, `Str` or universe level e-node.
-    pub fact:         Option<String>, // A class has an associated fact, if it contains a term which we know is proven in Lean.
+    pub loose_bvars:  HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
+    pub is_primitive: bool          // A class is primitive if it represents a `Nat`, `Str` or universe level e-node.
 }
 
 #[derive(Default)]
@@ -34,7 +33,6 @@ impl Analysis<LeanExpr> for LeanAnalysis {
         // `merge_max` prefers `Some` value over `None`. Note that if `to` and `from` both have nat 
         // values, then they should have the *same* value as otherwise merging their e-classes 
         // indicates an invalid rewrite. The same applies for the `dir_val`s.
-        egg::merge_max(&mut to.fact, from.fact) |
         egg::merge_max(&mut to.nat_val, from.nat_val) | 
         egg::merge_max(&mut to.dir_val, from.dir_val) | 
         egg::merge_max(&mut to.is_primitive, from.is_primitive) |

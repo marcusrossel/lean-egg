@@ -1,3 +1,5 @@
+#![feature(pattern)]
+
 use analysis::LeanEGraph;
 use egg::*;
 use std::ffi::{c_char, CStr, CString, c_void};
