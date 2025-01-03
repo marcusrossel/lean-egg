@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use egg::*;
 use std::ffi::c_void;
+use crate::basic::*;
 use crate::result::*;
 use crate::lean_expr::*;
 use crate::analysis::*;
@@ -15,25 +16,34 @@ pub struct RewriteTemplate {
     pub conds: Vec<Pattern<LeanExpr>>
 }
 
-pub fn templates_to_rewrites(
-    templates: Vec<RewriteTemplate>, 
+pub struct RewriteConfig {
     block_invalid_matches: bool, 
     shift_captured_bvars: bool, 
     allow_unsat_conditions: bool,
-    e: *const c_void
-) -> Res<Vec<LeanRewrite>> {
-    let mut result: Vec<LeanRewrite> = vec![];
-    for template in templates {
-        let applier = LeanApplier { 
-            rhs: template.rhs, conds: template.conds, 
-            block_invalid_matches, shift_captured_bvars, allow_unsat_conditions, e,
-        };
-        match Rewrite::new(template.name, template.lhs, applier) {
-            Ok(rw)   => result.push(rw),
-            Err(err) => return Err(Error::Rewrite(err.to_string()))
+    env: *const c_void
+}
+
+impl Config {
+
+    pub fn to_rw_config(&self, env: *const c_void) -> RewriteConfig {
+        RewriteConfig {
+            block_invalid_matches: self.block_invalid_matches,
+            shift_captured_bvars: self.shift_captured_bvars,
+            allow_unsat_conditions: self.allow_unsat_conditions,
+            env
         }
     }
-    Ok(result)
+}
+
+impl RewriteTemplate {
+
+    pub fn to_rewrite(self, cfg: RewriteConfig) -> Res<LeanRewrite> {
+        let applier = LeanApplier { rhs: self.rhs, conds: self.conds, cfg };
+        match Rewrite::new(self.name, self.lhs, applier) {
+            Ok(rw)   => Ok(rw),
+            Err(err) => Err(Error::Rewrite(err.to_string()))
+        }
+    } 
 }
 
 unsafe impl Send for LeanApplier {}
@@ -42,10 +52,7 @@ unsafe impl Sync for LeanApplier {}
 struct LeanApplier {
     pub rhs: Pattern<LeanExpr>,
     pub conds: Vec<Pattern<LeanExpr>>,
-    pub block_invalid_matches: bool,
-    pub shift_captured_bvars: bool,
-    pub allow_unsat_conditions: bool,
-    pub e: *const c_void,
+    pub cfg: RewriteConfig,
 }
 
 impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
@@ -57,7 +64,7 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
         let searcher_ast = searcher_ast.unwrap();
         let mut var_depths: Option<HashMap<Var, u64>> = None;
 
-        if self.block_invalid_matches || self.shift_captured_bvars { 
+        if self.cfg.block_invalid_matches || self.cfg.shift_captured_bvars { 
             match match_is_valid(subst, searcher_ast, graph) {
                 MatchValidity::Invalid   => return vec![],
                 MatchValidity::Valid(vd) => var_depths = Some(vd)
@@ -70,7 +77,7 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             if let Some(fact) = fact_for_cond(cond, graph, subst) {
                 let mut r = rule.as_str().to_string(); r.push_str(&fact);
                 rule = Symbol::from(r);
-            } else if self.allow_unsat_conditions {
+            } else if self.cfg.allow_unsat_conditions {
                 let mut r = rule.as_str().to_string(); r.push_str("!?");
                 rule = Symbol::from(r);
             } else {
@@ -82,7 +89,7 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
 
         // A substitution needs no shifting if it does not map any variables to e-classes containing 
         // loose bvars. This is the case exactly when `var_depths` is empty.
-        if self.shift_captured_bvars && !var_depths.clone().unwrap().is_empty() {
+        if self.cfg.shift_captured_bvars && !var_depths.clone().unwrap().is_empty() {
             let shifted_rhs = correct_bvar_indices(&self.rhs, var_depths.unwrap(), graph);
             let (from, did_union) = graph.union_instantiations(searcher_ast, &shifted_rhs, subst, rule);
             if did_union { vec![from] } else { vec![] }

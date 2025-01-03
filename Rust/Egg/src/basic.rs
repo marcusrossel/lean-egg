@@ -16,20 +16,20 @@ use crate::subst::*;
 
 #[repr(C)]
 pub struct Config {
-    optimize_expl:          bool,
-    time_limit:             usize,
-    node_limit:             usize,
-    iter_limit:             usize, 
-    nat_lit:                bool, 
-    eta:                    bool,
-    eta_expand:             bool,
-    beta:                   bool,
-    levels:                 bool,
-    shapes:                 bool,
-    block_invalid_matches:  bool,
-    shift_captured_bvars:   bool,
-    union_semantics:        bool,
-    allow_unsat_conditions: bool
+    optimize_expl:              bool,
+    time_limit:                 usize,
+    node_limit:                 usize,
+    iter_limit:                 usize, 
+    nat_lit:                    bool, 
+    eta:                        bool,
+    eta_expand:                 bool,
+    beta:                       bool,
+    levels:                     bool,
+    shapes:                     bool,
+    pub block_invalid_matches:  bool,
+    pub shift_captured_bvars:   bool,
+    union_semantics:            bool,
+    pub allow_unsat_conditions: bool
 }
 
 pub struct ExplainedCongr {
@@ -133,16 +133,14 @@ fn mk_initial_egraph(
 }
 
 fn mk_rewrites(rw_templates: Vec<RewriteTemplate>, cfg: &Config, env: *const c_void) -> Result<Vec<LeanRewrite>, Error> {
-    let mut rws;
-    match templates_to_rewrites(rw_templates, cfg.block_invalid_matches, cfg.shift_captured_bvars, cfg.allow_unsat_conditions, env) {
-        Ok(r)    => rws = r,
-        Err(err) => return Err(Error::Rewrite(err.to_string()))
-    }
-    if cfg.nat_lit    { rws.append(&mut nat_lit_rws(cfg.shapes)) }
-    if cfg.eta        { rws.push(eta_reduction_rw()) }
-    if cfg.eta_expand { rws.push(eta_expansion_rw()) }
-    if cfg.beta       { rws.push(beta_reduction_rw()) }
-    if cfg.levels     { rws.append(&mut level_rws()) }
+    let mut rws: Vec<LeanRewrite> = vec![];
+    
+    for template in rw_templates { rws.push(template.to_rewrite(cfg.to_rw_config(env))?) }
+    if cfg.nat_lit               { rws.append(&mut nat_lit_rws(cfg.shapes)) }
+    if cfg.eta                   { rws.push(eta_reduction_rw()) }
+    if cfg.eta_expand            { rws.push(eta_expansion_rw()) }
+    if cfg.beta                  { rws.push(beta_reduction_rw()) }
+    if cfg.levels                { rws.append(&mut level_rws()) }
     // TODO: Only add these rws if one of the following is active: beta, eta, eta-expansion, 
     //       bvar index correction. Anything else?
     rws.append(&mut subst_rws());
