@@ -55,9 +55,10 @@ impl RewriteTemplate {
             //       we probably need special handling for equality conditions.
 
             for cond in self.prop_conds { 
-                str = format!("(app (app (const \"And\") {}) (fact {}))", str, cond);
+                str = format!("(app (app (const \"And\") {}) {})", str, cond);
             }
 
+            str = format!("(fact {})", str);
             str.parse().expect("Failed to parse lhs in 'RewriteTemplate.to_rewrite'.")
         };
         

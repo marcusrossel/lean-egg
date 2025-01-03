@@ -23,6 +23,45 @@ impl LeanAnalysis {
 impl Analysis<LeanExpr> for LeanAnalysis {
     type Data = LeanAnalysisData;
 
+    // We use this hook to reify the equality inherent in an e-class.
+    fn modify(egraph: &mut EGraph<LeanExpr, Self>, id: Id) {
+        // WARNING: We have to be careful here to only add the equality e-node if it does not 
+        //          already exist. Otherwise we loop on this function infinitely.
+        
+        // Heuristic: if the e-class contains more than one e-node it's not new.
+        if egraph[id].len() > 1 { return }
+
+        // We don't create equality e-nodes for primitive classes.
+        if egraph[id].data.is_primitive { return }
+
+        // Constructs the required equality e-node, but aborts if the e-graph already contains it.
+        
+        let eq_const: Id; 
+        let eq_const_expr = "(app (const \"Eq\" _) _)".parse().unwrap();
+        if let Some(e) = egraph.lookup_expr(&eq_const_expr) {
+            eq_const = e;
+        } else {
+            eq_const = egraph.add_expr(&eq_const_expr);
+        };
+        
+        let eq: LeanExpr;
+        if let Some(eq_lhs) = egraph.lookup(LeanExpr::App([eq_const, id])) {
+            eq = LeanExpr::App([eq_lhs, id]);
+            if egraph.lookup(eq.clone()).is_some() { return }
+        } else {
+            // PROBLEM: When we add `(app eq_const id)`, this induces another call to `modify` which
+            //          then tries to construct the equality e-node for `(app eq_const id)`, which 
+            //          then adds `(app eq_const (app eq_const id))`, which induces another call to 
+            //          `modify`, etc.
+            let eq_lhs = egraph.add(LeanExpr::App([eq_const, id]));
+            eq = LeanExpr::App([eq_lhs, id]);
+        }
+        
+        let eq_id = egraph.add(eq);
+        let true_id = egraph.lookup_expr(&"(const \"True\")".parse().unwrap()).unwrap();
+        egraph.union_trusted(eq_id, true_id, "REIFY_EQ");
+    }
+
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge { 
         let loose_bvar_m = if self.union_semantics {
             union_sets(&mut to.loose_bvars, from.loose_bvars)
