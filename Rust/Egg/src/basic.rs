@@ -1,4 +1,3 @@
-use std::str::pattern::Pattern;
 use std::time::Duration;
 use std::collections::HashMap;
 use std::ffi::c_void;
@@ -13,6 +12,7 @@ use crate::nat_lit::*;
 use crate::rewrite::*;
 use crate::shift::*;
 use crate::subst::*;
+use crate::Fact;
 
 #[repr(C)]
 pub struct Config {
@@ -39,7 +39,10 @@ pub struct ExplainedCongr {
     pub rw_stats: String   
 }
 
-pub fn explain_congr(init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, guides: Vec<String>, cfg: Config, viz_path: Option<String>, env: *const c_void) -> Result<ExplainedCongr, Error> {    
+pub fn explain_congr(
+    init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<Fact>, 
+    guides: Vec<String>, cfg: Config, viz_path: Option<String>, env: *const c_void
+) -> Result<ExplainedCongr, Error> {    
     let Initialized { egraph, init_id, init_expr, goal_id, goal_expr } = 
         mk_initial_egraph(init, goal, facts, guides, &cfg)?;
 
@@ -83,7 +86,7 @@ struct Initialized {
 }
 
 fn mk_initial_egraph(
-    init: String, goal: String, facts: Vec<(String, String)>, guides: Vec<String>, cfg: &Config
+    init: String, goal: String, facts: Vec<Fact>, guides: Vec<String>, cfg: &Config
 ) -> Result<Initialized, Error> {
     let analysis = LeanAnalysis { union_semantics: cfg.union_semantics };
     let mut egraph: LeanEGraph = EGraph::new(analysis);
@@ -112,29 +115,29 @@ fn mk_initial_egraph(
     let true_fact = format!("(const {})", true_expr).parse().unwrap();
     egraph.add_expr(&true_fact); 
 
+    // Marks `p ∧ q` as a fact for any given facts `p` and `q`.
+    let and_true = "(app (app (const \"And\") (const \"True\")) (const \"True\"))".parse().unwrap();
+    let and_id = egraph.add_expr(&and_true); 
+    egraph.union_trusted(true_id, and_id, "AND_FACT");
+
     // Adds explicitly provided facts to the e-graph.
-    for (name, expr) in facts {
-        if let Some(e) = "(proof ".strip_prefix_of(&expr) {
+    for fact in facts {
+        match fact {
             // Adds propositional facts to the e-class of `True`.
-            let proof_str = ")".strip_suffix_of(e).unwrap();
-            let prop: RecExpr<LeanExpr> = proof_str.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
-            let prop_id = egraph.add_expr(&prop);
-            egraph.union_trusted(true_id, prop_id, "FACT");
-        } else if let Some(e) = "(inst ".strip_prefix_of(&expr) {
-            let inst_str = ")".strip_suffix_of(e);
-            let inst: RecExpr<LeanExpr> = e.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
-            todo!();
-        } else {
-            return Err(Error::Fact(name.to_string()))
+            Fact::Proof(prop) => {
+                let prop_id = egraph.add_expr(&prop);
+                egraph.union_trusted(true_id, prop_id, "FACT");
+            },
+            Fact::Inst(class) => todo!(),
         }
     }
 
     Ok(Initialized { egraph, init_id, init_expr, goal_id, goal_expr })
 }
-
+ 
 fn mk_rewrites(rw_templates: Vec<RewriteTemplate>, cfg: &Config, env: *const c_void) -> Result<Vec<LeanRewrite>, Error> {
     let mut rws: Vec<LeanRewrite> = vec![];
-    
+
     for template in rw_templates { rws.push(template.to_rewrite(cfg.to_rw_config(env))?) }
     if cfg.nat_lit               { rws.append(&mut nat_lit_rws(cfg.shapes)) }
     if cfg.eta                   { rws.push(eta_reduction_rw()) }

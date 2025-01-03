@@ -1,7 +1,7 @@
-#![feature(pattern)]
-
 use analysis::LeanEGraph;
 use egg::*;
+use lean_expr::LeanExpr;
+use util::sub_expr;
 use std::ffi::{c_char, CStr, CString, c_void};
 use std::ptr::null;
 use libc::c_double;
@@ -91,18 +91,38 @@ impl CRewritesArray {
             let conds_strs    = rw.conds.to_vec();
             let lhs           = Pattern::from_str(lhs_str).expect("Failed to parse lhs");
             let rhs           = Pattern::from_str(rhs_str).expect("Failed to parse rhs");
-            let conds: Vec<_> = conds_strs.iter().map(|cond| Pattern::from_str(cond).expect("Failed to parse condition")).collect();
+            
+            let mut prop_conds = vec![];
+            let mut tc_conds = vec![];
+            for str in conds_strs {
+                let pat: Pattern<_> = str.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
+                let head = Id::from(pat.ast.as_ref().len() - 1);
+                match &pat.ast[head] {
+                    ENodeOrVar::ENode(LeanExpr::Proof(prop)) => prop_conds.push(sub_expr(&pat.ast, *prop).into()),
+                    ENodeOrVar::ENode(LeanExpr::Inst(class)) => tc_conds.push(sub_expr(&pat.ast, *class).into()),
+                    _ => return Err(Error::Fact("Received condition without 'proof' or 'inst' prefix.".to_string()))
+                }
+            }
 
             if rw.dirs == RewriteDirections::Forward || rw.dirs == RewriteDirections::Both {
-                res.push(RewriteTemplate { name: name_str.to_string(), lhs: lhs.clone(), rhs: rhs.clone(), conds: conds.clone() })
+                res.push(RewriteTemplate { 
+                    name:       name_str.to_string(), 
+                    lhs:        lhs.clone(), 
+                    rhs:        rhs.clone(), 
+                    prop_conds: prop_conds.clone(),
+                    tc_conds:   tc_conds.clone()
+                })
             }
+
             if rw.dirs == RewriteDirections::Backward || rw.dirs == RewriteDirections::Both {
                 // It is important that we use the "-rev" suffix for reverse rules here, as this is also
                 // what's used for adding the reverse rule when using egg's `rewrite!(_; _ <=> _)` macro.
                 // If we choose another naming scheme, egg may complain about duplicate rules when 
                 // `rw.dir == RewriteDirection::Both`. This is the case, for example, for the rewrite
                 // `?a + ?b = ?b + ?a`.
-                res.push(RewriteTemplate { name: format!("{name_str}-rev"), lhs: rhs, rhs: lhs, conds })
+                res.push(RewriteTemplate { 
+                    name: format!("{name_str}-rev"), lhs: rhs, rhs: lhs, prop_conds, tc_conds
+                })
             }
         }
         Ok(res)
@@ -121,15 +141,28 @@ pub struct CFactsArray {
     len: usize, 
 }
 
+pub enum Fact {
+    Proof(RecExpr<LeanExpr>),
+    Inst(RecExpr<LeanExpr>)
+}
+
 impl CFactsArray {
 
-    fn to_vec(&self) -> Vec<(String, String)> {
+    fn to_vec(&self) -> Res<Vec<Fact>> {
         let slice = unsafe { std::slice::from_raw_parts(self.ptr, self.len) };
-        slice.iter().map(|fact| {
-            let name = c_str_to_string(fact.name);
-            let expr = c_str_to_string(fact.expr);
-            (name, expr)
-        }).collect()
+        let mut facts = vec![];
+        for cfact in slice {
+            let _ = c_str_to_string(cfact.name);
+            let str = c_str_to_string(cfact.expr);
+            let expr: RecExpr<_> = str.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
+            let head = Id::from(expr.as_ref().len() - 1);
+            match &expr[head] {
+                LeanExpr::Proof(prop) => facts.push(Fact::Proof(sub_expr(&expr, *prop).into())),
+                LeanExpr::Inst(class) => facts.push(Fact::Inst(sub_expr(&expr, *class).into())),
+                _ => return Err(Error::Fact("Received fact without 'proof' or 'inst' prefix.".to_string()))
+            }
+        }
+        Ok(facts)
     }
 }
 
@@ -206,12 +239,17 @@ pub extern "C" fn egg_explain_congr(
     guides: CStringArray, 
     cfg: Config,
     viz_path_ptr: *const c_char,
-    e: *const c_void,
+    env: *const c_void,
 ) -> EqsatResult {
     let init   = c_str_to_string(init_str_ptr);
     let goal   = c_str_to_string(goal_str_ptr);
     let guides = guides.to_vec();
-    let facts  = facts.to_vec();
+    
+    let facts = facts.to_vec();
+    if let Err(facts_err) = facts { 
+        return EqsatResult { expl: string_to_c_str(facts_err.to_string()), graph: None, report: CReport::none() }
+    }
+    let facts = facts.unwrap();
 
     let rw_templates = rws.to_templates();
     if let Err(rws_err) = rw_templates { 
@@ -222,7 +260,7 @@ pub extern "C" fn egg_explain_congr(
     let raw_viz_path = c_str_to_string(viz_path_ptr);
     let viz_path = if raw_viz_path.is_empty() { None } else { Some(raw_viz_path) };
 
-    let res = explain_congr(init, goal, rw_templates, facts, guides, cfg, viz_path, e);
+    let res = explain_congr(init, goal, rw_templates, facts, guides, cfg, viz_path, env);
     if let Err(res_err) = res {
         return EqsatResult { expl: string_to_c_str(res_err.to_string()), graph: None, report: CReport::none() }
     }
