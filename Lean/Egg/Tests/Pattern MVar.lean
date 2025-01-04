@@ -15,28 +15,11 @@ example (f : Nat → Nat → Nat) : (f 1) x = (f (nat_lit 1)) (x + 0) := by
 example (f : Nat → Nat → Nat) : (f 1) x = (f 1) (x + (nat_lit 0)) := by
   egg [h]
 
-/--
-error: egg failed to build proof step 2: unification failure for LHS of rewrite #0:
-
-  HAdd.hAdd (x + 0)
-vs
-  ?m.2075 (?m.2072 + 0)
-in
-  f 1 (x + 0 + 0)
-and
-  f 1 (x + 0)
-
-• Types: ⏎
-  ?m.2072: Nat
-  ?m.2075: Nat → Nat
-
-• Read Only Or Synthetic Opaque MVars: []
--/
-#guard_msgs in
+-- Note: This used to fail with a broken explanation, because `?m.2213 : Nat → Nat` was matched
+-- against `HAdd.hAdd : Nat → Nat → Nat`. That is, the types didn't match.
+-- This suddenly started working as part of the `better-facts` PR.
 set_option egg.retryWithShapes false in
 example (f : Nat → Nat → Nat) : (f 1) x = (f 1) (x + 0) := by
-  -- The explanation is broken because `?m.2213 : Nat → Nat` is being matched against
-  -- `HAdd.hAdd : Nat → Nat → Nat`. That is, the types don't match.
   egg [h]
 
 set_option egg.shapes true in

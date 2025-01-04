@@ -14,6 +14,7 @@ private inductive Expression where
   | lam    (ty body : Expression)
   | forall (ty body : Expression)
   | lit    (l : Literal)
+  | eq     (lhs rhs : Expression)
   | proof  (prop : Expression)
   | inst   (cls : Expression)
   | subst  (idx : Nat) (to e : Expression)
@@ -31,12 +32,18 @@ private def Expression.toExpr : Expression → MetaM Expr
   | lam ty body     => return .lam .anonymous (← toExpr ty) (← toExpr body) .default
   | .forall ty body => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
   | lit l           => return .lit l
+  | eq lhs rhs      => do mkEq (← toExpr lhs) (← toExpr rhs)
   | proof prop      => do mkFreshExprMVar (← toExpr prop)
   | inst cls        => do mkFreshExprMVar (← toExpr cls)
   | subst idx to e  => return applySubst idx (← toExpr to) (← toExpr e)
   | shift off cut e => return applyShift off cut (← toExpr e)
   | unknown         => mkFreshExprMVar none
 where
+  mkEq (lhs rhs : Expr) : MetaM Expr := do
+    -- This doesn't work immediately, because `lhs` and `rhs` can contains bvars:
+    -- mkEq (← toExpr lhs) (← toExpr rhs)
+    return .app (.app (.app (.const ``Eq [← mkFreshLevelMVar]) (← mkFreshExprMVar none)) lhs) rhs
+
   applySubst (idx : Nat) (to : Expr) : Expr → Expr
     | .bvar i          => if i = idx then to else .bvar i
     | .app fn arg      => .app (applySubst idx to fn) (applySubst idx to arg)
@@ -73,6 +80,7 @@ syntax "(" &"app" egg_expr egg_expr ")"               : egg_expr
 syntax "(" &"λ" egg_expr egg_expr ")"                 : egg_expr
 syntax "(" &"∀" egg_expr egg_expr ")"                 : egg_expr
 syntax "(" &"lit" lit ")"                             : egg_expr
+syntax "(" &"=" egg_expr egg_expr ")"                 : egg_expr
 syntax "(" &"proof" egg_expr ")"                      : egg_expr
 syntax "(" &"inst" egg_expr ")"                       : egg_expr
 syntax "(" &"↦" num egg_expr egg_expr ")"             : egg_expr
@@ -117,6 +125,7 @@ where
     | `(egg_expr|(λ $ty $body))            => return .lam (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(egg_expr|(∀ $ty $body))            => return .forall (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(egg_expr|(lit $l))                 => return .lit (parseLit l)
+    | `(egg_expr|(= $lhs $rhs))            => return .eq (← go (eqLhsPos pos) lhs) (← go (eqRhsPos pos) rhs)
     | `(egg_expr|(proof $p))               => return .proof (← parseTypeOfErased p pos)
     | `(egg_expr|(inst $c))                => return .inst (← parseTypeOfErased c pos)
     | `(egg_expr|(↦ $idx $to $e))          => return .subst idx.getNat (← go pos to) (← go pos e)
@@ -125,6 +134,9 @@ where
     | `(egg_expr|_)                        => return .unknown
     | `(egg_expr|(Rewrite$dir $src $body)) => parseRw dir src body pos
     | _                                    => unreachable!
+
+  eqLhsPos (init : SubExpr.Pos) : SubExpr.Pos := init.pushAppFn.pushAppArg
+  eqRhsPos (init : SubExpr.Pos) : SubExpr.Pos := init.pushAppArg
 
   parseTypeOfErased (t : TSyntax `egg_expr) (pos : SubExpr.Pos) : ParseStepM Expression := do
     -- If `t` did not contain a rewrite, all is well and we return `e`. Otherwise, obtain the

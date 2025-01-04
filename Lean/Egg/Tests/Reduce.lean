@@ -31,6 +31,8 @@ example (h : R) : true = false := by
 
 def S := ∀ _ : 0 = 0, R
 
+-- TODO: I think this fails becaues `0` doesn't appear in the e-graph, so there's no reified
+--       equality for it.
 -- Checks that we can "see through" definitions in rewrites where the body is not an equality.
 example (h : S) : R := by
   egg [h]
