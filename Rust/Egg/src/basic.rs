@@ -112,7 +112,7 @@ fn mk_initial_egraph(
     let true_id = egraph.add_expr(&true_expr);
 
     // Marks `True` as a fact.
-    let true_fact = format!("(const {})", true_expr).parse().unwrap();
+    let true_fact = format!("(fact {})", true_expr).parse().unwrap();
     egraph.add_expr(&true_fact); 
 
     // Marks `p ∧ q` as a fact for any given facts `p` and `q`.
@@ -124,11 +124,11 @@ fn mk_initial_egraph(
     for fact in facts {
         match fact {
             // Adds propositional facts to the e-class of `True`.
-            Fact::Proof(prop) => {
+            Fact::Proof(name, prop) => {
                 let prop_id = egraph.add_expr(&prop);
-                egraph.union_trusted(true_id, prop_id, "FACT");
+                egraph.union_trusted(true_id, prop_id, name);
             },
-            Fact::Inst(class) => todo!(),
+            Fact::Inst(name, class) => todo!(),
         }
     }
 
@@ -136,7 +136,9 @@ fn mk_initial_egraph(
 }
  
 fn mk_rewrites(rw_templates: Vec<RewriteTemplate>, cfg: &Config, env: *const c_void) -> Result<Vec<LeanRewrite>, Error> {
-    let mut rws: Vec<LeanRewrite> = vec![];
+    let mut rws = vec![
+        rewrite!("EQ"; "(app (app (app (const \"Eq\" ?u) ?t) ?l) ?r)" => "(= ?l ?r)")
+    ];
 
     for template in rw_templates { rws.push(template.to_rewrite(cfg.to_rw_config(env))?) }
     if cfg.nat_lit               { rws.append(&mut nat_lit_rws(cfg.shapes)) }

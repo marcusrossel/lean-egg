@@ -49,10 +49,7 @@ impl RewriteTemplate {
         let lhs = if self.prop_conds.is_empty() {
             self.lhs.clone()
         } else {
-            let mut str = format!("(app (app (app (const \"Eq\" ?u) ?t) {}) {})", self.lhs, self.lhs);
-
-            // TODO: Since we don't *completely* reify equalities (we erase the type and universe), 
-            //       we probably need special handling for equality conditions.
+            let mut str = format!("(= {} {})", self.lhs, self.lhs);
 
             for cond in self.prop_conds { 
                 str = format!("(app (app (const \"And\") {}) {})", str, cond);
@@ -61,7 +58,7 @@ impl RewriteTemplate {
             str = format!("(fact {})", str);
             str.parse().expect("Failed to parse lhs in 'RewriteTemplate.to_rewrite'.")
         };
-        
+
         let applier = LeanApplier { lhs: self.lhs, rhs: self.rhs, tc_conds: self.tc_conds, cfg };
         match Rewrite::new(self.name, lhs, applier) {
             Ok(rw)   => Ok(rw),

@@ -32,7 +32,8 @@ define_language! {
         "inst"  = Inst(Id),  // (<expr>)
 
         // Construct for representing equality:
-        // We use this *instead* of Lean's equality symbol `Eq` to solve two problems:
+        // We use this *instead* of Lean's equality symbol `Eq` or propositional equivalence symbol 
+        // `Iff` to solve two problems:
         // (1) When reifying equality, we can't determine the universe level and type arguments of
         //     equality and would have to use the `Unknown` constructor for them. If a condition of
         //     a rewrite is an equality with fixed universe level and type, it therefore won't match 

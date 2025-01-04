@@ -8,6 +8,8 @@ open Std (HashMap HashSet)
 
 namespace Egg.MVars
 
+-- TODO: We need to consider how `Eq` and `Iff` are encoded.
+
 /-
 1. An mvar is `unconditionallyVisible` if it appears explicitly in the given expression, but not in
    a type class instance or proof term. For example, this holds for `?m` in `f (?m + 1)`.

@@ -142,8 +142,8 @@ pub struct CFactsArray {
 }
 
 pub enum Fact {
-    Proof(RecExpr<LeanExpr>),
-    Inst(RecExpr<LeanExpr>)
+    Proof(String, RecExpr<LeanExpr>),
+    Inst(String, RecExpr<LeanExpr>)
 }
 
 impl CFactsArray {
@@ -152,13 +152,13 @@ impl CFactsArray {
         let slice = unsafe { std::slice::from_raw_parts(self.ptr, self.len) };
         let mut facts = vec![];
         for cfact in slice {
-            let _ = c_str_to_string(cfact.name);
+            let name = c_str_to_string(cfact.name);
             let str = c_str_to_string(cfact.expr);
             let expr: RecExpr<_> = str.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
             let head = Id::from(expr.as_ref().len() - 1);
             match &expr[head] {
-                LeanExpr::Proof(prop) => facts.push(Fact::Proof(sub_expr(&expr, *prop).into())),
-                LeanExpr::Inst(class) => facts.push(Fact::Inst(sub_expr(&expr, *class).into())),
+                LeanExpr::Proof(prop) => facts.push(Fact::Proof(name, sub_expr(&expr, *prop).into())),
+                LeanExpr::Inst(class) => facts.push(Fact::Inst(name, sub_expr(&expr, *class).into())),
                 _ => return Err(Error::Fact("Received fact without 'proof' or 'inst' prefix.".to_string()))
             }
         }

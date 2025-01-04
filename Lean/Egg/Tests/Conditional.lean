@@ -1,5 +1,4 @@
 import Egg
-open scoped Egg
 
 /-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
