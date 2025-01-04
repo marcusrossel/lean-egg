@@ -3,12 +3,28 @@ use egg::*;
 use crate::lean_expr::*;
 use crate::util::*;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct LeanAnalysisData {
     pub nat_val:      Option<u64>,
     pub dir_val:      Option<bool>,
     pub loose_bvars:  HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
-    pub is_primitive: bool          // A class is primitive if it represents a `Nat`, `Str` or universe level e-node.
+    pub is_primitive: bool,         // A class is primitive if it represents a `Nat`, `Str` or universe level e-node.
+    pub is_new:       bool,         // A class is new if it is not the result of any merge.
+    pub eq:           bool          // This value is an implementation detail of the `modify` function below.
+}
+
+impl Default for LeanAnalysisData {
+    
+    fn default() -> Self { 
+        LeanAnalysisData {
+            nat_val: None,
+            dir_val: None,
+            loose_bvars: HashSet::default(),
+            is_primitive: false,
+            is_new: true,
+            eq: false
+        }
+    }
 }
 
 #[derive(Default)]
@@ -23,51 +39,15 @@ impl LeanAnalysis {
 impl Analysis<LeanExpr> for LeanAnalysis {
     type Data = LeanAnalysisData;
 
-    // We use this hook to reify the equality inherent in an e-class.
-    fn modify(egraph: &mut EGraph<LeanExpr, Self>, id: Id) {
-        // WARNING: We have to be careful here to only add the equality e-node if it does not 
-        //          already exist. Otherwise we loop on this function infinitely.
-        
-        // Heuristic: if the e-class contains more than one e-node it's not new.
-        if egraph[id].len() > 1 { return }
-
-        // We don't create equality e-nodes for primitive classes.
-        if egraph[id].data.is_primitive { return }
-
-        // Constructs the required equality e-node, but aborts if the e-graph already contains it.
-        
-        let eq_const: Id; 
-        let eq_const_expr = "(app (const \"Eq\" _) _)".parse().unwrap();
-        if let Some(e) = egraph.lookup_expr(&eq_const_expr) {
-            eq_const = e;
-        } else {
-            eq_const = egraph.add_expr(&eq_const_expr);
-        };
-        
-        let eq: LeanExpr;
-        if let Some(eq_lhs) = egraph.lookup(LeanExpr::App([eq_const, id])) {
-            eq = LeanExpr::App([eq_lhs, id]);
-            if egraph.lookup(eq.clone()).is_some() { return }
-        } else {
-            // PROBLEM: When we add `(app eq_const id)`, this induces another call to `modify` which
-            //          then tries to construct the equality e-node for `(app eq_const id)`, which 
-            //          then adds `(app eq_const (app eq_const id))`, which induces another call to 
-            //          `modify`, etc.
-            let eq_lhs = egraph.add(LeanExpr::App([eq_const, id]));
-            eq = LeanExpr::App([eq_lhs, id]);
-        }
-        
-        let eq_id = egraph.add(eq);
-        let true_id = egraph.lookup_expr(&"(const \"True\")".parse().unwrap()).unwrap();
-        egraph.union_trusted(eq_id, true_id, "REIFY_EQ");
-    }
-
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge { 
         let loose_bvar_m = if self.union_semantics {
             union_sets(&mut to.loose_bvars, from.loose_bvars)
         } else {
             intersect_sets(&mut to.loose_bvars, from.loose_bvars)
         };
+
+        // A merged e-class is not new anymore.
+        to.is_new = false;
 
         // `merge_max` prefers `Some` value over `None`. Note that if `to` and `from` both have nat 
         // values, then they should have the *same* value as otherwise merging their e-classes 
@@ -168,8 +148,39 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                     ..Default::default() 
                 },
 
+            LeanExpr::Eq([l, r]) => 
+                Self::Data { 
+                    loose_bvars: union_clone(&egraph[*l].data.loose_bvars, &egraph[*r].data.loose_bvars),
+                    eq: true,
+                    ..Default::default()
+                },
+
             _ => Default::default()
         }
+    }
+
+    // We use this hook to reify the equality inherent in an e-class.
+    fn modify(egraph: &mut EGraph<LeanExpr, Self>, id: Id) {
+        // We only reify equality for new e-classes as the existance of reified equality e-node is
+        // invariant under e-class union.
+        if !egraph[id].data.is_new { return }
+
+        // If this e-class is new and contains an `=` node, then we skip adding an equality e-node 
+        // for it. This is necessary in order to avoid looping on `modify` infinitely.
+        // TODO: Is there some other way we can avoid looping? The current approach technically 
+        //       breaks the existance of reified equality invariant for e-classes containing only 
+        //       (non-fact) equality e-nodes.
+        //       A hacky approach would be to have a global variable which blocks calls to `modify` 
+        //       while adding reified equality nodes. 
+        if egraph[id].data.eq { return }
+
+        // We don't create equality e-nodes for primitive e-classes.
+        if egraph[id].data.is_primitive { return }
+
+        // Constructs the required equality e-node and adds it to the e-class of `True`.
+        let eq_id = egraph.add(LeanExpr::Eq([id, id]));
+        let true_id = egraph.add_expr(&"(const \"True\")".parse().unwrap());
+        egraph.union_trusted(eq_id, true_id, "REIFY_EQ");
     }
 }
 
