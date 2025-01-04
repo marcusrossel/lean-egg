@@ -107,12 +107,11 @@ syntax "≡/"                                         : fwd_rw_src
 syntax str                                          : fwd_rw_src
 -- syntax "≡%"                                      : fwd_rw_src
 
-syntax "!?"          : fact_src
-syntax "!="          : fact_src
 syntax "!#" noWs num : fact_src
 syntax "!*" noWs num : fact_src
 
-syntax fwd_rw_src (noWs "-rev")? fact_src* : rw_src
+syntax fwd_rw_src (noWs "-rev")? : rw_src
+syntax fact_src                  : rw_src
 
 syntax "+" num : shift_offset
 syntax "-" num : shift_offset
@@ -211,18 +210,19 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
   | _ => unreachable!
 
 private def parseFactSrc : (TSyntax `fact_src) → Source.Fact
-  | `(fact_src|!?)     => .postponed
-  | `(fact_src|!=)     => .equality
   | `(fact_src|!#$idx) => .explicit idx.getNat
   | `(fact_src|!*$idx) => .star (.fromUniqueIdx idx.getNat)
   | _                  => unreachable!
 
 def parseRwSrc : (TSyntax `rw_src) → Rewrite.Descriptor
-  | `(rw_src|$fwdSrc:fwd_rw_src$[-rev%$rev]?$[$facts]*) =>
-    let src   := parseFwdRwSrc fwdSrc
-    let dir   := if rev.isSome then .backward else .forward
-    let facts := facts.map parseFactSrc
-    { src, dir, facts }
+  | `(rw_src|$fwdSrc:fwd_rw_src$[-rev%$rev]?) => {
+      src := parseFwdRwSrc fwdSrc
+      dir := if rev.isSome then .backward else .forward
+    }
+  | `(rw_src|$f:fact_src) => {
+      src := .fact (parseFactSrc f)
+      dir := .forward
+    }
   | _ => unreachable!
 
 inductive ParseError where
