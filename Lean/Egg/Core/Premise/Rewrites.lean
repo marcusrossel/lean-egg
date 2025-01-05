@@ -88,6 +88,19 @@ where
       let some kind ← Fact.Kind.forType? ty
         | throwError m!"Rewrite {src} requires condition of type '{ty}' which is neither a proof nor an instance."
       conds := conds.push { kind, expr := arg, type := ty, mvars }
+    -- When type class instance erasure is active, we still need to make sure that all required type
+    -- class instances are synthesizable, so we add them as conditions to the rewrite.
+    if cfg.eraseTCInstances then
+      for tcInstMVar in mLhs.tcInsts.union mRhs.tcInsts do
+        -- TODO: Collecting all this information seems a bit superfluos. Perhaps we should redefine
+        --       `Condition` (or split it into two types) as we only consider propositions and type
+        --       class instances anyway.
+        conds := conds.push {
+          kind  := .tcInst,
+          expr  := .mvar tcInstMVar,
+          type  := ← tcInstMVar.getType,
+          mvars := ← MVars.collect (← tcInstMVar.getType) cfg.amb
+        }
     return conds
 
 def isConditional (rw : Rewrite) : Bool :=
