@@ -57,6 +57,7 @@ def MVars.Property.toMessageData : MVars.Property → MessageData
   | .inErasedTcInst         => m!".inErasedTcInst"
   | .inProofTerm            => m!".inProofTerm"
   | .inErasedProof          => m!".inErasedProof"
+  | .inEq                   => m!".inEq"
 
 def MVars.Properties.toMessageData (ps : MVars.Properties) : MessageData :=
   ps.toList.map Property.toMessageData

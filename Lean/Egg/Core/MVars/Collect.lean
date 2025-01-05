@@ -61,6 +61,9 @@ private partial def collect (e : Expr) : CollectionM Unit := do
   else if ← Meta.isProof e then
     withProperty .inProofTerm   do core e
     withProperty .inErasedProof do core (← inferType e)
+  else if let (.app (.app (.app (.const ``Eq [u]) t) lhs) rhs) := e then
+    withProperty .inEq do collectLevel u; core t
+    core lhs; core rhs
   else
     core e
 where

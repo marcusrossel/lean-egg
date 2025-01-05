@@ -8,8 +8,6 @@ open Std (HashMap HashSet)
 
 namespace Egg.MVars
 
--- TODO: We need to consider how `Eq` and `Iff` are encoded.
-
 /-
 1. An mvar is `unconditionallyVisible` if it appears explicitly in the given expression, but not in
    a type class instance or proof term. For example, this holds for `?m` in `f (?m + 1)`.
@@ -25,9 +23,12 @@ namespace Egg.MVars
 6. An mvar is `inErasedProof` if it appears explicitly in the type of a term whose type is a
    proposition. For example, this holds for `?m` and `?n` in `Nat.add_comm ?m ?n`. The type of this
    proof is `?m + ?n = ?n + ?m`.
+7. An mvar is `inEq` if it is the universe level or type argument of an `Eq`. For example, this
+   holds for `?u` and `?t` in `@Eq.{?u} ?t ?a ?b`. Note that we don't set this property for `Iff`,
+   as `Iff` has neither a universe level nor a type argument.
 
 A commonly required composite property is whether an mvar will appear in the final encoded term. We
-say that such an mvar is "visible". Visibility depends on Properties 1, 3, 4, 5 and 6, as well as
+say that such an mvar is "visible". Visibility depends on Properties 1, 3, 4, 5, 6, and 7 as well as
 the erasure configuration. The visibility property is used for the following:
 * To implement explosion.
 * To determine the valid directions of a rewrite.
@@ -45,6 +46,7 @@ inductive Property where
   | inErasedTcInst
   | inProofTerm
   | inErasedProof
+  | inEq
   deriving BEq, Hashable
 
 abbrev Properties := HashSet Property
@@ -62,6 +64,7 @@ def inTarget (ps : Properties) : Bool :=
   ps.contains .unconditionallyVisible
   || ps.contains .inProofTerm
   || ps.contains .inTcInstTerm
+  || ps.contains .inEq
 
 def insertIf (ps : Properties) (condition : Bool) (p : Property) : Properties :=
   if condition then ps.insert p else ps

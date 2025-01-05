@@ -58,8 +58,11 @@ example (h₁ : Prop) (h₂ : ∀ p : Prop, p → 1 = id 1) : 1 = id 1 := by
 class Fix (α : Type) where
   fix : ∀ (f : α → α) (a : α), f a = a
 
-/-- error: egg: rewrite #0 contains an unbound condition (expression) -/
-#guard_msgs in
+-- Note: `Fix.fix` used to be invalid as a rewrite as it contained an "unbounded condition" as `α`
+--       is not specified in `f a` or `a`, but is required for `Fix α`. Currently, this proof only
+--       succeeds because of type class specialization for conditions. That is, the `Fix α`
+--       condition is specialized before eqsat. In the future, this should also work with
+--       `egg.genTcSpecs false`, as type class instance conditions should be satisfied by synthesis.
 example [inst : Fix Nat] (f : Nat → Nat) (a : Nat) : f a = a := by
   egg [Fix.fix]
 
