@@ -33,9 +33,9 @@ example (h₁ : a = b) (h₂ : b = c) : a = c := by
     _ = c with [h₂]
 
 example (h₁ : 0 = 0 → a = b) : a = b := by
-  egg calc [h₁; (rfl : 0 = 0)]
+  egg calc [h₁, (rfl : 0 = 0)]
     _ = _
 
 example (h₁ : 0 = 0 → a = b) : a = b := by
   egg calc [h₁]
-    _ = _ with [; (rfl : 0 = 0)]
+    _ = _ with [(rfl : 0 = 0)]

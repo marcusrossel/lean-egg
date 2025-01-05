@@ -19,7 +19,6 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs(info) in
@@ -39,7 +38,6 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs(info) in
@@ -59,7 +57,6 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs(info) in
@@ -79,7 +76,6 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs(info) in

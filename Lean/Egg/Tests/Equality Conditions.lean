@@ -9,10 +9,10 @@ example (h : (0 = (fun x => x) 0) → 1 = 2) : 1 = 2 := by
 variable {x : Nat} {f : Nat → Nat}
 
 example (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
-  egg [h₂; h₁]
+  egg [h₁, h₂]
 
 example (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
-  egg [h₂, h₁]
+  egg [h₁, h₂]
 
 example (h₁ : x = y) (h₂ : y = z) (h₃ : x = z → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂, h₃]
@@ -28,8 +28,8 @@ example (h₁ : ∀ a : Nat, f a = a) (h₂ : f x = x → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂]
 
 example (h₁ : ∀ a : Nat, f a = a) (h₂ : p ∧ q) (h₃ : (f x = x) → (p ∧ q) → 1 = 2) : 1 = 2 := by
-  egg [h₁, h₃; h₂]
+  egg [h₁, h₂, h₃]
 
 example (h₁ : ∀ a : Nat, f a = a) (h₂ : p ∧ q) (h₃ : p ∧ q ↔ r) (h₄ : (f x = x) → r → 1 = 2) :
     1 = 2 := by
-  egg [h₁, h₃, h₄; h₂]
+  egg [h₁, h₂, h₃, h₄]

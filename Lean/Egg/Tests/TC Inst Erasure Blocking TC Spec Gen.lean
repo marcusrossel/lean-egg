@@ -29,7 +29,6 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] RHS MVars
           [?m.50: [.unconditionallyVisible]]
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (1)
     [egg.rewrites] #0<⊢>(⇔)
       [egg.rewrites] -?m.57 = ?m.57

@@ -10,7 +10,7 @@ example [inst : Decidable p] (h : [Decidable p] → p = q) : p = q := by
 
 set_option egg.genTcSpecRws false in
 example [inst : Decidable p] (h : [Decidable p] → p = q) : p = q := by
-  egg [h; inst]
+  egg [h, inst]
 
 set_option egg.genTcSpecRws true in
 example [inst : Decidable p] (h : [Decidable p] → p = q) : p = q := by

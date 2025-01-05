@@ -15,7 +15,7 @@ example : True := by
   egg
 
 /--
-error: egg requires rewrites to be equalities, equivalences or (non-propositional) definitions
+error: egg requires premises to be (proofs of) propositions or (non-propositional) definitions
 -/
 #guard_msgs in
 example : 0 = 0 := by

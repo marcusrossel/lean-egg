@@ -73,15 +73,18 @@ instance : Coe Config Config.Erasure where
 partial def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
     MetaM (Option Rewrite) := do
   let type ← if normalize then Egg.normalize type cfg else pure type
-  let mut (args, _, eqOrIff?) ← forallMetaTelescopeReducing type
+  let mut (args, _, prop) ← forallMetaTelescopeReducing type
+  let mut proof := mkAppN proof args
   let cgr ←
-    if let some cgr ← Congr.from? eqOrIff? then
+    if let some cgr ← Congr.from? prop then
       pure cgr
-    else if let some cgr ← Congr.from? (← reduce (skipTypes := false) eqOrIff?) then
+    else if let some cgr ← Congr.from? (← reduce (skipTypes := false) prop) then
       pure cgr
+    else if (← inferType prop).isProp then
+      proof ← mkEqTrue proof
+      pure { rel := .eq, lhs := prop, rhs := .const ``True [] }
     else
       return none
-  let proof := mkAppN proof args
   let mLhs  ← MVars.collect cgr.lhs cfg.amb
   let mRhs  ← MVars.collect cgr.rhs cfg.amb
   let conds ← collectConds args mLhs mRhs

@@ -77,7 +77,7 @@ private abbrev Premise.Mk? (α) := Expr → Expr → Source → TacticM (Option 
 private def Premise.Mk.rewrite (stx : Syntax) (cfg : Rewrite.Config) : Premise.Mk Rewrite :=
   fun proof type src => do
     (← Rewrite.from? proof type src cfg).getDM <|
-      throwErrorAt stx "egg requires rewrites to be equalities, equivalences or (non-propositional) definitions"
+      throwErrorAt stx "egg requires premises to be (proofs of) propositions or (non-propositional) definitions"
 
 private def Premise.Mk?.rewrite (cfg : Rewrite.Config) : Premise.Mk? Rewrite :=
   (Rewrite.from? · · · cfg)

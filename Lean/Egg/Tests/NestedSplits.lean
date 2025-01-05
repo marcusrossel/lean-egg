@@ -32,7 +32,6 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] RHS MVars
           []
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs(info) in

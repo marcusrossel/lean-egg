@@ -14,4 +14,4 @@ include f_assoc f_comm in
 theorem foldl_eq_foldr (l : List α) : l.foldl f init = l.foldr f init := by
   induction l with
   | nil         => rfl
-  | cons _ _ ih => egg [List.foldl, List.foldr, f_comm, ih, foldl_descend; f_comm, f_assoc]
+  | cons _ _ ih => egg [List.foldl, List.foldr, ih, foldl_descend, f_comm, f_assoc]

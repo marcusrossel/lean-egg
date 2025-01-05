@@ -20,7 +20,6 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (1)
     [egg.rewrites] #1(⇔)
       [egg.rewrites] 0 = 0
@@ -47,7 +46,6 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (1)
     [egg.rewrites] #1(⇔)
       [egg.rewrites] ?a + ?b = ?b + ?a
