@@ -1,7 +1,6 @@
 import Egg.Core.Request.EGraph
 import Egg.Core.Encode.Rewrites
 import Egg.Core.Encode.Guides
-import Egg.Core.Encode.Facts
 import Egg.Core.Config
 import Egg.Core.Explanation.Parse.Basic
 open Lean
@@ -51,31 +50,30 @@ structure _root_.Egg.Request where
   lhs     : Expression
   rhs     : Expression
   rws     : Rewrites.Encoded
-  facts   : Facts.Encoded
   guides  : Guides.Encoded
   vizPath : String
   cfg     : Request.Config
 
 -- Returns the encoded request with a flag indicating whether the proof goal contains a binder.
 def encoding'
-    (goal : Congr) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Config)
-    (amb : MVars.Ambient) : MetaM (Request × Bool) := do
+    (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) (amb : MVars.Ambient) :
+    MetaM (Request × Bool) := do
   let ctx := { cfg, amb }
   let (lhs, lhsBinder) ← encode' goal.lhs ctx
   let (rhs, rhsBinder) ← encode' goal.rhs ctx
   let req := {
     lhs, rhs
     rws     := ← rws.encode ctx
-    facts   := ← do if rws.any (·.isConditional) then facts.encode ctx else return #[]
     guides  := ← guides.encode ctx
     vizPath := cfg.vizPath.getD ""
     cfg
   }
   return (req, lhsBinder || rhsBinder)
 
-def encoding (goal : Congr) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Config)
-    (amb : MVars.Ambient) : MetaM Request :=
-  Prod.fst <$> encoding' goal rws facts guides cfg amb
+def encoding
+    (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) (amb : MVars.Ambient) :
+    MetaM Request :=
+  Prod.fst <$> encoding' goal rws guides cfg amb
 
 -- IMPORTANT: The C interface to egg depends on the order of these constructors.
 inductive Result.StopReason where

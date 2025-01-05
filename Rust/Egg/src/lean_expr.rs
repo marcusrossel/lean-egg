@@ -67,7 +67,7 @@ define_language! {
         "→" = Fun([Id; 2]),    // (<shape>, <shape>)
         "◇" = Shaped([Id; 2]), // (<shape>, <expr>)
 
-        // Construct for unknown terms (this is used when reifying equality and for η-expansion):
+        // Construct for unknown terms (this is used for η-expansion):
         "_" = Unknown,        
     }
 } 

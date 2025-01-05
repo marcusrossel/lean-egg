@@ -95,12 +95,12 @@ impl CRewritesArray {
             let mut prop_conds = vec![];
             let mut tc_conds = vec![];
             for str in conds_strs {
-                let pat: Pattern<_> = str.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
+                let pat: Pattern<_> = str.parse().map_err(|e : RecExprParseError<_>| Error::Condition(e.to_string()))?;
                 let head = Id::from(pat.ast.as_ref().len() - 1);
                 match &pat.ast[head] {
                     ENodeOrVar::ENode(LeanExpr::Proof(prop)) => prop_conds.push(sub_expr(&pat.ast, *prop).into()),
                     ENodeOrVar::ENode(LeanExpr::Inst(class)) => tc_conds.push(sub_expr(&pat.ast, *class).into()),
-                    _ => return Err(Error::Fact("Received condition without 'proof' or 'inst' prefix.".to_string()))
+                    _ => return Err(Error::Condition("Received condition without 'proof' or 'inst' prefix.".to_string()))
                 }
             }
 
@@ -126,43 +126,6 @@ impl CRewritesArray {
             }
         }
         Ok(res)
-    }
-}
-
-#[repr(C)]
-pub struct CFact {
-    name: *const c_char,
-    expr: *const c_char
-}
-
-#[repr(C)]
-pub struct CFactsArray {
-    ptr: *const CFact,
-    len: usize, 
-}
-
-pub enum Fact {
-    Proof(String, RecExpr<LeanExpr>),
-    Inst(String, RecExpr<LeanExpr>)
-}
-
-impl CFactsArray {
-
-    fn to_vec(&self) -> Res<Vec<Fact>> {
-        let slice = unsafe { std::slice::from_raw_parts(self.ptr, self.len) };
-        let mut facts = vec![];
-        for cfact in slice {
-            let name = c_str_to_string(cfact.name);
-            let str = c_str_to_string(cfact.expr);
-            let expr: RecExpr<_> = str.parse().map_err(|e : RecExprParseError<_>| Error::Fact(e.to_string()))?;
-            let head = Id::from(expr.as_ref().len() - 1);
-            match &expr[head] {
-                LeanExpr::Proof(prop) => facts.push(Fact::Proof(name, sub_expr(&expr, *prop).into())),
-                LeanExpr::Inst(class) => facts.push(Fact::Inst(name, sub_expr(&expr, *class).into())),
-                _ => return Err(Error::Fact("Received fact without 'proof' or 'inst' prefix.".to_string()))
-            }
-        }
-        Ok(facts)
     }
 }
 
@@ -235,7 +198,6 @@ pub extern "C" fn egg_explain_congr(
     init_str_ptr: *const c_char, 
     goal_str_ptr: *const c_char, 
     rws: CRewritesArray, 
-    facts: CFactsArray, 
     guides: CStringArray, 
     cfg: Config,
     viz_path_ptr: *const c_char,
@@ -245,12 +207,6 @@ pub extern "C" fn egg_explain_congr(
     let goal   = c_str_to_string(goal_str_ptr);
     let guides = guides.to_vec();
     
-    let facts = facts.to_vec();
-    if let Err(facts_err) = facts { 
-        return EqsatResult { expl: string_to_c_str(facts_err.to_string()), graph: None, report: CReport::none() }
-    }
-    let facts = facts.unwrap();
-
     let rw_templates = rws.to_templates();
     if let Err(rws_err) = rw_templates { 
         return EqsatResult { expl: string_to_c_str(rws_err.to_string()), graph: None, report: CReport::none() }
@@ -260,7 +216,7 @@ pub extern "C" fn egg_explain_congr(
     let raw_viz_path = c_str_to_string(viz_path_ptr);
     let viz_path = if raw_viz_path.is_empty() { None } else { Some(raw_viz_path) };
 
-    let res = explain_congr(init, goal, rw_templates, facts, guides, cfg, viz_path, env);
+    let res = explain_congr(init, goal, rw_templates, guides, cfg, viz_path, env);
     if let Err(res_err) = res {
         return EqsatResult { expl: string_to_c_str(res_err.to_string()), graph: None, report: CReport::none() }
     }

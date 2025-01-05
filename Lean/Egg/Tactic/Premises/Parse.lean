@@ -1,5 +1,4 @@
 import Egg.Core.Premise.Rewrites
-import Egg.Core.Premise.Facts
 import Lean
 
 open Lean Meta Elab Tactic
@@ -11,7 +10,7 @@ syntax "*"  : egg_premise
 syntax term : egg_premise
 
 declare_syntax_cat egg_premise_list
-syntax "[" egg_premise,* ("; " egg_premise,+)? "]" : egg_premise_list
+syntax "[" egg_premise,* "]" : egg_premise_list
 
 declare_syntax_cat egg_premises
 syntax (egg_premise_list)? : egg_premises
@@ -83,14 +82,6 @@ private def Premise.Mk.rewrite (stx : Syntax) (cfg : Rewrite.Config) : Premise.M
 private def Premise.Mk?.rewrite (cfg : Rewrite.Config) : Premise.Mk? Rewrite :=
   (Rewrite.from? · · · cfg)
 
-private def Premise.Mk.fact (stx : Syntax) : Premise.Mk Fact :=
-  fun proof type src => do
-    (← Fact.from? proof type src).getDM <|
-      throwErrorAt stx m!"egg requires facts to be proofs or type class instances"
-
-private def Premise.Mk?.fact : Premise.Mk? Fact :=
-  (Fact.from? · · ·)
-
 private def Premises.explicit
     (prem : Term) (idx : Nat) (mk : Premise.Mk α) (mkSrc : Nat → Option Nat → Source) :
     TacticM <| WithSyntax (Array α) := do
@@ -123,22 +114,12 @@ private def Premises.star (stx : Syntax) (mk : Premise.Mk? α) (mkSrc : FVarId �
   return result
 
 structure Premises where
-  rws   : WithSyntax Rewrites := ∅
-  facts : WithSyntax Facts    := ∅
+  rws : WithSyntax Rewrites := ∅
 
 def Premises.elab (cfg : Rewrite.Config) : (TSyntax `egg_premises) → TacticM Premises
   | `(egg_premises|) => return {}
-  | `(egg_premises|[$rws,* $[; $facts?,*]?]) => do
-    let mut result := {
-      rws := ← go rws (Premise.Mk.rewrite · cfg) (Premise.Mk?.rewrite cfg) .explicit .star
-    }
-    if let some facts := facts? then
-      let mkExplicitSrc idx _ := .fact (.explicit idx)
-      let mkStarSrc id := .fact (.star id)
-      result := { result with
-        facts := ← go facts Premise.Mk.fact Premise.Mk?.fact mkExplicitSrc mkStarSrc
-      }
-    return result
+  | `(egg_premises|[$rws,*]) =>
+    return { rws := ← go rws (Premise.Mk.rewrite · cfg) (Premise.Mk?.rewrite cfg) .explicit .star }
   | _ => throwUnsupportedSyntax
 where
   go {α} (prems : Array <| TSyntax `egg_premise) (mk : Syntax → Premise.Mk α) (mk? : Premise.Mk? α)

@@ -1,5 +1,4 @@
 import Egg.Core.Premise.Rewrites
-import Egg.Core.Premise.Facts
 import Egg.Core.Guides
 import Lean
 open Lean hiding HashMap HashSet
@@ -106,9 +105,6 @@ def Rewrites.tcProjTargets (rws : Rewrites) : Array TcProjTarget := Id.run do
     for cond in rw.conds, idx in [:rw.conds.size] do
       sources := sources.push { expr := cond.type, src := rw.src, loc := .cond idx }
   return sources
-
-def Facts.tcProjTargets (facts : Facts) : Array TcProjTarget :=
-  facts.map fun fact => { expr := fact.type, src := fact.src, loc := .root }
 
 def Guides.tcProjTargets (guides : Guides) : Array TcProjTarget :=
   guides.map fun guide => { expr := guide.expr, src := guide.src, loc := .root }

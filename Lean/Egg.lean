@@ -22,12 +22,10 @@ import Egg.Core.Explanation.Congr
 import Egg.Core.Explanation.Proof
 import Egg.Core.Explanation.Expr
 import Egg.Core.Encode.Shapes
-import Egg.Core.Encode.Facts
 import Egg.Core.Encode.Basic
 import Egg.Core.Encode.Rewrites
 import Egg.Core.Encode.EncodeM
 import Egg.Core.Encode.Guides
-import Egg.Core.Premise.Facts
 import Egg.Core.Premise.Rewrites
 import Egg.Core.Directions
 import Egg.Core.Congr
@@ -46,5 +44,6 @@ import Egg.Core.Source
 import Egg.Core.Request.EGraph
 import Egg.Core.Request.Basic
 import Egg.Core.Request.Equiv
+import Egg.Core.Request.Synth
 import Egg.Core.Config
 import Egg.Core.Guides

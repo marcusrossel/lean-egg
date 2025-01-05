@@ -1,7 +1,6 @@
 import Egg.Core.Directions
 import Egg.Core.MVars.Subst
 import Egg.Core.MVars.Collect
-import Egg.Core.Premise.Facts
 import Egg.Core.Normalize
 import Egg.Core.Congr
 import Egg.Core.Source
@@ -15,8 +14,22 @@ protected structure MVars where
   rhs : MVars
   deriving Inhabited
 
-structure Condition where
-  kind  : Fact.Kind
+namespace Condition
+
+inductive Kind where
+  | proof
+  | tcInst
+
+def Kind.forType? (ty : Expr) : MetaM (Option Kind) := do
+  if ← Meta.isProp ty then
+    return some .proof
+  else if (← Meta.isClass? ty).isSome then
+    return some .tcInst
+  else
+    return none
+
+structure _root_.Egg.Rewrite.Condition where
+  kind  : Kind
   -- Without instantiation, this `expr` is an mvar. When instantiated, the condition is considered
   -- proven.
   expr  : Expr
@@ -27,15 +40,17 @@ structure Condition where
 -- Conditions can become proven during type class specialization. We still need to keep these
 -- conditions in order to use their `expr` during proof reconstruction. Proven conditions are not
 -- encoded and thus transparent to the backend.
-def Condition.isProven (cond : Condition) : Bool :=
+def isProven (cond : Condition) : Bool :=
   !cond.expr.isMVar
 
-nonrec def Condition.instantiateMVars (cond : Condition) : MetaM Condition := do
+nonrec def instantiateMVars (cond : Condition) : MetaM Condition := do
   return { cond with
     expr  := ← instantiateMVars cond.expr
     type  := ← instantiateMVars cond.type
     mvars := ← cond.mvars.removeAssigned
   }
+
+end Condition
 
 -- Note: We don't create `Rewrite`s directly, but use `Rewrite.from` instead.
 structure _root_.Egg.Rewrite extends Congr where
@@ -85,7 +100,7 @@ where
       if noCond.contains arg.mvarId! then continue
       let ty ← arg.mvarId!.getType
       let mvars ← MVars.collect ty cfg.amb
-      let some kind ← Fact.Kind.forType? ty
+      let some kind ← Condition.Kind.forType? ty
         | throwError m!"Rewrite {src} requires condition of type '{ty}' which is neither a proof nor an instance."
       conds := conds.push { kind, expr := arg, type := ty, mvars }
     -- When type class instance erasure is active, we still need to make sure that all required type

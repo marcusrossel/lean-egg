@@ -104,30 +104,6 @@ impl CRewritesArray {
 }
 
 #[repr(C)]
-pub struct CFact {
-    name: *const c_char,
-    expr: *const c_char
-}
-
-#[repr(C)]
-pub struct CFactsArray {
-    ptr: *const CFact,
-    len: usize, 
-}
-
-impl CFactsArray {
-
-    fn to_vec(&self) -> Vec<(String, String)> {
-        let slice = unsafe { std::slice::from_raw_parts(self.ptr, self.len) };
-        slice.iter().map(|fact| {
-            let name = c_str_to_string(fact.name);
-            let expr = c_str_to_string(fact.expr);
-            (name, expr)
-        }).collect()
-    }
-}
-
-#[repr(C)]
 pub enum CStopReason {
     Saturated,
     TimeLimit,
@@ -195,7 +171,6 @@ pub extern "C" fn slotted_explain_congr(
     init_str_ptr: *const c_char, 
     goal_str_ptr: *const c_char, 
     rws: CRewritesArray, 
-    facts: CFactsArray, 
     guides: CStringArray, 
     cfg: Config,
     viz_path_ptr: *const c_char
@@ -203,7 +178,6 @@ pub extern "C" fn slotted_explain_congr(
     let init   = c_str_to_string(init_str_ptr);
     let goal   = c_str_to_string(goal_str_ptr);
     let guides = guides.to_vec();
-    let facts  = facts.to_vec();
 
     // Note: The `into_raw`s below are important, as otherwise Rust deallocates the string.
     // TODO: I think this is a memory leak right now.
@@ -218,7 +192,7 @@ pub extern "C" fn slotted_explain_congr(
     let raw_viz_path = String::from_utf8_lossy(viz_path_c_str.to_bytes()).to_string();
     let viz_path = if raw_viz_path.is_empty() { None } else { Some(raw_viz_path) };
 
-    let res = explain_congr(init, goal, rw_templates, facts, guides, cfg, viz_path);
+    let res = explain_congr(init, goal, rw_templates, guides, cfg, viz_path);
     if let Err(res_err) = res {
         return EqsatResult { expl: string_to_c_str(res_err.to_string()), graph: None, report: CReport::none() }
     }

@@ -3,7 +3,6 @@ import Egg.Core.Explanation.Congr
 import Egg.Core.Explanation.Parse.Basic
 import Egg.Core.Explanation.Expr
 import Egg.Core.Premise.Rewrites
-import Egg.Core.Premise.Facts
 import Egg.Core.Request.Equiv
 open Lean Meta
 
@@ -14,15 +13,14 @@ abbrev Subgoals := List MVarId
 inductive Step.Rewrite where
   | rw    (rw : Egg.Rewrite) (isRefl : Bool)
   | defeq (src : Source)
-  | fact  (src : Source.Fact)
   | reifiedEq
   deriving Inhabited
 
 def Step.Rewrite.isRefl : Rewrite → Bool
   | rw _ isRefl => isRefl
   | defeq _     => true
-  -- TODO: This isn't necessarily true in both cases.
-  | fact _ | reifiedEq => false
+  -- TODO: This isn't necessarily true.
+  | reifiedEq => false
 
 structure Step where
   lhs   : Expr
@@ -34,13 +32,6 @@ structure Step where
   deriving Inhabited
 
 end Proof
-
-/-
-private inductive Fact? where
-  | present (fact : Fact)
-  | equality
-  | postponed
--/
 
 structure Proof where
   steps    : Array Proof.Step
@@ -61,7 +52,7 @@ where
     throwError s!"egg failed to build proof: {msg}"
 
 partial def Explanation.proof
-    (expl : Explanation) (rws : Rewrites) (facts : Facts) (egraph : EGraph) (ctx : EncodingCtx) :
+    (expl : Explanation) (rws : Rewrites) (egraph : EGraph) (ctx : EncodingCtx) :
     MetaM Proof := do
   let mut current := expl.start
   let mut steps : Array Proof.Step := #[]
@@ -81,12 +72,6 @@ where
 
   proofStep (idx : Nat) (current next : Expr) (rwInfo : Rewrite.Info) :
       MetaM (Proof.Step × Proof.Subgoals) := do
-    if let .fact src := rwInfo.src then
-      let step := {
-        lhs := current, rhs := next, proof := ← mkFactStep idx current next src facts,
-        rw := .fact src, dir := rwInfo.dir
-      }
-      return (step, [])
     if let .reifiedEq := rwInfo.src then
       let step := {
         lhs := current, rhs := next, proof := ← mkReifiedEqStep idx current next,
@@ -107,17 +92,6 @@ where
         rw := .rw rw (isRefl := true), dir := rwInfo.dir
       }
       return (step, [])
-    /-
-    let facts ← rwInfo.facts.mapM fun
-      | .equality     => return .equality
-      | .postponed    => return .postponed
-      | .explicit i => do
-        let some f := facts.find? (·.src == .fact (.explicit i)) | fail m!"explanation references unknown fact #{i}" idx
-        return .present f
-      | .star id => do
-        let some f := facts.find? (·.src == .fact (.star id)) | fail m!"explanation references unknown fact *{id.uniqueIdx!}" idx
-        return .present f
-    -/
     let (prf, subgoals) ← mkCongrStep idx current next rwInfo.pos?.get! (← rw.forDir rwInfo.dir)
     let step := {
       lhs := current, rhs := next, proof := prf, rw := .rw rw (isRefl := false), dir := rwInfo.dir
@@ -128,19 +102,6 @@ where
     unless ← isDefEq current next do
       fail s!"unification failure for proof by reflexivity with rw {src.description}" idx
     mkEqRefl next
-
-  mkFactStep
-      (idx : Nat) (current next : Expr) (src : Source.Fact) (facts : Array Fact) : MetaM Expr := do
-    let some f := facts.find? (·.src == .fact src)
-      | fail m!"explanation references unknown fact !{src.description}" idx
-    if current.isTrue then
-      unless ← isDefEq f.type next do fail m!"fact step failed" idx
-      mkEqSymm (← mkEqTrue f.proof)
-    else if next.isTrue then
-      unless ← isDefEq f.type current do fail m!"fact step failed" idx
-      mkEqTrue f.proof
-    else
-      fail m!"fact step without `True`" idx
 
   mkReifiedEqStep (idx : Nat) (current next : Expr) : MetaM Expr := do
     unless next.isTrue do
@@ -186,7 +147,7 @@ where
       unless ← isDefEq rhs rw.rhs do failIsDefEq "RHS" rw.src rhs rw.rhs rw.mvars.rhs current next idx
       let mut subgoals := []
       let conds := rw.conds.filter (!·.isProven)
-      for cond in conds /-, fact in facts -/ do
+      for cond in conds do
         match cond.kind with
         | .proof =>
           let cond ← cond.instantiateMVars
@@ -196,23 +157,6 @@ where
             fail m!"proof of condition '{cond.type}' of rewrite {rw.src.description} was invalid" idx
         | .tcInst =>
           fail m!"type class conditions aren't implemented yet: '{cond.type}' of rewrite {rw.src.description}" idx
-        /-
-        match fact with
-        | .present f =>
-          if ← isDefEq cond.expr f.proof then
-            continue
-          else
-            if let some condProof ← mkConditionSubproof f.type cond.type then
-              if ← isDefEq cond.expr (← mkEqMP condProof f.proof) then continue
-            fail m!"condition {cond.type} of rewrite {rw.src.description} could not be proven" idx
-        | .equality =>
-          let some (_, condLhs, condRhs) := cond.type.eq?
-            | fail m!"condition {cond.type} of rewrite {rw.src.description} is not an equality, but was proven by equality fact" idx
-          if let some condProof ← mkConditionSubproof condLhs condRhs then
-              if ← isDefEq cond.expr condProof then continue
-            fail m!"condition {cond.type} of rewrite {rw.src.description} could not be proven" idx
-        | .postponed  => subgoals := subgoals.concat cond.expr.mvarId!
-        -/
       let proof ← rw.eqProof
       return (
         ← mkCHole (forLhs := true) lhs proof,
@@ -242,7 +186,7 @@ where
     let rawExpl := egraph.run req
     if rawExpl.str.isEmpty then return none
     let expl ← rawExpl.parse
-    let proof ← expl.proof rws facts egraph ctx
+    let proof ← expl.proof rws egraph ctx
     proof.prove { lhs, rhs, rel := .eq }
 
   synthLingeringTcErasureMVars (e : Expr) : MetaM Unit := do

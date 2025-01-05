@@ -38,7 +38,6 @@ private def RewriteCategory.title : RewriteCategory → String
 private structure State where
   all       : Rewrites
   pruned    : Rewrites
-  facts     : WithSyntax Facts
   tagged    : Rewrites
   basic     : Rewrites
   builtins  : Rewrites
@@ -48,7 +47,6 @@ private instance : EmptyCollection State where
   emptyCollection := {
     all      := {}
     pruned   := {}
-    facts    := {}
     tagged   := {}
     basic    := {}
     builtins := {}
@@ -72,23 +70,16 @@ abbrev _root_.Egg.Premises.GenM := StateT State TacticM
 structure Result where
   all    : Rewrites
   pruned : Rewrites
-  facts  : WithSyntax Facts
 
 nonrec def run (m : GenM Unit) : TacticM Result := do
-  let { all, pruned, facts, .. } ← Prod.snd <$> m.run ∅
-  return { all, pruned, facts }
+  let { all, pruned, .. } ← Prod.snd <$> m.run ∅
+  return { all, pruned }
 
 def all : GenM Rewrites :=
   return (← get).all
 
 private def addAll (new : Rewrites) : GenM Unit := do
   modify fun s => { s with all := s.all ++ new }
-
-def facts : GenM (WithSyntax Facts) :=
-  return (← get).facts
-
-private def addFacts (new : WithSyntax Facts) : GenM Unit := do
-  modify fun s => { s with facts := s.facts ++ new }
 
 private def addPruned (new : Rewrites) : GenM Unit := do
   modify fun s => { s with pruned := s.pruned ++ new }
@@ -114,8 +105,7 @@ private def prune (rws : Rewrites) (stx? : Option (Array Syntax) := none) :
   return (keep, keepStx)
 
 def generate' (cat : RewriteCategory) (cfg : Config.Erasure) (g : GenM Premises) : GenM Unit := do
-  let { rws := ⟨new, stxs⟩, facts } ← g
-  addFacts facts
+  let { rws := ⟨new, stxs⟩ } ← g
   let mut (new, stx) ← prune new (if stxs.isEmpty then none else stxs)
   let cls := `egg.rewrites
   withTraceNode cls (fun _ => return m!"{cat.title} ({new.size})") do new.trace stx cfg cls
@@ -123,4 +113,4 @@ def generate' (cat : RewriteCategory) (cfg : Config.Erasure) (g : GenM Premises)
   addAll new
 
 def generate (cat : RewriteCategory) (cfg : Config.Erasure) (g : GenM Rewrites) : GenM Unit := do
-  generate' cat cfg do return { rws.elems := ← g, rws.stxs := #[], facts := ⟨#[], #[]⟩ }
+  generate' cat cfg do return { rws.elems := ← g, rws.stxs := #[] }

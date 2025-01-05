@@ -12,7 +12,6 @@ use crate::nat_lit::*;
 use crate::rewrite::*;
 use crate::shift::*;
 use crate::subst::*;
-use crate::Fact;
 
 #[repr(C)]
 pub struct Config {
@@ -40,11 +39,14 @@ pub struct ExplainedCongr {
 }
 
 pub fn explain_congr(
-    init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<Fact>, 
+    init: String, goal: String, rw_templates: Vec<RewriteTemplate>, 
     guides: Vec<String>, cfg: Config, viz_path: Option<String>, env: *const c_void
 ) -> Result<ExplainedCongr, Error> {    
+    // TODO: For rewrites which don't contain conditions or pattern vars: only run the rewrite once
+    //       before eqsat by adding the LHS and RHS to the e-graph and unioning them.
+    
     let Initialized { egraph, init_id, init_expr, goal_id, goal_expr } = 
-        mk_initial_egraph(init, goal, facts, guides, &cfg)?;
+        mk_initial_egraph(init, goal, guides, &cfg)?;
 
     let rws = mk_rewrites(rw_templates, &cfg, env)?;
 
@@ -86,7 +88,7 @@ struct Initialized {
 }
 
 fn mk_initial_egraph(
-    init: String, goal: String, facts: Vec<Fact>, guides: Vec<String>, cfg: &Config
+    init: String, goal: String, guides: Vec<String>, cfg: &Config
 ) -> Result<Initialized, Error> {
     let analysis = LeanAnalysis { union_semantics: cfg.union_semantics };
     let mut egraph: LeanEGraph = EGraph::new(analysis);
@@ -119,18 +121,6 @@ fn mk_initial_egraph(
     let and_true = "(app (app (const \"And\") (const \"True\")) (const \"True\"))".parse().unwrap();
     let and_id = egraph.add_expr(&and_true); 
     egraph.union_trusted(true_id, and_id, "AND_FACT");
-
-    // Adds explicitly provided facts to the e-graph.
-    for fact in facts {
-        match fact {
-            // Adds propositional facts to the e-class of `True`.
-            Fact::Proof(name, prop) => {
-                let prop_id = egraph.add_expr(&prop);
-                egraph.union_trusted(true_id, prop_id, name);
-            },
-            Fact::Inst(name, class) => continue, // TODO
-        }
-    }
 
     Ok(Initialized { egraph, init_id, init_expr, goal_id, goal_expr })
 }

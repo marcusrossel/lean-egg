@@ -18,7 +18,6 @@ declare_syntax_cat tc_extension
 declare_syntax_cat nested_split_extension
 declare_syntax_cat explosion_extension
 declare_syntax_cat fwd_rw_src
-declare_syntax_cat fact_src
 declare_syntax_cat rw_src
 
 syntax num : lit
@@ -107,11 +106,7 @@ syntax "≡/"                                         : fwd_rw_src
 syntax str                                          : fwd_rw_src
 -- syntax "≡%"                                      : fwd_rw_src
 
-syntax "!#" noWs num : fact_src
-syntax "!*" noWs num : fact_src
-
 syntax fwd_rw_src (noWs "-rev")? : rw_src
-syntax fact_src                  : rw_src
 syntax &"="                      : rw_src
 
 syntax "+" num : shift_offset
@@ -210,19 +205,10 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
   | `(fwd_rw_src|$src:basic_fwd_rw_src⁅←⁆) => .nestedSplit (parseBasicFwdRwSrc src) .backward
   | _ => unreachable!
 
-private def parseFactSrc : (TSyntax `fact_src) → Source.Fact
-  | `(fact_src|!#$idx) => .explicit idx.getNat
-  | `(fact_src|!*$idx) => .star (.fromUniqueIdx idx.getNat)
-  | _                  => unreachable!
-
 def parseRwSrc : (TSyntax `rw_src) → Rewrite.Descriptor
   | `(rw_src|$fwdSrc:fwd_rw_src$[-rev%$rev]?) => {
       src := parseFwdRwSrc fwdSrc
       dir := if rev.isSome then .backward else .forward
-    }
-  | `(rw_src|$f:fact_src) => {
-      src := .fact (parseFactSrc f)
-      dir := .forward
     }
   | `(rw_src|=) => {
       src := .reifiedEq

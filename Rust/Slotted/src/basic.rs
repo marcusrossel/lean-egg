@@ -27,8 +27,8 @@ pub struct Config {
 }
 
 pub fn explain_congr(
-    init: String, goal: String, rw_templates: Vec<RewriteTemplate>, facts: Vec<(String, String)>, 
-    guides: Vec<String>, cfg: Config, _viz_path: Option<String>
+    init: String, goal: String, rw_templates: Vec<RewriteTemplate>, guides: Vec<String>, 
+    cfg: Config, _viz_path: Option<String>
 ) -> Result<(String, LeanEGraph, Report), Error> {    
     let mut egraph: LeanEGraph = EGraph::new();
 
@@ -48,17 +48,8 @@ pub fn explain_congr(
         egraph.add_expr(expr);
     }
 
-    let mut fact_map: HashMap<AppliedId, String> = Default::default();
-    for (name, expr) in facts {
-        let expr = RecExpr::parse(&expr).map_err(|err| {
-            Error::Fact(format!("Failed to parse fact: {:?}\n\n  {}", err, expr).to_string())
-        })?;
-        let class = egraph.add_expr(expr);
-        fact_map.insert(class, name);
-    }
-
     let mut rws;
-    match templates_to_rewrites(rw_templates, fact_map, cfg.allow_unsat_conditions) {
+    match templates_to_rewrites(rw_templates, cfg.allow_unsat_conditions) {
         Ok(r)    => rws = r,
         Err(err) => return Err(Error::Rewrite(err.to_string()))
     }

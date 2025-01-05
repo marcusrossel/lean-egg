@@ -104,12 +104,6 @@ def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cfg : Config.Erasure) 
     let stx? := stx[idx]? >>= fun s => if s.getAtomVal == "*" then none else s
     rw.trace stx? cfg cls
 
-nonrec def Fact.trace (f : Fact) (stx : Syntax) (cls : Name) : TacticM Unit := do
-  trace cls fun _ => m!"{f.src.description}: {stx} : {f.type}"
-
-def Facts.trace (fs : Facts) (stx : Array Syntax) (cls : Name) : TacticM Unit := do
-  for f in fs, s in stx do f.trace s cls
-
 def Rewrite.Encoded.trace (rw : Rewrite.Encoded) (cls : Name) : TacticM Unit := do
   let header := m!"{rw.name}({rw.dirs.format})"
   withTraceNode cls (fun _ => return header) do
@@ -121,9 +115,6 @@ def Rewrite.Encoded.trace (rw : Rewrite.Encoded) (cls : Name) : TacticM Unit := 
       withTraceNode cls (fun _ => return "Conditions") (collapsed := false) do
         for cond in rw.conds do
           Lean.trace cls fun _ => cond
-
-def Fact.Encoded.trace (fact : Fact.Encoded) (cls : Name) : TacticM Unit := do
-  Lean.trace cls fun _ => m!"{fact.name}: {fact.expr}"
 
 nonrec def Config.trace (cfg : Config) (cls : Name) : TacticM Unit := do
   let toEmoji (b : Bool) := if b then "✅" else "❌"
@@ -162,10 +153,6 @@ nonrec def Request.trace (req : Request) (cls : Name) : TacticM Unit := do
   withTraceNode `egg.frontend (fun _ => return rwsHeader) do
     for rw in req.rws do
       rw.trace cls
-  if !req.facts.isEmpty then
-    withTraceNode cls (fun _ => return "Facts") do
-      for fact in req.facts do
-        fact.trace cls
   if !req.guides.isEmpty then
     withTraceNode cls (fun _ => return "Guides") do
       for guide in req.guides do
@@ -192,9 +179,6 @@ nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
         withTraceNode cls (fun _ => return step.rhs) do
           traceM cls fun _ => return m!"{rw.src.description}({step.dir.format}) {← rw.toCongr.toMessageData}"
           trace  cls fun _ => step.proof
-      | .fact src =>
-        withTraceNode cls (fun _ => return step.rhs) do
-          trace cls fun _ => m!"{src.description}({step.dir.format})"
       | .reifiedEq =>
         withTraceNode cls (fun _ => return step.rhs) do
           trace cls fun _ => m!"Reified Equality"

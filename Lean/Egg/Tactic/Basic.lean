@@ -19,11 +19,11 @@ private inductive Proof? where
   | retryWithShapes
 
 private def resultToProof
-    (result : Request.Result) (goal : Goal) (rws : Rewrites) (facts : Facts) (ctx : EncodingCtx)
+    (result : Request.Result) (goal : Goal) (rws : Rewrites) (ctx : EncodingCtx)
     (retryWithShapes : Bool) : TacticM Proof? := do
   let proof ←
     try
-      result.expl.proof rws facts result.egraph ctx
+      result.expl.proof rws result.egraph ctx
     catch err =>
       -- If proof reconstruction fails but we haven't tried using shapes yet, retry with shapes
       -- (assuming the correcspoding option is enabled).
@@ -73,8 +73,8 @@ where
       -- We increase the mvar context depth, so that ambient mvars aren't unified during proof
       -- reconstruction. Note that this also means that we can't assign the `goal` mvar here.
       let res ← withNewMCtxDepth do
-        let (rws, facts) ← Premises.gen goal.toCongr prems guides cfg amb
-        runEqSat goal rws facts guides cfg amb
+        let rws ← Premises.gen goal.toCongr prems guides cfg amb
+        runEqSat goal rws guides cfg amb
       match res with
       | some (proof, proofTime, result, goalContainsBinder) =>
         if cfg.reporting then
@@ -84,20 +84,20 @@ where
         if let some tk := calcifyTk? then calcify tk proof goal.intros
       | none => goal.id.admit
   runEqSat
-      (goal : Goal) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Config)
-      (amb : MVars.Ambient) : TacticM <| Option (Expr × Nat × Request.Result × Bool) := do
-    let (req, goalContainsBinder) ← Request.encoding' goal.toCongr rws facts guides cfg amb
+      (goal : Goal) (rws : Rewrites) (guides : Guides) (cfg : Config) (amb : MVars.Ambient) :
+      TacticM <| Option (Expr × Nat × Request.Result × Bool) := do
+    let (req, goalContainsBinder) ← Request.encoding' goal.toCongr rws guides cfg amb
     withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
     if let .beforeEqSat := cfg.exitPoint then return none
     let result ← req.run cfg.explLengthLimit (onEqSatFailure cfg goalContainsBinder)
     result.expl.trace `egg.explanation.steps
     if let .beforeProof := cfg.exitPoint then return none
     let beforeProof ← IO.monoMsNow
-    match ← resultToProof result goal rws facts {amb, cfg} cfg.retryWithShapes with
+    match ← resultToProof result goal rws {amb, cfg} cfg.retryWithShapes with
     | .proof prf =>
       let proofTime := (← IO.monoMsNow) - beforeProof
       return some (prf, proofTime, result, goalContainsBinder)
-    | .retryWithShapes => runEqSat goal rws facts guides { cfg with shapes := true } amb
+    | .retryWithShapes => runEqSat goal rws guides { cfg with shapes := true } amb
   onEqSatFailure (cfg : Config) (goalContainsBinder : Bool) (report : Request.Result.Report) :
       Request.Failure → MetaM MessageData
     | .backend => do
