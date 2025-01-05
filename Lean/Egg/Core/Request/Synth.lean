@@ -14,9 +14,6 @@ def parse (s: String) : MetaM Expr := do
 
   | .error _ => throwError "meh"
 
-#reduce (types := true) MetaM PUnit
-#reduce ST.Ref
-
 @[export is_synthable]
 def isSynthable (ty : String) : MetaM Bool := do
   let ty_expr ← parse ty

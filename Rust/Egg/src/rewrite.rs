@@ -6,6 +6,7 @@ use crate::result::*;
 use crate::lean_expr::*;
 use crate::analysis::*;
 use crate::bvar_correction::*;
+use crate::string_to_c_str;
 use crate::util::sub_expr;
 use crate::valid_match::*;
 use crate::is_synthable;
@@ -93,7 +94,13 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             }
         }
 
-        // TODO: Check tc conditions.
+        for tc_cond in &self.tc_conds {
+            if !cond_is_synthable(tc_cond, graph, subst, self.cfg.env) {
+                // TODO: Is it correct to simply return the empty vector, or do we need to indicate
+                //       which e-cclasses were potentially changed/added by `add_instantiation`?
+                return vec![]
+            }
+        }
 
         // A substitution needs no shifting if it does not map any variables to e-classes containing 
         // loose bvars. This is the case exactly when `var_depths` is empty.
@@ -109,15 +116,9 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
     }
 }
 
-fn eval_tc_condition(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &Subst, e: *const c_void) -> bool {
+fn cond_is_synthable(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &Subst, env: *const c_void) -> bool {
     let i = graph.add_instantiation(&cond.ast, subst);
     let ast = graph.id_to_expr(i);
-
-    let i1 = Id::from(ast.as_ref().len() - 1);
-    let LeanExpr::Inst(ty_id) = &ast[i1] else { return false };
-    let ty = sub_expr(&ast, *ty_id);
-
-    let mut s = ty.to_string();
-    s.push('\0');
-    unsafe { is_synthable(e, s.as_ptr()) }
+    let str = string_to_c_str(ast.to_string());
+    unsafe { is_synthable(env, str) }
 }

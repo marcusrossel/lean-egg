@@ -10,7 +10,8 @@ extern lean_obj_res lean_is_synthable(
     lean_obj_arg x5
 );
 
-_Bool is_synthable(env* e, const char* str) {
+_Bool is_synthable(const void* v, const char* str) {
+    env* e = (env*)v;
     lean_obj_res ty_str = lean_mk_string(str);
     lean_obj_res s = lean_is_synthable(ty_str, e->x1, e->x2, e->x3, e->x4, e->x5);
     // The layout of `s` consists of one object and one boolean.

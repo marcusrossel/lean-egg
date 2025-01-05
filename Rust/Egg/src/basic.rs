@@ -128,7 +128,7 @@ fn mk_initial_egraph(
                 let prop_id = egraph.add_expr(&prop);
                 egraph.union_trusted(true_id, prop_id, name);
             },
-            Fact::Inst(name, class) => todo!(),
+            Fact::Inst(name, class) => continue, // TODO
         }
     }
 

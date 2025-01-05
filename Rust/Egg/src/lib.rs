@@ -300,5 +300,5 @@ pub unsafe extern "C" fn egg_free_egraph(egraph: *mut LeanEGraph) {
 }
 
 extern "C" {
-    fn is_synthable(env: *const c_void, tc_type_str: *const u8) -> bool;
+    fn is_synthable(env: *const c_void, tc_type_str: *const c_char) -> bool;
 }
