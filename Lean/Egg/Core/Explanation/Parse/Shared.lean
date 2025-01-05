@@ -37,6 +37,8 @@ syntax num "?" : tc_proj_loc
 syntax "#" noWs num (noWs "/" noWs num)? : basic_fwd_rw_src
 syntax "*" noWs num                      : basic_fwd_rw_src
 syntax "⊢"                               : basic_fwd_rw_src
+-- Note: We don't run rewrite generation after deriving guides, so a derived guide source can never
+--       be part of a rewrite source.
 syntax "↣" noWs num                      : basic_fwd_rw_src
 syntax "◯" noWs num                      : basic_fwd_rw_src
 syntax "□" noWs num (noWs "/" noWs num)? : basic_fwd_rw_src
@@ -146,7 +148,7 @@ private def parseBasicFwdRwSrc : (TSyntax `basic_fwd_rw_src) → Source
   | `(basic_fwd_rw_src|□$idx$[/$eqn?]?) => .tagged idx.getNat (eqn?.map TSyntax.getNat)
   | `(basic_fwd_rw_src|*$idx)           => .star (.fromUniqueIdx idx.getNat)
   | `(basic_fwd_rw_src|⊢)               => .goal
-  | `(basic_fwd_rw_src|↣$idx)           => .guide idx.getNat
+  | `(basic_fwd_rw_src|↣$idx)           => .guide idx.getNat (derived := false)
   | `(basic_fwd_rw_src|◯$idx)           => .builtin idx.getNat
   | _                                   => unreachable!
 

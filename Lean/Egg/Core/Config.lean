@@ -35,6 +35,7 @@ structure Gen where
   genGoalTcSpec   := true -- This option requires `genTcSpecRws` to be true.
   genNestedSplits := true
   explosion       := false
+  derivedGuides   := true
   deriving BEq
 
 structure DefEq extends Erasure where

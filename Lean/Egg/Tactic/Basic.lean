@@ -6,6 +6,7 @@ import Egg.Tactic.Base
 import Egg.Tactic.Goal
 import Egg.Tactic.Guides
 import Egg.Tactic.Premises.Gen.Basic
+import Egg.Core.Gen.Guides
 import Egg.Tactic.Trace
 import Egg.Tactic.Calcify
 import Lean
@@ -74,6 +75,7 @@ where
       -- reconstruction. Note that this also means that we can't assign the `goal` mvar here.
       let res ← withNewMCtxDepth do
         let rws ← Premises.gen goal.toCongr prems guides cfg amb
+        let guides := guides ++ (← genDerivedGuides rws amb)
         runEqSat goal rws guides cfg amb
       match res with
       | some (proof, proofTime, result, goalContainsBinder) =>

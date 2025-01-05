@@ -25,7 +25,7 @@ set_option egg.retryWithShapes false in
 example (h : ∀ u : Unit, u = .unit) : Nat.add = Nat.mul := by
   egg [h]
 
-/-- error: egg failed to prove the goal (saturated) -/
+/-- error: egg failed to prove the goal (reached time limit) -/
 #guard_msgs in
 set_option egg.retryWithShapes true in
 example (h : ∀ u : Unit, u = .unit) : Nat.add = Nat.mul := by

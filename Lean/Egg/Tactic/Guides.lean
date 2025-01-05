@@ -11,7 +11,7 @@ def parseGuides : TSyntax `egg_guides → TacticM Guides
   | `(egg_guides|using $gs,*) => do
     let mut guides : Guides := #[]
     for g in gs.getElems, idx in [:gs.getElems.size] do
-      let guide ← Guide.from (← Tactic.elabTerm g none) (.guide idx)
+      let guide ← Guide.from (← Tactic.elabTerm g none) (.guide idx (derived := false))
       guides := guides.push guide
     return guides
   | _ => unreachable!

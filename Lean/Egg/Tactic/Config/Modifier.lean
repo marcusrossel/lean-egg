@@ -24,6 +24,7 @@ structure Modifier where
   beta                : Option Bool            := none
   levels              : Option Bool            := none
   explosion           : Option Bool            := none
+  derivedGuides       : Option Bool            := none
   blockInvalidMatches : Option Bool            := none
   shiftCapturedBVars  : Option Bool            := none
   unionSemantics      : Option Bool            := none
@@ -58,6 +59,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   beta                := mod.beta.getD cfg.beta
   levels              := mod.levels.getD cfg.levels
   explosion           := mod.explosion.getD cfg.explosion
+  derivedGuides       := mod.derivedGuides.getD cfg.derivedGuides
   blockInvalidMatches := mod.blockInvalidMatches.getD cfg.blockInvalidMatches
   shiftCapturedBVars  := mod.shiftCapturedBVars.getD cfg.shiftCapturedBVars
   unionSemantics      := mod.unionSemantics.getD cfg.unionSemantics

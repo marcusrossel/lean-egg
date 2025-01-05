@@ -57,6 +57,7 @@ register_egg_options
   beta
   levels
   explosion
+  derivedGuides
   blockInvalidMatches
   shiftCapturedBVars "Note: Setting this to `true` also enables `egg.blockInvalidMatches`."
   unionSemantics

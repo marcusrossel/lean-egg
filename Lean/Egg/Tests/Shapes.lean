@@ -24,6 +24,8 @@ info: [egg.encoded] Encoded
     [egg.encoded] LHS: (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (app (◇ (→ * (→ * (→ * *))) (app (◇ (→ * (→ * (→ * (→ * *)))) (app (◇ (→ * (→ * (→ * (→ * (→ * *))))) (app (◇ (→ * (→ * (→ * (→ * (→ * (→ * *)))))) (const "HAdd.hAdd" 0 0 0)) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (const "instHAdd" 0)) (◇ * (const "Nat")))) (◇ * (const "instAddNat")))))) (◇ * ?351))) (◇ * ?352)))
     [egg.encoded] RHS: (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (app (◇ (→ * (→ * (→ * *))) (app (◇ (→ * (→ * (→ * (→ * *)))) (app (◇ (→ * (→ * (→ * (→ * (→ * *))))) (app (◇ (→ * (→ * (→ * (→ * (→ * (→ * *)))))) (const "HAdd.hAdd" 0 0 0)) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (const "instHAdd" 0)) (◇ * (const "Nat")))) (◇ * (const "instAddNat")))))) (◇ * ?352))) (◇ * ?351)))
     [egg.encoded] No Conditions
+  [egg.encoded] Guides
+    [egg.encoded] (◇ (→ * (→ * *)) (app (◇ (→ * (→ * (→ * *))) (app (◇ (→ * (→ * (→ * (→ * *)))) (app (◇ (→ * (→ * (→ * (→ * (→ * *))))) (app (◇ (→ * (→ * (→ * (→ * (→ * (→ * *)))))) (const "HAdd.hAdd" 0 0 0)) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (const "Nat")))) (◇ * (app (◇ (→ * *) (app (◇ (→ * (→ * *)) (const "instHAdd" 0)) (◇ * (const "Nat")))) (◇ * (const "instAddNat"))))))
 -/
 #guard_msgs in
 set_option trace.egg.encoded true in
@@ -32,7 +34,7 @@ set_option egg.builtins false in
 example (h : ∀ x y : Nat, x + y = y + x) : 0 + 1 = 1 + 0 := by
   egg [h]
 
-/-- error: egg failed to prove the goal (saturated) -/
+/-- error: egg failed to prove the goal (reached time limit) -/
 #guard_msgs in
 example (h : ∀ u : Unit, u = .unit) : Nat.add = Nat.mul := by
   egg (config := { exitPoint := some .beforeProof }) [h]
