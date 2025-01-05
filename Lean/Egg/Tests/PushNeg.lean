@@ -20,15 +20,13 @@ theorem iff_iff_and_or_not_and_not : (a ↔ b) ↔ a ∧ b ∨ ¬a ∧ ¬b :=
 @[egg] theorem not_exists_eq : (¬ ∃ x, s x) = (∀ x, ¬ s x) := propext not_exists
 @[egg] theorem not_implies_eq : (¬ (p → q)) = (p ∧ ¬ q) := propext Classical.not_imp
 @[egg] theorem not_ne_eq (x y : α) : (¬ (x ≠ y)) = (x = y) := ne_eq x y ▸ not_not_eq _
-@[egg] theorem not_iff : (¬ (p ↔ q)) = ((p ∧ ¬ q) ∨ (¬ p ∧ q)) := propext <|
-  _root_.not_iff.trans <| iff_iff_and_or_not_and_not.trans <| by rw [not_not, or_comm]
+@[egg] theorem not_iff : (¬ (p ↔ q)) = ((p ∧ ¬ q) ∨ (¬ p ∧ q)) := propext <| _root_.not_iff.trans <|
+  iff_iff_and_or_not_and_not.trans <| by rw [not_not, or_comm]
 
--- sorry
-
+-- TODO: This crashes because the explicit equality constructor erases certain mvars, which we still
+--       need to account for during mvar collection.
 example : ((fun x => x+x) 1) = 2 := by
   egg!
-
-
 
 -- These should all work nicely with `simp_egg` in the future
 /--

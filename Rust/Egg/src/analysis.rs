@@ -180,7 +180,7 @@ impl Analysis<LeanExpr> for LeanAnalysis {
         // Constructs the required equality e-node and adds it to the e-class of `True`.
         let eq_id = egraph.add(LeanExpr::Eq([id, id]));
         let true_id = egraph.add_expr(&"(const \"True\")".parse().unwrap());
-        egraph.union_trusted(eq_id, true_id, "REIFY_EQ");
+        egraph.union_trusted(eq_id, true_id, "=");
     }
 }
 

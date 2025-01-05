@@ -194,6 +194,9 @@ nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
       | .fact src =>
         withTraceNode cls (fun _ => return step.rhs) do
           trace cls fun _ => m!"{src.description}({step.dir.format})"
+      | .reifiedEq =>
+        withTraceNode cls (fun _ => return step.rhs) do
+          trace cls fun _ => m!"Reified Equality"
 
 nonrec def MVars.Ambient.trace (amb : MVars.Ambient) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Ambient MVars") do

@@ -112,6 +112,7 @@ syntax "!*" noWs num : fact_src
 
 syntax fwd_rw_src (noWs "-rev")? : rw_src
 syntax fact_src                  : rw_src
+syntax &"="                      : rw_src
 
 syntax "+" num : shift_offset
 syntax "-" num : shift_offset
@@ -221,6 +222,10 @@ def parseRwSrc : (TSyntax `rw_src) → Rewrite.Descriptor
     }
   | `(rw_src|$f:fact_src) => {
       src := .fact (parseFactSrc f)
+      dir := .forward
+    }
+  | `(rw_src|=) => {
+      src := .reifiedEq
       dir := .forward
     }
   | _ => unreachable!
