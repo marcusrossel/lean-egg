@@ -104,7 +104,7 @@ pub fn subst_rws() -> Vec<LeanRewrite> {
     let mut rws = vec![];
     rws.push(rewrite!("↦bvar";  "(↦ ?f ?t (bvar ?b))"   => { BVarSubst   { from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), bvar_idx : "?b".parse().unwrap() }}));
     rws.push(rewrite!("↦app";   "(↦ ?f ?t (app ?a ?b))" => { BasicSubst  { ctor: "app".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), left   : "?a".parse().unwrap(), right : "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↦=";     "(↦ ?f ?t (eq ?a ?b))"  => { BasicSubst  { ctor: "=".to_string(),   from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), left   : "?a".parse().unwrap(), right : "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↦=";     "(↦ ?f ?t (= ?a ?b))"  => { BasicSubst  { ctor: "=".to_string(),   from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), left   : "?a".parse().unwrap(), right : "?b".parse().unwrap() }}));
     rws.push(rewrite!("↦λ";     "(↦ ?f ?t (λ ?a ?b))"   => { BinderSubst { binder: "λ".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), domain : "?a".parse().unwrap(), body  : "?b".parse().unwrap() }}));
     rws.push(rewrite!("↦∀";     "(↦ ?f ?t (∀ ?a ?b))"   => { BinderSubst { binder: "∀".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), domain : "?a".parse().unwrap(), body  : "?b".parse().unwrap() }}));
     rws.push(rewrite!("↦fvar";  "(↦ ?f ?t (fvar ?x))"   => "(fvar ?x)"));
