@@ -19,8 +19,8 @@ class Group (α) extends One α, Inv α, Mul α where
 variable [Group G] {a b : G}
 
 open Group Egg.Guides Egg.Config.Modifier in
-macro "group" mod:egg_cfg_mod base:(egg_base)? guides:(egg_guides)? : tactic => `(tactic|
-  egg $mod [mul_assoc, one_mul, mul_one, inv_mul_self, mul_inv_self] $[$base]? $[$guides]?
+macro "group" mod:egg_cfg_mod guides:(egg_guides)? : tactic => `(tactic|
+  egg $mod [mul_assoc, one_mul, mul_one, inv_mul_self, mul_inv_self] $[$guides]?
 )
 
 theorem inv_mul_cancel_left : a⁻¹ * (a * b) = b := by group

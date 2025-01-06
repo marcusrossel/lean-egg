@@ -6,7 +6,6 @@ import Egg.Tactic.Premises.Parse
 import Egg.Tactic.Config.Option
 import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Config.NoDefEq
-import Egg.Tactic.Base
 import Egg.Tactic.Tags
 import Egg.Tactic.Calcify
 import Egg.Tactic.Basic
@@ -39,6 +38,7 @@ import Egg.Core.Gen.Builtins
 import Egg.Core.Gen.NestedSplits
 import Egg.Core.Gen.TcProjs
 import Egg.Core.Gen.TcSpecs
+import Egg.Core.Gen.Guides
 import Egg.Core.Normalize
 import Egg.Core.Source
 import Egg.Core.Request.EGraph

@@ -2,7 +2,6 @@ import Egg.Core.Request.Basic
 import Egg.Core.Explanation.Proof
 import Egg.Tactic.Config.Option
 import Egg.Tactic.Config.Modifier
-import Egg.Tactic.Base
 import Egg.Tactic.Goal
 import Egg.Tactic.Guides
 import Egg.Tactic.Premises.Gen.Basic
@@ -54,7 +53,7 @@ where
 open Config.Modifier (egg_cfg_mod)
 
 protected partial def eval
-    (mod : TSyntax ``egg_cfg_mod) (prems : TSyntax `egg_premises) (base : Option (TSyntax `egg_base))
+    (mod : TSyntax ``egg_cfg_mod) (prems : TSyntax `egg_premises)
     (guides : Option (TSyntax `egg_guides)) (basket? : Option Name := none)
     (calcifyTk? : Option Syntax := none) : TacticM Unit := do
   let save ← saveState
@@ -66,7 +65,7 @@ where
     let mod  ← Config.Modifier.parse mod
     let cfg := { (← Config.fromOptions).modify mod with basket? }
     cfg.trace `egg.config
-    let goal ← Goal.gen goal base
+    let goal ← Goal.gen goal
     goal.id.withContext do
       let guides := (← guides.mapM Guides.parseGuides).getD #[]
       let amb ← MVars.Ambient.collect
@@ -111,23 +110,23 @@ where
       unless cfg.reporting do return msg
       return msg ++ formatReport cfg.flattenReports report (goalContainsBinder := goalContainsBinder)
 
-syntax &"egg " egg_cfg_mod egg_premises (egg_base)? (egg_guides)? : tactic
+syntax &"egg " egg_cfg_mod egg_premises (egg_guides)? : tactic
 elab_rules : tactic
-  | `(tactic| egg $mod $prems $[$base]? $[$guides]?) => Egg.eval mod prems base guides
+  | `(tactic| egg $mod $prems $[$guides]?) => Egg.eval mod prems guides
 
 -- WORKAROUND: This fixes `Tests/EndOfInput *`.
 macro "egg " mod:egg_cfg_mod : tactic => `(tactic| egg $mod)
 
 -- The syntax `egg!` calls egg with the global egg basket.
-elab "egg! " mod:egg_cfg_mod prems:egg_premises base:(egg_base)? guides:(egg_guides)? : tactic =>
-  Egg.eval mod prems base guides (basket? := `egg)
+elab "egg! " mod:egg_cfg_mod prems:egg_premises guides:(egg_guides)? : tactic =>
+  Egg.eval mod prems guides (basket? := `egg)
 
 -- WORKAROUND: This fixes a problem analogous to `Tests/EndOfInput *` for `egg!`.
 macro "egg! " mod:egg_cfg_mod : tactic => `(tactic| egg! $mod)
 
 -- The syntax `egg?` calls calcify after running egg.
-elab tk:"egg? " mod:egg_cfg_mod prems:egg_premises base:(egg_base)? guides:(egg_guides)? : tactic =>
-  Egg.eval mod prems base guides (basket? := none) (calcifyTk? := tk)
+elab tk:"egg? " mod:egg_cfg_mod prems:egg_premises guides:(egg_guides)? : tactic =>
+  Egg.eval mod prems guides (basket? := none) (calcifyTk? := tk)
 
 -- WORKAROUND: This fixes a problem analogous to `Tests/EndOfInput *` for `egg?`.
 macro "egg? " mod:egg_cfg_mod : tactic => `(tactic| egg? $mod)

@@ -57,8 +57,8 @@ private def eval
     let stepToEgg (step : Step) : TacticM (TSyntax `tactic) := do
       let allPrems ← appendPremises step.prems prems
       if bang
-      then `(tactic| egg! $step.mod $allPrems $[$(Option.none)]? $[$step.guides]?)
-      else `(tactic| egg  $step.mod $allPrems $[$(Option.none)]? $[$step.guides]?)
+      then `(tactic| egg! $step.mod $allPrems $[$step.guides]?)
+      else `(tactic| egg  $step.mod $allPrems $[$step.guides]?)
     let tailEggs ← steps.tail.mapM stepToEgg
     let headEgg : Option (TSyntax `tactic) ← do
       if (← elabTerm steps.head.goal none).eqOrIff?.isSome
