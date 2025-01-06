@@ -6,15 +6,6 @@ example : true = false := by
   egg
 
 /--
-error: expected goal to be of type '=', '↔', '∀ ..., _ = _', or '∀ ..., _ ↔ _', but found:
-
-  True
--/
-#guard_msgs in
-example : True := by
-  egg
-
-/--
 error: egg requires premises to be (proofs of) propositions or (non-propositional) definitions
 -/
 #guard_msgs in

@@ -22,16 +22,26 @@ def Goal.gen (goal : MVarId) (base? : Option <| TSyntax `egg_base) : TacticM Goa
       let cgr ← Congr.from! eq
       return { cgr with id := newGoal.mvarId!, intros := #[] }
     else
+      let goal ← getMainGoal
+      let goalType ← goal.getType'
+      let goalTypeType ← inferType goalType
+      unless goalTypeType.isProp do
+        throwError m!"goal type is not a proposition:\n {goalType} : {goalTypeType}"
       let fvars := (← getLCtx).getFVarIds
       evalTactic <| ← `(tactic|repeat intro)
       let goal ← getMainGoal
       let (goal, intros) ← genIntros goal fvars
       goal.withContext do
         let goalType ← goal.getType'
-        let some cgr ← Congr.from? goalType
-          | throwError "expected goal to be of type '=', '↔', '∀ ..., _ = _', or '∀ ..., _ ↔ _', \
-                        but found:\n\n  {← ppExpr goalType}"
-        return { cgr with id := goal, intros }
+        if let some cgr ← Congr.from? goalType then
+          return { cgr with id := goal, intros }
+        else
+          let goalEqTrue  ← mkEq goalType (.const ``True [])
+          let mGoalEqTrue ← mkFreshExprMVar goalEqTrue
+          let oldProof    ← mkOfEqTrue mGoalEqTrue
+          goal.assignIfDefeq' oldProof
+          let cgr ← Congr.from! goalEqTrue
+          return { cgr with id := mGoalEqTrue.mvarId!, intros }
 where
   genIntros (goal : MVarId) (previousFVars : Array FVarId) : MetaM (MVarId × Array Name) := do
     goal.withContext do

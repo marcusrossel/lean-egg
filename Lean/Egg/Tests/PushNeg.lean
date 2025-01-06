@@ -23,50 +23,24 @@ theorem iff_iff_and_or_not_and_not : (a ↔ b) ↔ a ∧ b ∨ ¬a ∧ ¬b :=
 @[egg] theorem not_iff : (¬ (p ↔ q)) = ((p ∧ ¬ q) ∨ (¬ p ∧ q)) := propext <| _root_.not_iff.trans <|
   iff_iff_and_or_not_and_not.trans <| by rw [not_not, or_comm]
 
-example : ((fun x => x+x) 1) = 2 := by
+example : ((fun x => x + x) 1) = 2 := by
   egg!
 
--- These should all work nicely with `simp_egg` in the future
-/--
-error: expected goal to be of type '=', '↔', '∀ ..., _ = _', or '∀ ..., _ ↔ _', but found:
-
-  False
--/
-#guard_msgs in
-example : ¬ ¬ p = p := by
+example : ¬¬(p = p) := by
   egg!
 
-example : (¬ ¬ p) = p := by
+example : (¬¬p) = p := by
   egg!
 
 
-/--
-error: expected goal to be of type '=', '↔', '∀ ..., _ = _', or '∀ ..., _ ↔ _', but found:
-
-  False
--/
-#guard_msgs in
 example : (¬p ∧ ¬q) → ¬(p ∨ q) := by
   intro h
   egg!
-  exact h
 
-/--
-error: expected goal to be of type '=', '↔', '∀ ..., _ = _', or '∀ ..., _ ↔ _', but found:
-
-  False
--/
-#guard_msgs in
 example : ¬(p ∧ q) → (p → ¬q) := by
   intro h
   egg!
 
-/--
-error: expected goal to be of type '=', '↔', '∀ ..., _ = _', or '∀ ..., _ ↔ _', but found:
-
-  False
--/
-#guard_msgs in
 example {p' : α → Prop} : (∀(x : α), ¬ p' x) → ¬ ∃(x : α), p' x := by
   intro h
   egg!
