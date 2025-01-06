@@ -25,34 +25,35 @@ impl Applier<LeanExpr, LeanAnalysis> for BVarSubst {
     }
 }
 
-struct AppSubst {
+struct BasicSubst {
+    ctor:     String,
     from_idx: Var,
     to:       Var,
-    fun:      Var,
-    arg:      Var
+    left:     Var,
+    right:    Var
 }
 
-impl Applier<LeanExpr, LeanAnalysis> for AppSubst {
+impl Applier<LeanExpr, LeanAnalysis> for BasicSubst {
 
     fn apply_one(&self, egraph: &mut LeanEGraph, _: Id, subst: &Subst, ast: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
-        let from_idx  = egraph[subst[self.from_idx]].data.nat_val.unwrap();
-        let fun_bvars = &egraph[subst[self.fun]].data.loose_bvars;
-        let arg_bvars = &egraph[subst[self.arg]].data.loose_bvars;
+        let from_idx    = egraph[subst[self.from_idx]].data.nat_val.unwrap();
+        let left_bvars  = &egraph[subst[self.left]].data.loose_bvars;
+        let right_bvars = &egraph[subst[self.right]].data.loose_bvars;
 
-        let new_fun: PatternAst<LeanExpr> = if fun_bvars.contains(&from_idx) { 
-            format!("(↦ {} {} {})", self.from_idx, self.to, self.fun).parse().unwrap()
+        let new_left: PatternAst<LeanExpr> = if left_bvars.contains(&from_idx) { 
+            format!("(↦ {} {} {})", self.from_idx, self.to, self.left).parse().unwrap()
         } else { 
-            format!("{}", self.fun).parse().unwrap()
+            format!("{}", self.left).parse().unwrap()
         };
 
-        let new_arg: PatternAst<LeanExpr> = if arg_bvars.contains(&from_idx) { 
-            format!("(↦ {} {} {})", self.from_idx, self.to, self.arg).parse().unwrap()
+        let new_right: PatternAst<LeanExpr> = if right_bvars.contains(&from_idx) { 
+            format!("(↦ {} {} {})", self.from_idx, self.to, self.right).parse().unwrap()
         } else { 
-            format!("{}", self.arg).parse().unwrap()
+            format!("{}", self.right).parse().unwrap()
         };
         
-        let new_app = format!("(app {} {})", new_fun, new_arg).parse().unwrap();
-        let (id, did_union) = egraph.union_instantiations(ast.unwrap(), &new_app, subst, rule);
+        let new_expr = format!("({} {} {})", self.ctor, new_left, new_right).parse().unwrap();
+        let (id, did_union) = egraph.union_instantiations(ast.unwrap(), &new_expr, subst, rule);
         if did_union { vec![id] } else { vec![] }
     }
 }
@@ -102,9 +103,10 @@ impl Applier<LeanExpr, LeanAnalysis> for BinderSubst {
 pub fn subst_rws() -> Vec<LeanRewrite> {
     let mut rws = vec![];
     rws.push(rewrite!("↦bvar";  "(↦ ?f ?t (bvar ?b))"   => { BVarSubst   { from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), bvar_idx : "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↦app";   "(↦ ?f ?t (app ?a ?b))" => { AppSubst    { from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), fun : "?a".parse().unwrap(), arg : "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↦λ";     "(↦ ?f ?t (λ ?a ?b))"   => { BinderSubst { binder: "λ".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), domain : "?a".parse().unwrap(), body : "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↦∀";     "(↦ ?f ?t (∀ ?a ?b))"   => { BinderSubst { binder: "∀".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), domain : "?a".parse().unwrap(), body : "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↦app";   "(↦ ?f ?t (app ?a ?b))" => { BasicSubst  { ctor: "app".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), left   : "?a".parse().unwrap(), right : "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↦=";     "(↦ ?f ?t (eq ?a ?b))"  => { BasicSubst  { ctor: "=".to_string(),   from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), left   : "?a".parse().unwrap(), right : "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↦λ";     "(↦ ?f ?t (λ ?a ?b))"   => { BinderSubst { binder: "λ".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), domain : "?a".parse().unwrap(), body  : "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↦∀";     "(↦ ?f ?t (∀ ?a ?b))"   => { BinderSubst { binder: "∀".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), domain : "?a".parse().unwrap(), body  : "?b".parse().unwrap() }}));
     rws.push(rewrite!("↦fvar";  "(↦ ?f ?t (fvar ?x))"   => "(fvar ?x)"));
     rws.push(rewrite!("↦mvar";  "(↦ ?f ?t (mvar ?x))"   => "(mvar ?x)"));
     rws.push(rewrite!("↦sort";  "(↦ ?f ?t (sort ?x))"   => "(sort ?x)"));
