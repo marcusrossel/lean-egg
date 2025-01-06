@@ -65,6 +65,20 @@ pub fn explain_congr(
                 Ok(())
             }
         })
+        .with_hook(move |runner| {
+            let eg = &mut runner.egraph;
+            let true_expr = "(const \"True\")".parse().unwrap();
+            let true_class = eg.add_expr(&true_expr);
+            let ids: Vec<_> = eg.classes().map(|x| x.id).collect();
+            for x in ids {
+                if !eg[x].data.is_primitive {
+                    let a = eg.add(LeanExpr::Eq([x, x]));
+                    eg.union_trusted(a, true_class, "=");
+                }
+            }
+            eg.rebuild();
+            Ok(())
+        })
         .run(&rws);
 
     let report = runner.report();

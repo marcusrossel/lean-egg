@@ -9,8 +9,6 @@ pub struct LeanAnalysisData {
     pub dir_val:      Option<bool>,
     pub loose_bvars:  HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
     pub is_primitive: bool,         // A class is primitive if it represents a `Nat`, `Str` or universe level e-node.
-    pub is_new:       bool,         // A class is new if it is not the result of any merge.
-    pub eq:           bool          // This value is an implementation detail of the `modify` function below.
 }
 
 impl Default for LeanAnalysisData {
@@ -21,8 +19,6 @@ impl Default for LeanAnalysisData {
             dir_val: None,
             loose_bvars: HashSet::default(),
             is_primitive: false,
-            is_new: true,
-            eq: false
         }
     }
 }
@@ -45,9 +41,6 @@ impl Analysis<LeanExpr> for LeanAnalysis {
         } else {
             intersect_sets(&mut to.loose_bvars, from.loose_bvars)
         };
-
-        // A merged e-class is not new anymore.
-        to.is_new = false;
 
         // `merge_max` prefers `Some` value over `None`. Note that if `to` and `from` both have nat 
         // values, then they should have the *same* value as otherwise merging their e-classes 
@@ -151,36 +144,11 @@ impl Analysis<LeanExpr> for LeanAnalysis {
             LeanExpr::Eq([l, r]) => 
                 Self::Data { 
                     loose_bvars: union_clone(&egraph[*l].data.loose_bvars, &egraph[*r].data.loose_bvars),
-                    eq: true,
                     ..Default::default()
                 },
 
             _ => Default::default()
         }
-    }
-
-    // We use this hook to reify the equality inherent in an e-class.
-    fn modify(egraph: &mut EGraph<LeanExpr, Self>, id: Id) {
-        // We only reify equality for new e-classes as the existance of reified equality e-node is
-        // invariant under e-class union.
-        if !egraph[id].data.is_new { return }
-
-        // If this e-class is new and contains an `=` node, then we skip adding an equality e-node 
-        // for it. This is necessary in order to avoid looping on `modify` infinitely.
-        // TODO: Is there some other way we can avoid looping? The current approach technically 
-        //       breaks the existance of reified equality invariant for e-classes containing only 
-        //       (non-fact) equality e-nodes.
-        //       A hacky approach would be to have a global variable which blocks calls to `modify` 
-        //       while adding reified equality nodes. 
-        if egraph[id].data.eq { return }
-
-        // We don't create equality e-nodes for primitive e-classes.
-        if egraph[id].data.is_primitive { return }
-
-        // Constructs the required equality e-node and adds it to the e-class of `True`.
-        let eq_id = egraph.add(LeanExpr::Eq([id, id]));
-        let true_id = egraph.add_expr(&"(const \"True\")".parse().unwrap());
-        egraph.union_trusted(eq_id, true_id, "=");
     }
 }
 
