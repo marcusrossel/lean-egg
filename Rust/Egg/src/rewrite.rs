@@ -122,7 +122,7 @@ fn cond_is_synthable(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &S
 // We create a fresh graph, as we don't want to bloat the original e-graph with new stuff,
 // but we still want to get access to e-graph analysis of it.
 fn in_fresh_graph(cond: &Pattern<LeanExpr>, graph: &LeanEGraph, subst: &Subst) -> (LeanEGraph, Id) {
-    let mut fresh = LeanEGraph::new(LeanAnalysis::default());
+    let mut fresh = LeanEGraph::new(LeanAnalysis::default()).with_explanations_enabled();
 
     let mut fresh_subst = Subst::default();
     for pvar in cond.vars() {
