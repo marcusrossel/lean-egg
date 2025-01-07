@@ -7,7 +7,6 @@ use crate::lean_expr::*;
 use crate::analysis::*;
 use crate::bvar_correction::*;
 use crate::string_to_c_str;
-use crate::util::sub_expr;
 use crate::valid_match::*;
 use crate::is_synthable;
 

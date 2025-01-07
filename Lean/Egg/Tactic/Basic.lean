@@ -74,7 +74,7 @@ where
       -- reconstruction. Note that this also means that we can't assign the `goal` mvar here.
       let res ← withNewMCtxDepth do
         let rws ← Premises.gen goal.toCongr prems guides cfg amb
-        let guides := guides ++ (← genDerivedGuides rws amb)
+        let guides ← do if cfg.derivedGuides then pure (guides ++ (← genDerivedGuides rws amb)) else pure guides
         runEqSat goal rws guides cfg amb
       match res with
       | some (proof, proofTime, result, goalContainsBinder) =>
