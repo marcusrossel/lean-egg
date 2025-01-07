@@ -71,7 +71,7 @@ pub fn explain_congr(
             let true_class = eg.add_expr(&true_expr);
             let ids: Vec<_> = eg.classes().map(|x| x.id).collect();
             for x in ids {
-                if !eg[x].data.is_primitive {
+                if !is_primitive(x, eg) {
                     let a = eg.add(LeanExpr::Eq([x, x]));
                     eg.union_trusted(a, true_class, "=");
                 }

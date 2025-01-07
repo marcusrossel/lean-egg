@@ -81,10 +81,7 @@ struct LeanApplier {
 impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
 
     fn apply_one(&self, graph: &mut LeanEGraph, _: Id, subst: &Subst, _: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
-        let lhs_id = graph.add_instantiation(&self.lhs.ast, subst);
-        
-        // Disallows rewriting on primitive e-nodes.
-        if graph[lhs_id].data.is_primitive { return vec![] }
+        if is_primitive_pattern_subst(&self.lhs, graph, subst) { return vec![] }
         
         let mut var_depths: Option<HashMap<Var, u64>> = None;
         if self.cfg.block_invalid_matches || self.cfg.shift_captured_bvars { 
@@ -117,8 +114,43 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
 }
 
 fn cond_is_synthable(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &Subst, env: *const c_void) -> bool {
-    let i = graph.add_instantiation(&cond.ast, subst);
-    let ast = graph.id_to_expr(i);
+    let (fresh, i) = in_fresh_graph(cond, graph, subst);
+    let ast = fresh.id_to_expr(i);
     let str = string_to_c_str(ast.to_string());
     unsafe { is_synthable(env, str) }
+}
+
+// We create a fresh graph, as we don't want to bloat the original e-graph with new stuff,
+// but we still want to get access to e-graph analysis of it.
+fn in_fresh_graph(cond: &Pattern<LeanExpr>, graph: &LeanEGraph, subst: &Subst) -> (LeanEGraph, Id) {
+    let mut fresh = LeanEGraph::new(LeanAnalysis::default());
+
+    let mut fresh_subst = Subst::default();
+    for pvar in cond.vars() {
+        let id = *subst.get(pvar).unwrap();
+        let expr = graph.id_to_expr(id);
+        let fresh_id = fresh.add_expr(&expr);
+        fresh_subst.insert(pvar, fresh_id);
+    }
+
+    let i = fresh.add_instantiation(&cond.ast, &fresh_subst);
+    (fresh, i)
+}
+
+fn is_primitive_pattern_subst(pat: &Pattern<LeanExpr>, graph: &LeanEGraph, subst: &Subst) -> bool {
+    match &pat.ast.as_ref().last().unwrap() {
+        ENodeOrVar::Var(x) => is_primitive(subst[*x], graph),
+        ENodeOrVar::ENode(n) => is_primitive_node(n),
+    }
+}
+
+pub fn is_primitive_node(node: &LeanExpr) -> bool {
+    matches!(node, 
+            LeanExpr::Nat(_) | LeanExpr::Str(_) | LeanExpr::Fun(_) | LeanExpr::UVar(_) | LeanExpr::Param(_) | 
+            LeanExpr::Succ(_) | LeanExpr::Max(_) | LeanExpr::IMax(_) | LeanExpr::Fact(_) | LeanExpr::Unknown
+    )
+}
+
+pub fn is_primitive(x: Id, graph: &LeanEGraph) -> bool {
+    is_primitive_node(&graph[x].nodes.first().unwrap())
 }
