@@ -148,15 +148,18 @@ where
       let mut subgoals := []
       let conds := rw.conds.filter (!·.isProven)
       for cond in conds do
+        let cond ← cond.instantiateMVars
         match cond.kind with
         | .proof =>
-          let cond ← cond.instantiateMVars
           let some p ← proveCondition cond.type
             | fail m!"condition '{cond.type}' of rewrite {rw.src.description} could not be proven" idx
           unless ← isDefEq cond.expr p do
             fail m!"proof of condition '{cond.type}' of rewrite {rw.src.description} was invalid" idx
         | .tcInst =>
-          fail m!"type class conditions aren't implemented yet: '{cond.type}' of rewrite {rw.src.description}" idx
+          let some p ← synthInstance? cond.type
+            | fail m!"type class condition '{cond.type}' of rewrite {rw.src.description} could not be synthesized" idx
+          unless ← isDefEq cond.expr p do
+            fail m!"synthesized type class for condition '{cond.type}' of rewrite {rw.src.description} was invalid" idx
       let proof ← rw.eqProof
       return (
         ← mkCHole (forLhs := true) lhs proof,

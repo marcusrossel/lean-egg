@@ -15,6 +15,8 @@ extern lean_obj_res lean_is_synthable(
 _Bool is_synthable(const void* v, const char* str) {
     env* e = (env*)v;
     lean_obj_res ty_str = lean_mk_string(str);
+    
+    lean_inc(e->x1); lean_inc(e->x2); lean_inc(e->x3); lean_inc(e->x4); lean_inc(e->x5);
     lean_obj_res s = lean_is_synthable(ty_str, e->x1, e->x2, e->x3, e->x4, e->x5);
     
     switch (s->m_tag) {
