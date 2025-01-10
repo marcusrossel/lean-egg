@@ -76,6 +76,9 @@ structure _root_.Egg.MVars where
   lvl  : HashMap LMVarId Properties := ∅
   deriving Inhabited
 
+def isEmpty (mvars : MVars) : Bool :=
+  mvars.expr.isEmpty && mvars.lvl.isEmpty
+
 def visibleExpr (mvars : MVars) (cfg : Config.Erasure) : MVarIdSet :=
   mvars.expr.fold (init := ∅) fun result m ps =>
     if ps.isVisible cfg then result.insert m else result

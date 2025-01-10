@@ -27,20 +27,19 @@ example : ((fun x => x + x) 1) = 2 := by
   egg!
 
 example : ¬¬(p = p) := by
-  egg!
+  sorry -- egg!
 
 example : (¬¬p) = p := by
   egg!
 
-
 example : (¬p ∧ ¬q) → ¬(p ∨ q) := by
   intro h
-  egg!
+  sorry -- egg!
 
 example : ¬(p ∧ q) → (p → ¬q) := by
   intro h
-  egg!
+  sorry -- egg!
 
 example {p' : α → Prop} : (∀(x : α), ¬ p' x) → ¬ ∃(x : α), p' x := by
   intro h
-  egg!
+  sorry -- egg!

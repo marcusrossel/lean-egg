@@ -110,6 +110,7 @@ syntax str                                          : fwd_rw_src
 
 syntax fwd_rw_src (noWs "-rev")? : rw_src
 syntax &"="                      : rw_src
+syntax &"∧"                      : rw_src
 
 syntax "+" num : shift_offset
 syntax "-" num : shift_offset
@@ -214,6 +215,10 @@ def parseRwSrc : (TSyntax `rw_src) → Rewrite.Descriptor
     }
   | `(rw_src|=) => {
       src := .reifiedEq
+      dir := .forward
+    }
+  | `(rw_src|∧) => {
+      src := .factAnd
       dir := .forward
     }
   | _ => unreachable!

@@ -9,11 +9,12 @@ use crate::bvar_correction::*;
 use crate::string_to_c_str;
 use crate::valid_match::*;
 use crate::is_synthable;
+use crate::util::*;
 
 pub struct RewriteConfig {
     block_invalid_matches: bool, 
     shift_captured_bvars: bool, 
-    allow_unsat_conditions: bool,
+    _allow_unsat_conditions: bool,
     env: *const c_void
 }
 
@@ -23,7 +24,7 @@ impl Config {
         RewriteConfig {
             block_invalid_matches: self.block_invalid_matches,
             shift_captured_bvars: self.shift_captured_bvars,
-            allow_unsat_conditions: self.allow_unsat_conditions,
+            _allow_unsat_conditions: self.allow_unsat_conditions,
             env
         }
     }
@@ -37,14 +38,25 @@ pub struct RewriteTemplate {
     pub tc_conds:   Vec<Pattern<LeanExpr>>,
 }
 
+pub struct GroundEq {
+    pub name: String,
+    pub lhs : PatternAst<LeanExpr>,
+    pub rhs : PatternAst<LeanExpr>
+}
+
 impl RewriteTemplate {
 
-    pub fn to_rewrite(self, cfg: RewriteConfig) -> Res<LeanRewrite> {
-        // TODO: How do we handle `allow_unsat_conditions`? One option would be to simply not add
-        //       the conditional statements when the option is enabled. I'm not sure what to do 
-        //       about tc conditions though, because some of them are a result of tc inst erasure 
-        //       and should always be enforced. Perhaps, can we determine which tc conditions are a
-        //       result of tc inst erasure and still check those?
+    // TODO: How do we handle `allow_unsat_conditions`? One option would be to simply not add
+    //       the conditional statements when the option is enabled. I'm not sure what to do 
+    //       about tc conditions though, because some of them are a result of tc inst erasure 
+    //       and should always be enforced. Perhaps, can we determine which tc conditions are a
+    //       result of tc inst erasure and still check those?
+    pub fn to_rewrite(self, cfg: RewriteConfig) -> Res<Either<LeanRewrite, GroundEq>> {
+        // If the rewrite contains neither conditions nor pattern variables, it's a ground equation.
+        if self.prop_conds.is_empty() && self.tc_conds.is_empty() && 
+           self.lhs.vars().is_empty() && self.rhs.vars().is_empty() {
+            return Ok(Either::Right(GroundEq { name: self.name, lhs: self.lhs.ast, rhs: self.rhs.ast }))
+        }
 
         let lhs = if self.prop_conds.is_empty() {
             self.lhs.clone()
@@ -61,7 +73,7 @@ impl RewriteTemplate {
 
         let applier = LeanApplier { lhs: self.lhs, rhs: self.rhs, tc_conds: self.tc_conds, cfg };
         match Rewrite::new(self.name, lhs, applier) {
-            Ok(rw)   => Ok(rw),
+            Ok(rw)   => Ok(Either::Left(rw)),
             Err(err) => Err(Error::Rewrite(err.to_string()))
         }
     } 

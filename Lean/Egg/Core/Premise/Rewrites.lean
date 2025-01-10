@@ -20,6 +20,10 @@ inductive Kind where
   | proof
   | tcInst
 
+def Kind.isProof : Kind → Bool
+  | proof  => true
+  | tcInst => false
+
 def Kind.forType? (ty : Expr) : MetaM (Option Kind) := do
   if ← Meta.isProp ty then
     return some .proof
@@ -124,9 +128,21 @@ where
 def isConditional (rw : Rewrite) : Bool :=
   !rw.conds.isEmpty
 
+def isGroundEq (rw : Rewrite) : Bool :=
+  rw.conds.isEmpty && rw.mvars.lhs.isEmpty && rw.mvars.rhs.isEmpty
+
 def validDirs (rw : Rewrite) (cfg : Config.Erasure) : Directions :=
-  let exprDirs := Directions.satisfyingSuperset (rw.mvars.lhs.visibleExpr cfg) (rw.mvars.rhs.visibleExpr cfg)
-  let lvlDirs  := Directions.satisfyingSuperset (rw.mvars.lhs.visibleLevel cfg) (rw.mvars.rhs.visibleLevel cfg)
+  -- MVars appearing in propositional conditions are definitely going to be part of the rewrite's
+  -- LHS, so they can (and should be) ignored when computing valid directions.
+  -- TODO: How does visibility work in conditions?
+  let propCondExpr  : MVarIdSet  := rw.conds.filter (·.kind.isProof) |>.foldl (init := ∅) (·.union <| ·.mvars.visibleExpr  cfg)
+  let propCondLevel : LMVarIdSet := rw.conds.filter (·.kind.isProof) |>.foldl (init := ∅) (·.union <| ·.mvars.visibleLevel cfg)
+  let visibleExprLhs    := rw.mvars.lhs.visibleExpr  cfg |>.filter (!propCondExpr.contains ·)
+  let visibleExprRhs    := rw.mvars.rhs.visibleExpr  cfg |>.filter (!propCondExpr.contains ·)
+  let visibleLevelLhs   := rw.mvars.lhs.visibleLevel cfg |>.filter (!propCondLevel.contains ·)
+  let visibleLevelRhs   := rw.mvars.rhs.visibleLevel cfg |>.filter (!propCondLevel.contains ·)
+  let exprDirs          := Directions.satisfyingSuperset visibleExprLhs visibleExprRhs
+  let lvlDirs           := Directions.satisfyingSuperset visibleLevelLhs visibleLevelRhs
   exprDirs.meet lvlDirs
 
 -- Returns the same rewrite but with its type and proof potentially flipped to match the given

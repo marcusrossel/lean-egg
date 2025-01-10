@@ -14,13 +14,14 @@ inductive Step.Rewrite where
   | rw    (rw : Egg.Rewrite) (isRefl : Bool)
   | defeq (src : Source)
   | reifiedEq
+  | factAnd
   deriving Inhabited
 
 def Step.Rewrite.isRefl : Rewrite → Bool
   | rw _ isRefl => isRefl
   | defeq _     => true
   -- TODO: This isn't necessarily true.
-  | reifiedEq => false
+  | reifiedEq | factAnd => false
 
 structure Step where
   lhs   : Expr
@@ -72,10 +73,10 @@ where
 
   proofStep (idx : Nat) (current next : Expr) (rwInfo : Rewrite.Info) :
       MetaM (Proof.Step × Proof.Subgoals) := do
-    if let .reifiedEq := rwInfo.src then
+    if let .factAnd := rwInfo.src then
       let step := {
-        lhs := current, rhs := next, proof := ← mkReifiedEqStep idx current next,
-        rw := .reifiedEq, dir := rwInfo.dir
+        lhs := current, rhs := next, proof := ← mkFactAndStep idx current next,
+        rw := .factAnd, dir := rwInfo.dir
       }
       return (step, [])
     if rwInfo.src.isDefEq then
@@ -84,88 +85,96 @@ where
         rw := .defeq rwInfo.src, dir := rwInfo.dir
       }
       return (step, [])
-    let some rw := rws.find? rwInfo.src | fail s!"unknown rewrite {rwInfo.src.description}" idx
-    -- TODO: Can there be conditional rfl proofs?
-    if ← isRflProof rw.proof then
+    if let some rw := rws.find? rwInfo.src then
+      -- TODO: Can there be conditional rfl proofs?
+      if ← isRflProof rw.proof then
+        let step := {
+          lhs := current, rhs := next, proof := ← mkReflStep idx current next rwInfo.src,
+          rw := .rw rw (isRefl := true), dir := rwInfo.dir
+        }
+        return (step, [])
+      let (prf, subgoals) ← mkCongrStep idx current next rwInfo.pos?.get! <| .inl (← rw.forDir rwInfo.dir)
       let step := {
-        lhs := current, rhs := next, proof := ← mkReflStep idx current next rwInfo.src,
-        rw := .rw rw (isRefl := true), dir := rwInfo.dir
+        lhs := current, rhs := next, proof := prf, rw := .rw rw (isRefl := false), dir := rwInfo.dir
       }
-      return (step, [])
-    let (prf, subgoals) ← mkCongrStep idx current next rwInfo.pos?.get! (← rw.forDir rwInfo.dir)
-    let step := {
-      lhs := current, rhs := next, proof := prf, rw := .rw rw (isRefl := false), dir := rwInfo.dir
-    }
-    return (step, subgoals)
+      return (step, subgoals)
+    else if rwInfo.src.isReifiedEq then
+      let (prf, subgoals) ← mkCongrStep idx current next rwInfo.pos?.get! <| .inr rwInfo.dir
+      let step := { lhs := current, rhs := next, proof := prf, rw := .reifiedEq, dir := rwInfo.dir }
+      return (step, subgoals)
+    else
+      fail s!"unknown rewrite {rwInfo.src.description}" idx
 
   mkReflStep (idx : Nat) (current next : Expr) (src : Source) : MetaM Expr := do
     unless ← isDefEq current next do
       fail s!"unification failure for proof by reflexivity with rw {src.description}" idx
     mkEqRefl next
 
-  mkReifiedEqStep (idx : Nat) (current next : Expr) : MetaM Expr := do
-    unless next.isTrue do
-      fail "invalid RHS of reified equality step from\n\n  '{current}'\to\n  '{next}'" idx
-    let some (lhs, rhs) := current.eqOrIff?
-      | fail "invalid LHS of reified equality step from\n\n  '{current}'\to\n  '{next}'" idx
-    unless ← isDefEq lhs rhs do
-      fail "invalid LHS of reified equality step from\n\n  '{current}'\to\n  '{next}'" idx
-    mkEqTrue (← mkEqRefl lhs)
-    /- This loops, and I think reified eq-steps might always be by refl, because we only introduce
-       a union by reified eq for fresh e-classes.
+  mkFactAndStep (idx : Nat) (current next : Expr) : MetaM Expr := do
+    let .app (.app (.const ``And []) (.const ``True [])) (.const ``True []) := current
+      | fail m!"invalid LHS of ∧-step from\n\n  '{current}'\nto\n  '{next}'" idx
+    unless next.isTrue do fail m!"invalid RHS of ∧-step from\n\n  '{current}'\nto\n  '{next}'" idx
+    mkAppM ``true_and #[.const ``True []]
 
-      ```
-      let some prf ← mkSubproof current next
-        |  fail m!"reified equality '{current} = {next}' could not be proven" idx
-      return prf
-      ```
-    -/
-
-  mkCongrStep (idx : Nat) (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) :
+  mkCongrStep (idx : Nat) (current next : Expr) (pos : SubExpr.Pos) (rw? : Sum Rewrite Direction) :
       MetaM (Expr × Proof.Subgoals) := do
     let mvc := (← getMCtx).mvarCounter
-    let (lhs, rhs, subgoals) ← placeCHoles idx current next pos rw
+    let (lhs, rhs, subgoals) ← placeCHoles idx current next pos rw?
     try return (← (← mkCongrOf 0 mvc lhs rhs).eq, subgoals)
     catch err => fail m!"'mkCongrOf' failed with\n  {err.toMessageData}" idx
 
-  placeCHoles (idx : Nat) (current next : Expr) (pos : SubExpr.Pos) (rw : Rewrite) :
+  placeCHoles (idx : Nat) (current next : Expr) (pos : SubExpr.Pos) (rw? : Sum Rewrite Direction) :
       MetaM (Expr × Expr × Proof.Subgoals) := do
     replaceSubexprs (root₁ := current) (root₂ := next) (p := pos) fun lhs rhs => do
       -- It's necessary that we create the fresh rewrite (that is, create the fresh mvars) in *this*
       -- local context as otherwise the mvars can't unify with variables under binders.
-      let rw ← rw.fresh
-      unless ← isDefEq lhs rw.lhs do failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs current next idx
-      /- TODO: Remove?
-        let lhsType ← inferType lhs
-        let rwLhsType ← inferType rw.lhs
-        let _ ← isDefEq lhsType rwLhsType
-        synthLingeringTcErasureMVars lhs
-        synthLingeringTcErasureMVars rw.lhs
-        unless ← isDefEq lhs rw.lhs do
-          failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs.expr current next idx
-      -/
-      unless ← isDefEq rhs rw.rhs do failIsDefEq "RHS" rw.src rhs rw.rhs rw.mvars.rhs current next idx
-      let mut subgoals := []
-      let conds := rw.conds.filter (!·.isProven)
-      for cond in conds do
-        let cond ← cond.instantiateMVars
-        match cond.kind with
-        | .proof =>
-          let some p ← proveCondition cond.type
-            | fail m!"condition '{cond.type}' of rewrite {rw.src.description} could not be proven" idx
-          unless ← isDefEq cond.expr p do
-            fail m!"proof of condition '{cond.type}' of rewrite {rw.src.description} was invalid" idx
-        | .tcInst =>
-          let some p ← synthInstance? cond.type
-            | fail m!"type class condition '{cond.type}' of rewrite {rw.src.description} could not be synthesized" idx
-          unless ← isDefEq cond.expr p do
-            fail m!"synthesized type class for condition '{cond.type}' of rewrite {rw.src.description} was invalid" idx
-      let proof ← rw.eqProof
-      return (
-        ← mkCHole (forLhs := true) lhs proof,
-        ← mkCHole (forLhs := false) rhs proof,
-        subgoals
-      )
+      match rw? with
+      | .inr reifiedEqDir =>
+        let proof ← proveReifiedEq idx lhs rhs reifiedEqDir
+        return (
+          ← mkCHole (forLhs := true) lhs proof,
+          ← mkCHole (forLhs := false) rhs proof,
+          []
+        )
+      | .inl rw =>
+        let rw ← rw.fresh
+        unless ← isDefEq lhs rw.lhs do failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs current next idx
+        unless ← isDefEq rhs rw.rhs do failIsDefEq "RHS" rw.src rhs rw.rhs rw.mvars.rhs current next idx
+        let mut subgoals := []
+        let conds := rw.conds.filter (!·.isProven)
+        for cond in conds do
+          let cond ← cond.instantiateMVars
+          match cond.kind with
+          | .proof =>
+            let some p ← proveCondition cond.type
+              | fail m!"condition '{cond.type}' of rewrite {rw.src.description} could not be proven" idx
+            unless ← isDefEq cond.expr p do
+              fail m!"proof of condition '{cond.type}' of rewrite {rw.src.description} was invalid" idx
+          | .tcInst =>
+            let some p ← synthInstance? cond.type
+              | fail m!"type class condition '{cond.type}' of rewrite {rw.src.description} could not be synthesized" idx
+            unless ← isDefEq cond.expr p do
+              fail m!"synthesized type class for condition '{cond.type}' of rewrite {rw.src.description} was invalid" idx
+        let proof ← rw.eqProof
+        return (
+          ← mkCHole (forLhs := true) lhs proof,
+          ← mkCHole (forLhs := false) rhs proof,
+          subgoals
+        )
+
+  proveReifiedEq (idx : Nat) (current next : Expr) (dir : Direction) : MetaM Expr := do
+    let (current, next) := match dir with
+      | .forward  => (current, next)
+      | .backward => (next, current)
+    unless next.isTrue do
+      fail m!"invalid RHS of reified equality step from\n\n  '{current}'\nto\n  '{next}'" idx
+    let some (lhs, rhs) := current.eqOrIff?
+      | fail m!"invalid LHS (not an equivalence) of reified equality step from\n\n  '{current}'\nto\n  '{next}'" idx
+    unless ← isDefEq lhs rhs do
+      fail m!"invalid LHS (not defeq) of reified equality step from\n\n  '{current}'\nto\n  '{next}'" idx
+    match dir with
+      | .forward  => mkEqTrue (← mkEqRefl lhs)
+      | .backward => mkEqSymm <| ← mkEqTrue (← mkEqRefl lhs)
 
   failIsDefEq
       {α} (side : String) (src : Source) (expr rwExpr : Expr) (rwMVars : MVars)
@@ -187,10 +196,13 @@ where
   mkSubproof (lhs rhs : Expr) : MetaM (Option Expr) := do
     let req ← Request.Equiv.encoding lhs rhs ctx
     let rawExpl := egraph.run req
+    withTraceNode `egg.explanation (fun _ => return "Subexplanation") do trace[egg.explanation] rawExpl.str
     if rawExpl.str.isEmpty then return none
     let expl ← rawExpl.parse
     let proof ← expl.proof rws egraph ctx
-    proof.prove { lhs, rhs, rel := .eq }
+    -- `EGraph.run` proves `(lhs = rhs) = True`, so we still need to convert that to a proof of
+    -- `lhs = rhs`.
+    mkOfEqTrue <| ← proof.prove { lhs := ← mkEq lhs rhs, rhs := .const ``True [], rel := .eq }
 
   synthLingeringTcErasureMVars (e : Expr) : MetaM Unit := do
     let mvars := (← instantiateMVars e).collectMVars {} |>.result

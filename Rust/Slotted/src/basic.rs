@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use slotted_egraphs::*;
 use crate::result::*;
 use crate::analysis::*;

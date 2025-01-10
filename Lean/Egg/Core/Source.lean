@@ -58,6 +58,7 @@ inductive Source where
   | explicit (idx : Nat) (eqn? : Option Nat)
   | star (id : FVarId)
   | reifiedEq
+  | factAnd
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos) (depth : Nat)
   | tcSpec (src : Source) (spec : Source.TcSpec)
   | nestedSplit (src : Source) (dir : Direction)
@@ -125,6 +126,7 @@ def description : Source → String
   | explicit idx (some eqn) => s!"#{idx}/{eqn}"
   | star id                 => s!"*{id.uniqueIdx!}"
   | reifiedEq               => "="
+  | factAnd                 => "∧"
   | tcProj src loc pos dep  => s!"{src.description}[{loc.description}{pos.asNat},{dep}]"
   | tcSpec src spec         => s!"{src.description}<{spec.description}>"
   | nestedSplit src dir     => s!"{src.description}⁅{dir.description}⁆"
@@ -163,3 +165,7 @@ def isSubst : Source → Bool
 def involvesBinders : Source → Bool
   | subst _ | shift _ | eta _ | beta => true
   | _                                => false
+
+def isReifiedEq : Source → Bool
+  | reifiedEq => true
+  | _         => false

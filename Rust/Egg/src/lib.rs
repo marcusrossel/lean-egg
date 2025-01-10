@@ -236,18 +236,22 @@ pub unsafe extern "C" fn egg_query_equiv(
     goal_str_ptr: *const c_char
 ) -> *const c_char {
     let egraph = egraph.as_mut().unwrap();
-    let init = c_str_to_string(init_str_ptr).parse().unwrap();
-    let goal = c_str_to_string(goal_str_ptr).parse().unwrap();
-    let init_id = egraph.add_expr(&init);
-    let goal_id = egraph.add_expr(&goal);
+    let init = c_str_to_string(init_str_ptr);
+    let goal = c_str_to_string(goal_str_ptr);
 
-    if egraph.find(init_id) == egraph.find(goal_id) {
-        let mut expl = egraph.explain_equivalence(&init, &goal);
-        let expl_str = expl.get_flat_string();
-        string_to_c_str(expl_str)
-    } else {
-        string_to_c_str("".to_string())
+    let eq_expr = format!("(= {} {})", init, goal).parse().unwrap();
+    let true_expr = "(const \"True\")".parse().unwrap();
+    let true_id = egraph.lookup_expr(&true_expr).unwrap();
+    
+    if let Some(eq_id) = egraph.lookup_expr(&eq_expr) {
+        if egraph.find(true_id) == egraph.find(eq_id) {
+            let mut expl = egraph.explain_equivalence(&eq_expr, &true_expr);
+            let expl_str = expl.get_flat_string();
+            return string_to_c_str(expl_str)        
+        }
     }
+    
+    string_to_c_str("".to_string())
 }
 
 #[no_mangle]

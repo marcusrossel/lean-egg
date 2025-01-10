@@ -88,7 +88,7 @@ impl CRewritesArray {
             let conds: Vec<_> = conds_strs.iter().map(|cond| Pattern::parse(cond).expect("Failed to parse condition")).collect();
 
             if rw.dirs == RewriteDirections::Forward || rw.dirs == RewriteDirections::Both {
-                res.push(RewriteTemplate { name: name_str.to_string(), lhs: lhs.clone(), rhs: rhs.clone(), conds: conds.clone() })
+                res.push(RewriteTemplate { name: name_str.to_string(), lhs: lhs.clone(), rhs: rhs.clone(), _conds: conds.clone() })
             }
             if rw.dirs == RewriteDirections::Backward || rw.dirs == RewriteDirections::Both {
                 // It is important that we use the "-rev" suffix for reverse rules here, as this is also
@@ -96,7 +96,7 @@ impl CRewritesArray {
                 // If we choose another naming scheme, egg may complain about duplicate rules when 
                 // `rw.dir == RewriteDirection::Both`. This is the case, for example, for the rewrite
                 // `?a + ?b = ?b + ?a`.
-                res.push(RewriteTemplate { name: format!("{name_str}-rev"), lhs: rhs, rhs: lhs, conds })
+                res.push(RewriteTemplate { name: format!("{name_str}-rev"), lhs: rhs, rhs: lhs, _conds: conds })
             }
         }
         Ok(res)

@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::collections::HashSet;
 use slotted_egraphs::*;
 use crate::result::*;
@@ -9,7 +8,7 @@ pub struct RewriteTemplate {
     pub name:  String,
     pub lhs:   Pattern<LeanExpr>,
     pub rhs:   Pattern<LeanExpr>,
-    pub conds: Vec<Pattern<LeanExpr>>
+    pub _conds: Vec<Pattern<LeanExpr>>
 }
 
 fn slots_for_node(e: &LeanExpr) -> HashSet<Slot> {
@@ -44,7 +43,7 @@ fn subst_is_valid(subst: &Subst, illegal_slots: &HashSet<Slot>) -> bool {
 }
 
 pub fn templates_to_rewrites(
-    templates: Vec<RewriteTemplate>, allow_unsat_conditions: bool
+    templates: Vec<RewriteTemplate>, _allow_unsat_conditions: bool
 ) -> Res<Vec<LeanRewrite>> {
     let mut result: Vec<LeanRewrite> = vec![];
     for template in templates {
@@ -66,15 +65,9 @@ pub fn templates_to_rewrites(
                     // Disallows rewriting on primitive e-nodes.
                     if analysis.is_primitive { continue }
 
-                    let mut rule = template.name.clone();
-                    
-                    for cond in template.conds.clone() {
-                        let id = pattern_subst(graph, &cond, &subst);
-                        
-                        // TODO: Handle conditions.
-                    }
-
-                    graph.union_instantiations(&template.lhs, &template.rhs, &subst, Some(rule));
+                    // TODO: Handle conditions.
+                
+                    graph.union_instantiations(&template.lhs, &template.rhs, &subst, Some(template.name.clone()));
                 }
             }),
         };
