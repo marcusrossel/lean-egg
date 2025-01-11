@@ -82,6 +82,7 @@ inductive Result.StopReason where
   | iterationLimit
   | nodeLimit
   | other
+  deriving Inhabited
 
 def Result.StopReason.description : StopReason → String
   | saturated      => "saturated"
@@ -92,18 +93,33 @@ def Result.StopReason.description : StopReason → String
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 structure Result.Report where
-  iterations:  Nat
-  stopReason:  StopReason
-  nodeCount:   Nat
-  classCount:  Nat
-  time:        Float
-  rwStats:     String
+  iterations: Nat
+  stopReason: StopReason
+  reasonMsg:  String
+  nodeCount:  Nat
+  classCount: Nat
+  time:       Float
+  rwStats:    String
+  deriving Inhabited
+
+-- IMPORTANT: The C interface to egg depends on the order of these constructors.
+private inductive Explanation.Kind.Raw where
+  | none
+  | sameEClass
+  | eqTrue
+  deriving Inhabited
+
+private def Explanation.Kind.Raw.toKind? : Raw → Option Explanation.Kind
+  | none       => Option.none
+  | sameEClass => some .sameEClass
+  | eqTrue     => some .eqTrue
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
-private structure Result.Raw where
+structure Result.Raw where
+  kind    : Explanation.Kind.Raw
   expl    : String
   egraph? : Option EGraph.Obj
-  report? : Option Report
+  report  : Report
   deriving Inhabited
 
 @[extern "run_eqsat_request"]
@@ -115,7 +131,7 @@ structure Result where
   report : Result.Report
 
 inductive Failure where
-  | backend
+  | backend (msg : String)
   | explLength (len : Nat)
 
 def run
@@ -123,18 +139,10 @@ def run
     MetaM Result := do
   let raw ← runRaw req
   withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] raw.expl
-  if "⚡️".isPrefixOf raw.expl then
-    throwError s!"egg backend failed:\n  {raw.expl}"
-  else
-    let some report := raw.report? | throwError "egg: internal error: report is absent"
-    if raw.expl.isEmpty then
-      throwError ← onFail report .backend
-    else
-      let explLength := raw.expl.lineCount
-      if explLength > explLengthLimit then
-        throwError ← onFail report (.explLength explLength)
-      else
-        let some obj := raw.egraph? | throwError "egg: internal error: e-graph is absent"
-        let egraph := { obj, slotted := req.cfg.slotted }
-        let expl ← Explanation.Raw.parse { str := raw.expl, slotted := req.cfg.slotted }
-        return { expl, egraph, report }
+  let some kind := raw.kind.toKind? | throwError ← onFail raw.report (.backend raw.expl)
+  let explLength := raw.expl.lineCount
+  unless explLength <= explLengthLimit do throwError ← onFail raw.report (.explLength explLength)
+  let some obj := raw.egraph? | throwError "egg: internal error: e-graph is absent"
+  let egraph := { obj, slotted := req.cfg.slotted }
+  let expl ← Explanation.Raw.parse { kind, str := raw.expl, slotted := req.cfg.slotted }
+  return { expl, egraph, report := raw.report }

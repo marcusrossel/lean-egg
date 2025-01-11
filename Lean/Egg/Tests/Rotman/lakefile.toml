@@ -4,9 +4,9 @@ keywords = ["math"]
 defaultTargets = ["Rotman"]
 
 [[require]]
-name    = "mathlib"
-scope   = "leanprover-community"
-version = "git#v4.14.0-rc1"
+name  = "mathlib"
+scope = "leanprover-community"
+rev   = "v4.15.0"
 
 [[require]]
 name = "egg"

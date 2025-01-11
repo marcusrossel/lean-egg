@@ -42,8 +42,6 @@ set_option egg.genTcProjRws false in
 example (h : (a = b) ↔ (c = d)) : 0 = 0 := by
   egg [h]
 
-/-- error: egg failed to prove the goal (saturated) -/
-#guard_msgs in
 set_option egg.genNestedSplits false in
 example (h₁ : (a = b) ↔ (c = d)) (h₂ : a = b) : c = d := by
   egg [h₁, h₂]

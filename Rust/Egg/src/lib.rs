@@ -1,9 +1,9 @@
 use analysis::LeanEGraph;
 use egg::*;
+use expl::{mk_explanation, ExplanationKind};
 use lean_expr::LeanExpr;
 use util::sub_expr;
 use std::ffi::{c_char, CStr, CString, c_void};
-use std::ptr::null;
 use libc::c_double;
 use std::str::FromStr;
 use basic::*;
@@ -17,6 +17,7 @@ mod bvar_correction;
 mod eta;
 mod lean_expr;
 mod levels;
+mod expl;
 mod nat_lit;
 mod result;
 mod rewrite;
@@ -140,54 +141,59 @@ pub enum CStopReason {
 
 impl CStopReason {
 
-    fn from_stop_reason(r: StopReason) -> CStopReason {
+    fn from_stop_reason(r: StopReason) -> (CStopReason, String) {
         match r {
-            StopReason::Saturated         => CStopReason::Saturated,
-            StopReason::IterationLimit(_) => CStopReason::IterationLimit,
-            StopReason::NodeLimit(_)      => CStopReason::NodeLimit,
-            StopReason::TimeLimit(_)      => CStopReason::TimeLimit,
-            StopReason::Other(_)          => CStopReason::Other,
+            StopReason::Saturated         => (CStopReason::Saturated, "".to_string()),
+            StopReason::IterationLimit(_) => (CStopReason::IterationLimit, "".to_string()),
+            StopReason::NodeLimit(_)      => (CStopReason::NodeLimit, "".to_string()),
+            StopReason::TimeLimit(_)      => (CStopReason::TimeLimit, "".to_string()),
+            StopReason::Other(msg)        => (CStopReason::Other, msg),
         }
     }
 }
 
 #[repr(C)]
 pub struct CReport {
-    iterations:     usize,
-    stop_reason:    CStopReason,
-    egraph_nodes:   usize,
-    egraph_classes: usize,
-    total_time:     c_double,
-    rw_stats:       *const c_char,
+    iterations:      usize,
+    stop_reason:     CStopReason,
+    stop_reason_msg: *const c_char,
+    egraph_nodes:    usize,
+    egraph_classes:  usize,
+    total_time:      c_double,
+    rw_stats:        *const c_char,
 }
 
 impl CReport {
 
     fn from_report(r: Report, rw_stats: String) -> CReport {
+        let (stop_reason, msg) = CStopReason::from_stop_reason(r.stop_reason);
         CReport {
-            iterations:     r.iterations,
-            stop_reason:    CStopReason::from_stop_reason(r.stop_reason),
-            egraph_nodes:   r.egraph_nodes,
-            egraph_classes: r.egraph_classes,
-            total_time:     r.total_time,
-            rw_stats:       string_to_c_str(rw_stats),
+            iterations:      r.iterations,
+            stop_reason:     stop_reason,
+            stop_reason_msg: string_to_c_str(msg),
+            egraph_nodes:    r.egraph_nodes,
+            egraph_classes:  r.egraph_classes,
+            total_time:      r.total_time,
+            rw_stats:        string_to_c_str(rw_stats),
         }
     }
 
-    fn none() -> CReport {
+    fn from_other_stop_reason(msg: String) -> CReport {
         CReport {
-            iterations:     0,
-            stop_reason:    CStopReason::Other,
-            egraph_nodes:   0,
-            egraph_classes: 0,
-            total_time:     0.0,
-            rw_stats:       null(),
+            iterations:      0,
+            stop_reason:     CStopReason::Other,
+            stop_reason_msg: string_to_c_str(msg),
+            egraph_nodes:    0,
+            egraph_classes:  0,
+            total_time:      0.0,
+            rw_stats:        string_to_c_str("".to_string()),
         }
     }
 }
 
 #[repr(C)]
 pub struct EqsatResult {
+    kind: ExplanationKind,
     expl: *const c_char,
     graph: Option<Box<LeanEGraph>>,
     report: CReport
@@ -209,7 +215,12 @@ pub extern "C" fn egg_explain_congr(
     
     let rw_templates = rws.to_templates();
     if let Err(rws_err) = rw_templates { 
-        return EqsatResult { expl: string_to_c_str(rws_err.to_string()), graph: None, report: CReport::none() }
+        return EqsatResult { 
+            kind: ExplanationKind::None, 
+            expl: string_to_c_str(rws_err.to_string()), 
+            graph: None, 
+            report: CReport::from_other_stop_reason(rws_err.to_string()) 
+        }
     }
     let rw_templates = rw_templates.unwrap();
 
@@ -218,11 +229,17 @@ pub extern "C" fn egg_explain_congr(
 
     let res = explain_congr(init, goal, rw_templates, guides, cfg, viz_path, env);
     if let Err(res_err) = res {
-        return EqsatResult { expl: string_to_c_str(res_err.to_string()), graph: None, report: CReport::none() }
+        return EqsatResult { 
+            kind: ExplanationKind::None, 
+            expl: string_to_c_str(res_err.to_string()), 
+            graph: None, 
+            report: CReport::from_other_stop_reason(res_err.to_string()) 
+        }
     }
-    let ExplainedCongr { expl, egraph, report, rw_stats } = res.unwrap();
+    let ExplainedCongr { kind, expl, egraph, report, rw_stats } = res.unwrap();
 
-    return EqsatResult {
+    EqsatResult {
+        kind,
         expl: string_to_c_str(expl),
         graph: Some(Box::new(egraph)),
         report: CReport::from_report(report, rw_stats) 
@@ -234,24 +251,25 @@ pub unsafe extern "C" fn egg_query_equiv(
     egraph: *mut LeanEGraph,
     init_str_ptr: *const c_char, 
     goal_str_ptr: *const c_char
-) -> *const c_char {
-    let egraph = egraph.as_mut().unwrap();
-    let init = c_str_to_string(init_str_ptr);
-    let goal = c_str_to_string(goal_str_ptr);
+) -> EqsatResult {
+    let egraph    = egraph.as_mut().unwrap();
+    let init_expr = c_str_to_string(init_str_ptr).parse().unwrap();
+    let goal_expr = c_str_to_string(goal_str_ptr).parse().unwrap();
+    let kind: ExplanationKind;
+    let expl: String;
 
-    let eq_expr = format!("(= {} {})", init, goal).parse().unwrap();
-    let true_expr = "(const \"True\")".parse().unwrap();
-    let true_id = egraph.lookup_expr(&true_expr).unwrap();
-    
-    if let Some(eq_id) = egraph.lookup_expr(&eq_expr) {
-        if egraph.find(true_id) == egraph.find(eq_id) {
-            let mut expl = egraph.explain_equivalence(&eq_expr, &true_expr);
-            let expl_str = expl.get_flat_string();
-            return string_to_c_str(expl_str)        
-        }
+    if let (Some(init_id), Some(goal_id)) = (egraph.lookup_expr(&init_expr), egraph.lookup_expr(&goal_expr)) {
+        (kind, expl) = mk_explanation(egraph, init_expr, goal_expr, init_id, goal_id);
+    } else {
+        (kind, expl) = (ExplanationKind::None, "".to_string());
     }
-    
-    string_to_c_str("".to_string())
+
+    EqsatResult {
+        kind,
+        expl: string_to_c_str(expl),
+        graph: None,
+        report: CReport::from_other_stop_reason("".to_string())
+    }
 }
 
 #[no_mangle]

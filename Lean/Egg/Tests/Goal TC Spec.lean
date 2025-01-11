@@ -6,11 +6,11 @@ class CommAdd (α) extends Add α where
 instance : CommAdd Nat where
   comm := Nat.add_comm
 
-/-- error: egg failed to prove the goal (saturated) -/
-#guard_msgs in
 set_option egg.genGoalTcSpec false in
 example (a : Nat) : a + b = b + a := by
-  egg [CommAdd.comm]
+  -- TODO: What is the role of type class specialization now that we have type class instance
+  --       erasure?
+  fail_if_success egg [CommAdd.comm]
 
 set_option egg.genGoalTcSpec true in
 example (a : Nat) : a + b = b + a := by

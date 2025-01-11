@@ -10,8 +10,7 @@ axiom beq_ext {α : Type _} (inst1 : BEq α) (inst2 : BEq α)
 open Classical in
 axiom beq_eq_decide {α : Type _} [BEq α] [LawfulBEq α] {a b : α} : (a == b) = decide (a = b)
 
-/-- error: egg failed to prove the goal (saturated) -/
-#guard_msgs in
+-- BUG:
 theorem lawful_beq_subsingleton
     {α : Type _} (inst1 : BEq α) (inst2 : BEq α) [@LawfulBEq α inst1] [@LawfulBEq α inst2] :
     inst1 = inst2 := by

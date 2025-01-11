@@ -38,7 +38,7 @@ structure Proof where
   steps    : Array Proof.Step
   subgoals : Proof.Subgoals
 
-def Proof.prove (prf : Proof) (cgr : Congr) : MetaM Expr := do
+private def Proof.prove (prf : Proof) (cgr : Congr) : MetaM Expr := do
   let some first := prf.steps[0]? | return (← cgr.rel.mkRefl cgr.lhs)
   unless ← isDefEq first.lhs cgr.lhs do fail "initial expression is not defeq to lhs of proof goal"
   let mut proof := first.proof
@@ -52,7 +52,9 @@ where
   fail (msg : String) : MetaM Unit := do
     throwError s!"egg failed to build proof: {msg}"
 
-partial def Explanation.proof
+mutual
+
+private partial def Explanation.proof
     (expl : Explanation) (rws : Rewrites) (egraph : EGraph) (ctx : EncodingCtx) :
     MetaM Proof := do
   let mut current := expl.start
@@ -195,14 +197,10 @@ where
 
   mkSubproof (lhs rhs : Expr) : MetaM (Option Expr) := do
     let req ← Request.Equiv.encoding lhs rhs ctx
-    let rawExpl := egraph.run req
+    let some rawExpl := egraph.run req | return none
     withTraceNode `egg.explanation (fun _ => return "Subexplanation") do trace[egg.explanation] rawExpl.str
-    if rawExpl.str.isEmpty then return none
     let expl ← rawExpl.parse
-    let proof ← expl.proof rws egraph ctx
-    -- `EGraph.run` proves `(lhs = rhs) = True`, so we still need to convert that to a proof of
-    -- `lhs = rhs`.
-    mkOfEqTrue <| ← proof.prove { lhs := ← mkEq lhs rhs, rhs := .const ``True [], rel := .eq }
+    expl.prove { lhs, rhs, rel := .eq } rws egraph ctx
 
   synthLingeringTcErasureMVars (e : Expr) : MetaM Unit := do
     let mvars := (← instantiateMVars e).collectMVars {} |>.result
@@ -216,3 +214,21 @@ where
       let some inst := inst? | continue
       unless ← isDefEq (.mvar mvar) inst do
         throwError "egg: internal error in 'Egg.Proof.Explanation.proof.synthLingeringTcErasureMVars'"
+
+partial def Explanation.prove'
+    (expl : Explanation) (cgr : Congr) (rws : Rewrites) (egraph : EGraph) (ctx : EncodingCtx) :
+    MetaM (Expr × Proof) := do
+  let proof ← expl.proof rws egraph ctx
+  match expl.kind with
+  | .sameEClass => return (← proof.prove cgr, proof)
+  | .eqTrue =>
+    let eqTrueCgr : Congr := { lhs := ← cgr.expr, rhs := .const ``True [], rel := .eq }
+    let p ← proof.prove eqTrueCgr
+    return (← mkOfEqTrue p, proof)
+
+partial def Explanation.prove
+    (expl : Explanation) (cgr : Congr) (rws : Rewrites) (egraph : EGraph) (ctx : EncodingCtx) :
+    MetaM Expr :=
+  Prod.fst <$> expl.prove' cgr rws egraph ctx
+
+end

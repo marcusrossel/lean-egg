@@ -21,9 +21,9 @@ private inductive Proof? where
 private def resultToProof
     (result : Request.Result) (goal : Goal) (rws : Rewrites) (ctx : EncodingCtx)
     (retryWithShapes : Bool) : TacticM Proof? := do
-  let proof ←
+  let mut (proof, steps) ←
     try
-      result.expl.proof rws result.egraph ctx
+      result.expl.prove' goal.toCongr rws result.egraph ctx
     catch err =>
       -- If proof reconstruction fails but we haven't tried using shapes yet, retry with shapes
       -- (assuming the correcspoding option is enabled).
@@ -32,14 +32,13 @@ private def resultToProof
         throw err
       else
         return .retryWithShapes
-  proof.trace `egg.proof
-  let mut prf ← proof.prove goal.toCongr
-  prf ← instantiateMVars prf
-  withTraceNode `egg.proof.term (fun _ => return "Proof Term") do trace[egg.proof.term] prf
-  catchLooseMVars prf ctx.amb proof.subgoals
+  steps.trace `egg.proof
+  proof ← instantiateMVars proof
+  withTraceNode `egg.proof.term (fun _ => return "Proof Term") do trace[egg.proof.term] proof
+  catchLooseMVars proof ctx.amb steps.subgoals
   -- TODO: These mvars have the wrong depth.
-  appendGoals proof.subgoals
-  return .proof prf
+  appendGoals steps.subgoals
+  return .proof proof
 where
   catchLooseMVars (prf : Expr) (amb : MVars.Ambient) (subgoals : List MVarId) : MetaM Unit := do
     let mvars ← MVars.collect prf ∅
@@ -101,8 +100,11 @@ where
     | .retryWithShapes => runEqSat goal rws guides { cfg with shapes := true } amb
   onEqSatFailure (cfg : Config) (goalContainsBinder : Bool) (report : Request.Result.Report) :
       Request.Failure → MetaM MessageData
-    | .backend => do
-      let msg := s!"egg failed to prove the goal ({report.stopReason.description}) "
+    | .backend msg? => do
+      let mut msg := msg?
+      if msg.isEmpty then
+        let reasonMsg := if report.reasonMsg.isEmpty then "" else s!": {report.reasonMsg}"
+        msg := s!"egg failed to prove the goal ({report.stopReason.description}{reasonMsg}) "
       unless cfg.reporting do return msg
       return msg ++ formatReport cfg.flattenReports report (goalContainsBinder := goalContainsBinder)
     | .explLength len => do

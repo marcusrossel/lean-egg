@@ -170,7 +170,7 @@ where
 
 end Slotted
 
-def parseSlottedExpl : (TSyntax `slotted_expl) → MetaM Explanation
+def parseSlottedExpl : (TSyntax `slotted_expl) → MetaM Explanation.Steps
   | `(slotted_expl|$steps:slotted_expr*) => do
     let some start := steps[0]? | throwError ParseError.noSteps
     let .ok (start, none) := Slotted.parseExpr start | throwError ParseError.startContainsRw

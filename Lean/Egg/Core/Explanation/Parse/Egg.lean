@@ -156,7 +156,7 @@ where
     set <| some { info with dir, pos? := pos : Rewrite.Info }
     go pos body
 
-def parseEggExpl : (TSyntax `egg_expl) → MetaM Explanation
+def parseEggExpl : (TSyntax `egg_expl) → MetaM Explanation.Steps
   | `(egg_expl|$steps:egg_expr*) => do
     let some start := steps[0]? | throwError ParseError.noSteps
     let .ok (start, none) := parseExpr start | throwError ParseError.startContainsRw

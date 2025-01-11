@@ -23,10 +23,10 @@ str_array str_array_from_lean_obj(lean_obj_arg strs) {
 }
 
 typedef enum rw_dirs {
-  NONE,
-  FORWARD,
-  BACKWARD,
-  BOTH
+  RW_DIR_NONE,
+  RW_DIR_FORWARD,
+  RW_DIR_BACKWARD,
+  RW_DIR_BOTH
 } rw_dirs;
 
 typedef struct rewrite {
@@ -170,18 +170,37 @@ uint8_t stop_reason_to_lean(stop_reason reason) {
 }
 
 /*
+inductive Explanation.Kind where
+  | none
+  | sameEClass
+  | eqTrue
+*/
+
+typedef enum expl_kind {
+    EXPL_KIND_NONE,
+    EXPL_KIND_SAME_ECLASS,
+    EXPL_KIND_EQ_TRUE
+} expl_kind;
+
+uint8_t expl_kind_to_lean(expl_kind kind) {
+    return (uint8_t)kind;
+}
+
+/*
 structure Report where
-  iterations:  Nat
-  stopReason:  StopReason
-  nodeCount:   Nat
-  classCount:  Nat
-  time:        Float
-  rwStats:     String
+  iterations: Nat
+  stopReason: StopReason
+  reasonMsg:  String
+  nodeCount:  Nat
+  classCount: Nat
+  time:       Float
+  rwStats:    String
 */
 
 typedef struct report {
     size_t      iterations;
     stop_reason reason;
+    char*       reason_msg;
     size_t      node_count;
     size_t      class_count;
     double      time;
@@ -189,13 +208,14 @@ typedef struct report {
 } report;
 
 lean_obj_res report_to_lean(report rep) {
-    lean_object* r = lean_alloc_ctor(0, 4, sizeof(double) + sizeof(uint8_t));
-    size_t obj_offset = 4 * sizeof(void*);
+    lean_object* r = lean_alloc_ctor(0, 5, sizeof(double) + sizeof(uint8_t));
+    size_t obj_offset = 5 * sizeof(void*);
 
     lean_ctor_set(r, 0, lean_box(rep.iterations));
-    lean_ctor_set(r, 1, lean_box(rep.node_count));
-    lean_ctor_set(r, 2, lean_box(rep.class_count));
-    lean_ctor_set(r, 3, lean_mk_string(rep.rw_stats));
+    lean_ctor_set(r, 1, lean_mk_string(rep.reason_msg));
+    lean_ctor_set(r, 2, lean_box(rep.node_count));
+    lean_ctor_set(r, 3, lean_box(rep.class_count));
+    lean_ctor_set(r, 4, lean_mk_string(rep.rw_stats));
     lean_ctor_set_float(r, obj_offset, rep.time);
     lean_ctor_set_uint8(r, obj_offset + sizeof(double), stop_reason_to_lean(rep.reason));
 
@@ -250,6 +270,7 @@ slotted_egraph to_slotted_egraph(b_lean_obj_arg e) {
 }
 
 typedef struct egg_result {
+    expl_kind kind;
     char* expl;
     egg_egraph graph;
     report rep;
@@ -276,7 +297,8 @@ lean_object* egraph_to_lean(egraph e, _Bool slotted) {
 
 typedef struct eqsat_result {
     _Bool slotted;
-    char* expl;
+    expl_kind kind;
+    const char* expl;
     egraph graph;
     report rep;
 } eqsat_result;
@@ -322,6 +344,7 @@ eqsat_result run_eqsat_request_core(lean_obj_arg req, env* e) {
         slotted_result res = slotted_explain_congr(lhs, rhs, rws, guides, cfg.rust_config, viz_path);
         result = (eqsat_result) {
             .slotted = true,
+            .kind    = EXPL_KIND_SAME_ECLASS,
             .expl    = res.expl,
             .graph   = { .slotted = res.graph },
             .rep     = res.rep,
@@ -330,6 +353,7 @@ eqsat_result run_eqsat_request_core(lean_obj_arg req, env* e) {
         egg_result res = egg_explain_congr(lhs, rhs, rws, guides, cfg.rust_config, viz_path, e);
         result = (eqsat_result) {
             .slotted = false,
+            .kind    = res.kind,
             .expl    = res.expl,
             .graph   = { .egg = res.graph },
             .rep     = res.rep,
@@ -345,44 +369,40 @@ eqsat_result run_eqsat_request_core(lean_obj_arg req, env* e) {
 
 /*
 structure Result.Raw where
+  kind    : Explanation.Kind.Raw
   expl    : String
   egraph? : Option EGraph
-  report? : Option Report
+  report  : Report
 */
-lean_obj_res run_eqsat_request_impl(lean_obj_arg req, env* e) {
-    eqsat_result result = run_eqsat_request_core(req, e);
-    lean_object* expl   = lean_mk_string(result.expl);
-    lean_object* graph  = egraph_to_lean(result.graph, result.slotted);
-    lean_object* rep    = report_to_lean(result.rep);
+lean_obj_res eqsat_result_to_lean(eqsat_result result) {
+    uint8_t kind       = expl_kind_to_lean(result.kind);
+    lean_object* expl  = lean_mk_string(result.expl);
+    lean_object* graph = egraph_to_lean(result.graph, result.slotted);
+    lean_object* rep   = report_to_lean(result.rep);
 
-    lean_object* lean_result = lean_alloc_ctor(0, 3, 0);
+    lean_object* lean_result = lean_alloc_ctor(0, 3, sizeof(uint8_t));
     lean_ctor_set(lean_result, 0, expl);
+    lean_ctor_set(lean_result, 2, rep);
+
+    unsigned scalar_base_offset = lean_ctor_num_objs(lean_result) * sizeof(void*);
+    lean_ctor_set_uint8(lean_result, scalar_base_offset + 0, kind);
 
     if (graph == NULL) {
         lean_object* option_nil = lean_alloc_ctor(0, 0, 0); // Option.nil
         lean_ctor_set(lean_result, 1, option_nil);
-        lean_ctor_set(lean_result, 2, option_nil);
     } else {
         lean_object* some_graph = lean_alloc_ctor(1, 1, 0); // Option.some
-        lean_object* some_report = lean_alloc_ctor(1, 1, 0); // Option.some
         lean_ctor_set(some_graph, 0, graph);
-        lean_ctor_set(some_report, 0, rep);
         lean_ctor_set(lean_result, 1, some_graph);
-        lean_ctor_set(lean_result, 2, some_report);
     }
 
     return lean_result;
 }
 
 lean_obj_res run_eqsat_request(lean_obj_arg req, lean_obj_arg x1, lean_obj_arg x2, lean_obj_arg x3, lean_obj_arg x4, lean_obj_arg x5) {
-    env e = {
-        .x1 = x1,
-        .x2 = x2,
-        .x3 = x3,
-        .x4 = x4,
-        .x5 = x5,
-    };
-    lean_object* res = run_eqsat_request_impl(req, &e);
+    env e = { .x1 = x1, .x2 = x2, .x3 = x3, .x4 = x4, .x5 = x5 };
+    eqsat_result result = run_eqsat_request_core(req, &e);
+    lean_object* res = eqsat_result_to_lean(result);
     // TODO: We should construct an error here if any `is_synthable` call fails.
     //       Cf. the comment in `rev_ffi.c`.
     lean_object* metam_state = lean_alloc_ctor(0, 2, 0);
@@ -391,7 +411,7 @@ lean_obj_res run_eqsat_request(lean_obj_arg req, lean_obj_arg x1, lean_obj_arg x
     return metam_state;
 }
 
-extern const char* egg_query_equiv(
+extern eqsat_result egg_query_equiv(
     egg_egraph graph,
     const char* init, 
     const char* goal
@@ -409,9 +429,12 @@ lean_obj_res explain_equiv(b_lean_obj_arg graph, uint8_t slotted, lean_obj_arg i
     
     if (slotted != 0) {
         slotted_egraph graph_c = to_slotted_egraph(graph);
-        return lean_mk_string(slotted_query_equiv(graph_c, init_c, goal_c));
+        const char* expl = slotted_query_equiv(graph_c, init_c, goal_c);
+        eqsat_result res = (eqsat_result) { .slotted = true, .expl = expl, .graph = NULL, .rep = 0 };
+        return eqsat_result_to_lean(res);
     } else {
         egg_egraph graph_c = to_egg_egraph(graph);
-        return lean_mk_string(egg_query_equiv(graph_c, init_c, goal_c));
+        eqsat_result result = egg_query_equiv(graph_c, init_c, goal_c);
+        return eqsat_result_to_lean(result);
     }
 }

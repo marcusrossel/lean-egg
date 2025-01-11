@@ -36,7 +36,7 @@ def Rel.mkMPR (proof : Expr) : Rel → MetaM Expr
 def expr (cgr : Congr) : MetaM Expr := do
   match cgr.rel with
   | .eq  => mkEq cgr.lhs cgr.rhs
-  | .iff => return mkAppN (.const `Iff []) #[cgr.lhs, cgr.rhs]
+  | .iff => return mkIff cgr.lhs cgr.rhs
 
 -- Since `=` and `↔` are not heterogeneous, we assume `lhs` and `rhs` to have the same type.
 def type (cgr : Congr) : MetaM Expr :=
