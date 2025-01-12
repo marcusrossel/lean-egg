@@ -97,22 +97,22 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] LHS MVars
           [?x: [.unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?x: [.unconditionallyVisible], ?y: [.unconditionallyVisible]]
+          [?y: [.unconditionallyVisible], ?x: [.unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (2)
     [egg.rewrites] #0💥→[3](⇔)
-      [egg.rewrites] f ?m.243 ?m.243 = f a ?m.243
+      [egg.rewrites] f ?m.231 ?m.231 = f a ?m.231
       [egg.rewrites] LHS MVars
-          [?m.243: [.unconditionallyVisible]]
+          [?m.231: [.unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m.243: [.unconditionallyVisible]]
+          [?m.231: [.unconditionallyVisible]]
     [egg.rewrites] #0💥→[4](⇔)
-      [egg.rewrites] f ?m.252 ?m.252 = f b ?m.252
+      [egg.rewrites] f ?m.240 ?m.240 = f b ?m.240
       [egg.rewrites] LHS MVars
-          [?m.252: [.unconditionallyVisible]]
+          [?m.240: [.unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m.252: [.unconditionallyVisible]]
+          [?m.240: [.unconditionallyVisible]]
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
 -/

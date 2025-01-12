@@ -125,12 +125,6 @@ where
         }
     return conds
 
-def isConditional (rw : Rewrite) : Bool :=
-  !rw.conds.isEmpty
-
-def isGroundEq (rw : Rewrite) : Bool :=
-  rw.conds.isEmpty && rw.mvars.lhs.isEmpty && rw.mvars.rhs.isEmpty
-
 def validDirs (rw : Rewrite) (cfg : Config.Erasure) : Directions :=
   -- MVars appearing in propositional conditions are definitely going to be part of the rewrite's
   -- LHS, so they can (and should be) ignored when computing valid directions.

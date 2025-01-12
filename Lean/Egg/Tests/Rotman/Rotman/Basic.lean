@@ -8,7 +8,10 @@ notation:100 r "¡" => Real.Gamma (r + 1)
 
 open Nat
 
-set_option egg.eraseTCInstances true
+-- TODO: If we don't seal `Ne` then fact `h₃` in the first `egg` call below is reduced to `_ = _ → `
+--       by `forallMetaTelescopeReducing`. Should we only telescope into reducible defs and not
+--       semireducible ones?
+seal Not
 
 theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! * (n - r)!) := by
   induction n generalizing r
@@ -41,7 +44,7 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
     have h₆ : (n : Real) + 1 ≠ 0      := by rw [←cast_one, ←cast_add, cast_ne_zero]; omega
 
     calc (n + 1).choose r
-      _ = (n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!) := by egg [proposition_1_14, hi h₁, hi h₂, h₃]
+      _ = (n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!) := by egg [proposition_1_14, hi, h₁, h₂, h₃]
       _ = _ := Nat.cast_inj.mp <| by
         egg calc [toReal, fromReal, add_comm, sub_add_cancel, sub_add_eq_add_sub, mul_one, mul_comm, mul_assoc, mul_div_mul_left, _root_.div_mul_div_comm, _root_.add_div, div_mul_eq_div_mul_one_div, left_distrib, Real.Gamma_add_one, h₄, h₅, h₆]
           ↑((n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!))

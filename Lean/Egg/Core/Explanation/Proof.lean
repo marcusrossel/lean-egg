@@ -40,7 +40,8 @@ structure Proof where
 
 private def Proof.prove (prf : Proof) (cgr : Congr) : MetaM Expr := do
   let some first := prf.steps[0]? | return (← cgr.rel.mkRefl cgr.lhs)
-  unless ← isDefEq first.lhs cgr.lhs do fail "initial expression is not defeq to lhs of proof goal"
+  unless ← isDefEq first.lhs cgr.lhs do
+    fail s!"initial expression is not defeq to LHS of proof goal:\n\n  {first.lhs}\n\nvs\n\n  {cgr.lhs}"
   let mut proof := first.proof
   for step in prf.steps[1:] do
     if !step.rw.isRefl then proof ← mkEqTrans proof step.proof
