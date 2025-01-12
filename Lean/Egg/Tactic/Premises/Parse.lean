@@ -71,29 +71,45 @@ private instance : Append <| WithSyntax (Array α) where
     stxs  := ws₁.stxs ++ ws₂.stxs
   }
 
-private abbrev Premise.Mk  (α) := Expr → Expr → Source → TacticM α
-private abbrev Premise.Mk? (α) := Expr → Expr → Source → TacticM (Option α)
+private abbrev Premise.Mk  (α) := Expr → Expr → Source → TacticM (Array α)
+private abbrev Premise.Mk?     := Premise.Mk
 
-private def Premise.Mk.rewrite (stx : Syntax) (cfg : Rewrite.Config) : Premise.Mk Rewrite :=
+private def Premise.Mk.rewrites
+    (genGroundEqs : Bool) (stx : Syntax) (cfg : Rewrite.Config) : Premise.Mk Rewrite :=
   fun proof type src => do
-    (← Rewrite.from? proof type src cfg).getDM <|
-      throwErrorAt stx "egg requires premises to be (proofs of) propositions or (non-propositional) definitions"
+    let mut rws := #[]
+    let some rw ← Rewrite.from? proof type src cfg
+      | throwErrorAt stx "egg requires premises to be (proofs of) propositions or (non-propositional) definitions"
+    rws := rws.push rw
+    if genGroundEqs then
+      if let some eq ← Rewrite.mkGroundEq? proof type (.ground src) cfg then
+      rws := rws.push eq
+    return rws
 
-private def Premise.Mk?.rewrite (cfg : Rewrite.Config) : Premise.Mk? Rewrite :=
-  (Rewrite.from? · · · cfg)
+private def Premise.Mk?.rewrites
+    (genGroundEqs : Bool) (cfg : Rewrite.Config) : Premise.Mk? Rewrite :=
+  fun proof type src => do
+    let mut rws := #[]
+    if let some rw ← Rewrite.from? proof type src cfg then rws := rws.push rw
+    if genGroundEqs then
+      if let some eq ← Rewrite.mkGroundEq? proof type (.ground src) cfg then rws := rws.push eq
+    return rws
 
 private def Premises.explicit
     (prem : Term) (idx : Nat) (mk : Premise.Mk α) (mkSrc : Nat → Option Nat → Source) :
     TacticM <| WithSyntax (Array α) := do
   match ← Premise.Raw.elab prem with
-  | .single e type? => return { elems := #[(← make e type? none)], stxs := #[prem] }
+  | .single e type? =>
+    let prems ← make e type? none
+    return { elems := prems, stxs := ⟨List.replicate prems.size prem⟩ }
   | .eqns eqs =>
     let mut result : WithSyntax (Array α) := ∅
     for (val, ty) in eqs, eqnIdx in [:eqs.size] do
-      result := result.push (← make val ty eqnIdx) prem
+      for p in ← make val ty eqnIdx do
+        result := result.push p prem
     return result
 where
-  make (e : Expr) (ty? : Option Expr) (eqnIdx? : Option Nat) : TacticM α := do
+  make (e : Expr) (ty? : Option Expr) (eqnIdx? : Option Nat) : TacticM (Array α) := do
     let src := mkSrc idx eqnIdx?
     let ty := ty?.getD (← inferType e)
     mk e ty src
@@ -109,17 +125,20 @@ private def Premises.star (stx : Syntax) (mk : Premise.Mk? α) (mkSrc : FVarId �
   for decl in ← getLCtx do
     if decl.isImplementationDetail || decl.isAuxDecl then continue
     let src := mkSrc decl.fvarId
-    if let some prem ← mk decl.toExpr decl.type src then
+    for prem in ← mk decl.toExpr decl.type src do
       result := result.push prem stx
   return result
 
 structure Premises where
   rws : WithSyntax Rewrites := ∅
 
-def Premises.elab (cfg : Rewrite.Config) : (TSyntax `egg_premises) → TacticM Premises
+def Premises.elab
+    (cfg : Rewrite.Config) (genGroundEqs : Bool) : (TSyntax `egg_premises) → TacticM Premises
   | `(egg_premises|) => return {}
   | `(egg_premises|[$rws,*]) =>
-    return { rws := ← go rws (Premise.Mk.rewrite · cfg) (Premise.Mk?.rewrite cfg) .explicit .star }
+    let mk  := (Premise.Mk.rewrites genGroundEqs · cfg)
+    let mk? := Premise.Mk?.rewrites genGroundEqs cfg
+    return { rws := ← go rws mk mk? .explicit .star }
   | _ => throwUnsupportedSyntax
 where
   go {α} (prems : Array <| TSyntax `egg_premise) (mk : Syntax → Premise.Mk α) (mk? : Premise.Mk? α)
@@ -145,6 +164,6 @@ def Premises.elabTagged (prems : Array Name) (cfg : Rewrite.Config) : TacticM Re
 where
   taggedRw (prem : Name) (idx : Nat) : TacticM Rewrites := do
     let ident := mkIdent prem
-    let mk := Premise.Mk.rewrite ident cfg
+    let mk := Premise.Mk.rewrites (genGroundEqs := false) ident cfg
     let rws ← Premises.explicit ident idx mk .tagged
     return rws.elems

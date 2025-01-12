@@ -66,6 +66,7 @@ syntax "💥←[" num,* "]" : explosion_extension
 syntax basic_fwd_rw_src (noWs tc_extension)*        : fwd_rw_src
 syntax basic_fwd_rw_src noWs explosion_extension    : fwd_rw_src
 syntax basic_fwd_rw_src noWs nested_split_extension : fwd_rw_src
+syntax basic_fwd_rw_src noWs "↓"                    : fwd_rw_src
 syntax "↦bvar"                                      : fwd_rw_src
 syntax "↦app"                                       : fwd_rw_src
 syntax "↦λ"                                         : fwd_rw_src
@@ -206,6 +207,7 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
     .explosion (parseBasicFwdRwSrc src) .backward (idxs.getElems.map (·.getNat)).toList
   | `(fwd_rw_src|$src:basic_fwd_rw_src⁅→⁆) => .nestedSplit (parseBasicFwdRwSrc src) .forward
   | `(fwd_rw_src|$src:basic_fwd_rw_src⁅←⁆) => .nestedSplit (parseBasicFwdRwSrc src) .backward
+  | `(fwd_rw_src|$src:basic_fwd_rw_src↓)   => .ground (parseBasicFwdRwSrc src)
   | _ => unreachable!
 
 def parseRwSrc : (TSyntax `rw_src) → Rewrite.Descriptor

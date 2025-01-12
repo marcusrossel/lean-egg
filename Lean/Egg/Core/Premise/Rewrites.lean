@@ -74,7 +74,7 @@ instance : Coe Config Config.Normalization where
 instance : Coe Config Config.Erasure where
   coe := Config.toErasure
 
-partial def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
+def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
     MetaM (Option Rewrite) := do
   let type ← if normalize then Egg.normalize type cfg else pure type
   let mut (args, _, prop) ← withReducible do forallMetaTelescopeReducing type
@@ -82,7 +82,7 @@ partial def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize :
   let cgr ←
     if let some cgr ← Congr.from? prop then
       pure cgr
-    else if let some cgr ← Congr.from? (← reduce (skipTypes := false) prop) then
+    else if let some cgr ← Congr.from? (← withReducible do reduce (skipTypes := false) prop) then
       pure cgr
     else if (← inferType prop).isProp then
       proof ← mkEqTrue proof
@@ -124,6 +124,19 @@ where
           mvars := ← MVars.collect (← tcInstMVar.getType) cfg.amb
         }
     return conds
+
+-- Returns `none` if the given type is already ground.
+def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
+    MetaM (Option Rewrite) := do
+  unless (← inferType type).isProp do return none
+  let type ← if normalize then Egg.normalize type cfg else pure type
+  -- Aborts if the type is already ground.
+  unless (← withReducible do whnf type).isForall do return none
+  -- If level mvars are present we abort.
+  if type.hasLevelMVar then return none
+  let cgr : Congr := { rel := .eq, lhs := type, rhs := .const ``True [] }
+  let proof ← mkEqTrue proof
+  return some { cgr with proof, src, conds := #[], mvars.lhs := {}, mvars.rhs := {}, }
 
 def validDirs (rw : Rewrite) (cfg : Config.Erasure) : Directions :=
   -- MVars appearing in propositional conditions are definitely going to be part of the rewrite's

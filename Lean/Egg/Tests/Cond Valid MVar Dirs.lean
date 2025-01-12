@@ -24,6 +24,7 @@ info: [egg.rewrites] Rewrites
 #guard_msgs(info) in
 set_option trace.egg.rewrites true in
 set_option egg.builtins false in
+set_option egg.genGroundEqs false in
 egg_no_defeq in
 example (h : ∀ a b : Nat, a = b → b = a) : true = true := by
   egg [h]

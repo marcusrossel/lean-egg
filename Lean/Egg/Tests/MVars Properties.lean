@@ -4,6 +4,7 @@ open scoped Egg
 egg_no_defeq
 set_option egg.builtins false
 set_option egg.genTcProjRws false
+set_option egg.genGroundEqs false
 set_option trace.egg.rewrites true
 
 /--

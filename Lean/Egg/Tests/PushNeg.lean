@@ -27,7 +27,7 @@ example : ((fun x => x + x) 1) = 2 := by
   egg!
 
 example : ¬¬(p = p) := by
-  sorry -- egg!
+  egg!
 
 example : (¬¬p) = p := by
   egg!

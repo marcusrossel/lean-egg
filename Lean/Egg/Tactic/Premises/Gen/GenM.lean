@@ -74,6 +74,9 @@ nonrec def run (m : GenM Unit) : TacticM Result := do
 def all : GenM Rewrites :=
   return (← get).all
 
+def allExceptGeneratedGroundEqs : GenM Rewrites :=
+  return (← all).filter (!·.src.isGround)
+
 private def addAll (new : Rewrites) : GenM Unit := do
   modify fun s => { s with all := s.all ++ new }
 

@@ -8,6 +8,7 @@ open scoped Egg
 egg_no_defeq
 set_option egg.builtins false
 set_option egg.genTcProjRws false
+set_option egg.genGroundEqs false
 set_option trace.egg.rewrites true
 
 /--
@@ -23,18 +24,18 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (1)
     [egg.rewrites] #0<←>(⇔)
-      [egg.rewrites] -?m.50 = ?m.50
+      [egg.rewrites] -?m.55 = ?m.55
       [egg.rewrites] LHS MVars
-          [?m.50: [.unconditionallyVisible]]
+          [?m.55: [.unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m.50: [.unconditionallyVisible]]
+          [?m.55: [.unconditionallyVisible]]
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (1)
     [egg.rewrites] #0<⊢>(⇔)
-      [egg.rewrites] -?m.57 = ?m.57
+      [egg.rewrites] -?m.62 = ?m.62
       [egg.rewrites] LHS MVars
-          [?m.57: [.unconditionallyVisible]]
-      [egg.rewrites] RHS MVars [?m.57: [.unconditionallyVisible]]
+          [?m.62: [.unconditionallyVisible]]
+      [egg.rewrites] RHS MVars [?m.62: [.unconditionallyVisible]]
 -/
 #guard_msgs(info) in
 set_option egg.eraseTCInstances false in

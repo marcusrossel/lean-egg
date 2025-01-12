@@ -57,6 +57,7 @@ inductive Source where
   | guide (idx : Nat) (derived : Bool)
   | explicit (idx : Nat) (eqn? : Option Nat)
   | star (id : FVarId)
+  | ground (src : Source)
   | reifiedEq
   | factAnd
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos) (depth : Nat)
@@ -125,6 +126,7 @@ def description : Source → String
   | explicit idx none       => s!"#{idx}"
   | explicit idx (some eqn) => s!"#{idx}/{eqn}"
   | star id                 => s!"*{id.uniqueIdx!}"
+  | .ground src             => s!"{src.description}↓"
   | reifiedEq               => "="
   | factAnd                 => "∧"
   | tcProj src loc pos dep  => s!"{src.description}[{loc.description}{pos.asNat},{dep}]"
@@ -169,3 +171,7 @@ def involvesBinders : Source → Bool
 def isReifiedEq : Source → Bool
   | reifiedEq => true
   | _         => false
+
+def isGround : Source → Bool
+  | ground _ => true
+  | _        => false

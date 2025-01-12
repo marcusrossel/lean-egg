@@ -22,7 +22,7 @@ def gen
     return all
 where
   core : GenM Unit := open GenM in do
-    generate' .basic    cfg.toErasure do Premises.elab { cfg with amb } ps
+    generate' .basic    cfg.toErasure do Premises.elab { cfg with amb } cfg.genGroundEqs ps
     generate  .tagged   cfg.toErasure do genTagged cfg amb
     generate  .builtins cfg.toErasure do genBuiltins cfg amb
-    generate  .derived  cfg.toErasure do genDerived goal (← all) guides cfg amb
+    generate  .derived  cfg.toErasure do genDerived goal (← allExceptGeneratedGroundEqs) guides cfg amb

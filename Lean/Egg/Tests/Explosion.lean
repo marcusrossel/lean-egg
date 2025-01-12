@@ -64,6 +64,7 @@ info: [egg.rewrites] Rewrites
 -/
 #guard_msgs in
 set_option trace.egg.rewrites true in
+set_option egg.genGroundEqs false in
 example (h : ∀ x y : Nat, f x y = f y x) : f 1 2 = f 2 1 := by
   egg [h]
 
@@ -85,6 +86,7 @@ info: [egg.rewrites] Rewrites
 -/
 #guard_msgs in
 set_option trace.egg.rewrites true in
+set_option egg.genGroundEqs false in
 example (a b : Nat) (h : ∀ x y : Nat, f x y = f y x) : f a b = f b a := by
   egg [h]
 
@@ -102,22 +104,23 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (2)
     [egg.rewrites] #0💥→[3](⇔)
-      [egg.rewrites] f ?m.231 ?m.231 = f a ?m.231
+      [egg.rewrites] f ?m.247 ?m.247 = f a ?m.247
       [egg.rewrites] LHS MVars
-          [?m.231: [.unconditionallyVisible]]
+          [?m.247: [.unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m.231: [.unconditionallyVisible]]
+          [?m.247: [.unconditionallyVisible]]
     [egg.rewrites] #0💥→[4](⇔)
-      [egg.rewrites] f ?m.240 ?m.240 = f b ?m.240
+      [egg.rewrites] f ?m.256 ?m.256 = f b ?m.256
       [egg.rewrites] LHS MVars
-          [?m.240: [.unconditionallyVisible]]
+          [?m.256: [.unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m.240: [.unconditionallyVisible]]
+          [?m.256: [.unconditionallyVisible]]
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs in
 set_option trace.egg.rewrites true in
+set_option egg.genGroundEqs false in
 example (a b : Nat) (h : ∀ x y : Nat, f x x = f y x) : f a a = f b a := by
   egg [h]
 

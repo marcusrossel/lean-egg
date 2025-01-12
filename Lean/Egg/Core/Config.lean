@@ -22,9 +22,9 @@ def Erasure.noErase : Erasure where
 
 structure Encoding extends Normalization, Erasure where
   -- TODO: Currently, this option implicitly disables `retryWithShapes` as slotted cannot handle shapes, yet.
-  slotted          := false
+  slotted := false
   -- TODO: Currently, this option implicitly disables defeq rewrites as they can not handle shapes, yet.
-  shapes           := false
+  shapes  := false
   deriving BEq
 
 structure Gen where
@@ -36,6 +36,7 @@ structure Gen where
   genNestedSplits := true
   explosion       := false
   derivedGuides   := true
+  genGroundEqs    := true
   deriving BEq
 
 structure DefEq extends Erasure where

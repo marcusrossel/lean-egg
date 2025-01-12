@@ -47,13 +47,6 @@ example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂, h₁]
 
--- TODO: ∀-quantified premises aren't added as `(∀ _, _) = True`, but rather as `∀ _, (_ = True)`.
---       Should we always add both versions?
---       Or perhaps should we generalize tc condition specialization to all conditions?
-set_option trace.egg true in
-example (h₁ : ∀ p, p ∧ p) (h₂ : (∀ p, p ∧ p) → q = True) : q = True := by
-  egg [h₁, h₂]
-
 /-- error: Rewrite #0 requires condition of type 'Prop' which is neither a proof nor an instance. -/
 #guard_msgs in
 example (h : ∀ p : Prop, p → 1 = id 1) : 1 = id 1 := by
