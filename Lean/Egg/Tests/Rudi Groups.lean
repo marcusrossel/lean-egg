@@ -52,6 +52,7 @@ theorem inv_mul' : rudify (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
 theorem inv_mul'' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using a⁻¹ * (a * b) * (a * b)⁻¹
 
+set_option egg.genTcSpecRws false in
 theorem inv_mul''' : rudify (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using a⁻¹ * (a * b) * (a * b)⁻¹
 

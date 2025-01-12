@@ -8,11 +8,6 @@ notation:100 r "¡" => Real.Gamma (r + 1)
 
 open Nat
 
--- TODO: If we don't seal `Ne` then fact `h₃` in the first `egg` call below is reduced to `_ = _ → `
---       by `forallMetaTelescopeReducing`. Should we only telescope into reducible defs and not
---       semireducible ones?
-seal Not
-
 theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! * (n - r)!) := by
   induction n generalizing r
   case zero => rw [Nat.le_zero.mp h]; rfl

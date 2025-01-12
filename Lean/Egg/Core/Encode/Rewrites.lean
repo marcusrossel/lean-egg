@@ -14,7 +14,7 @@ structure Encoded where
   conds : Array Expression
 
 def Condition.encode? (c : Rewrite.Condition) (ctx : EncodingCtx) : MetaM (Option Expression) := do
-  unless !c.isProven do return none
+  if c.isProven then return none
   let type ← encode c.type ctx
   match c.kind with
   | .proof  => return s!"(proof {type})"

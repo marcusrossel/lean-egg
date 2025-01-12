@@ -14,16 +14,16 @@ structure Goal extends Congr where private mk ::
 def Goal.gen (goal : MVarId) : TacticM Goal :=
   goal.withContext do
     let goal ← getMainGoal
-    let goalType ← goal.getType'
+    let goalType ← withReducible goal.getType'
     let goalTypeType ← inferType goalType
     unless goalTypeType.isProp do
       throwError m!"goal type is not a proposition:\n {goalType} : {goalTypeType}"
     let fvars := (← getLCtx).getFVarIds
-    evalTactic <| ← `(tactic|repeat intro)
+    withReducible do evalTactic <| ← `(tactic|repeat intro)
     let goal ← getMainGoal
     let (goal, intros) ← genIntros goal fvars
     goal.withContext do
-      let goalType ← goal.getType'
+      let goalType ← withReducible goal.getType'
       if let some cgr ← Congr.from? goalType then
         return { cgr with id := goal, intros }
       else
