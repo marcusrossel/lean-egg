@@ -3,13 +3,22 @@ use egg::*;
 use crate::lean_expr::*;
 use crate::util::*;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct LeanAnalysisData {
     pub nat_val:      Option<u64>,
     pub dir_val:      Option<bool>,
-    pub loose_bvars:  HashSet<u64>,   // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
-    pub is_primitive: bool,           // A class is primitive if it represents a `Nat`, `Str` or universe level e-node.
-    pub fact:         Option<String>, // A class has an associated fact, if it contains a term which we know is proven in Lean.
+    pub loose_bvars:  HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
+}
+
+impl Default for LeanAnalysisData {
+    
+    fn default() -> Self { 
+        LeanAnalysisData {
+            nat_val: None,
+            dir_val: None,
+            loose_bvars: HashSet::default(),
+        }
+    }
 }
 
 #[derive(Default)]
@@ -34,10 +43,8 @@ impl Analysis<LeanExpr> for LeanAnalysis {
         // `merge_max` prefers `Some` value over `None`. Note that if `to` and `from` both have nat 
         // values, then they should have the *same* value as otherwise merging their e-classes 
         // indicates an invalid rewrite. The same applies for the `dir_val`s.
-        egg::merge_max(&mut to.fact, from.fact) |
         egg::merge_max(&mut to.nat_val, from.nat_val) | 
         egg::merge_max(&mut to.dir_val, from.dir_val) | 
-        egg::merge_max(&mut to.is_primitive, from.is_primitive) |
         loose_bvar_m
     }
 
@@ -46,28 +53,25 @@ impl Analysis<LeanExpr> for LeanAnalysis {
             LeanExpr::Nat(n) => 
                 Self::Data { 
                     nat_val: Some(*n), 
-                    is_primitive: true,
                     ..Default::default() 
                 },
             
             LeanExpr::Str(shift_up) if shift_up == "+" => 
                 Self::Data { 
                     dir_val: Some(true), 
-                    is_primitive: true,
                     ..Default::default() 
                 },
             
             LeanExpr::Str(shift_down) if shift_down == "-" => 
                 Self::Data { 
                     dir_val: Some(false), 
-                    is_primitive: true,
                     ..Default::default() 
                 },
 
             LeanExpr::Str(_) | LeanExpr::Fun(_) | LeanExpr::UVar(_) | LeanExpr::Param(_) | 
-            LeanExpr::Succ(_) | LeanExpr::Max(_) | LeanExpr::IMax(_) | LeanExpr::Unknown => 
+            LeanExpr::Succ(_) | LeanExpr::Max(_) | LeanExpr::IMax(_) | LeanExpr::Fact(_) | 
+            LeanExpr::Unknown => 
                 Self::Data { 
-                    is_primitive: true,
                     ..Default::default() 
                 },
             
@@ -128,6 +132,12 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                 Self::Data { 
                     loose_bvars: egraph[*e].data.loose_bvars.clone(), 
                     ..Default::default() 
+                },
+
+            LeanExpr::Eq([l, r]) => 
+                Self::Data { 
+                    loose_bvars: union_clone(&egraph[*l].data.loose_bvars, &egraph[*r].data.loose_bvars),
+                    ..Default::default()
                 },
 
             _ => Default::default()

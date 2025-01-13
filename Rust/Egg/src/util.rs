@@ -2,6 +2,16 @@ use std::collections::HashSet;
 use std::hash::Hash;
 use egg::*;
 
+pub enum Either<L, R> {
+    Left(L),
+    Right(R),
+}
+
+pub fn sub_expr<L: Language>(ast: &RecExpr<L>, i: Id) -> RecExpr<L> {
+    let v: Vec<_> = ast.as_ref()[0..=usize::from(i)].iter().cloned().collect();
+    RecExpr::from(v)
+}
+
 pub fn union_sets<T: Eq + Hash + Clone>(to: &mut HashSet<T>, from: HashSet<T>) -> DidMerge {
     let to_sub_from = to.is_subset(&from);
     let from_sub_to = from.is_subset(to);

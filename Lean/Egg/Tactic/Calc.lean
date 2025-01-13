@@ -10,12 +10,9 @@ private def appendPremises : (TSyntax `egg_premises) → (TSyntax `egg_premises)
     | ps, none | none, ps => `(egg_premises|$[$ps]?)
     | some ps₁, some ps₂ => do
       match ps₁, ps₂ with
-      | `(egg_premise_list| [$rws₁,* $[; $fs₁,*]?]), `(egg_premise_list| [$rws₂,* $[; $fs₂,*]?]) =>
+      | `(egg_premise_list| [$rws₁,*]), `(egg_premise_list| [$rws₂,*]) =>
         let rws := rws₁.getElems ++ rws₂
-        let fs := match fs₁, fs₂ with
-          | fs, none | none, fs => fs
-          | some fs₁, some fs₂ => fs₁.getElems ++ fs₂.getElems
-        `(egg_premises| [$rws,* $[; $fs,*]?])
+        `(egg_premises| [$rws,*])
       | _, _ => throwUnsupportedSyntax
   | _, _ => throwUnsupportedSyntax
 
@@ -60,8 +57,8 @@ private def eval
     let stepToEgg (step : Step) : TacticM (TSyntax `tactic) := do
       let allPrems ← appendPremises step.prems prems
       if bang
-      then `(tactic| egg! $step.mod $allPrems $[$(Option.none)]? $[$step.guides]?)
-      else `(tactic| egg  $step.mod $allPrems $[$(Option.none)]? $[$step.guides]?)
+      then `(tactic| egg! $step.mod $allPrems $[$step.guides]?)
+      else `(tactic| egg  $step.mod $allPrems $[$step.guides]?)
     let tailEggs ← steps.tail.mapM stepToEgg
     let headEgg : Option (TSyntax `tactic) ← do
       if (← elabTerm steps.head.goal none).eqOrIff?.isSome

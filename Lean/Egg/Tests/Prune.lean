@@ -5,10 +5,12 @@ open scoped Egg
 
 egg_no_defeq
 set_option egg.genTcProjRws false
+set_option egg.genGroundEqs false
 set_option egg.builtins false
 
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇔): h₁
       [egg.rewrites] 0 = 0
@@ -20,7 +22,6 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (1)
     [egg.rewrites] #1(⇔)
       [egg.rewrites] 0 = 0
@@ -36,6 +37,7 @@ example (h₁ h₂ : 0 = 0) : 0 = 0 := by
 
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇔): Nat.add_comm
       [egg.rewrites] ?n + ?m = ?m + ?n
@@ -47,7 +49,6 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (1)
     [egg.rewrites] #1(⇔)
       [egg.rewrites] ?a + ?b = ?b + ?a

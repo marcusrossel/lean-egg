@@ -38,6 +38,8 @@ struct EtaExpand {
 impl Applier<LeanExpr, LeanAnalysis> for EtaExpand {
 
     fn apply_one(&self, graph: &mut LeanEGraph, _: Id, subst: &Subst, ast: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
+        // TODO: This does not respect primitive constructors.
+
         let term_bvars = &graph[subst[self.term]].data.loose_bvars;
         
         let new_term: PatternAst<LeanExpr> = if term_bvars.is_empty() {

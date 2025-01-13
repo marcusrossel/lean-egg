@@ -1,7 +1,9 @@
 use analysis::LeanEGraph;
 use egg::*;
+use expl::{mk_explanation, ExplanationKind};
+use lean_expr::LeanExpr;
+use util::sub_expr;
 use std::ffi::{c_char, CStr, CString, c_void};
-use std::ptr::null;
 use libc::c_double;
 use std::str::FromStr;
 use basic::*;
@@ -15,6 +17,7 @@ mod bvar_correction;
 mod eta;
 mod lean_expr;
 mod levels;
+mod expl;
 mod nat_lit;
 mod result;
 mod rewrite;
@@ -89,45 +92,41 @@ impl CRewritesArray {
             let conds_strs    = rw.conds.to_vec();
             let lhs           = Pattern::from_str(lhs_str).expect("Failed to parse lhs");
             let rhs           = Pattern::from_str(rhs_str).expect("Failed to parse rhs");
-            let conds: Vec<_> = conds_strs.iter().map(|cond| Pattern::from_str(cond).expect("Failed to parse condition")).collect();
+            
+            let mut prop_conds = vec![];
+            let mut tc_conds = vec![];
+            for str in conds_strs {
+                let pat: Pattern<_> = str.parse().map_err(|e : RecExprParseError<_>| Error::Condition(e.to_string()))?;
+                let head = Id::from(pat.ast.as_ref().len() - 1);
+                match &pat.ast[head] {
+                    ENodeOrVar::ENode(LeanExpr::Proof(prop)) => prop_conds.push(sub_expr(&pat.ast, *prop).into()),
+                    ENodeOrVar::ENode(LeanExpr::Inst(class)) => tc_conds.push(sub_expr(&pat.ast, *class).into()),
+                    _ => return Err(Error::Condition("Received condition without 'proof' or 'inst' prefix.".to_string()))
+                }
+            }
 
             if rw.dirs == RewriteDirections::Forward || rw.dirs == RewriteDirections::Both {
-                res.push(RewriteTemplate { name: name_str.to_string(), lhs: lhs.clone(), rhs: rhs.clone(), conds: conds.clone() })
+                res.push(RewriteTemplate { 
+                    name:       name_str.to_string(), 
+                    lhs:        lhs.clone(), 
+                    rhs:        rhs.clone(), 
+                    prop_conds: prop_conds.clone(),
+                    tc_conds:   tc_conds.clone()
+                })
             }
+
             if rw.dirs == RewriteDirections::Backward || rw.dirs == RewriteDirections::Both {
                 // It is important that we use the "-rev" suffix for reverse rules here, as this is also
                 // what's used for adding the reverse rule when using egg's `rewrite!(_; _ <=> _)` macro.
                 // If we choose another naming scheme, egg may complain about duplicate rules when 
                 // `rw.dir == RewriteDirection::Both`. This is the case, for example, for the rewrite
                 // `?a + ?b = ?b + ?a`.
-                res.push(RewriteTemplate { name: format!("{name_str}-rev"), lhs: rhs, rhs: lhs, conds })
+                res.push(RewriteTemplate { 
+                    name: format!("{name_str}-rev"), lhs: rhs, rhs: lhs, prop_conds, tc_conds
+                })
             }
         }
         Ok(res)
-    }
-}
-
-#[repr(C)]
-pub struct CFact {
-    name: *const c_char,
-    expr: *const c_char
-}
-
-#[repr(C)]
-pub struct CFactsArray {
-    ptr: *const CFact,
-    len: usize, 
-}
-
-impl CFactsArray {
-
-    fn to_vec(&self) -> Vec<(String, String)> {
-        let slice = unsafe { std::slice::from_raw_parts(self.ptr, self.len) };
-        slice.iter().map(|fact| {
-            let name = c_str_to_string(fact.name);
-            let expr = c_str_to_string(fact.expr);
-            (name, expr)
-        }).collect()
     }
 }
 
@@ -142,54 +141,59 @@ pub enum CStopReason {
 
 impl CStopReason {
 
-    fn from_stop_reason(r: StopReason) -> CStopReason {
+    fn from_stop_reason(r: StopReason) -> (CStopReason, String) {
         match r {
-            StopReason::Saturated         => CStopReason::Saturated,
-            StopReason::IterationLimit(_) => CStopReason::IterationLimit,
-            StopReason::NodeLimit(_)      => CStopReason::NodeLimit,
-            StopReason::TimeLimit(_)      => CStopReason::TimeLimit,
-            StopReason::Other(_)          => CStopReason::Other,
+            StopReason::Saturated         => (CStopReason::Saturated, "".to_string()),
+            StopReason::IterationLimit(_) => (CStopReason::IterationLimit, "".to_string()),
+            StopReason::NodeLimit(_)      => (CStopReason::NodeLimit, "".to_string()),
+            StopReason::TimeLimit(_)      => (CStopReason::TimeLimit, "".to_string()),
+            StopReason::Other(msg)        => (CStopReason::Other, msg),
         }
     }
 }
 
 #[repr(C)]
 pub struct CReport {
-    iterations:     usize,
-    stop_reason:    CStopReason,
-    egraph_nodes:   usize,
-    egraph_classes: usize,
-    total_time:     c_double,
-    rw_stats:       *const c_char,
+    iterations:      usize,
+    stop_reason:     CStopReason,
+    stop_reason_msg: *const c_char,
+    egraph_nodes:    usize,
+    egraph_classes:  usize,
+    total_time:      c_double,
+    rw_stats:        *const c_char,
 }
 
 impl CReport {
 
     fn from_report(r: Report, rw_stats: String) -> CReport {
+        let (stop_reason, msg) = CStopReason::from_stop_reason(r.stop_reason);
         CReport {
-            iterations:     r.iterations,
-            stop_reason:    CStopReason::from_stop_reason(r.stop_reason),
-            egraph_nodes:   r.egraph_nodes,
-            egraph_classes: r.egraph_classes,
-            total_time:     r.total_time,
-            rw_stats:       string_to_c_str(rw_stats),
+            iterations:      r.iterations,
+            stop_reason:     stop_reason,
+            stop_reason_msg: string_to_c_str(msg),
+            egraph_nodes:    r.egraph_nodes,
+            egraph_classes:  r.egraph_classes,
+            total_time:      r.total_time,
+            rw_stats:        string_to_c_str(rw_stats),
         }
     }
 
-    fn none() -> CReport {
+    fn from_other_stop_reason(msg: String) -> CReport {
         CReport {
-            iterations:     0,
-            stop_reason:    CStopReason::Other,
-            egraph_nodes:   0,
-            egraph_classes: 0,
-            total_time:     0.0,
-            rw_stats:       null(),
+            iterations:      0,
+            stop_reason:     CStopReason::Other,
+            stop_reason_msg: string_to_c_str(msg),
+            egraph_nodes:    0,
+            egraph_classes:  0,
+            total_time:      0.0,
+            rw_stats:        string_to_c_str("".to_string()),
         }
     }
 }
 
 #[repr(C)]
 pub struct EqsatResult {
+    kind: ExplanationKind,
     expl: *const c_char,
     graph: Option<Box<LeanEGraph>>,
     report: CReport
@@ -200,33 +204,42 @@ pub extern "C" fn egg_explain_congr(
     init_str_ptr: *const c_char, 
     goal_str_ptr: *const c_char, 
     rws: CRewritesArray, 
-    facts: CFactsArray, 
     guides: CStringArray, 
     cfg: Config,
     viz_path_ptr: *const c_char,
-    e: *const c_void,
+    env: *const c_void,
 ) -> EqsatResult {
     let init   = c_str_to_string(init_str_ptr);
     let goal   = c_str_to_string(goal_str_ptr);
     let guides = guides.to_vec();
-    let facts  = facts.to_vec();
-
+    
     let rw_templates = rws.to_templates();
     if let Err(rws_err) = rw_templates { 
-        return EqsatResult { expl: string_to_c_str(rws_err.to_string()), graph: None, report: CReport::none() }
+        return EqsatResult { 
+            kind: ExplanationKind::None, 
+            expl: string_to_c_str(rws_err.to_string()), 
+            graph: None, 
+            report: CReport::from_other_stop_reason(rws_err.to_string()) 
+        }
     }
     let rw_templates = rw_templates.unwrap();
 
     let raw_viz_path = c_str_to_string(viz_path_ptr);
     let viz_path = if raw_viz_path.is_empty() { None } else { Some(raw_viz_path) };
 
-    let res = explain_congr(init, goal, rw_templates, facts, guides, cfg, viz_path, e);
+    let res = explain_congr(init, goal, rw_templates, guides, cfg, viz_path, env);
     if let Err(res_err) = res {
-        return EqsatResult { expl: string_to_c_str(res_err.to_string()), graph: None, report: CReport::none() }
+        return EqsatResult { 
+            kind: ExplanationKind::None, 
+            expl: string_to_c_str(res_err.to_string()), 
+            graph: None, 
+            report: CReport::from_other_stop_reason(res_err.to_string()) 
+        }
     }
-    let ExplainedCongr { expl, egraph, report, rw_stats } = res.unwrap();
+    let ExplainedCongr { kind, expl, egraph, report, rw_stats } = res.unwrap();
 
-    return EqsatResult {
+    EqsatResult {
+        kind,
         expl: string_to_c_str(expl),
         graph: Some(Box::new(egraph)),
         report: CReport::from_report(report, rw_stats) 
@@ -238,19 +251,24 @@ pub unsafe extern "C" fn egg_query_equiv(
     egraph: *mut LeanEGraph,
     init_str_ptr: *const c_char, 
     goal_str_ptr: *const c_char
-) -> *const c_char {
-    let egraph = egraph.as_mut().unwrap();
-    let init = c_str_to_string(init_str_ptr).parse().unwrap();
-    let goal = c_str_to_string(goal_str_ptr).parse().unwrap();
-    let init_id = egraph.add_expr(&init);
-    let goal_id = egraph.add_expr(&goal);
+) -> EqsatResult {
+    let egraph    = egraph.as_mut().unwrap();
+    let init_expr = c_str_to_string(init_str_ptr).parse().unwrap();
+    let goal_expr = c_str_to_string(goal_str_ptr).parse().unwrap();
+    let kind: ExplanationKind;
+    let expl: String;
 
-    if egraph.find(init_id) == egraph.find(goal_id) {
-        let mut expl = egraph.explain_equivalence(&init, &goal);
-        let expl_str = expl.get_flat_string();
-        string_to_c_str(expl_str)
+    if let (Some(init_id), Some(goal_id)) = (egraph.lookup_expr(&init_expr), egraph.lookup_expr(&goal_expr)) {
+        (kind, expl) = mk_explanation(egraph, init_expr, goal_expr, init_id, goal_id);
     } else {
-        string_to_c_str("".to_string())
+        (kind, expl) = (ExplanationKind::None, "".to_string());
+    }
+
+    EqsatResult {
+        kind,
+        expl: string_to_c_str(expl),
+        graph: None,
+        report: CReport::from_other_stop_reason("".to_string())
     }
 }
 
@@ -260,5 +278,5 @@ pub unsafe extern "C" fn egg_free_egraph(egraph: *mut LeanEGraph) {
 }
 
 extern "C" {
-    fn is_synthable(env: *const c_void, tc_type_str: *const u8) -> bool;
+    fn is_synthable(env: *const c_void, tc_type_str: *const c_char) -> bool;
 }

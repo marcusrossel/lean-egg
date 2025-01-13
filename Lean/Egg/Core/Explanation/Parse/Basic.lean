@@ -14,5 +14,8 @@ def Raw.parse (raw : Explanation.Raw) : MetaM Explanation := do
     then (raw.str.replace "$" "", `slotted_expl) -- HACK
     else (raw.str, `egg_expl)
   match Parser.runParserCategory (← getEnv) stx_cat str with
-  | .ok stx    => if raw.slotted then parseSlottedExpl ⟨stx⟩ else parseEggExpl ⟨stx⟩
   | .error err => throwError s!"{ParseError.msgPrefix}\n{err}\n\n{raw.str}"
+  | .ok stx =>
+    if raw.slotted
+    then return { ← parseSlottedExpl ⟨stx⟩ with kind := raw.kind }
+    else return { ← parseEggExpl ⟨stx⟩ with kind := raw.kind }

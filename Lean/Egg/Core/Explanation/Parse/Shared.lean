@@ -18,7 +18,6 @@ declare_syntax_cat tc_extension
 declare_syntax_cat nested_split_extension
 declare_syntax_cat explosion_extension
 declare_syntax_cat fwd_rw_src
-declare_syntax_cat fact_src
 declare_syntax_cat rw_src
 
 syntax num : lit
@@ -38,6 +37,9 @@ syntax num "?" : tc_proj_loc
 syntax "#" noWs num (noWs "/" noWs num)? : basic_fwd_rw_src
 syntax "*" noWs num                      : basic_fwd_rw_src
 syntax "⊢"                               : basic_fwd_rw_src
+syntax "→" noWs num                      : basic_fwd_rw_src
+-- Note: We don't run rewrite generation after deriving guides, so a derived guide source can never
+--       be part of a rewrite source.
 syntax "↣" noWs num                      : basic_fwd_rw_src
 syntax "◯" noWs num                      : basic_fwd_rw_src
 syntax "□" noWs num (noWs "/" noWs num)? : basic_fwd_rw_src
@@ -65,6 +67,7 @@ syntax "💥←[" num,* "]" : explosion_extension
 syntax basic_fwd_rw_src (noWs tc_extension)*        : fwd_rw_src
 syntax basic_fwd_rw_src noWs explosion_extension    : fwd_rw_src
 syntax basic_fwd_rw_src noWs nested_split_extension : fwd_rw_src
+syntax basic_fwd_rw_src noWs "↓"                    : fwd_rw_src
 syntax "↦bvar"                                      : fwd_rw_src
 syntax "↦app"                                       : fwd_rw_src
 syntax "↦λ"                                         : fwd_rw_src
@@ -107,12 +110,9 @@ syntax "≡/"                                         : fwd_rw_src
 syntax str                                          : fwd_rw_src
 -- syntax "≡%"                                      : fwd_rw_src
 
-syntax "!?"          : fact_src
-syntax "!="          : fact_src
-syntax "!#" noWs num : fact_src
-syntax "!*" noWs num : fact_src
-
-syntax fwd_rw_src (noWs "-rev")? fact_src* : rw_src
+syntax fwd_rw_src (noWs "-rev")? : rw_src
+syntax &"="                      : rw_src
+syntax &"∧"                      : rw_src
 
 syntax "+" num : shift_offset
 syntax "-" num : shift_offset
@@ -151,7 +151,8 @@ private def parseBasicFwdRwSrc : (TSyntax `basic_fwd_rw_src) → Source
   | `(basic_fwd_rw_src|□$idx$[/$eqn?]?) => .tagged idx.getNat (eqn?.map TSyntax.getNat)
   | `(basic_fwd_rw_src|*$idx)           => .star (.fromUniqueIdx idx.getNat)
   | `(basic_fwd_rw_src|⊢)               => .goal
-  | `(basic_fwd_rw_src|↣$idx)           => .guide idx.getNat
+  | `(basic_fwd_rw_src|→$idx)           => .intro idx.getNat
+  | `(basic_fwd_rw_src|↣$idx)           => .guide idx.getNat (derived := false)
   | `(basic_fwd_rw_src|◯$idx)           => .builtin idx.getNat
   | _                                   => unreachable!
 
@@ -208,21 +209,22 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
     .explosion (parseBasicFwdRwSrc src) .backward (idxs.getElems.map (·.getNat)).toList
   | `(fwd_rw_src|$src:basic_fwd_rw_src⁅→⁆) => .nestedSplit (parseBasicFwdRwSrc src) .forward
   | `(fwd_rw_src|$src:basic_fwd_rw_src⁅←⁆) => .nestedSplit (parseBasicFwdRwSrc src) .backward
+  | `(fwd_rw_src|$src:basic_fwd_rw_src↓)   => .ground (parseBasicFwdRwSrc src)
   | _ => unreachable!
 
-private def parseFactSrc : (TSyntax `fact_src) → Source.Fact
-  | `(fact_src|!?)     => .postponed
-  | `(fact_src|!=)     => .equality
-  | `(fact_src|!#$idx) => .explicit idx.getNat
-  | `(fact_src|!*$idx) => .star (.fromUniqueIdx idx.getNat)
-  | _                  => unreachable!
-
 def parseRwSrc : (TSyntax `rw_src) → Rewrite.Descriptor
-  | `(rw_src|$fwdSrc:fwd_rw_src$[-rev%$rev]?$[$facts]*) =>
-    let src   := parseFwdRwSrc fwdSrc
-    let dir   := if rev.isSome then .backward else .forward
-    let facts := facts.map parseFactSrc
-    { src, dir, facts }
+  | `(rw_src|$fwdSrc:fwd_rw_src$[-rev%$rev]?) => {
+      src := parseFwdRwSrc fwdSrc
+      dir := if rev.isSome then .backward else .forward
+    }
+  | `(rw_src|=) => {
+      src := .reifiedEq
+      dir := .forward
+    }
+  | `(rw_src|∧) => {
+      src := .factAnd
+      dir := .forward
+    }
   | _ => unreachable!
 
 inductive ParseError where

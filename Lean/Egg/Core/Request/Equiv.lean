@@ -1,5 +1,6 @@
 import Egg.Core.Encode.Basic
 import Egg.Core.Explanation.Basic
+import Egg.Core.Request.Basic
 import Egg.Core.Request.EGraph
 import Lean
 open Lean
@@ -16,8 +17,9 @@ def Equiv.encoding (init goal : Expr) (ctx : EncodingCtx) : MetaM Equiv :=
 end Request
 
 @[extern "explain_equiv"]
-private opaque explainEquivRaw (graph : @& EGraph.Obj) (slotted : Bool) (e₁ e₂ : Expression) : String
+private opaque explainEquivRaw (graph : EGraph.Obj) (slotted : Bool) (e₁ e₂ : Expression) : Request.Result.Raw
 
-def EGraph.run (graph : @& EGraph) (req : Request.Equiv) : Explanation.Raw where
-  str := explainEquivRaw graph.obj graph.slotted req.init req.goal
-  slotted := graph.slotted
+def EGraph.run (graph : EGraph) (req : Request.Equiv) : Option Explanation.Raw := Id.run do
+  let { kind := kind?, expl, .. } := explainEquivRaw graph.obj graph.slotted req.init req.goal
+  let some kind := kind?.toKind? | return none
+  return some { kind, str := expl, slotted := graph.slotted }

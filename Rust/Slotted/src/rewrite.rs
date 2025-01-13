@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::collections::HashSet;
 use slotted_egraphs::*;
 use crate::result::*;
@@ -9,7 +8,7 @@ pub struct RewriteTemplate {
     pub name:  String,
     pub lhs:   Pattern<LeanExpr>,
     pub rhs:   Pattern<LeanExpr>,
-    pub conds: Vec<Pattern<LeanExpr>>
+    pub _conds: Vec<Pattern<LeanExpr>>
 }
 
 fn slots_for_node(e: &LeanExpr) -> HashSet<Slot> {
@@ -44,15 +43,12 @@ fn subst_is_valid(subst: &Subst, illegal_slots: &HashSet<Slot>) -> bool {
 }
 
 pub fn templates_to_rewrites(
-    templates: Vec<RewriteTemplate>, 
-    facts: HashMap<AppliedId, String>, 
-    allow_unsat_conditions: bool
+    templates: Vec<RewriteTemplate>, _allow_unsat_conditions: bool
 ) -> Res<Vec<LeanRewrite>> {
     let mut result: Vec<LeanRewrite> = vec![];
     for template in templates {
         let lhs_search = template.lhs.clone();
         let lhs_apply = template.lhs.clone();
-        let facts = facts.clone();
         
         let mut illegal_slots = private_slots(&template.lhs);
         illegal_slots.extend(&private_slots(&template.rhs));
@@ -69,27 +65,9 @@ pub fn templates_to_rewrites(
                     // Disallows rewriting on primitive e-nodes.
                     if analysis.is_primitive { continue }
 
-                    let mut rule = template.name.clone();
-                    
-                    for cond in template.conds.clone() {
-                        let id = pattern_subst(graph, &cond, &subst);
-                        
-                        // Note: If we don't find a fact matching `id`, this might just be because 
-                        //       the fact id isn't canonical. Thus, in the `else if` branch we also 
-                        //       check whether there exists a fact id whose canonicalization matches 
-                        //       `id`.
-                        if let Some(fact_name) = facts.get(&id) {
-                            rule = rule.as_str().to_string(); rule.push_str(&fact_name);
-                        } else if let Some((_, fact_name)) = facts.iter().find(|(f_id, _)| graph.eq(f_id, &id)) { 
-                            rule = rule.as_str().to_string(); rule.push_str(&fact_name);
-                        } else if allow_unsat_conditions {
-                            rule = rule.as_str().to_string(); rule.push_str("!?");
-                        } else {
-                            continue
-                        }
-                    }
-
-                    graph.union_instantiations(&template.lhs, &template.rhs, &subst, Some(rule));
+                    // TODO: Handle conditions.
+                
+                    graph.union_instantiations(&template.lhs, &template.rhs, &subst, Some(template.name.clone()));
                 }
             }),
         };

@@ -14,7 +14,26 @@ protected structure MVars where
   rhs : MVars
   deriving Inhabited
 
-structure Condition where
+namespace Condition
+
+inductive Kind where
+  | proof
+  | tcInst
+
+def Kind.isProof : Kind → Bool
+  | proof  => true
+  | tcInst => false
+
+def Kind.forType? (ty : Expr) : MetaM (Option Kind) := do
+  if ← Meta.isProp ty then
+    return some .proof
+  else if (← Meta.isClass? ty).isSome then
+    return some .tcInst
+  else
+    return none
+
+structure _root_.Egg.Rewrite.Condition where
+  kind  : Kind
   -- Without instantiation, this `expr` is an mvar. When instantiated, the condition is considered
   -- proven.
   expr  : Expr
@@ -25,15 +44,17 @@ structure Condition where
 -- Conditions can become proven during type class specialization. We still need to keep these
 -- conditions in order to use their `expr` during proof reconstruction. Proven conditions are not
 -- encoded and thus transparent to the backend.
-def Condition.isProven (cond : Condition) : Bool :=
+def isProven (cond : Condition) : Bool :=
   !cond.expr.isMVar
 
-nonrec def Condition.instantiateMVars (cond : Condition) : MetaM Condition := do
+nonrec def instantiateMVars (cond : Condition) : MetaM Condition := do
   return { cond with
     expr  := ← instantiateMVars cond.expr
     type  := ← instantiateMVars cond.type
     mvars := ← cond.mvars.removeAssigned
   }
+
+end Condition
 
 -- Note: We don't create `Rewrite`s directly, but use `Rewrite.from` instead.
 structure _root_.Egg.Rewrite extends Congr where
@@ -53,18 +74,21 @@ instance : Coe Config Config.Normalization where
 instance : Coe Config Config.Erasure where
   coe := Config.toErasure
 
-partial def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
+def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
     MetaM (Option Rewrite) := do
   let type ← if normalize then Egg.normalize type cfg else pure type
-  let mut (args, _, eqOrIff?) ← forallMetaTelescopeReducing type
+  let mut (args, _, prop) ← withReducible do forallMetaTelescopeReducing type
+  let mut proof := mkAppN proof args
   let cgr ←
-    if let some cgr ← Congr.from? eqOrIff? then
+    if let some cgr ← Congr.from? prop then
       pure cgr
-    else if let some cgr ← Congr.from? (← reduce (skipTypes := false) eqOrIff?) then
+    else if let some cgr ← Congr.from? (← withReducible do reduce (skipTypes := false) prop) then
       pure cgr
+    else if (← inferType prop).isProp then
+      proof ← mkEqTrue proof
+      pure { rel := .eq, lhs := prop, rhs := .const ``True [] }
     else
       return none
-  let proof := mkAppN proof args
   let mLhs  ← MVars.collect cgr.lhs cfg.amb
   let mRhs  ← MVars.collect cgr.rhs cfg.amb
   let conds ← collectConds args mLhs mRhs
@@ -72,6 +96,19 @@ partial def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize :
 where
   collectConds (args : Array Expr) (mLhs mRhs : MVars) : MetaM (Array Rewrite.Condition) := do
     let mut conds := #[]
+    -- When type class instance erasure is active, we still need to make sure that all required type
+    -- class instances are synthesizable, so we add them as conditions to the rewrite.
+    if cfg.eraseTCInstances then
+      for tcInstMVar in mLhs.tcInsts.union mRhs.tcInsts do
+        -- TODO: Collecting all this information seems a bit superfluos. Perhaps we should redefine
+        --       `Condition` (or split it into two types) as we only consider propositions and type
+        --       class instances anyway.
+        conds := conds.push {
+          kind  := .tcInst,
+          expr  := .mvar tcInstMVar,
+          type  := ← tcInstMVar.getType,
+          mvars := ← MVars.collect (← tcInstMVar.getType) cfg.amb
+        }
     -- Even when erasure is active, we still do not consider the mvars contained in erased terms to
     -- be conditions. Thus, we start by considering all mvars in the target as non-conditions and
     -- take their type mvar closure. This closure will necessarily contain the mvars contained in
@@ -79,19 +116,43 @@ where
     -- contingent upon the erasure configuration).
     let inTarget : MVarIdSet := mLhs.inTarget.union mRhs.inTarget
     let mut noCond ← inTarget.typeMVarClosure (ignore := cfg.amb.expr)
-    for arg in args do
+    for arg in args.reverse do
       if noCond.contains arg.mvarId! then continue
+      -- As we encode conditions as part of a rewrite's searcher its mvars also become
+      -- non-conditions. That's why we traverse the list of arguments above in reverse.
+      noCond := noCond.union (← MVarIdSet.typeMVarClosure {arg.mvarId!} (ignore := cfg.amb.expr))
       let ty ← arg.mvarId!.getType
       let mvars ← MVars.collect ty cfg.amb
-      conds := conds.push { expr := arg, type := ty, mvars }
+      let some kind ← Condition.Kind.forType? ty
+        | throwError m!"Rewrite {src} requires condition of type '{ty}' which is neither a proof nor an instance."
+      conds := conds.push { kind, expr := arg, type := ty, mvars }
     return conds
 
-def isConditional (rw : Rewrite) : Bool :=
-  !rw.conds.isEmpty
+-- Returns `none` if the given type is already ground.
+def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
+    MetaM (Option Rewrite) := do
+  unless (← inferType type).isProp do return none
+  let type ← if normalize then Egg.normalize type cfg else pure type
+  -- Aborts if the type is already ground.
+  unless (← withReducible do whnf type).isForall do return none
+  -- If level mvars are present we abort.
+  if type.hasLevelMVar then return none
+  let cgr : Congr := { rel := .eq, lhs := type, rhs := .const ``True [] }
+  let proof ← mkEqTrue proof
+  return some { cgr with proof, src, conds := #[], mvars.lhs := {}, mvars.rhs := {}, }
 
 def validDirs (rw : Rewrite) (cfg : Config.Erasure) : Directions :=
-  let exprDirs := Directions.satisfyingSuperset (rw.mvars.lhs.visibleExpr cfg) (rw.mvars.rhs.visibleExpr cfg)
-  let lvlDirs  := Directions.satisfyingSuperset (rw.mvars.lhs.visibleLevel cfg) (rw.mvars.rhs.visibleLevel cfg)
+  -- MVars appearing in propositional conditions are definitely going to be part of the rewrite's
+  -- LHS, so they can (and should be) ignored when computing valid directions.
+  -- TODO: How does visibility work in conditions?
+  let propCondExpr  : MVarIdSet  := rw.conds.filter (·.kind.isProof) |>.foldl (init := ∅) (·.union <| ·.mvars.visibleExpr  cfg)
+  let propCondLevel : LMVarIdSet := rw.conds.filter (·.kind.isProof) |>.foldl (init := ∅) (·.union <| ·.mvars.visibleLevel cfg)
+  let visibleExprLhs    := rw.mvars.lhs.visibleExpr  cfg |>.filter (!propCondExpr.contains ·)
+  let visibleExprRhs    := rw.mvars.rhs.visibleExpr  cfg |>.filter (!propCondExpr.contains ·)
+  let visibleLevelLhs   := rw.mvars.lhs.visibleLevel cfg |>.filter (!propCondLevel.contains ·)
+  let visibleLevelRhs   := rw.mvars.rhs.visibleLevel cfg |>.filter (!propCondLevel.contains ·)
+  let exprDirs          := Directions.satisfyingSuperset visibleExprLhs visibleExprRhs
+  let lvlDirs           := Directions.satisfyingSuperset visibleLevelLhs visibleLevelRhs
   exprDirs.meet lvlDirs
 
 -- Returns the same rewrite but with its type and proof potentially flipped to match the given
@@ -127,7 +188,12 @@ where
     for cond in rw.conds do
       let (_, s) ← (← MVars.collect cond.expr ∅).fresh (init := subst)
       let (mvars, s) ← cond.mvars.fresh (init := s)
-      conds := conds.push { expr := s.apply cond.expr, type := s.apply cond.type, mvars }
+      conds := conds.push {
+        kind := cond.kind,
+        expr := s.apply cond.expr,
+        type := s.apply cond.type,
+        mvars
+      }
       subst := s
     return (conds, subst)
 

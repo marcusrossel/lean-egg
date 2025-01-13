@@ -6,7 +6,7 @@ example : 1 = 2 := by
   egg [ax]
 
 /--
-error: egg requires rewrites to be equalities, equivalences or (non-propositional) definitions
+error: egg requires premises to be (proofs of) propositions or (non-propositional) definitions
 -/
 #guard_msgs in
 example : 0 = 0 := by
@@ -15,7 +15,7 @@ example : 0 = 0 := by
 opaque op : Nat
 
 /--
-error: egg requires rewrites to be equalities, equivalences or (non-propositional) definitions
+error: egg requires premises to be (proofs of) propositions or (non-propositional) definitions
 -/
 #guard_msgs in
 example : 0 = 0 := by

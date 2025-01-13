@@ -1,5 +1,8 @@
 import Egg
 
+set_option egg.eraseTCInstances false
+set_option egg.genTcSpecRws true
+
 class CommAdd (α) extends Add α where
   comm : ∀ a b : α, a + b = b + a
 

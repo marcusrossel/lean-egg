@@ -4,10 +4,12 @@ open scoped Egg
 egg_no_defeq
 set_option egg.builtins false
 set_option egg.genTcProjRws false
+set_option egg.genGroundEqs false
 set_option trace.egg.rewrites true
 
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] ?x = ?x
@@ -19,7 +21,6 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs(info) in
@@ -28,6 +29,7 @@ example (h : ∀ x : Nat, x = x) : true = true := by
 
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇒): h
       [egg.rewrites] f ?x = ?x
@@ -39,7 +41,6 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs(info) in
@@ -48,6 +49,7 @@ example (f : {α : Type} → α → α) (h : ∀ α (x : α), f x = x) : true = 
 
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇒): h
       [egg.rewrites] ?x + ?x = ?x
@@ -59,7 +61,6 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs(info) in
@@ -68,6 +69,7 @@ example (h : ∀ [Add α] (x : α), x + x = x) : true = true := by
 
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] f ?n ⋯ = ?n
@@ -79,7 +81,6 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs(info) in

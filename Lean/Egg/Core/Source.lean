@@ -52,19 +52,15 @@ inductive Source.SubstShift where
   | abort
   deriving Inhabited, BEq, Hashable
 
-inductive Source.Fact where
-  | explicit (idx : Nat)
-  | star (id : FVarId)
-  | equality
-  | postponed
-  deriving Inhabited, BEq, Hashable
-
 inductive Source where
   | goal
-  | guide (idx : Nat)
+  | intro (idx : Nat)
+  | guide (idx : Nat) (derived : Bool)
   | explicit (idx : Nat) (eqn? : Option Nat)
   | star (id : FVarId)
-  | fact (src : Source.Fact)
+  | ground (src : Source)
+  | reifiedEq
+  | factAnd
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos) (depth : Nat)
   | tcSpec (src : Source) (spec : Source.TcSpec)
   | nestedSplit (src : Source) (dir : Direction)
@@ -123,21 +119,18 @@ def SubstShift.description : SubstShift → String
   | unknown => "_"
   | abort   => "|"
 
-def Fact.description : Fact → String
-  | explicit idx => s!"#{idx}"
-  | star id      => s!"*{id.uniqueIdx!}"
-  | equality     => "="
-  | postponed    => "?"
-
 -- Note: It's important that we remove the whitespace from the list in the `.explosion` case,
 --       because otherwise egg adds quotes around the rule name.
 def description : Source → String
   | goal                    => "⊢"
-  | guide idx               => s!"↣{idx}"
+  | intro idx               => s!"→{idx}"
+  | guide idx derived       => s!"↣{idx}{if derived then "!" else ""}"
   | explicit idx none       => s!"#{idx}"
   | explicit idx (some eqn) => s!"#{idx}/{eqn}"
   | star id                 => s!"*{id.uniqueIdx!}"
-  | fact src                => s!"!{src.description}"
+  | .ground src             => s!"{src.description}↓"
+  | reifiedEq               => "="
+  | factAnd                 => "∧"
   | tcProj src loc pos dep  => s!"{src.description}[{loc.description}{pos.asNat},{dep}]"
   | tcSpec src spec         => s!"{src.description}<{spec.description}>"
   | nestedSplit src dir     => s!"{src.description}⁅{dir.description}⁆"
@@ -145,8 +138,8 @@ def description : Source → String
   | natLit src              => src.description
   | subst src               => s!"↦{src.description}"
   | shift src               => s!"↑{src.description}"
-  | eta false               => s!"≡η"
-  | eta true                => s!"≡η+"
+  | eta false               => "≡η"
+  | eta true                => "≡η+"
   | beta                    => "≡β"
   | level src               => src.description
   | builtin idx             => s!"◯{idx}"
@@ -155,10 +148,6 @@ def description : Source → String
 
 instance : ToString Source where
   toString := description
-
-def isRewrite : Source → Bool
-  | goal | guide _ => false
-  | _              => true
 
 def isDefEq : Source → Bool
   | natLit _ | eta _ | beta | level _ | subst _ | shift _ => true
@@ -180,3 +169,11 @@ def isSubst : Source → Bool
 def involvesBinders : Source → Bool
   | subst _ | shift _ | eta _ | beta => true
   | _                                => false
+
+def isReifiedEq : Source → Bool
+  | reifiedEq => true
+  | _         => false
+
+def isGround : Source → Bool
+  | ground _ => true
+  | _        => false

@@ -42,6 +42,8 @@ where
           let cls ← normalize cls .noReduce
           let enc ← withoutShapes do go cls
           pure s!"(inst {enc})"
+        else if let some (lhs, rhs) := e.eqOrIff? then
+          pure s!"(= {← go lhs} {← go rhs})"
         else
           core e
       if (← config).shapes then

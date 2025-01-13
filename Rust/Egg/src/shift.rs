@@ -34,34 +34,35 @@ impl Applier<LeanExpr, LeanAnalysis> for BVarShift {
     }
 }
 
-struct AppShift {
+struct BasicShift {
+    ctor:   String,
     dir:    Var,
     offset: Var,
     cutoff: Var,
-    fun:    Var,
-    arg:    Var
+    left:   Var,
+    right:  Var
 }
 
-impl Applier<LeanExpr, LeanAnalysis> for AppShift {
+impl Applier<LeanExpr, LeanAnalysis> for BasicShift {
 
     fn apply_one(&self, egraph: &mut LeanEGraph, _: Id, subst: &Subst, ast: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
-        let fun_bvars = &egraph[subst[self.fun]].data.loose_bvars;
-        let arg_bvars = &egraph[subst[self.arg]].data.loose_bvars;
-        let cutoff    = &egraph[subst[self.cutoff]].data.nat_val.unwrap();
+        let left_bvars  = &egraph[subst[self.left]].data.loose_bvars;
+        let right_bvars = &egraph[subst[self.right]].data.loose_bvars;
+        let cutoff      = &egraph[subst[self.cutoff]].data.nat_val.unwrap();
 
-        let shifted_fun: PatternAst<LeanExpr> = if fun_bvars.iter().all(|b| b < cutoff) { 
-            format!("{}", self.fun).parse().unwrap()
+        let shifted_left: PatternAst<LeanExpr> = if left_bvars.iter().all(|b| b < cutoff) { 
+            format!("{}", self.left).parse().unwrap()
         } else { 
-            format!("(↑ {} {} {} {})", self.dir, self.offset, self.cutoff, self.fun).parse().unwrap()
+            format!("(↑ {} {} {} {})", self.dir, self.offset, self.cutoff, self.left).parse().unwrap()
         };
 
-        let shifted_arg: PatternAst<LeanExpr> = if arg_bvars.iter().all(|b| b < cutoff) { 
-            format!("{}", self.arg).parse().unwrap()
+        let shifted_right: PatternAst<LeanExpr> = if right_bvars.iter().all(|b| b < cutoff) { 
+            format!("{}", self.right).parse().unwrap()
         } else { 
-            format!("(↑ {} {} {} {})", self.dir, self.offset, self.cutoff, self.arg).parse().unwrap()
+            format!("(↑ {} {} {} {})", self.dir, self.offset, self.cutoff, self.right).parse().unwrap()
         };
 
-        let shifted_app = format!("(app {} {})", shifted_fun, shifted_arg).parse().unwrap();
+        let shifted_app = format!("({} {} {})", self.ctor, shifted_left, shifted_right).parse().unwrap();
         let (id, did_union) = egraph.union_instantiations(ast.unwrap(), &shifted_app, subst, rule);
         if did_union { vec![id] } else { vec![] }
     }
@@ -107,9 +108,10 @@ impl Applier<LeanExpr, LeanAnalysis> for BinderShift {
 pub fn shift_rws() -> Vec<LeanRewrite> {
     let mut rws = vec![];
     rws.push(rewrite!("↑bvar";  "(↑ ?d ?o ?c (bvar ?b))"   => { BVarShift   { dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), bvar_idx: "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↑app";   "(↑ ?d ?o ?c (app ?a ?b))" => { AppShift    { dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), fun: "?a".parse().unwrap(), arg: "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↑λ";     "(↑ ?d ?o ?c (λ ?a ?b))"   => { BinderShift { binder: "λ".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), domain: "?a".parse().unwrap(), body: "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↑∀";     "(↑ ?d ?o ?c (∀ ?a ?b))"   => { BinderShift { binder: "∀".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), domain: "?a".parse().unwrap(), body: "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↑app";   "(↑ ?d ?o ?c (app ?a ?b))" => { BasicShift  { ctor: "app".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), left:   "?a".parse().unwrap(), right: "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↑=";     "(↑ ?d ?o ?c (= ?a ?b))"   => { BasicShift  { ctor: "=".to_string(),   dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), left:   "?a".parse().unwrap(), right: "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↑λ";     "(↑ ?d ?o ?c (λ ?a ?b))"   => { BinderShift { binder: "λ".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), domain: "?a".parse().unwrap(), body:  "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↑∀";     "(↑ ?d ?o ?c (∀ ?a ?b))"   => { BinderShift { binder: "∀".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), domain: "?a".parse().unwrap(), body:  "?b".parse().unwrap() }}));
     rws.push(rewrite!("↑fvar";  "(↑ ?d ?o ?c (fvar ?x))"   => "(fvar ?x)"));
     rws.push(rewrite!("↑mvar";  "(↑ ?d ?o ?c (mvar ?x))"   => "(mvar ?x)"));
     rws.push(rewrite!("↑sort";  "(↑ ?d ?o ?c (sort ?x))"   => "(sort ?x)"));
@@ -119,5 +121,7 @@ pub fn shift_rws() -> Vec<LeanRewrite> {
     rws.push(rewrite!("↑proof"; "(↑ ?d ?o ?c (proof ?x))"  => "(proof ?x)"));
     rws.push(rewrite!("↑inst";  "(↑ ?d ?o ?c (inst ?x))"   => "(inst ?x)"));
     rws.push(rewrite!("↑_";     "(↑ ?d ?o ?c _)"           => "_"));
+    // Note: We don't handle the propagation of shifts over facts, as a shift should never even be
+    //       applied to a fact.
     rws
 }

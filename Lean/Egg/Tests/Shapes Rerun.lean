@@ -5,18 +5,18 @@ import Egg
 -- shown when setting `exitPoint := some .beforeProof`.
 
 /--
-error: egg failed to build proof step 0: unification failure for LHS of rewrite #0:
+error: egg failed to build proof step 2: unification failure for LHS of rewrite #0:
 
-  Nat.add
+  HAdd.hAdd
 vs
-  ?m.253
+  ?m.300
 in
-  Nat.add
+  HAdd.hAdd
 and
   ()
 
 • Types: ⏎
-  ?m.253: Unit
+  ?m.300: Unit
 
 • Read Only Or Synthetic Opaque MVars: []
 -/
@@ -25,7 +25,7 @@ set_option egg.retryWithShapes false in
 example (h : ∀ u : Unit, u = .unit) : Nat.add = Nat.mul := by
   egg [h]
 
-/-- error: egg failed to prove the goal (saturated) -/
+/-- error: egg failed to prove the goal (reached time limit) -/
 #guard_msgs in
 set_option egg.retryWithShapes true in
 example (h : ∀ u : Unit, u = .unit) : Nat.add = Nat.mul := by

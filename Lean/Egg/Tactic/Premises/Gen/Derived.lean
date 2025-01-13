@@ -19,6 +19,11 @@ private inductive DerivationCategory where
 private def DerivationCategory.all : Array DerivationCategory :=
   #[tcProj, tcSpec, splits, explosion]
 
+-- We maintain this theorem to ensure that we don't forget to add elements to
+-- `DerivationCategory.all`.
+theorem DerivationCategory.all_complete (c : DerivationCategory) : c ∈ all := by
+  cases c <;> simp [all]
+
 private def DerivationCategory.isEnabled (cfg : Config.Gen): DerivationCategory → Bool
   | tcProj    => cfg.genTcProjRws
   | tcSpec    => cfg.genTcSpecRws
@@ -98,8 +103,8 @@ open DerivedM
 -- TODO: We need to be careful about making sure that we don't loop infinitely.
 --       For example, tc proj and explosion might easily loop.
 partial def genDerived
-    (goal : Congr) (rws : Rewrites) (facts : Facts) (guides : Guides) (cfg : Config)
-    (amb : MVars.Ambient) : TacticM Rewrites := do
+    (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) (amb : MVars.Ambient) :
+    TacticM Rewrites := do
   let all ← DerivedM.run do
     add' (cat? := none) rws
     addInitialTcProjs
@@ -109,7 +114,7 @@ partial def genDerived
 where
   addInitialTcProjs : DerivedM Unit := do
     unless cfg.genTcProjRws do return
-    let targets := rws.tcProjTargets ++ goal.tcProjTargets .goal ++ guides.tcProjTargets ++ facts.tcProjTargets
+    let targets := rws.tcProjTargets ++ goal.tcProjTargets .goal ++ guides.tcProjTargets
     let (rws, cover) ← genTcProjReductions targets (covered := ∅) { cfg with amb }
     add .tcProj rws
     setTcProjCover cover

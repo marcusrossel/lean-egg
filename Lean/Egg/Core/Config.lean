@@ -13,7 +13,7 @@ def Normalization.noReduce : Normalization where
 
 structure Erasure where
   eraseProofs      := true
-  eraseTCInstances := false
+  eraseTCInstances := true
   deriving Inhabited, BEq
 
 def Erasure.noErase : Erasure where
@@ -22,9 +22,9 @@ def Erasure.noErase : Erasure where
 
 structure Encoding extends Normalization, Erasure where
   -- TODO: Currently, this option implicitly disables `retryWithShapes` as slotted cannot handle shapes, yet.
-  slotted          := false
+  slotted := false
   -- TODO: Currently, this option implicitly disables defeq rewrites as they can not handle shapes, yet.
-  shapes           := false
+  shapes  := false
   deriving BEq
 
 structure Gen where
@@ -35,6 +35,8 @@ structure Gen where
   genGoalTcSpec   := true -- This option requires `genTcSpecRws` to be true.
   genNestedSplits := true
   explosion       := false
+  derivedGuides   := true
+  genGroundEqs    := true
   deriving BEq
 
 structure DefEq extends Erasure where
@@ -66,12 +68,13 @@ inductive Debug.ExitPoint
   deriving BEq, Inhabited
 
 structure Debug where
-  exitPoint := Debug.ExitPoint.none
-  vizPath   := (none : Option String)
+  exitPoint  := Debug.ExitPoint.none
+  proofFuel? := (none : Option Nat)
+  vizPath    := (none : Option String)
   deriving BEq
 
 structure _root_.Egg.Config extends Encoding, DefEq, Gen, Backend, Debug where
-  retryWithShapes := true
+  retryWithShapes := false
   explLengthLimit := 1000
 
 -- TODO: Why aren't these coercions automatic?

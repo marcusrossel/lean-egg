@@ -24,6 +24,8 @@ structure Modifier where
   beta                : Option Bool            := none
   levels              : Option Bool            := none
   explosion           : Option Bool            := none
+  derivedGuides       : Option Bool            := none
+  genGroundEqs        : Option Bool            := none
   blockInvalidMatches : Option Bool            := none
   shiftCapturedBVars  : Option Bool            := none
   unionSemantics      : Option Bool            := none
@@ -37,6 +39,7 @@ structure Modifier where
   retryWithShapes     : Option Bool            := none
   explLengthLimit     : Option Nat             := none
   exitPoint           : Option Debug.ExitPoint := none
+  proofFuel?          : Option Nat             := none
   vizPath             : Option String          := none
 
 def modify (cfg : Config) (mod : Modifier) : Config where
@@ -58,6 +61,8 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   beta                := mod.beta.getD cfg.beta
   levels              := mod.levels.getD cfg.levels
   explosion           := mod.explosion.getD cfg.explosion
+  derivedGuides       := mod.derivedGuides.getD cfg.derivedGuides
+  genGroundEqs        := mod.genGroundEqs.getD cfg.genGroundEqs
   blockInvalidMatches := mod.blockInvalidMatches.getD cfg.blockInvalidMatches
   shiftCapturedBVars  := mod.shiftCapturedBVars.getD cfg.shiftCapturedBVars
   unionSemantics      := mod.unionSemantics.getD cfg.unionSemantics
@@ -70,6 +75,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   flattenReports      := mod.flattenReports.getD cfg.flattenReports
   retryWithShapes     := mod.retryWithShapes.getD cfg.retryWithShapes
   explLengthLimit     := mod.explLengthLimit.getD cfg.explLengthLimit
+  proofFuel?          := match mod.proofFuel? with | some p => p | none => cfg.proofFuel?
   exitPoint           := mod.exitPoint.getD cfg.exitPoint
   vizPath             := match mod.vizPath with | some p => p | none => cfg.vizPath
 

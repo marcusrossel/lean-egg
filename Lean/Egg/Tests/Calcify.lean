@@ -53,7 +53,7 @@ example (h : ∀ x y : Nat, f x x = f y x) : ∀ a b : Nat, f a a = f b a := by
   egg? [h]
 
 
-def E := ∀ a b : Nat, f a a = f b a
+abbrev E := ∀ a b : Nat, f a a = f b a
 
 /--
 info: Try this: ⏎

@@ -5,6 +5,7 @@ set_option egg.genNestedSplits true
 
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] a = b ↔ c = d
@@ -32,7 +33,6 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] RHS MVars
           []
   [egg.rewrites] Definitional
-  [egg.rewrites] Hypotheses (0)
   [egg.rewrites] Pruned (0)
 -/
 #guard_msgs(info) in
@@ -43,8 +43,6 @@ set_option egg.genTcProjRws false in
 example (h : (a = b) ↔ (c = d)) : 0 = 0 := by
   egg [h]
 
-/-- error: egg failed to prove the goal (saturated) -/
-#guard_msgs in
 set_option egg.genNestedSplits false in
 example (h₁ : (a = b) ↔ (c = d)) (h₂ : a = b) : c = d := by
   egg [h₁, h₂]

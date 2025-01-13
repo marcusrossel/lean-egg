@@ -5,7 +5,12 @@ open Lean
 
 namespace Egg.Explanation
 
+inductive Kind where
+  | sameEClass
+  | eqTrue
+
 structure Raw where
+  kind    : Kind
   str     : String
   slotted : Bool
 
@@ -14,7 +19,6 @@ namespace Rewrite
 structure Descriptor where
   src   : Source
   dir   : Direction
-  facts : Array Source.Fact
   deriving Inhabited
 
 structure Info extends Descriptor where
@@ -27,8 +31,11 @@ structure Step extends Rewrite.Info where
   dst : Expr
   deriving Inhabited
 
-end Explanation
-
-structure Explanation where
+structure Steps where
   start : Expr
   steps : Array Explanation.Step
+
+end Explanation
+
+structure Explanation extends Explanation.Steps where
+  kind  : Explanation.Kind

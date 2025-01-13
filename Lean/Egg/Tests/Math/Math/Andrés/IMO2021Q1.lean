@@ -38,7 +38,7 @@ theorem exists_finset_3_le_card_with_pairs_summing_to_squares {n : ℕ} (hn : 10
       rw [Finset.card_insert_of_not_mem this.1, Finset.card_insert_of_not_mem this.2,
         Finset.card_singleton]
     apply of_eq_true
-    egg! [Finset.mem_insert, Finset.mem_singleton, Finset.mem_singleton; hab, hbc, hbc]
+    egg! [Finset.mem_insert, Finset.mem_singleton, Finset.mem_singleton, hab, hbc, hbc]
     --rw [Finset.mem_insert, Finset.mem_singleton, Finset.mem_singleton]
     --push_neg
     --exact ⟨⟨hab.ne, (hab.trans hbc).ne⟩, hbc.ne⟩
