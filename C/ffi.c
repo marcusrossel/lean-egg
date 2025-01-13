@@ -1,5 +1,6 @@
 #include <lean/lean.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "ffi.h"
 
 size_t nat_from_lean_obj(lean_obj_arg nat) {
@@ -29,6 +30,16 @@ typedef enum rw_dirs {
   RW_DIR_BOTH
 } rw_dirs;
 
+rw_dirs rw_dirs_from_lean(uint8_t dirs) {
+    switch (dirs) {
+        case 0:  return RW_DIR_NONE;
+        case 1:  return RW_DIR_FORWARD;
+        case 2:  return RW_DIR_BACKWARD;
+        case 3:  return RW_DIR_BOTH;
+        default: exit(11);
+    }
+}
+
 typedef struct rewrite {
     const char* name;
     const char* lhs;
@@ -57,7 +68,7 @@ rewrite rewrite_from_lean_obj(lean_obj_arg rw) {
         .name  = lean_string_cstr(lean_ctor_get(rw, 0)),
         .lhs   = lean_string_cstr(lean_ctor_get(rw, 1)),
         .rhs   = lean_string_cstr(lean_ctor_get(rw, 2)),
-        .dirs  = lean_ctor_get_uint8(rw, scalar_base_offset + 0),
+        .dirs  = rw_dirs_from_lean(lean_ctor_get_uint8(rw, scalar_base_offset + 0)),
         .conds = str_array_from_lean_obj(lean_ctor_get(rw, 3))
     };
 }
@@ -158,15 +169,22 @@ inductive StopReason where
 */
 
 typedef enum stop_reason {
-    SATURATED,
-    TIME_LIMIT,
-    ITERATION_LIMIT,
-    NODE_LIMIT,
-    OTHER
+    STOP_REASON_SATURATED,
+    STOP_REASON_TIME_LIMIT,
+    STOP_REASON_ITERATION_LIMIT,
+    STOP_REASON_NODE_LIMIT,
+    STOP_REASON_OTHER
 } stop_reason;
 
 uint8_t stop_reason_to_lean(stop_reason reason) {
-    return (uint8_t)reason;
+    switch (reason) {
+        case STOP_REASON_SATURATED:       return 0;
+        case STOP_REASON_TIME_LIMIT:      return 1;
+        case STOP_REASON_ITERATION_LIMIT: return 2;
+        case STOP_REASON_NODE_LIMIT:      return 3;
+        case STOP_REASON_OTHER:           return 4;
+        default:                          exit(12);
+    }
 }
 
 /*
@@ -183,7 +201,12 @@ typedef enum expl_kind {
 } expl_kind;
 
 uint8_t expl_kind_to_lean(expl_kind kind) {
-    return (uint8_t)kind;
+    switch (kind) {
+        case EXPL_KIND_NONE:        return 0;
+        case EXPL_KIND_SAME_ECLASS: return 1;
+        case EXPL_KIND_EQ_TRUE:     return 2;
+        default:                    exit(13);
+    }
 }
 
 /*

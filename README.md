@@ -72,7 +72,7 @@ If you need more control, you can use `egg calc` to specify a chain of equations
 -- From `Lean/Egg/Tests/Freshman Calc.lean`
 import Egg
 
-theorem freshmans_dream₃ [CharTwoRing α] (x y : α) : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
+example [CharTwoRing α] (x y : α) : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
   egg calc [/- axioms of ring of characteristic 2 -/]
     _ = (x + y) * (x + y) * (x + y)
     _ = (x + y) * (x * (x + y) + y * (x + y))
