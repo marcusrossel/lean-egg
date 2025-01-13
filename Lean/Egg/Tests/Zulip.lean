@@ -6,12 +6,8 @@ variable {α} {f : α → α → α} (f_comm : ∀ a b, f a b = f b a) (f_assoc 
 
 include f_assoc f_comm in
 theorem foldl_descend : (head :: tail).foldl f init = f init (tail.foldl f head) := by
-  induction tail generalizing init with
-  | nil         => rfl
-  | cons _ _ ih => egg [List.foldl, f_assoc, f_comm, ih]
+  induction tail generalizing init <;> egg [List.foldl, *]
 
 include f_assoc f_comm in
 theorem foldl_eq_foldr (l : List α) : l.foldl f init = l.foldr f init := by
-  induction l with
-  | nil         => rfl
-  | cons _ _ ih => egg [List.foldl, List.foldr, ih, foldl_descend, f_comm, f_assoc]
+  induction l <;> egg [List.foldl, List.foldr, foldl_descend, *]

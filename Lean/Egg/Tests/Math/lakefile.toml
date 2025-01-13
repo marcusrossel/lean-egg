@@ -1,7 +1,7 @@
-name = "Rotman"
+name = "Math"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["Rotman"]
+defaultTargets = ["Math"]
 
 [[require]]
 name  = "mathlib"
@@ -13,4 +13,4 @@ name = "egg"
 path = "../../../.."
 
 [[lean_lib]]
-name = "Rotman"
+name = "Math"

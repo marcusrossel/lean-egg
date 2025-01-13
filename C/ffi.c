@@ -430,7 +430,7 @@ lean_obj_res explain_equiv(b_lean_obj_arg graph, uint8_t slotted, lean_obj_arg i
     if (slotted != 0) {
         slotted_egraph graph_c = to_slotted_egraph(graph);
         const char* expl = slotted_query_equiv(graph_c, init_c, goal_c);
-        eqsat_result res = (eqsat_result) { .slotted = true, .expl = expl, .graph = NULL, .rep = 0 };
+        eqsat_result res = (eqsat_result) { .slotted = true, .kind = EXPL_KIND_SAME_ECLASS, .expl = expl, .graph = NULL, .rep = 0 };
         return eqsat_result_to_lean(res);
     } else {
         egg_egraph graph_c = to_egg_egraph(graph);
