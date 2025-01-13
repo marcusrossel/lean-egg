@@ -19,6 +19,11 @@ private inductive DerivationCategory where
 private def DerivationCategory.all : Array DerivationCategory :=
   #[tcProj, tcSpec, splits, explosion]
 
+-- We maintain this theorem to ensure that we don't forget to add elements to
+-- `DerivationCategory.all`.
+theorem DerivationCategory.all_complete (c : DerivationCategory) : c ∈ all := by
+  cases c <;> simp [all]
+
 private def DerivationCategory.isEnabled (cfg : Config.Gen): DerivationCategory → Bool
   | tcProj    => cfg.genTcProjRws
   | tcSpec    => cfg.genTcSpecRws

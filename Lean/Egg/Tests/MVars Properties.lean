@@ -9,6 +9,7 @@ set_option trace.egg.rewrites true
 
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] ?x = ?x
@@ -28,6 +29,7 @@ example (h : ∀ x : Nat, x = x) : true = true := by
 
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇒): h
       [egg.rewrites] f ?x = ?x
@@ -47,6 +49,7 @@ example (f : {α : Type} → α → α) (h : ∀ α (x : α), f x = x) : true = 
 
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇒): h
       [egg.rewrites] ?x + ?x = ?x
@@ -66,6 +69,7 @@ example (h : ∀ [Add α] (x : α), x + x = x) : true = true := by
 
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] f ?n ⋯ = ?n

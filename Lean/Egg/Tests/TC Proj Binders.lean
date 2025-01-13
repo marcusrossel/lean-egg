@@ -19,6 +19,7 @@ example (h : ∀ {α} [Add α] (a : α), a + a = a) : 1 + 1 = 1 := by
 -- This test ensures that projection reductions are produced for terms appearing in binder domains.
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] z = z

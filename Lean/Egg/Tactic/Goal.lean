@@ -7,9 +7,8 @@ open Lean Meta Elab Tactic
 namespace Egg
 
 structure Goal extends Congr where private mk ::
-  id : MVarId
-  -- The user names of the fvars that had to be introduced in order to reach the goal congruence.
-  intros : Array Name
+  id     : MVarId
+  intros : Array (FVarId × Name)
 
 def Goal.gen (goal : MVarId) : TacticM Goal :=
   goal.withContext do
@@ -34,7 +33,7 @@ def Goal.gen (goal : MVarId) : TacticM Goal :=
         let cgr ← Congr.from! goalEqTrue
         return { cgr with id := mGoalEqTrue.mvarId!, intros }
 where
-  genIntros (goal : MVarId) (previousFVars : Array FVarId) : MetaM (MVarId × Array Name) := do
+  genIntros (goal : MVarId) (previousFVars : Array FVarId) : MetaM (MVarId × Array (FVarId × Name)) := do
     goal.withContext do
       let mut goal := goal
       let mut intros := #[]
@@ -44,5 +43,5 @@ where
           let userName := (← getLCtx).getUnusedName (← fvar.getUserName)
           pure (← goal.rename fvar userName, userName)
         goal := g
-        intros := intros.push name
+        intros := intros.push (fvar, name)
       return (goal, intros)

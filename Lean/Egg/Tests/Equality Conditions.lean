@@ -14,6 +14,8 @@ example (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
 example (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂]
 
+-- BUG: This stackoverflows - I'm guessing during proof reconstruction.
+--      Add fuel and debug.
 example (h₁ : x = y) (h₂ : y = z) (h₃ : x = z → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂, h₃]
 

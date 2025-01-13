@@ -72,7 +72,7 @@ where
       -- We increase the mvar context depth, so that ambient mvars aren't unified during proof
       -- reconstruction. Note that this also means that we can't assign the `goal` mvar here.
       let res ← withNewMCtxDepth do
-        let rws ← Premises.gen goal.toCongr prems guides cfg amb
+        let rws ← Premises.gen goal prems guides cfg amb
         let guides ← do if cfg.derivedGuides then pure (guides ++ (← genDerivedGuides rws amb)) else pure guides
         runEqSat goal rws guides cfg amb
       match res with
@@ -81,7 +81,7 @@ where
           let totalTime := (← IO.monoMsNow) - startTime
           logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl goalContainsBinder)
         goal.id.assignIfDefeq' proof
-        if let some tk := calcifyTk? then calcify tk proof goal.intros
+        if let some tk := calcifyTk? then calcify tk proof goal.intros.unzip.snd
       | none => goal.id.admit
   runEqSat
       (goal : Goal) (rws : Rewrites) (guides : Guides) (cfg : Config) (amb : MVars.Ambient) :

@@ -13,6 +13,7 @@ variable (f : Nat → Nat → Nat)
 -- This should not generate exploded rewrites.
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (0)
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
@@ -28,6 +29,7 @@ example : true = true := by
 -- This should not generate exploded rewrites.
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] true = false
@@ -49,6 +51,7 @@ example (h : true = false) : true = false := by
 -- This should not generate exploded rewrites.
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] f ?x ?y = f ?y ?x
@@ -93,6 +96,7 @@ example (a b : Nat) (h : ∀ x y : Nat, f x y = f y x) : f a b = f b a := by
 -- This should generate two explosions of `h` - one for `a` and one for `b`.
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇐): h
       [egg.rewrites] f ?x ?x = f ?y ?x

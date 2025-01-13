@@ -54,6 +54,7 @@ inductive Source.SubstShift where
 
 inductive Source where
   | goal
+  | intro (idx : Nat)
   | guide (idx : Nat) (derived : Bool)
   | explicit (idx : Nat) (eqn? : Option Nat)
   | star (id : FVarId)
@@ -122,6 +123,7 @@ def SubstShift.description : SubstShift → String
 --       because otherwise egg adds quotes around the rule name.
 def description : Source → String
   | goal                    => "⊢"
+  | intro idx               => s!"→{idx}"
   | guide idx derived       => s!"↣{idx}{if derived then "!" else ""}"
   | explicit idx none       => s!"#{idx}"
   | explicit idx (some eqn) => s!"#{idx}/{eqn}"

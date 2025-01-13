@@ -10,6 +10,7 @@ set_option egg.builtins false
 
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇔): h₁
       [egg.rewrites] 0 = 0
@@ -36,6 +37,7 @@ example (h₁ h₂ : 0 = 0) : 0 = 0 := by
 
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇔): Nat.add_comm
       [egg.rewrites] ?n + ?m = ?m + ?n

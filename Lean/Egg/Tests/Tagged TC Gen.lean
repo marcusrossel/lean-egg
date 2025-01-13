@@ -16,6 +16,7 @@ theorem r [c : C α] : z (self := c) = z := rfl
 
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (0)
   [egg.rewrites] Tagged (1)
     [egg.rewrites] □0(⇔)

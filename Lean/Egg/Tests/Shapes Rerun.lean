@@ -9,14 +9,14 @@ error: egg failed to build proof step 2: unification failure for LHS of rewrite 
 
   HAdd.hAdd
 vs
-  ?m.300
+  ?m.363
 in
   HAdd.hAdd
 and
   ()
 
 • Types: ⏎
-  ?m.300: Unit
+  ?m.363: Unit
 
 • Read Only Or Synthetic Opaque MVars: []
 -/

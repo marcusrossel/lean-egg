@@ -21,12 +21,14 @@ namespace Premises.GenM
 
 private inductive RewriteCategory where
   | tagged
+  | intros
   | basic
   | builtins
   | derived
 
 private def RewriteCategory.title : RewriteCategory → String
   | .tagged   => "Tagged"
+  | .intros   => "Intros"
   | .basic    => "Basic"
   | .builtins => "Builtin"
   | .derived  => "Derived"
@@ -35,6 +37,7 @@ private structure State where
   all       : Rewrites
   pruned    : Rewrites
   tagged    : Rewrites
+  intros    : Rewrites
   basic     : Rewrites
   builtins  : Rewrites
   derived   : Rewrites
@@ -44,6 +47,7 @@ private instance : EmptyCollection State where
     all      := {}
     pruned   := {}
     tagged   := {}
+    intros   := {}
     basic    := {}
     builtins := {}
     derived  := {}
@@ -51,12 +55,14 @@ private instance : EmptyCollection State where
 
 private def State.get (s : State) : RewriteCategory → Rewrites
   | .tagged   => s.tagged
+  | .intros   => s.basic
   | .basic    => s.basic
   | .builtins => s.builtins
   | .derived  => s.derived
 
 private def State.set (s : State) : RewriteCategory → Rewrites → State
   | .tagged,   rws => { s with tagged   := rws }
+  | .intros,   rws => { s with intros   := rws }
   | .basic,    rws => { s with basic    := rws }
   | .builtins, rws => { s with builtins := rws }
   | .derived,  rws => { s with derived  := rws }

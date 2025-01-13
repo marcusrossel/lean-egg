@@ -18,12 +18,11 @@ example : ¬¬(p = p) := by
 example : (¬¬p) ↔ p := by
   egg!
 
--- TODO: Auto-introed hypotheses are not being added as rewrites.
 example : (¬p ∧ ¬q) → ¬(p ∨ q) := by
-  egg! [*]
+  egg!
 
 example : ¬(p ∧ q) → (p → ¬q) := by
-  egg! [*]
+  egg!
 
 example (r : α → Prop) : (∀ x, ¬ r x) → ¬(∃ x, r x) := by
-  egg! [*]
+  egg!
