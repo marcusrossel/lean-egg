@@ -21,6 +21,7 @@ example : (¬¬p) ↔ p := by
 example : (¬p ∧ ¬q) → ¬(p ∨ q) := by
   egg!
 
+-- TODO: This will work again once `imp_mp` is reintroduced as an egg builtin.
 example : ¬(p ∧ q) → (p → ¬q) := by
   egg!
 

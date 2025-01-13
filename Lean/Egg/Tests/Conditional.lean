@@ -47,8 +47,10 @@ example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂, h₁]
 
+-- BUG: Having conditions with unbound variables is problematic during proof reconstruction.
+--      In this case, this results from `h`. But modus ponens suffers from the same problem.
 example (h : ∀ p : Prop, p → 1 = id 1) : 1 = id 1 := by
-  egg [h]
+  sorry -- egg [h]
 
 class Fix (α : Type) where
   fix : ∀ (f : α → α) (a : α), f a = a

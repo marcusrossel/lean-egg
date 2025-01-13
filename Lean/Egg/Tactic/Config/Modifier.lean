@@ -39,6 +39,7 @@ structure Modifier where
   retryWithShapes     : Option Bool            := none
   explLengthLimit     : Option Nat             := none
   exitPoint           : Option Debug.ExitPoint := none
+  proofFuel?          : Option Nat             := none
   vizPath             : Option String          := none
 
 def modify (cfg : Config) (mod : Modifier) : Config where
@@ -74,6 +75,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   flattenReports      := mod.flattenReports.getD cfg.flattenReports
   retryWithShapes     := mod.retryWithShapes.getD cfg.retryWithShapes
   explLengthLimit     := mod.explLengthLimit.getD cfg.explLengthLimit
+  proofFuel?          := match mod.proofFuel? with | some p => p | none => cfg.proofFuel?
   exitPoint           := mod.exitPoint.getD cfg.exitPoint
   vizPath             := match mod.vizPath with | some p => p | none => cfg.vizPath
 

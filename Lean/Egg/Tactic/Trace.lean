@@ -168,22 +168,24 @@ nonrec def Explanation.trace (expl : Explanation) (cls : Name) : TacticM Unit :=
 nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Proof") do
     for step in prf.steps, idx in [:prf.steps.size] do
-      if idx == 0 then trace cls fun _ => step.lhs
+      if idx == 0 then
+        let lhs ← instantiateMVars step.lhs
+        trace cls fun _ => lhs
       match step.rw with
       | .defeq src =>
         if src.isNatLitConversion || src.isSubst then continue
-        withTraceNode cls (fun _ => return step.rhs) do
+        withTraceNode cls (fun _ => instantiateMVars step.rhs) do
           trace cls fun _ => m!"{src.description}({step.dir.format})"
       | .rw rw _ =>
         if rw.src.containsTcProj then continue
-        withTraceNode cls (fun _ => return step.rhs) do
+        withTraceNode cls (fun _ => instantiateMVars step.rhs) do
           traceM cls fun _ => return m!"{rw.src.description}({step.dir.format}) {← rw.toCongr.toMessageData}"
           trace  cls fun _ => step.proof
       | .reifiedEq =>
-        withTraceNode cls (fun _ => return step.rhs) do
+        withTraceNode cls (fun _ => instantiateMVars step.rhs) do
           trace cls fun _ => m!"Reified Equality"
       | .factAnd =>
-        withTraceNode cls (fun _ => return step.rhs) do
+        withTraceNode cls (fun _ => instantiateMVars step.rhs) do
           trace cls fun _ => m!"Fact ∧ Fact"
 
 nonrec def MVars.Ambient.trace (amb : MVars.Ambient) (cls : Name) : TacticM Unit := do

@@ -68,8 +68,9 @@ inductive Debug.ExitPoint
   deriving BEq, Inhabited
 
 structure Debug where
-  exitPoint := Debug.ExitPoint.none
-  vizPath   := (none : Option String)
+  exitPoint  := Debug.ExitPoint.none
+  proofFuel? := (none : Option Nat)
+  vizPath    := (none : Option String)
   deriving BEq
 
 structure _root_.Egg.Config extends Encoding, DefEq, Gen, Backend, Debug where

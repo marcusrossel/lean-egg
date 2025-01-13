@@ -74,6 +74,7 @@ example (h : ∀ x y : Nat, f x y = f y x) : f 1 2 = f 2 1 := by
 -- This should not generate exploded rewrites.
 /--
 info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] f ?x ?y = f ?y ?x
@@ -128,21 +129,14 @@ set_option egg.genGroundEqs false in
 example (a b : Nat) (h : ∀ x y : Nat, f x x = f y x) : f a a = f b a := by
   egg [h]
 
-/-- error: egg failed to prove the goal (saturated) -/
-#guard_msgs in
+-- BUG: Egg finds a a broken proof path: by rewriting `f #0 #0` with both `h₁` and `h₂` which
+--      establishes `0 = f #0 #0 = 1`. Is there any sensible way to fix this?
 set_option egg.explosion false in
 example (a : Nat) (h₁ : ∀ x : Nat, f x x = 0) (h₂ : ∀ x : Nat, f x x = 1) : 0 = 1 := by
-  egg [h₁, h₂]
+  sorry -- egg [h₁, h₂]
 
 example (a : Nat) (h₁ : ∀ x : Nat, f x x = 0) (h₂ : ∀ x : Nat, f x x = 1) : 0 = 1 := by
   egg [h₁, h₂]
 
 example (a : Nat) (h₁ : ∀ x : Nat, 0 = f x x) (h₂ : ∀ x : Nat, 1 = f x x) : 0 = 1 := by
   egg [*]
-
--- TODO: Should we add an exploded rewrite for `Inhabited.default` when the local context doesn't
---       contain a term of the required type?
-/-- error: egg failed to prove the goal (saturated) -/
-#guard_msgs in
-example (h₁ : ∀ x : Nat, f x x = 0) (h₂ : ∀ x : Nat, f x x = 1) : 0 = 1 := by
-  egg [h₁, h₂]

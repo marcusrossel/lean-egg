@@ -56,8 +56,8 @@ where
 mutual
 
 private partial def Explanation.proof
-    (expl : Explanation) (rws : Rewrites) (egraph : EGraph) (ctx : EncodingCtx) :
-    MetaM Proof := do
+    (expl : Explanation) (rws : Rewrites) (egraph : EGraph) (ctx : EncodingCtx)
+    (fuel? : Option Nat := none) : MetaM Proof := do
   let mut current := expl.start
   let mut steps : Array Proof.Step := #[]
   let mut subgoals : Proof.Subgoals := []
@@ -193,19 +193,19 @@ where
     fail m!"unification failure for {side} of rewrite {src.description}:\n\n  {expr}\nvs\n  {rwExpr}\nin\n  {current}\nand\n  {next}\n\n• Types: {types}\n• Read Only Or Synthetic Opaque MVars: {readOnlyOrSynthOpaque}" idx
 
   proveCondition (cond : Expr) : MetaM (Option Expr) := do
-    -- This first check tries to handle a slightly obscure case when `cond` is simply
-    -- `cond : ?m : Prop` (that is, it can be a proof of any proposition). In this case we
-    -- arbitrarily choose `?m := True`.
-    if cond.isMVar then return some (.const ``True.intro [])
+    trace[egg.explanation] m!"Prove condition '{cond}'"
+    -- TODO: What should we do if `cond` still contains mvars?
     let some prf ← mkSubproof cond (.const ``True []) | return none
     mkOfEqTrue prf
 
   mkSubproof (lhs rhs : Expr) : MetaM (Option Expr) := do
+    if let some fuel := fuel? then unless fuel > 0 do fail "ran out of fuel"
     let req ← Request.Equiv.encoding lhs rhs ctx
     let some rawExpl := egraph.run req | return none
-    withTraceNode `egg.explanation (fun _ => return "Subexplanation") do trace[egg.explanation] rawExpl.str
+    withTraceNode `egg.explanation (fun _ => return m!"Nested Explanation for '{lhs}' = '{rhs}'") do
+      trace[egg.explanation] rawExpl.str
     let expl ← rawExpl.parse
-    expl.prove { lhs, rhs, rel := .eq } rws egraph ctx
+    expl.prove { lhs, rhs, rel := .eq } rws egraph ctx <| fuel?.map (· - 1)
 
   synthLingeringTcErasureMVars (e : Expr) : MetaM Unit := do
     let mvars := (← instantiateMVars e).collectMVars {} |>.result
@@ -221,9 +221,9 @@ where
         throwError "egg: internal error in 'Egg.Proof.Explanation.proof.synthLingeringTcErasureMVars'"
 
 partial def Explanation.prove'
-    (expl : Explanation) (cgr : Congr) (rws : Rewrites) (egraph : EGraph) (ctx : EncodingCtx) :
-    MetaM (Expr × Proof) := do
-  let proof ← expl.proof rws egraph ctx
+    (expl : Explanation) (cgr : Congr) (rws : Rewrites) (egraph : EGraph) (ctx : EncodingCtx)
+    (fuel? : Option Nat := none) : MetaM (Expr × Proof) := do
+  let proof ← expl.proof rws egraph ctx fuel?
   match expl.kind with
   | .sameEClass => return (← proof.prove cgr, proof)
   | .eqTrue =>
@@ -232,8 +232,8 @@ partial def Explanation.prove'
     return (← mkOfEqTrue p, proof)
 
 partial def Explanation.prove
-    (expl : Explanation) (cgr : Congr) (rws : Rewrites) (egraph : EGraph) (ctx : EncodingCtx) :
-    MetaM Expr :=
-  Prod.fst <$> expl.prove' cgr rws egraph ctx
+    (expl : Explanation) (cgr : Congr) (rws : Rewrites) (egraph : EGraph) (ctx : EncodingCtx)
+    (fuel? : Option Nat := none) : MetaM Expr :=
+  Prod.fst <$> expl.prove' cgr rws egraph ctx fuel?
 
 end
