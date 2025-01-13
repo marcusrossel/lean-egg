@@ -2,7 +2,6 @@ use egg::*;
 use crate::analysis::*;
 use crate::lean_expr::*;
 
-#[repr(C)]
 pub enum ExplanationKind {
     None,
     SameEClass,
@@ -10,6 +9,13 @@ pub enum ExplanationKind {
 }
 
 impl ExplanationKind {
+    pub fn to_c(self) -> u8 {
+        match self {
+            Self::None => 0,
+            Self::SameEClass => 1,
+            Self::EqTrue => 2,
+        }
+    }
 
     fn for_goal(
         egraph: &LeanEGraph, init_expr: RecExpr<LeanExpr>, goal_expr: RecExpr<LeanExpr>, init_id: Id, 

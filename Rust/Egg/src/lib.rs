@@ -52,7 +52,6 @@ impl CStringArray {
     }
 }
 
-#[repr(C)]
 #[derive(PartialEq)]
 pub enum RewriteDirections {
     None,
@@ -61,12 +60,24 @@ pub enum RewriteDirections {
     Both
 }
 
+impl RewriteDirections {
+    fn from_c(x: u8) -> Self {
+        match x {
+            0 => Self::None,
+            1 => Self::Forward,
+            2 => Self::Backward,
+            3 => Self::Both,
+            _ => panic!(),
+        }
+    }
+}
+
 #[repr(C)]
 pub struct CRewrite {
     name:  *const c_char,
     lhs:   *const c_char,
     rhs:   *const c_char,
-    dirs:  RewriteDirections,
+    dirs:  u8,
     conds: CStringArray
 }
 
@@ -105,7 +116,8 @@ impl CRewritesArray {
                 }
             }
 
-            if rw.dirs == RewriteDirections::Forward || rw.dirs == RewriteDirections::Both {
+            let rw_dirs = RewriteDirections::from_c(rw.dirs);
+            if rw_dirs == RewriteDirections::Forward || rw_dirs == RewriteDirections::Both {
                 res.push(RewriteTemplate { 
                     name:       name_str.to_string(), 
                     lhs:        lhs.clone(), 
@@ -115,7 +127,7 @@ impl CRewritesArray {
                 })
             }
 
-            if rw.dirs == RewriteDirections::Backward || rw.dirs == RewriteDirections::Both {
+            if rw_dirs == RewriteDirections::Backward || rw_dirs == RewriteDirections::Both {
                 // It is important that we use the "-rev" suffix for reverse rules here, as this is also
                 // what's used for adding the reverse rule when using egg's `rewrite!(_; _ <=> _)` macro.
                 // If we choose another naming scheme, egg may complain about duplicate rules when 
@@ -130,32 +142,21 @@ impl CRewritesArray {
     }
 }
 
-#[repr(C)]
-pub enum CStopReason {
-    Saturated,
-    TimeLimit,
-    IterationLimit,
-    NodeLimit,
-    Other,
-}
 
-impl CStopReason {
-
-    fn from_stop_reason(r: StopReason) -> (CStopReason, String) {
-        match r {
-            StopReason::Saturated         => (CStopReason::Saturated, "".to_string()),
-            StopReason::IterationLimit(_) => (CStopReason::IterationLimit, "".to_string()),
-            StopReason::NodeLimit(_)      => (CStopReason::NodeLimit, "".to_string()),
-            StopReason::TimeLimit(_)      => (CStopReason::TimeLimit, "".to_string()),
-            StopReason::Other(msg)        => (CStopReason::Other, msg),
-        }
+pub fn u8_from_stop_reason(r: StopReason) -> (u8, String) {
+    match r {
+        StopReason::Saturated         => (0, "".to_string()),
+        StopReason::IterationLimit(_) => (1, "".to_string()),
+        StopReason::NodeLimit(_)      => (2, "".to_string()),
+        StopReason::TimeLimit(_)      => (3, "".to_string()),
+        StopReason::Other(msg)        => (4, msg),
     }
 }
 
 #[repr(C)]
 pub struct CReport {
     iterations:      usize,
-    stop_reason:     CStopReason,
+    stop_reason:     u8,
     stop_reason_msg: *const c_char,
     egraph_nodes:    usize,
     egraph_classes:  usize,
@@ -166,7 +167,7 @@ pub struct CReport {
 impl CReport {
 
     fn from_report(r: Report, rw_stats: String) -> CReport {
-        let (stop_reason, msg) = CStopReason::from_stop_reason(r.stop_reason);
+        let (stop_reason, msg) = u8_from_stop_reason(r.stop_reason);
         CReport {
             iterations:      r.iterations,
             stop_reason:     stop_reason,
@@ -181,7 +182,7 @@ impl CReport {
     fn from_other_stop_reason(msg: String) -> CReport {
         CReport {
             iterations:      0,
-            stop_reason:     CStopReason::Other,
+            stop_reason:     u8_from_stop_reason(StopReason::Other(String::new())).0,
             stop_reason_msg: string_to_c_str(msg),
             egraph_nodes:    0,
             egraph_classes:  0,
@@ -193,7 +194,7 @@ impl CReport {
 
 #[repr(C)]
 pub struct EqsatResult {
-    kind: ExplanationKind,
+    kind: u8,
     expl: *const c_char,
     graph: Option<Box<LeanEGraph>>,
     report: CReport
@@ -216,7 +217,7 @@ pub extern "C" fn egg_explain_congr(
     let rw_templates = rws.to_templates();
     if let Err(rws_err) = rw_templates { 
         return EqsatResult { 
-            kind: ExplanationKind::None, 
+            kind: ExplanationKind::None.to_c(), 
             expl: string_to_c_str(rws_err.to_string()), 
             graph: None, 
             report: CReport::from_other_stop_reason(rws_err.to_string()) 
@@ -230,7 +231,7 @@ pub extern "C" fn egg_explain_congr(
     let res = explain_congr(init, goal, rw_templates, guides, cfg, viz_path, env);
     if let Err(res_err) = res {
         return EqsatResult { 
-            kind: ExplanationKind::None, 
+            kind: ExplanationKind::None.to_c(),
             expl: string_to_c_str(res_err.to_string()), 
             graph: None, 
             report: CReport::from_other_stop_reason(res_err.to_string()) 
@@ -239,7 +240,7 @@ pub extern "C" fn egg_explain_congr(
     let ExplainedCongr { kind, expl, egraph, report, rw_stats } = res.unwrap();
 
     EqsatResult {
-        kind,
+        kind: kind.to_c(),
         expl: string_to_c_str(expl),
         graph: Some(Box::new(egraph)),
         report: CReport::from_report(report, rw_stats) 
@@ -265,7 +266,7 @@ pub unsafe extern "C" fn egg_query_equiv(
     }
 
     EqsatResult {
-        kind,
+        kind: kind.to_c(),
         expl: string_to_c_str(expl),
         graph: None,
         report: CReport::from_other_stop_reason("".to_string())

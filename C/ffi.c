@@ -23,28 +23,11 @@ str_array str_array_from_lean_obj(lean_obj_arg strs) {
     return (str_array) { .ptr = c_strs, .len = strs_count };
 }
 
-typedef enum rw_dirs {
-  RW_DIR_NONE,
-  RW_DIR_FORWARD,
-  RW_DIR_BACKWARD,
-  RW_DIR_BOTH
-} rw_dirs;
-
-rw_dirs rw_dirs_from_lean(uint8_t dirs) {
-    switch (dirs) {
-        case 0:  return RW_DIR_NONE;
-        case 1:  return RW_DIR_FORWARD;
-        case 2:  return RW_DIR_BACKWARD;
-        case 3:  return RW_DIR_BOTH;
-        default: exit(11);
-    }
-}
-
 typedef struct rewrite {
     const char* name;
     const char* lhs;
     const char* rhs;
-    rw_dirs     dirs;
+    uint8_t     dirs;
     str_array   conds;
 } rewrite;
 
@@ -55,12 +38,6 @@ structure Rewrite.Encoded where
   rhs   : String
   dirs  : Directions
   conds : Array String
-
-inductive Directions where
-  | none
-  | forward
-  | backward
-  | both
 */
 rewrite rewrite_from_lean_obj(lean_obj_arg rw) {
     unsigned scalar_base_offset = lean_ctor_num_objs(rw) * sizeof(void*);
@@ -68,7 +45,7 @@ rewrite rewrite_from_lean_obj(lean_obj_arg rw) {
         .name  = lean_string_cstr(lean_ctor_get(rw, 0)),
         .lhs   = lean_string_cstr(lean_ctor_get(rw, 1)),
         .rhs   = lean_string_cstr(lean_ctor_get(rw, 2)),
-        .dirs  = rw_dirs_from_lean(lean_ctor_get_uint8(rw, scalar_base_offset + 0)),
+        .dirs  = lean_ctor_get_uint8(rw, scalar_base_offset + 0),
         .conds = str_array_from_lean_obj(lean_ctor_get(rw, 3))
     };
 }
@@ -160,56 +137,6 @@ lean_config config_from_lean_obj(lean_obj_arg cfg) {
 }
 
 /*
-inductive StopReason where
-  | saturated
-  | timeLimit
-  | iterationLimit
-  | nodeLimit
-  | other
-*/
-
-typedef enum stop_reason {
-    STOP_REASON_SATURATED,
-    STOP_REASON_TIME_LIMIT,
-    STOP_REASON_ITERATION_LIMIT,
-    STOP_REASON_NODE_LIMIT,
-    STOP_REASON_OTHER
-} stop_reason;
-
-uint8_t stop_reason_to_lean(stop_reason reason) {
-    switch (reason) {
-        case STOP_REASON_SATURATED:       return 0;
-        case STOP_REASON_TIME_LIMIT:      return 1;
-        case STOP_REASON_ITERATION_LIMIT: return 2;
-        case STOP_REASON_NODE_LIMIT:      return 3;
-        case STOP_REASON_OTHER:           return 4;
-        default:                          exit(12);
-    }
-}
-
-/*
-inductive Explanation.Kind where
-  | none
-  | sameEClass
-  | eqTrue
-*/
-
-typedef enum expl_kind {
-    EXPL_KIND_NONE,
-    EXPL_KIND_SAME_ECLASS,
-    EXPL_KIND_EQ_TRUE
-} expl_kind;
-
-uint8_t expl_kind_to_lean(expl_kind kind) {
-    switch (kind) {
-        case EXPL_KIND_NONE:        return 0;
-        case EXPL_KIND_SAME_ECLASS: return 1;
-        case EXPL_KIND_EQ_TRUE:     return 2;
-        default:                    exit(13);
-    }
-}
-
-/*
 structure Report where
   iterations: Nat
   stopReason: StopReason
@@ -222,7 +149,7 @@ structure Report where
 
 typedef struct report {
     size_t      iterations;
-    stop_reason reason;
+    uint8_t reason;
     char*       reason_msg;
     size_t      node_count;
     size_t      class_count;
@@ -240,7 +167,7 @@ lean_obj_res report_to_lean(report rep) {
     lean_ctor_set(r, 3, lean_box(rep.class_count));
     lean_ctor_set(r, 4, lean_mk_string(rep.rw_stats));
     lean_ctor_set_float(r, obj_offset, rep.time);
-    lean_ctor_set_uint8(r, obj_offset + sizeof(double), stop_reason_to_lean(rep.reason));
+    lean_ctor_set_uint8(r, obj_offset + sizeof(double), rep.reason);
 
     return r;
 }
@@ -293,7 +220,7 @@ slotted_egraph to_slotted_egraph(b_lean_obj_arg e) {
 }
 
 typedef struct egg_result {
-    expl_kind kind;
+    uint8_t kind;
     char* expl;
     egg_egraph graph;
     report rep;
@@ -320,7 +247,7 @@ lean_object* egraph_to_lean(egraph e, _Bool slotted) {
 
 typedef struct eqsat_result {
     _Bool slotted;
-    expl_kind kind;
+    uint8_t kind;
     const char* expl;
     egraph graph;
     report rep;
@@ -367,7 +294,7 @@ eqsat_result run_eqsat_request_core(lean_obj_arg req, env* e) {
         slotted_result res = slotted_explain_congr(lhs, rhs, rws, guides, cfg.rust_config, viz_path);
         result = (eqsat_result) {
             .slotted = true,
-            .kind    = EXPL_KIND_SAME_ECLASS,
+            .kind    = 1,
             .expl    = res.expl,
             .graph   = { .slotted = res.graph },
             .rep     = res.rep,
@@ -398,7 +325,6 @@ structure Result.Raw where
   report  : Report
 */
 lean_obj_res eqsat_result_to_lean(eqsat_result result) {
-    uint8_t kind       = expl_kind_to_lean(result.kind);
     lean_object* expl  = lean_mk_string(result.expl);
     lean_object* graph = egraph_to_lean(result.graph, result.slotted);
     lean_object* rep   = report_to_lean(result.rep);
@@ -408,7 +334,7 @@ lean_obj_res eqsat_result_to_lean(eqsat_result result) {
     lean_ctor_set(lean_result, 2, rep);
 
     unsigned scalar_base_offset = lean_ctor_num_objs(lean_result) * sizeof(void*);
-    lean_ctor_set_uint8(lean_result, scalar_base_offset + 0, kind);
+    lean_ctor_set_uint8(lean_result, scalar_base_offset + 0, result.kind);
 
     if (graph == NULL) {
         lean_object* option_nil = lean_alloc_ctor(0, 0, 0); // Option.nil
@@ -453,7 +379,7 @@ lean_obj_res explain_equiv(b_lean_obj_arg graph, uint8_t slotted, lean_obj_arg i
     if (slotted != 0) {
         slotted_egraph graph_c = to_slotted_egraph(graph);
         const char* expl = slotted_query_equiv(graph_c, init_c, goal_c);
-        eqsat_result res = (eqsat_result) { .slotted = true, .kind = EXPL_KIND_SAME_ECLASS, .expl = expl, .graph = NULL, .rep = 0 };
+        eqsat_result res = (eqsat_result) { .slotted = true, .kind = 1, .expl = expl, .graph = NULL, .rep = 0 };
         return eqsat_result_to_lean(res);
     } else {
         egg_egraph graph_c = to_egg_egraph(graph);
