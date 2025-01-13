@@ -1,4 +1,4 @@
-# <img src="Docs/icon.png" alt="lean-egg logo" height="40" align="left"> Equality Saturation Tactic for Lean
+# <img src="Docs/icon.png" alt="lean-egg logo" height="38" align="left"> Equality Saturation Tactic for Lean
 
 This repository contains a (work-in-progress) [equality saturation](https://arxiv.org/abs/1012.1802) tactic for [Lean](https://lean-lang.org) based on [egg](https://egraphs-good.github.io). This `egg` tactic is useful for automated equational reasoning based on given equational theorems. 
 
@@ -40,8 +40,8 @@ example (a b c : Nat) (h₁ : a = b) (h₂ : b = c) : a = c := by
 open List in
 example (as bs : List α) : reverse (as ++ bs) = (reverse bs) ++ (reverse as) := by
   induction as generalizing bs with
-  | nil         => egg [reverse_nil, append_nil, append]
-  | cons _ _ ih => egg [ih, append_assoc, reverse_cons, append]
+  | nil         => egg [reverse_nil, append_nil, List.append]
+  | cons _ _ ih => egg [ih, append_assoc, reverse_cons, List.append]
 ```
 
 But you can use it to solve some equations which `simp` cannot:
@@ -59,29 +59,36 @@ Sometimes, `egg` needs a little help with finding the correct sequence of rewrit
 You can help out by providing _guide terms_ which nudge `egg` in the right direction:
 
 ```lean
--- From Lean/Egg/Tests/Groups.lean
+import Mathlib.Algebra.Group.Defs
 import Egg
 
 example [Group G] (a : G) : a⁻¹⁻¹ = a := by
   egg [/- group axioms -/] using a⁻¹ * a
 ```
 
-And if you want to prove your goal based on an equivalent hypothesis, you can use the `from` syntax:
+If you need more control, you can use `egg calc` to specify a chain of equations:
 
 ```lean
+-- From `Lean/Egg/Tests/Freshman Calc.lean`
 import Egg
 
-example (h : p ∧ q ∧ r) : r ∧ r ∧ q ∧ p ∧ q ∧ r ∧ p := by
-  egg [and_comm, and_assoc, and_self] from h
+theorem freshmans_dream₃ [CharTwoRing α] (x y : α) : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
+  egg calc [/- axioms of ring of characteristic 2 -/]
+    _ = (x + y) * (x + y) * (x + y)
+    _ = (x + y) * (x * (x + y) + y * (x + y))
+    _ = (x + y) * (x ^ 2 + y ^ 2)
+    _ = x * (x ^ 2 + y ^ 2) + y * (x ^ 2 + y ^ 2)
+    _ = (x * x ^ 2) + x * y ^ 2 + y * x ^ 2 + y * y ^ 2
+    _ = _
 ```
 
-For conditional rewriting, hypotheses can be provided after the rewrites:
+For conditional rewriting, hypotheses can be provided alongside rewrites:
 
 ```lean
 import Egg
 
 example {p q r : Prop} (h₁ : p) (h₂ : p ↔ q) (h₃ : q → (p ↔ r)) : p ↔ r := by
-  egg [h₂, h₃; h₁]
+  egg [h₁, h₂, h₃]
 ```
 
 Note that rewrites are also applied to hypotheses.
