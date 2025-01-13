@@ -5,7 +5,11 @@ open Lean Meta
 
 namespace Egg.Rewrites
 
+theorem imp_mp {p q : Prop} (imp : p → q) (h : p) : q :=
+  imp h
+
 private def builtinTheorems := #[
+  ``imp_mp,
   ``Nat.succ_eq_add_one,
   ``ge_iff_le,
   ``gt_iff_lt

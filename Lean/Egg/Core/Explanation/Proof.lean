@@ -193,6 +193,10 @@ where
     fail m!"unification failure for {side} of rewrite {src.description}:\n\n  {expr}\nvs\n  {rwExpr}\nin\n  {current}\nand\n  {next}\n\n• Types: {types}\n• Read Only Or Synthetic Opaque MVars: {readOnlyOrSynthOpaque}" idx
 
   proveCondition (cond : Expr) : MetaM (Option Expr) := do
+    -- This first check tries to handle a slightly obscure case when `cond` is simply
+    -- `cond : ?m : Prop` (that is, it can be a proof of any proposition). In this case we
+    -- arbitrarily choose `?m := True`.
+    if cond.isMVar then return some (.const ``True.intro [])
     let some prf ← mkSubproof cond (.const ``True []) | return none
     mkOfEqTrue prf
 

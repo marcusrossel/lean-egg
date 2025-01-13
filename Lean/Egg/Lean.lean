@@ -69,6 +69,9 @@ partial def MVarIdSet.typeMVarClosure (init ignore : MVarIdSet) : MetaM MVarIdSe
     nextTodo? := todos.min
   return closure
 
+instance : Singleton MVarId MVarIdSet where
+  singleton m := (∅ : MVarIdSet).insert m
+
 def Meta.isTCInstance (e : Expr) : MetaM Bool :=
   return (← isClass? <| ← inferType e).isSome
 

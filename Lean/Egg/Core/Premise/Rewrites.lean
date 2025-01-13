@@ -96,20 +96,6 @@ def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) 
 where
   collectConds (args : Array Expr) (mLhs mRhs : MVars) : MetaM (Array Rewrite.Condition) := do
     let mut conds := #[]
-    -- Even when erasure is active, we still do not consider the mvars contained in erased terms to
-    -- be conditions. Thus, we start by considering all mvars in the target as non-conditions and
-    -- take their type mvar closure. This closure will necessarily contain the mvars contained in
-    -- the types of erased terms, which therefore don't need to be added separately (as in,
-    -- contingent upon the erasure configuration).
-    let inTarget : MVarIdSet := mLhs.inTarget.union mRhs.inTarget
-    let mut noCond ← inTarget.typeMVarClosure (ignore := cfg.amb.expr)
-    for arg in args do
-      if noCond.contains arg.mvarId! then continue
-      let ty ← arg.mvarId!.getType
-      let mvars ← MVars.collect ty cfg.amb
-      let some kind ← Condition.Kind.forType? ty
-        | throwError m!"Rewrite {src} requires condition of type '{ty}' which is neither a proof nor an instance."
-      conds := conds.push { kind, expr := arg, type := ty, mvars }
     -- When type class instance erasure is active, we still need to make sure that all required type
     -- class instances are synthesizable, so we add them as conditions to the rewrite.
     if cfg.eraseTCInstances then
@@ -123,6 +109,23 @@ where
           type  := ← tcInstMVar.getType,
           mvars := ← MVars.collect (← tcInstMVar.getType) cfg.amb
         }
+    -- Even when erasure is active, we still do not consider the mvars contained in erased terms to
+    -- be conditions. Thus, we start by considering all mvars in the target as non-conditions and
+    -- take their type mvar closure. This closure will necessarily contain the mvars contained in
+    -- the types of erased terms, which therefore don't need to be added separately (as in,
+    -- contingent upon the erasure configuration).
+    let inTarget : MVarIdSet := mLhs.inTarget.union mRhs.inTarget
+    let mut noCond ← inTarget.typeMVarClosure (ignore := cfg.amb.expr)
+    for arg in args.reverse do
+      if noCond.contains arg.mvarId! then continue
+      -- As we encode conditions as part of a rewrite's searcher its mvars also become
+      -- non-conditions. That's why we traverse the list of arguments above in reverse.
+      noCond := noCond.union (← MVarIdSet.typeMVarClosure {arg.mvarId!} (ignore := cfg.amb.expr))
+      let ty ← arg.mvarId!.getType
+      let mvars ← MVars.collect ty cfg.amb
+      let some kind ← Condition.Kind.forType? ty
+        | throwError m!"Rewrite {src} requires condition of type '{ty}' which is neither a proof nor an instance."
+      conds := conds.push { kind, expr := arg, type := ty, mvars }
     return conds
 
 -- Returns `none` if the given type is already ground.

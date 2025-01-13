@@ -47,8 +47,6 @@ example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂, h₁]
 
-/-- error: Rewrite #0 requires condition of type 'Prop' which is neither a proof nor an instance. -/
-#guard_msgs in
 example (h : ∀ p : Prop, p → 1 = id 1) : 1 = id 1 := by
   egg [h]
 
@@ -59,7 +57,7 @@ class Fix (α : Type) where
 --       is not specified in `f a` or `a`, but is required for `Fix α`. Currently, this proof only
 --       succeeds because of type class specialization for conditions. That is, the `Fix α`
 --       condition is specialized before eqsat. In the future, this should also work with
---       `egg.genTcSpecs false`, as type class instance conditions should be satisfied by synthesis.
+--       `egg.genTcSpecRws false`, as type class instance conditions should be satisfied by synthesis.
 example [inst : Fix Nat] (f : Nat → Nat) (a : Nat) : f a = a := by
   egg [Fix.fix]
 
