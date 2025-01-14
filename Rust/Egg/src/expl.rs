@@ -2,6 +2,7 @@ use egg::*;
 use crate::analysis::*;
 use crate::lean_expr::*;
 
+#[derive(Clone, Copy)]
 pub enum ExplanationKind {
     None,
     SameEClass,

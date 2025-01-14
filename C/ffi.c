@@ -360,7 +360,7 @@ lean_obj_res run_eqsat_request(lean_obj_arg req, lean_obj_arg x1, lean_obj_arg x
     return metam_state;
 }
 
-extern eqsat_result egg_query_equiv(
+extern egg_result egg_query_equiv(
     egg_egraph graph,
     const char* init, 
     const char* goal
@@ -383,7 +383,14 @@ lean_obj_res explain_equiv(b_lean_obj_arg graph, uint8_t slotted, lean_obj_arg i
         return eqsat_result_to_lean(res);
     } else {
         egg_egraph graph_c = to_egg_egraph(graph);
-        eqsat_result result = egg_query_equiv(graph_c, init_c, goal_c);
+        egg_result res = egg_query_equiv(graph_c, init_c, goal_c);
+        eqsat_result result = (eqsat_result) {
+            .slotted = false,
+            .kind    = res.kind,
+            .expl    = res.expl,
+            .graph   = { .egg = res.graph },
+            .rep     = res.rep,
+        };
         return eqsat_result_to_lean(result);
     }
 }

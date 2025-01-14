@@ -1,4 +1,5 @@
 import Egg.Tactic.Calc
+import Egg.Tactic.Premises.Gen.Intros
 import Egg.Tactic.Premises.Gen.GenM
 import Egg.Tactic.Premises.Gen.Basic
 import Egg.Tactic.Premises.Gen.Derived
@@ -35,6 +36,7 @@ import Egg.Core.MVars.Subst
 import Egg.Core.Gen.Tagged
 import Egg.Core.Gen.Explosion
 import Egg.Core.Gen.Builtins
+import Egg.Core.Gen.GoalTcSpecs
 import Egg.Core.Gen.NestedSplits
 import Egg.Core.Gen.TcProjs
 import Egg.Core.Gen.TcSpecs
