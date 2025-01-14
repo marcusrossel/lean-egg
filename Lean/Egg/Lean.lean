@@ -33,7 +33,7 @@ def merge (m₁ m₂ : HashMap α β) (combine : β → β → β) : HashMap α 
   for (a, b) in m₂ do
     m := m₁.alter a fun b'? =>
       if let some b' := b'? then combine b' b else b
-  return m₁
+  return m
 
 def filterM [Monad m] (map : HashMap α β) (keep : α → m Bool) : m (HashMap α β) :=
   map.foldM (init := map) fun result a _ => do

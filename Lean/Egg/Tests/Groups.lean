@@ -23,6 +23,7 @@ macro "group" mod:egg_cfg_mod guides:(egg_guides)? : tactic => `(tactic|
   egg $mod [mul_assoc, one_mul, mul_one, inv_mul_self, mul_inv_self] $[$guides]?
 )
 
+set_option trace.egg true in
 theorem inv_mul_cancel_left : a⁻¹ * (a * b) = b := by group
 
 theorem mul_inv_cancel_left : a * (a⁻¹ * b) = b := by group

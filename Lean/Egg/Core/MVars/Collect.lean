@@ -56,13 +56,16 @@ private partial def collect (e : Expr) : CollectionM Unit := do
   if ← isAmbientMVar e then
     return
   else if ← Meta.isTCInstance e then
-    withProperty .inTcInstTerm do core e
+    -- We don't want mvars which are `.isTcInst` to also be tagged with `.inTcInstTerm`, if they
+    -- don't appear within another type class instance term. Thus, we check whether `m` is an mvar
+    -- to avoid the `withProperty .inTcInstTerm` in that case.
+    if let .mvar m := e then collectMVar m else withProperty .inTcInstTerm do core e
     withProperty .inErasedTcInst do core (← inferType e)
   else if ← Meta.isProof e then
     withProperty .inProofTerm   do core e
     withProperty .inErasedProof do core (← inferType e)
   else if let (.app (.app (.app (.const ``Eq [u]) t) lhs) rhs) := e then
-    withProperty .inEq do collectLevel u; core t
+    withProperty .inEqType do collectLevel u; core t
     core lhs; core rhs
   else
     core e

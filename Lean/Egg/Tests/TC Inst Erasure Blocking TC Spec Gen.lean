@@ -18,13 +18,13 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇒): h
       [egg.rewrites] -?x = ?x
       [egg.rewrites] LHS MVars
-          [?x: [.unconditionallyVisible], ?inst: [.inTcInstTerm, .isTcInst]]
+          [?x: [.unconditionallyVisible], ?inst: [.isTcInst, .unconditionallyVisible]]
       [egg.rewrites] RHS MVars
           [?x: [.unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (1)
-    [egg.rewrites] #0<←>(⇔)
+    [egg.rewrites] #0<⊢0>(⇔)
       [egg.rewrites] -?m.55 = ?m.55
       [egg.rewrites] LHS MVars
           [?m.55: [.unconditionallyVisible]]
@@ -32,7 +32,7 @@ info: [egg.rewrites] Rewrites
           [?m.55: [.unconditionallyVisible]]
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (1)
-    [egg.rewrites] #0<⊢>(⇔)
+    [egg.rewrites] #0<←>(⇔)
       [egg.rewrites] -?m.62 = ?m.62
       [egg.rewrites] LHS MVars
           [?m.62: [.unconditionallyVisible]]

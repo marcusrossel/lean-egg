@@ -24,6 +24,10 @@ def Kind.isProof : Kind → Bool
   | proof  => true
   | tcInst => false
 
+def Kind.isTcInst : Kind → Bool
+  | proof  => false
+  | tcInst => true
+
 def Kind.forType? (ty : Expr) : MetaM (Option Kind) := do
   if ← Meta.isProp ty then
     return some .proof
@@ -97,9 +101,15 @@ where
   collectConds (args : Array Expr) (mLhs mRhs : MVars) : MetaM (Array Rewrite.Condition) := do
     let mut conds := #[]
     -- When type class instance erasure is active, we still need to make sure that all required type
-    -- class instances are synthesizable, so we add them as conditions to the rewrite.
+    -- class instances are synthesizable, so we add them as conditions to the rewrite. We only do
+    -- this for type class instances though which are erased as part of a type class instance term,
+    -- because "standalone" type class instances are represented by their erased term.
+    -- For example, we wouldn't add `?i` as a condition in `@Inhabited.default α ?i` as the erasure
+    -- of `?i` is precisely its type `Inhabited α`. In constrast, we would add `?j` as a condition
+    -- in `@HAdd.hAdd α α α (@instHAdd α j?)`, as the type of the entire type class instance term is
+    -- `HAdd α α α`, which doesn't match the type of `?j : Add α`.
     if cfg.eraseTCInstances then
-      for tcInstMVar in mLhs.tcInsts.union mRhs.tcInsts do
+      for tcInstMVar in mLhs.nestedTcInsts.union mRhs.nestedTcInsts do
         -- TODO: Collecting all this information seems a bit superfluos. Perhaps we should redefine
         --       `Condition` (or split it into two types) as we only consider propositions and type
         --       class instances anyway.
@@ -213,6 +223,10 @@ def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
     mvars.rhs := ← rw.mvars.rhs.removeAssigned
     conds     := ← rw.conds.mapM (·.instantiateMVars)
   }
+
+def tcConditionMVars (rw : Rewrite) : MVarIdSet :=
+  rw.conds.foldl (init := ∅) fun cs c =>
+    if c.kind.isTcInst && !c.isProven then cs.insert c.expr.mvarId! else cs
 
 end Rewrite
 

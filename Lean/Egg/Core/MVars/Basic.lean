@@ -14,7 +14,7 @@ namespace Egg.MVars
 2. An mvar `isTcInst` if its type is a type class. For example, this holds for `?i` in
    `@Add Nat ?i`.
 3. An mvar is `inTcInstTerm` if it appears explicitly in a term whose type is a type class. For
-   example, this holds for both `?t` and `?i` in `@instHAdd ?t ?i`.
+   example, this holds for both `?t` and `?i` in `@instHAdd ?t ?i`, but not for `?i` by itself.
 4. An mvar is `inErasedTcInst` if it appears explicitly in the type of a term whose type is a type
    class. For example, this holds for `?t` but not for `?i` in `@instHAdd ?t ?i`. The type of this
    instance is `HAdd ?t ?t ?t`.
@@ -23,7 +23,7 @@ namespace Egg.MVars
 6. An mvar is `inErasedProof` if it appears explicitly in the type of a term whose type is a
    proposition. For example, this holds for `?m` and `?n` in `Nat.add_comm ?m ?n`. The type of this
    proof is `?m + ?n = ?n + ?m`.
-7. An mvar is `inEq` if it is the universe level or type argument of an `Eq`. For example, this
+7. An mvar is `inEqType` if it is the universe level or type argument of an `Eq`. For example, this
    holds for `?u` and `?t` in `@Eq.{?u} ?t ?a ?b`. Note that we don't set this property for `Iff`,
    as `Iff` has neither a universe level nor a type argument.
 
@@ -46,7 +46,7 @@ inductive Property where
   | inErasedTcInst
   | inProofTerm
   | inErasedProof
-  | inEq
+  | inEqType
   deriving BEq, Hashable
 
 abbrev Properties := HashSet Property
@@ -55,6 +55,7 @@ namespace Properties
 
 def isVisible (ps : Properties) (cfg : Config.Erasure) : Bool :=
   ps.contains .unconditionallyVisible
+  || (ps.contains .isTcInst       && !cfg.eraseTCInstances)
   || (ps.contains .inTcInstTerm   && !cfg.eraseTCInstances)
   || (ps.contains .inErasedTcInst && cfg.eraseTCInstances)
   || (ps.contains .inProofTerm    && !cfg.eraseProofs)
@@ -63,8 +64,9 @@ def isVisible (ps : Properties) (cfg : Config.Erasure) : Bool :=
 def inTarget (ps : Properties) : Bool :=
   ps.contains .unconditionallyVisible
   || ps.contains .inProofTerm
+  || ps.contains .isTcInst
   || ps.contains .inTcInstTerm
-  || ps.contains .inEq
+  || ps.contains .inEqType
 
 def insertIf (ps : Properties) (condition : Bool) (p : Property) : Properties :=
   if condition then ps.insert p else ps
@@ -90,6 +92,10 @@ def visibleLevel (mvars : MVars) (cfg : Config.Erasure) : LMVarIdSet :=
 def tcInsts (mvars : MVars) : MVarIdSet :=
   mvars.expr.fold (init := ∅) fun result m ps =>
     if ps.contains .isTcInst then result.insert m else result
+
+def nestedTcInsts (mvars : MVars) : MVarIdSet :=
+  mvars.expr.fold (init := ∅) fun result m ps =>
+    if ps.contains .isTcInst && ps.contains .inTcInstTerm then result.insert m else result
 
 def inTarget (mvars : MVars) : MVarIdSet :=
   mvars.expr.fold (init := ∅) fun result m ps =>

@@ -46,10 +46,10 @@ syntax "□" noWs num (noWs "/" noWs num)? : basic_fwd_rw_src
 
 syntax "[" tc_proj_loc num "," num "]" : tc_proj
 
-syntax "→" : tc_spec_src
-syntax "←" : tc_spec_src
-syntax "?" : tc_spec_src
-syntax "⊢" : tc_spec_src
+syntax "→"          : tc_spec_src
+syntax "←"          : tc_spec_src
+syntax "?"          : tc_spec_src
+syntax "⊢" noWs num : tc_spec_src
 syntax "<" tc_spec_src ">" : tc_spec
 
 syntax tc_proj : tc_extension
@@ -133,11 +133,11 @@ def parseRwDir : (TSyntax `rw_dir) → Direction
   | _                => unreachable!
 
 private def parsTcSpecSrc : (TSyntax `tc_spec_src) → Source.TcSpec
-  | `(tc_spec_src|→) => .dir .forward
-  | `(tc_spec_src|←) => .dir .backward
-  | `(tc_spec_src|?) => .cond
-  | `(tc_spec_src|⊢) => .goalType
-  | _                => unreachable!
+  | `(tc_spec_src|→)     => .dir .forward
+  | `(tc_spec_src|←)     => .dir .backward
+  | `(tc_spec_src|?)     => .cond
+  | `(tc_spec_src|⊢$idx) => .goalType idx.getNat
+  | _                    => unreachable!
 
 private def parseTcProjLocation : (TSyntax `tc_proj_loc) → Source.TcProjLocation
   | `(tc_proj_loc|▪)        => .root

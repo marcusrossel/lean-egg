@@ -53,7 +53,7 @@ theorem freshmans_dream₂ : (x + y) ^ 2 = (x ^ 2) + (y ^ 2) := by
 
 -- TODO: Before 78480a591ed00e75435e9d0a6f64f8c8aada655e we didn't have type class rewrite gen for
 --       tagged rewrites. Now that we have them, it seems that egg is overwhelmed by them.
-set_option egg.genTcSpecRws false
+set_option egg.genGoalTcSpec false
 
 theorem freshmans_dream₂' : (x + y) ^ 2 = (x ^ 2) + (y ^ 2) := by
   egg! [CharTwoRing.char_two]

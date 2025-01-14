@@ -1,5 +1,6 @@
 import Egg.Core.Gen.TcProjs
 import Egg.Core.Gen.TcSpecs
+import Egg.Core.Gen.GoalTcSpecs
 import Egg.Core.Gen.Explosion
 import Egg.Core.Gen.NestedSplits
 import Lean
@@ -13,11 +14,12 @@ namespace Egg.Premises.DerivedM
 private inductive DerivationCategory where
   | tcProj
   | tcSpec
+  | goalTcSpec
   | splits
   | explosion
 
 private def DerivationCategory.all : Array DerivationCategory :=
-  #[tcProj, tcSpec, splits, explosion]
+  #[tcProj, tcSpec, goalTcSpec, splits, explosion]
 
 -- We maintain this theorem to ensure that we don't forget to add elements to
 -- `DerivationCategory.all`.
@@ -25,31 +27,35 @@ theorem DerivationCategory.all_complete (c : DerivationCategory) : c ∈ all := 
   cases c <;> simp [all]
 
 private def DerivationCategory.isEnabled (cfg : Config.Gen): DerivationCategory → Bool
-  | tcProj    => cfg.genTcProjRws
-  | tcSpec    => cfg.genTcSpecRws
-  | splits    => cfg.genNestedSplits
-  | explosion => cfg.explosion
+  | tcProj     => cfg.genTcProjRws
+  | tcSpec     => cfg.genTcSpecRws
+  | goalTcSpec => cfg.genGoalTcSpec
+  | splits     => cfg.genNestedSplits
+  | explosion  => cfg.explosion
 
 -- Each index in this structure indicates to which point in `State.derived` a given derivation
 -- category has been applied. More precisely, these indices indicate the first element that has not
 -- been considered yet.
 private structure State.Progress where
-  tcProj    : Nat
-  tcSpec    : Nat
-  splits    : Nat
-  explosion : Nat
+  tcProj     : Nat
+  tcSpec     : Nat
+  goalTcSpec : Nat
+  splits     : Nat
+  explosion  : Nat
 
 private def State.Progress.get (p : Progress) : DerivationCategory → Nat
-  | .tcProj    => p.tcProj
-  | .tcSpec    => p.tcSpec
-  | .splits    => p.splits
-  | .explosion => p.explosion
+  | .tcProj     => p.tcProj
+  | .tcSpec     => p.tcSpec
+  | .goalTcSpec => p.goalTcSpec
+  | .splits     => p.splits
+  | .explosion  => p.explosion
 
 private def State.Progress.set (p : Progress) : DerivationCategory → Nat → Progress
-  | .tcProj,    n => { p with tcProj    := n }
-  | .tcSpec,    n => { p with tcSpec    := n }
-  | .splits,    n => { p with splits    := n }
-  | .explosion, n => { p with explosion := n }
+  | .tcProj,     n => { p with tcProj     := n }
+  | .tcSpec,     n => { p with tcSpec     := n }
+  | .goalTcSpec, n => { p with goalTcSpec := n }
+  | .splits,     n => { p with splits     := n }
+  | .explosion,  n => { p with explosion  := n }
 
 private structure State where
   derived     : Rewrites
@@ -59,7 +65,7 @@ private structure State where
 private instance : EmptyCollection State where
   emptyCollection := {
     derived     := #[]
-    progress    := ⟨0, 0, 0, 0⟩
+    progress    := ⟨0, 0, 0, 0, 0⟩
     tcProjCover := ∅
   }
 
@@ -108,8 +114,7 @@ partial def genDerived
   let all ← DerivedM.run do
     add' (cat? := none) rws
     addInitialTcProjs
-    let goalType? ← do if cfg.genGoalTcSpec then pure <| some (← goal.type) else pure none
-    while !(← isDone cfg) do core goalType?
+    while !(← isDone cfg) do core
   return all[rws.size:]
 where
   addInitialTcProjs : DerivedM Unit := do
@@ -119,13 +124,15 @@ where
     add .tcProj rws
     setTcProjCover cover
 
-  core (goalType? : Option Expr) : DerivedM Unit := do
+  core : DerivedM Unit := do
     generate cfg .splits do
       genNestedSplits (← todo .splits) { cfg with amb }
     generate cfg .explosion do
       genExplosions (← todo .explosion) cfg.toErasure
+    generate cfg .goalTcSpec do
+      genGoalTcSpecializations (← todo .goalTcSpec) cfg.toNormalization goal
     generate cfg .tcSpec do
-      genTcSpecializations (← todo .tcSpec) cfg.toNormalization cfg.toErasure goalType?
+      genTcSpecializations (← todo .tcSpec) cfg.toNormalization cfg.toErasure
     generate cfg .tcProj do
       let targets := (← todo .tcProj).tcProjTargets
       let (rws, cover) ← genTcProjReductions targets (← tcProjCover) { cfg with amb }

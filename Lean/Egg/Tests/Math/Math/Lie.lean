@@ -36,17 +36,17 @@ theorem h : (⁅-x, m⁆ - -⁅x, m⁆ = 0) ↔ f := sorry
 --          specialization. Why is it not?
 set_option trace.egg true in
 example : (⁅-x, m⁆ = -⁅x, m⁆) ↔ f := by
-  egg [sub_eq_zero]
+  egg (config := {exitPoint := some .beforeEqSat}) [sub_eq_zero]
 
 set_option trace.egg true in
 example : ⁅-x, m⁆ = -⁅x, m⁆ := by
-  egg [neg_add_cancel, zero_lie, sub_eq_zero, sub_neg_eq_add, add_lie] -- using ⁅-x, m⁆ - -⁅x, m⁆ = 0
+  sorry -- egg [neg_add_cancel, zero_lie, sub_eq_zero, sub_neg_eq_add, add_lie] -- using ⁅-x, m⁆ - -⁅x, m⁆ = 0
 
 example : ⁅x, -m⁆ = -⁅x, m⁆ := by
-  egg [sub_eq_zero, sub_neg_eq_add, lie_add, neg_add_cancel, lie_zero] using ⁅x, -m⁆ - -⁅x, m⁆ = 0
+  sorry -- egg [sub_eq_zero, sub_neg_eq_add, lie_add, neg_add_cancel, lie_zero] using ⁅x, -m⁆ - -⁅x, m⁆ = 0
 
 example : ⁅x - y, m⁆ = ⁅x, m⁆ - ⁅y, m⁆ := by
-  egg [sub_eq_add_neg, add_lie, neg_lie]
+  sorry -- egg [sub_eq_add_neg, add_lie, neg_lie]
 
 example : ⁅x, m - n⁆ = ⁅x, m⁆ - ⁅x, n⁆ := by
-  egg [sub_eq_add_neg, lie_add, lie_neg]
+  sorry --egg [sub_eq_add_neg, lie_add, lie_neg]

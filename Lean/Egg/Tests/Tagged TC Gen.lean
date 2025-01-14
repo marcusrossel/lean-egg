@@ -23,27 +23,27 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] z = z
       [egg.rewrites] LHS MVars
           [?α: [.inErasedTcInst, .unconditionallyVisible],
-           ?c: [.inTcInstTerm, .isTcInst],
+           ?c: [.isTcInst, .unconditionallyVisible],
            ?u.80: [.inErasedTcInst, .unconditionallyVisible]]
       [egg.rewrites] RHS MVars
           [?α: [.inErasedTcInst, .unconditionallyVisible],
-           ?c: [.inTcInstTerm, .isTcInst],
+           ?c: [.isTcInst, .unconditionallyVisible],
            ?u.80: [.inErasedTcInst, .unconditionallyVisible]]
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (3)
-    [egg.rewrites] □0<⊢>(⇔)
+    [egg.rewrites] □0<⊢0>(⇔)
       [egg.rewrites] z = z
       [egg.rewrites] LHS MVars
           []
       [egg.rewrites] RHS MVars
           []
-    [egg.rewrites] □0<⊢>[◂16,0](⇔)
+    [egg.rewrites] □0<⊢0>[◂16,0](⇔)
       [egg.rewrites] z = 0
       [egg.rewrites] LHS MVars
           []
       [egg.rewrites] RHS MVars
           []
-    [egg.rewrites] □0<⊢>[◂16,1](⇔)
+    [egg.rewrites] □0<⊢0>[◂16,1](⇔)
       [egg.rewrites] 0 = 0
       [egg.rewrites] LHS MVars
           []

@@ -25,6 +25,9 @@ private def TcProj.reductionRewrites
   let mut proj := proj
   while true do
     if let some u ← unfoldProjInst? proj then
+      -- Since we have type class instance erasure, we are not interested in type class projections
+      -- which only transform a given type class instance into another type class instance.
+      if ← Meta.isTCInstance u then break
       let uNorm ← normalize u cfg
       let eq ← mkEq proj uNorm
       let proof ← mkEqRefl proj

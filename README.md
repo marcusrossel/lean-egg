@@ -40,8 +40,8 @@ example (a b c : Nat) (h₁ : a = b) (h₂ : b = c) : a = c := by
 open List in
 example (as bs : List α) : reverse (as ++ bs) = (reverse bs) ++ (reverse as) := by
   induction as generalizing bs with
-  | nil         => egg [reverse_nil, append_nil, List.append]
-  | cons _ _ ih => egg [ih, append_assoc, reverse_cons, List.append]
+  | nil  => egg [reverse_nil, append_nil, List.append]
+  | cons => egg [*, append_assoc, reverse_cons, List.append]
 ```
 
 But you can use it to solve some equations which `simp` cannot:
