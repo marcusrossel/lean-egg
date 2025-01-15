@@ -26,27 +26,17 @@ example : ⁅x, m - n⁆ = ⁅x, m⁆ - ⁅x, n⁆ := by
 example : ⁅-x, m⁆ - -⁅x, m⁆ = 0 := by
   egg [neg_add_cancel, zero_lie, sub_neg_eq_add, add_lie]
 
-def f : Prop := sorry
-theorem h : (⁅-x, m⁆ - -⁅x, m⁆ = 0) ↔ f := sorry
+set_option egg.timeLimit 10
+set_option egg.genNestedSplits false
 
--- PROBLEM: The fact that the type `M` appears in the subtraction of `?a - ?b = 0` but not in the
---          equality `?a = ?b` causes `sub_eq_zero` to not be applicable in both directions by
---          default. The nested split in the `←` direction *is* bidirectional, but contains `M` as
---          an unbound mvar in the condition `AddGroup ?m`. This should be resolved by type class
---          specialization. Why is it not?
-set_option trace.egg true in
-example : (⁅-x, m⁆ = -⁅x, m⁆) ↔ f := by
-  egg (config := {exitPoint := some .beforeEqSat}) [sub_eq_zero]
-
-set_option trace.egg true in
 example : ⁅-x, m⁆ = -⁅x, m⁆ := by
-  sorry -- egg [neg_add_cancel, zero_lie, sub_eq_zero, sub_neg_eq_add, add_lie] -- using ⁅-x, m⁆ - -⁅x, m⁆ = 0
+  egg [neg_add_cancel, zero_lie, sub_eq_zero, sub_neg_eq_add, add_lie]
 
 example : ⁅x, -m⁆ = -⁅x, m⁆ := by
-  sorry -- egg [sub_eq_zero, sub_neg_eq_add, lie_add, neg_add_cancel, lie_zero] using ⁅x, -m⁆ - -⁅x, m⁆ = 0
+  egg [sub_eq_zero, sub_neg_eq_add, lie_add, neg_add_cancel, lie_zero]
 
 example : ⁅x - y, m⁆ = ⁅x, m⁆ - ⁅y, m⁆ := by
-  sorry -- egg [sub_eq_add_neg, add_lie, neg_lie]
+  egg [sub_eq_add_neg, add_lie, neg_lie]
 
 example : ⁅x, m - n⁆ = ⁅x, m⁆ - ⁅x, n⁆ := by
-  sorry --egg [sub_eq_add_neg, lie_add, lie_neg]
+  egg [sub_eq_add_neg, lie_add, lie_neg]

@@ -224,6 +224,9 @@ def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
     conds     := ← rw.conds.mapM (·.instantiateMVars)
   }
 
+def eraseConditions (rw : Rewrite) : Rewrite :=
+  { rw with conds := #[] }
+
 def tcConditionMVars (rw : Rewrite) : MVarIdSet :=
   rw.conds.foldl (init := ∅) fun cs c =>
     if c.kind.isTcInst && !c.isProven then cs.insert c.expr.mvarId! else cs

@@ -12,6 +12,5 @@ attribute [egg] cast_sub_of_add_le cast_sub_of_lt natCast_inj natAbs_cast Int.ca
 open Mathlib.Tactic.Zify Nat Int in
 #check Nat.cast_sub
 
-set_option trace.egg true in
 example (a b : Nat) : (a = b) ↔ (a : Int) = (b : Int) := by
   egg!

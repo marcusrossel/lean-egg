@@ -21,8 +21,8 @@ private def deriveGuides (rw : Rewrite) (amb : MVars.Ambient) : ExprSet := Id.ru
   for cond in rw.conds do result := result.union (subexprsWithoutMVars cond.type amb)
   return result
 
-def genDerivedGuides (rws : Rewrites) (amb : MVars.Ambient) : MetaM Guides := do
-  let guides : ExprSet := rws.foldl (init := ∅) (·.union <| deriveGuides · amb)
+def genDerivedGuides (goal : Congr) (rws : Rewrites) (amb : MVars.Ambient) : MetaM Guides := do
+  let guides : ExprSet := rws.foldl (init := {← goal.expr}) (·.union <| deriveGuides · amb)
   let mut result := #[]
   for guide in guides, idx in [:guides.size] do
     result := result.push <| ← Guide.from guide (.guide idx (derived := true))
