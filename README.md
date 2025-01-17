@@ -95,6 +95,7 @@ Note that rewrites are also applied to hypotheses.
 
 ## Related Work
 
+* [Lean Together 2025: "Egg: An Equality Saturation Tactic in Lean"](https://www.youtube.com/watch?v=Nnxp92NGB9c) is a talk which motivates the use cases of the `egg` tactic.
 * [An Equality Saturation Tactic for Lean](https://cfaed.tu-dresden.de/files/Images/people/chair-cc/theses/2407_Rossel_MA.pdf) contains a detailed description of the tactic's inner workings as of June 2024.
 * [Guided Equality Saturation](https://dl.acm.org/doi/10.1145/3632900) introduces the original prototype of the `egg` tactic.
 * [Bridging Syntax and Semantics of Lean Expressions in E-Graphs](http://arxiv.org/abs/2405.10188) contains a high-level description of how the tactic handles binders and definitional equality. 

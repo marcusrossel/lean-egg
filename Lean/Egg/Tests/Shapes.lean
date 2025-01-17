@@ -147,7 +147,7 @@ theorem mul_inv_cancel_left : a * (a⁻¹ * b) = b := by group
 
 theorem inv_one : (1 : G)⁻¹ = 1 := by group
 
-set_option egg.genTcSpecRws false in
+set_option egg.timeLimit 7 in
 theorem inv_mul : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   calc _ = b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹ := by group
        _ = _                               := by group
