@@ -12,6 +12,8 @@ attribute [egg] not_exists
 
 -- TODO: Changing this `=` to a `↔` exposes the problem of instantiating erased equivalences with
 --       `Eq`, instead of distinguishing between `Eq` and `Iff`.
+--       Andrés Idea: During proof reconstruction, if defeq with `Eq` fails, try replacing it with
+--       `Iff`.
 example : ¬¬(p = p) := by
   egg!
 

@@ -23,8 +23,8 @@ theorem inv_inv : a⁻¹⁻¹ = a := by
   egg! calc _ = a⁻¹⁻¹ * (a⁻¹ * a)
             _ = _
 
-theorem inv_mul'' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
-  egg! using a⁻¹ * (a * b) * (a * b)⁻¹
+theorem inv_mul' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
+  egg! using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
 
 theorem inv_inv' : a⁻¹⁻¹ = a := by
   egg! using a⁻¹ * a

@@ -5,18 +5,18 @@ import Egg
 -- shown when setting `exitPoint := some .beforeProof`.
 
 /--
-error: egg failed to build proof step 2: unification failure for LHS of rewrite #0:
+error: egg failed to build proof step 0: unification failure for LHS of rewrite #0:
 
-  HAdd.hAdd
+  Nat.add
 vs
-  ?m.257
+  ?m.240
 in
-  HAdd.hAdd
+  Nat.add
 and
   ()
 
 • Types: ⏎
-  ?m.257: Unit
+  ?m.240: Unit
 
 • Read Only Or Synthetic Opaque MVars: []
 -/

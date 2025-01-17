@@ -29,10 +29,11 @@ def Kind.isTcInst : Kind → Bool
   | tcInst => true
 
 def Kind.forType? (ty : Expr) : MetaM (Option Kind) := do
-  if ← Meta.isProp ty then
-    return some .proof
-  else if (← Meta.isClass? ty).isSome then
+  -- Since type classes can also be propositions, we do the type class check first.
+  if (← Meta.isClass? ty).isSome then
     return some .tcInst
+  else if ← Meta.isProp ty then
+    return some .proof
   else
     return none
 

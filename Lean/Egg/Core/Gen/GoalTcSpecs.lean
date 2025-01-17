@@ -7,7 +7,7 @@ namespace Egg
 /-
 For goal type specialization, we consider the following shapes of goals and rewrites:
 
-(1) . ~ .       where . is not a proposition
+(1) . = .       where . is not a proposition
 (2) (_ = _) ~ . where . is a proposition (necessarily)
 (3) . ~ (_ = _) where . is a proposition (necessarily)
 

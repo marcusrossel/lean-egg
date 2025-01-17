@@ -146,9 +146,9 @@ impl CRewritesArray {
 pub fn u8_from_stop_reason(r: StopReason) -> (u8, String) {
     match r {
         StopReason::Saturated         => (0, "".to_string()),
-        StopReason::IterationLimit(_) => (1, "".to_string()),
-        StopReason::NodeLimit(_)      => (2, "".to_string()),
-        StopReason::TimeLimit(_)      => (3, "".to_string()),
+        StopReason::TimeLimit(_)      => (1, "".to_string()),
+        StopReason::IterationLimit(_) => (2, "".to_string()),
+        StopReason::NodeLimit(_)      => (3, "".to_string()),
         StopReason::Other(msg)        => (4, msg),
     }
 }

@@ -7,6 +7,8 @@ info: [egg.encoded] Encoded
   [egg.encoded] Goal
     [egg.encoded] LHS: (◇ * (const "Bool.true"))
     [egg.encoded] RHS: (◇ * (const "Bool.true"))
+  [egg.encoded] Guides
+    [egg.encoded] (◇ * (= (◇ * (const "Bool.true")) (◇ * (const "Bool.true"))))
 -/
 #guard_msgs in
 set_option trace.egg.encoded true in
