@@ -1,10 +1,7 @@
 import Lean
 open Lean Syntax
 
-syntax (name := projfns) "#projfns " ident : command
-
-private def printStructId (id : Syntax) : Elab.Command.CommandElabM Unit := do --Elab.Command.CommandElabM Unit := do
-    let structName := id.getId
+private def getStructureCtorAndProjs (structName : Name) : MetaM (Name × Array Name) := do --Elab.Command.CommandElabM Unit := do
     let env ← getEnv
     match env.find? structName with
     | none => throwError s!"Structure {structName} not found"
@@ -15,14 +12,28 @@ private def printStructId (id : Syntax) : Elab.Command.CommandElabM Unit := do -
              | none => throwError s!"{structName} is inductive but not a structure"
              | some structInfo => do
                let ctorVal := getStructureCtor env structName
-               logInfo s!"Constructor: {ctorVal.name}"
-               for fieldInfo in structInfo.fieldInfo do
-                 logInfo s!"Field {fieldInfo.fieldName}: {fieldInfo.projFn}"
+               --logInfo s!"Constructor: {ctorVal.name}"
+               let projs := structInfo.fieldNames.map
+                 fun nm => structInfo.structName.append nm
+               return (ctorVal.name, projs)
         | _ => throwError s!"{structName} is not a structure"
 
+private def buildStructureProjEqns (structName : Name) : MetaM <| Array (Expr × Expr) := do
+  let (ctor, projs) ← getStructureCtorAndProjs structName
+  let mvars ← projs.mapM
+    fun _ => Meta.mkFreshExprMVar none
+  let ctorApp := mkAppN (mkConst ctor) mvars
+  let rws := projs.zipWithIndex.map
+    fun (proj, idx) =>
+      (mkApp (mkConst proj) ctorApp, mvars[idx]!)
+  return rws
+
+syntax (name := projfns) "#projfns " ident : command
 @[command_elab projfns]
 def elabProjFns : Elab.Command.CommandElab
-  | `(#projfns%$tk  $id:ident) => withRef tk <| printStructId id
+  | `(#projfns%$tk  $id:ident) => do
+    let rws ← Elab.Command.liftTermElabM <| buildStructureProjEqns id.getId
+    logInfo s!"rws {rws}"
   | _                       => throwError "invalid #print command"
 
 structure Point where
@@ -30,3 +41,5 @@ structure Point where
   y : Nat
 
 #projfns Point
+
+#eval {x := 10, y := 2 : Point}.2
