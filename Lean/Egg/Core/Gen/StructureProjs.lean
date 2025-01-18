@@ -21,7 +21,7 @@ private def getStructureCtorAndProjs (structName : Name) : MetaM (Name × Array 
 private def buildStructureProjEqns (structName : Name) : MetaM <| Array (Expr × Expr) := do
   let (ctor, projs) ← getStructureCtorAndProjs structName
   let mvars ← projs.mapM
-    fun _ => Meta.mkFreshExprMVar none
+    fun pr => Meta.mkFreshExprMVar none (userName := pr)
   let ctorApp := mkAppN (mkConst ctor) mvars
   let rws := projs.zipWithIndex.map
     fun (proj, idx) =>
@@ -31,15 +31,15 @@ private def buildStructureProjEqns (structName : Name) : MetaM <| Array (Expr ×
 syntax (name := projfns) "#projfns " ident : command
 @[command_elab projfns]
 def elabProjFns : Elab.Command.CommandElab
-  | `(#projfns%$tk  $id:ident) => do
+  | `(#projfns $id:ident) => do
     let rws ← Elab.Command.liftTermElabM <| buildStructureProjEqns id.getId
-    logInfo s!"rws {rws}"
-  | _                       => throwError "invalid #print command"
+    for rw in rws do
+      logInfo m!"{rw.1} -> {rw.2}"
+  | _ => throwError "invalid #projfns command"
 
 structure Point where
   x : Nat
   y : Nat
 
+set_option pp.rawOnError true in
 #projfns Point
-
-#eval {x := 10, y := 2 : Point}.2
