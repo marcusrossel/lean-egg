@@ -139,6 +139,22 @@ where
       conds := conds.push { kind, expr := arg, type := ty, mvars }
     return conds
 
+/--
+This constructor builds a rewrite coming from an equality that is
+definitionally true.
+
+TODO: This should have a special kind that does not record a proof
+(since it needs no reconstruction).
+-/
+def mkDefEq (lhs rhs : Expr) (cfg : Config) : MetaM Rewrite := do
+  if (← isDefEq lhs rhs) then
+    let mvars : Rewrite.MVars :=
+      { lhs := ← MVars.collect lhs cfg.amb,
+        rhs := ← MVars.collect rhs cfg.amb}
+    return { rel := .eq, lhs, rhs, proof := ← mkEqRefl rhs,
+             src := .defEq lhs rhs, conds := #[], mvars}
+    else throwError m!"Error registering defEq rewrite {lhs} and {rhs} are not definitionally equal"
+
 -- Returns `none` if the given type is already ground.
 def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
     MetaM (Option Rewrite) := do

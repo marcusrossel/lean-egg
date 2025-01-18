@@ -1,4 +1,6 @@
 import Lean
+import Egg.Core.Premise.Rewrites
+
 open Lean Syntax
 
 private def getStructureCtorAndProjs (structName : Name) : MetaM (Name × Array Name) := do --Elab.Command.CommandElabM Unit := do
@@ -18,28 +20,18 @@ private def getStructureCtorAndProjs (structName : Name) : MetaM (Name × Array 
                return (ctorVal.name, projs)
         | _ => throwError s!"{structName} is not a structure"
 
-private def buildStructureProjEqns (structName : Name) : MetaM <| Array (Expr × Expr) := do
+open Egg
+
+private def buildStructureProjEqns (structName : Name) (cfg : Rewrite.Config) : MetaM Rewrites := do
   let (ctor, projs) ← getStructureCtorAndProjs structName
   let mvars ← projs.mapM
     fun pr => Meta.mkFreshExprMVar none (userName := pr)
   let ctorApp := mkAppN (mkConst ctor) mvars
-  let rws := projs.zipWithIndex.map
+  let rawRws := projs.zipWithIndex.map
     fun (proj, idx) =>
       (mkApp (mkConst proj) ctorApp, mvars[idx]!)
-  return rws
-
-syntax (name := projfns) "#projfns " ident : command
-@[command_elab projfns]
-def elabProjFns : Elab.Command.CommandElab
-  | `(#projfns $id:ident) => do
-    let rws ← Elab.Command.liftTermElabM <| buildStructureProjEqns id.getId
-    for rw in rws do
-      logInfo m!"{rw.1} -> {rw.2}"
-  | _ => throwError "invalid #projfns command"
-
-structure Point where
-  x : Nat
-  y : Nat
-
-set_option pp.rawOnError true in
-#projfns Point
+  let mut rws := []
+  for (lhs, rhs) in rawRws do
+    let rw ← Rewrite.mkDefEq lhs rhs cfg
+    rws := rw :: rws
+  return rws.toArray
