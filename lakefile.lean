@@ -1,6 +1,8 @@
 import Lake
 open Lake DSL
 
+require "nomeata" / "calcify" @ git "master"
+
 -- Cf. https://github.com/lurk-lab/RustFFI.lean
 
 package egg where
@@ -8,6 +10,7 @@ package egg where
 
 @[default_target]
 lean_lib Egg where
+  -- This enables the interpreter to run functions marked `@[extern]`.
   precompileModules := true
 
 target importTarget pkg : System.FilePath := do
@@ -48,4 +51,6 @@ extern_lib slotted_for_lean pkg := do
   IO.FS.writeBinFile tgtPath (← IO.FS.readBinFile srcPath)
   return pure tgtPath
 
-require "nomeata" / "calcify" @ git "master"
+@[test_driver]
+lean_exe TestDriver where
+  srcDir := "Egg/Tests"
