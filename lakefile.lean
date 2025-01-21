@@ -7,6 +7,10 @@ require "nomeata" / "calcify" @ git "master"
 
 package egg where
   srcDir := "Lean"
+  -- See https://github.com/leanprover/lean4/tree/master/src/lake#github-release-builds
+  preferReleaseBuild := true
+  releaseRepo?       := none
+  buildArchive?      := none
 
 @[default_target]
 lean_lib Egg where
