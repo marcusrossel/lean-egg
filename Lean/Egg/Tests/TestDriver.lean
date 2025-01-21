@@ -10,8 +10,10 @@ def String.isInfixOf (needle : String) (hey : String) := Id.run do
     else i := i.next
   return false
 
+def ciFlag := "ci"
+
 def getTests : IO (Array FS.DirEntry) := do
-  let testsDir := (← currentDir) / "Lean"/ "Egg" / "Tests"
+  let testsDir := (← currentDir) / "Lean" / "Egg" / "Tests"
   let entries ← testsDir.readDir
   let files ← entries.filterM fun e => return !(← e.path.isDir)
   let leanFiles := files.filter (·.fileName.endsWith ".lean")
@@ -29,7 +31,7 @@ inductive TestResult where
 def fileContainsSorry (file : FS.DirEntry) : IO Bool :=
   return "sorry".isInfixOf (← FS.readFile file.path)
 
-def runTest (file : FS.DirEntry) : IO TestResult := do
+def runFile (file : FS.DirEntry) : IO TestResult := do
   if let some err ← buildResult then
     return .failure err
   else if ← fileContainsSorry file then
@@ -38,22 +40,34 @@ def runTest (file : FS.DirEntry) : IO TestResult := do
     return .success
 where
   buildResult : IO (Option String) := do
-    let cfg := IO.Process.StdioConfig.mk IO.Process.Stdio.null IO.Process.Stdio.null IO.Process.Stdio.null
-    let filename := file.fileName.replace ".lean" ""
-    let filename := String.join ["Egg.Tests.«", filename, "»"]
-    let args := (List.toArray ["build", filename])
-    let cwd := some (← IO.Process.getCurrentDir)
-    let spawn_args := IO.Process.SpawnArgs.mk cfg "lake" args cwd Array.empty false
-    let output ← IO.Process.output spawn_args
-    -- let _ := ← IO.println output.exitCode
-    -- let _ := ← IO.println output.stdout
-    -- let _ := ← IO.println output.stderr
-    let out := if output.exitCode == 0 then some output.stdout else none
-    pure out
+    let output ← Process.output {
+      stdin := .null, stdout := .null, stderr := .null,
+      cmd := "lake", args := #["build", s!"Egg.Tests.«{testName file}»"]
+    }
+    if output.exitCode = 0 then
+      return none
+    else
+      return output.stdout
+
+def runTest (test : FS.DirEntry) (printErr : Bool) : IO Unit := do
+  match ← runFile test with
+  | .success     => println s!"✅ {testName test}"
+  | .sorry       => println s!"🟡 {testName test}"
+  | .failure msg => println s!"❌ {testName test}{if printErr then s!"\n{msg}" else ""}"
+
+def runAllTests (printErr : Bool) : IO Unit := do
+  for test in ← getTests do
+    runTest test printErr
+
+def runSingleTest (name : String) : IO Unit := do
+  runTest (printErr := true) {
+    root := (← currentDir) / "Lean" / "Egg" / "Tests",
+    fileName := s!"{name}.lean"
+  }
 
 def main (args : List String) : IO Unit := do
-  for test in ← getTests do
-    match ← runTest test with
-    | .success     => println s!"✅ {testName test}"
-    | .sorry       => println s!"🟡 {testName test}"
-    | .failure msg => println s!"❌ {testName test}{if args.contains "ci" then s!"\n{msg}" else ""}"
+  assert! args.length ≤ 1
+  match args[0]? with
+  | none      => runAllTests (printErr := false)
+  | some "ci" => runAllTests (printErr := true)
+  | some test => runSingleTest test

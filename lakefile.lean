@@ -7,8 +7,6 @@ require "nomeata" / "calcify" @ git "master"
 
 package egg where
   srcDir := "Lean"
-  -- TODO: Add `batteries`, `mathlib`, and `profile` options.
-  testDriverArgs := #["egg", "ci"]
 
 @[default_target]
 lean_lib Egg where
