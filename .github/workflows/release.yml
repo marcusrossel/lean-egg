@@ -1,0 +1,53 @@
+name: Create Release
+on:
+  # Allows this workflow to be run manually from the "Actions" tab.
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        type: string
+        description: Release Tag
+
+# https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/controlling-permissions-for-github_token
+permissions:
+  contents: write
+
+# For each step that uses `gh`, we need to set the `GITHUB_TOKEN`:
+# https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/using-github-cli-in-workflows
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    env: 
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: "${{ github.event.inputs.release-tag }}" 
+    steps:
+      - name: Checkout Repository 
+        uses: actions/checkout@v3
+      - name: Create Tag and Release
+        run: |
+          git tag "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" --repo="$GITHUB_REPOSITORY" --title="$TAG" --prerelease
+  upload-artifacts:
+    # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/running-variations-of-jobs-in-a-workflow#about-matrix-strategies
+    strategy:
+      matrix:
+        # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#standard-github-hosted-runners-for-public-repositories
+        os: [macos-latest, macos-13, ubuntu-24.04-arm, ubuntu-latest] # TODO: windows-latest
+    runs-on: ${{ matrix.os }}
+    env: 
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps: 
+      - name: Checkout Repository 
+        uses: actions/checkout@v3
+      - name: Install elan 
+        run: |
+          set -o pipefail
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- --default-toolchain none -y
+          "$HOME/.elan/bin/lean" --version
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+      - name: Build Library 
+        run: lake build
+      - name: Upload Artifacts
+        run: lake upload "${{ github.event.inputs.release-tag }}"
