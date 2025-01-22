@@ -63,28 +63,30 @@ def genStructureProjections (targets : Rewrites) (norm : Config.Normalization) (
        |>.foldlM  (init := #[]) fun acc struct => do
         return acc ++ (← buildStructureProjEqns struct sorry)
 
-mutual
 /--
-We only  get the structure projcetions
+This function gathers the `Name`s of structures occuring in a constant.
+
+We don't want to make this mutually recursive with `getStructureNames`
+because we don't want to dig up `structure`s that where the constructors
+or projections won't occur in an `egg` proof.
 -/
-private partial def getStructuresFromConstantInfo (info : ConstantInfo) : MetaM (Array Name) :=
+private def getStructureFromConstantInfo (info : ConstantInfo) : MetaM (Option Name) :=
   match info with
   | .inductInfo val => do
            match getStructureInfo? (← getEnv) val.name with
-             | none => pure #[]
-             | some structInfo => return #[structInfo.structName]
-  | .defnInfo val => getStructureNames val.value
-  | .thmInfo val => getStructureNames val.value
-  | .ctorInfo val => getStructureNames (mkConst val.name)
-  | .recInfo val => val.all.foldlM (init := #[])
-    fun structs nm => do
-      let newStructs ← getStructureNames (mkConst nm)
-      return structs ++ newStructs
-  | .quotInfo _ => pure #[]
-  | .opaqueInfo _ =>  pure #[]
-  | .axiomInfo _ => pure #[]
+             | none => pure none
+             | some structInfo => pure structInfo.structName
+  | .ctorInfo val => do
+           match getStructureInfo? (← getEnv) val.name with
+             | none => pure none
+             | some structInfo => pure structInfo.structName
+  | _ => pure none
 
-private partial def getStructureNames (e : Expr) : MetaM (Array Name) := do
+/--
+This function walks over an expression and collects the names of all
+`structure`s in subexpressions.
+-/
+private def getStructureNames (e : Expr) : MetaM (Array Name) := do
 
   let env ← getEnv
   let rec visit (e : Expr) (currNames : Array Name) : MetaM (Array Name) := do
@@ -92,8 +94,10 @@ private partial def getStructureNames (e : Expr) : MetaM (Array Name) := do
     | Expr.const name _ =>
       match env.find? name with
         | some info  => do
-          let newNames ← getStructuresFromConstantInfo info
-          return currNames ++ newNames
+          let newName? ← getStructureFromConstantInfo info
+          match newName? with
+            | some newName => return currNames.push newName
+            | none => pure currNames
         | none => pure currNames
     | Expr.app fn arg =>
       let fnNames ← visit fn currNames
@@ -111,10 +115,15 @@ private partial def getStructureNames (e : Expr) : MetaM (Array Name) := do
       return valNames ++ bodyNames
     | _ => pure currNames
   visit e #[]
-end  --mutual
 
-theorem foo : 1 + 1 = 2 := rfl
 
 #eval show MetaM Unit from do
-  let names ← getStructureNames (mkConst `foo)
-  trace[Meta.debug] s!"Structure names: {names}"
+  let names ← getStructureNames (mkConst `Prod)
+  logInfo s!"Structure names: {names}"
+
+theorem foo : (1,2).snd = 1 + 1 := rfl
+
+#eval show MetaM Unit from do
+  let constinfo ← getConstInfo `foo
+  let names ← getStructureNames constinfo.value!
+  logInfo s!"Structure names of {constinfo.value!}: {names}"
