@@ -127,3 +127,35 @@ theorem foo : (1,2).snd = 1 + 1 := rfl
   let constinfo ← getConstInfo `foo
   let names ← getStructureNames constinfo.value!
   logInfo s!"Structure names of {constinfo.value!}: {names}"
+
+set_option pp.raw true in
+#reduce (1,2)
+
+def pair : Prod Nat Nat := (1,2)
+
+instance : ToString ConstantInfo := ⟨fun cinfo => match cinfo with
+ | .axiomInfo  val => "Axiom: {val}"
+ | .defnInfo   val => "Defn: {val}"
+ | .thmInfo    val => "Thm: {val}"
+ | .opaqueInfo val => "Opaque: {val}"
+ | .quotInfo   val => "Quot: {val}"
+ | .inductInfo val => "Induct: {val}"
+ | .ctorInfo   val => "Ctor: {val}"
+ | .recInfo    val => "Rec: {val}"
+ ⟩
+
+#eval show MetaM Unit from do
+  let constinfo ← getConstInfo `pair
+  match constinfo.value! with
+    | Expr.app (Expr.app (Expr.app (Expr.app fn arg₁) arg₂) arg₃) arg₄ => do
+       logInfo s!"Function: {fn}"
+       logInfo s!"Arg: {arg₁}"
+       logInfo s!"Arg: {arg₂}"
+       logInfo s!"Arg: {arg₃}"
+       logInfo s!"Arg: {arg₄}"
+       let some (nm, _) := fn.const?
+         | throwError "Expected constant"
+       let constInfo ← getConstInfo nm
+       logInfo s!"Constant info: {constInfo}"
+       logInfo s!"structureFromConstantInfo {← getStructureFromConstantInfo constInfo}"
+    | _ => pure ()
