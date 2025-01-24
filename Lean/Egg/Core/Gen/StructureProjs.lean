@@ -36,32 +36,6 @@ private def buildStructureProjEqns (structName : Name) (cfg : Rewrite.Config) : 
     rws := rw :: rws
   return rws.toArray
 
-/--
-For the given rewrite (`target`), we iterate over all subterms and collect
- `structure`s that occur in them.
-
-We use a list since we later want to `eraseDups`, but this function
-does not exist for `Array`.
--/
-private def getStructuresInRewrite (target : Rewrite)
-   : MetaM (List Name) := do
-   for c in target.conds do
-     for ..
-  return []
-
-/--
-To generate the structure projections, we first collect all the
-structures that occur in the rewrites. For each structure, we
-generate all the projections.
--/
-def genStructureProjections (targets : Rewrites) (norm : Config.Normalization) (cfg : Config.Erasure) :
-    MetaM Rewrites := do
-      let structures ← targets.foldlM (init := []) fun rws rw => do
-        return rws ++ (← getStructuresInRewrite rw)
-      -- deduplicate names, convert to array
-      structures.eraseDups
-       |>.foldlM  (init := #[]) fun acc struct => do
-        return acc ++ (← buildStructureProjEqns struct sorry)
 
 /--
 This function gathers the `Name`s of structures occuring in a constant.
@@ -116,14 +90,33 @@ private def getStructureNames (e : Expr) : MetaM (Array Name) := do
     | _ => pure currNames
   visit e #[]
 
+/--
+For the given rewrite (`target`), we iterate over all subterms and collect
+ `structure`s that occur in them.
 
-#eval show MetaM Unit from do
-  let names ← getStructureNames (mkConst `Prod)
-  logInfo s!"Structure names: {names}"
+We use a list since we later want to `eraseDups`, but this function
+does not exist for `Array`.
+-/
+private def getStructuresInRewrite (target : Rewrite)
+   : MetaM (List Name) := do
+  let mut structures := []
+  for c in target.conds do
+    let newnames ← getStructureNames c.expr
+    structures := structures ++ newnames.toList
+  let lhsNames ← getStructureNames target.lhs
+  let rhsNames ← getStructureNames target.rhs
+  return structures ++ lhsNames.toList ++ rhsNames.toList
 
-theorem foo : (1,2).snd = 1 + 1 := rfl
-
-#eval show MetaM Unit from do
-  let constinfo ← getConstInfo `foo
-  let names ← getStructureNames constinfo.value!
-  logInfo s!"Structure names of {constinfo.value!}: {names}"
+/--
+To generate the structure projections, we first collect all the
+structures that occur in the rewrites. For each structure, we
+generate all the projections.
+-/
+def genStructureProjections (targets : Rewrites) (cfg : Rewrite.Config) :
+    MetaM Rewrites := do
+      let structures ← targets.foldlM (init := []) fun rws rw => do
+        return rws ++ (← getStructuresInRewrite rw)
+      -- deduplicate names, convert to array
+      structures.eraseDups
+       |>.foldlM  (init := #[]) fun acc struct => do
+        return acc ++ (← buildStructureProjEqns struct cfg)
