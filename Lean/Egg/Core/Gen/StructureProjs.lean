@@ -6,10 +6,11 @@ open Lean Syntax
 structure RawStructProjInfo where
   ctor : Name
   params : Nat
-  levels : List Name
+  levels : List Level
   projs : Array Name
 
-private def getStructureCtorAndProjs (structName : Name) : MetaM RawStructProjInfo := do --Elab.Command.CommandElabM Unit := do
+private def getStructureCtorAndProjs (structName : Name) :
+ MetaM RawStructProjInfo := do
     let env ← getEnv
     match env.find? structName with
     | none => throwError s!"Structure {structName} not found"
@@ -23,8 +24,9 @@ private def getStructureCtorAndProjs (structName : Name) : MetaM RawStructProjIn
                --logInfo s!"Constructor: {ctorVal.name}"
                let projs := structInfo.fieldNames.map
                  fun nm => structInfo.structName.append nm
+               let levels := ctorVal.levelParams.map mkLevelParam
                return {ctor := ctorVal.name, params := ctorVal.numParams,
-                       levels := ctorVal.levelParams,  projs := projs}
+                       levels := levels,  projs := projs}
         | _ => throwError s!"{structName} is not a structure"
 
 open Egg
@@ -48,10 +50,10 @@ private def buildStructureProjEqns (structName : Name) (cfg : Rewrite.Config) : 
       return acc.push mvar
   let mvars ← rawInfo.projs.mapM
     fun pr => Meta.mkFreshExprMVar none (userName := pr)
-  let ctorApp := mkAppN (mkConst rawInfo.ctor) (paramMvars ++ mvars)
+  let ctorApp := mkAppN (mkConst rawInfo.ctor rawInfo.levels) (paramMvars ++ mvars)
   let rawRws := rawInfo.projs.zipWithIndex.map
     fun (proj, idx) =>
-      (mkAppN (mkConst proj) (paramMvars ++ #[ctorApp]), mvars[idx]!)
+      (mkAppN (mkConst proj rawInfo.levels) (paramMvars ++ #[ctorApp]), mvars[idx]!)
   let mut rws := []
   for (lhs, rhs) in rawRws do
     let rw ← Rewrite.mkDefEq lhs rhs cfg
