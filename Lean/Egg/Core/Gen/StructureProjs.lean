@@ -3,7 +3,13 @@ import Egg.Core.Premise.Rewrites
 
 open Lean Syntax
 
-private def getStructureCtorAndProjs (structName : Name) : MetaM (Name × Array Name) := do --Elab.Command.CommandElabM Unit := do
+structure RawStructProjInfo where
+  ctor : Name
+  params : Nat
+  levels : List Name
+  projs : Array Name
+
+private def getStructureCtorAndProjs (structName : Name) : MetaM RawStructProjInfo := do --Elab.Command.CommandElabM Unit := do
     let env ← getEnv
     match env.find? structName with
     | none => throwError s!"Structure {structName} not found"
@@ -17,19 +23,35 @@ private def getStructureCtorAndProjs (structName : Name) : MetaM (Name × Array 
                --logInfo s!"Constructor: {ctorVal.name}"
                let projs := structInfo.fieldNames.map
                  fun nm => structInfo.structName.append nm
-               return (ctorVal.name, projs)
+               return {ctor := ctorVal.name, params := ctorVal.numParams,
+                       levels := ctorVal.levelParams,  projs := projs}
         | _ => throwError s!"{structName} is not a structure"
 
 open Egg
 
+-- This should probably go to some Util file.
+def toSubscript (n : Nat) : String :=
+  String.mk $ n.repr.data.map fun c =>
+    Char.ofNat $ c.toNat - '0'.toNat + '₀'.toNat
+
+/--
+Given a structure name, this function generates the equations for the
+projections. It needs to take care of implicit arguments and universe
+parameters.
+-/
 private def buildStructureProjEqns (structName : Name) (cfg : Rewrite.Config) : MetaM Rewrites := do
-  let (ctor, projs) ← getStructureCtorAndProjs structName
-  let mvars ← projs.mapM
+  let rawInfo ← getStructureCtorAndProjs structName
+  let paramMvars ← (Array.range rawInfo.params).foldlM
+    (init := #[]) fun acc i => do
+      let nm := .str .anonymous <| "α" ++ (toSubscript i)
+      let mvar ← Meta.mkFreshExprMVar none (userName := nm)
+      return acc.push mvar
+  let mvars ← rawInfo.projs.mapM
     fun pr => Meta.mkFreshExprMVar none (userName := pr)
-  let ctorApp := mkAppN (mkConst ctor) mvars
-  let rawRws := projs.zipWithIndex.map
+  let ctorApp := mkAppN (mkConst rawInfo.ctor) (paramMvars ++ mvars)
+  let rawRws := rawInfo.projs.zipWithIndex.map
     fun (proj, idx) =>
-      (mkApp (mkConst proj) ctorApp, mvars[idx]!)
+      (mkAppN (mkConst proj) (paramMvars ++ #[ctorApp]), mvars[idx]!)
   let mut rws := []
   for (lhs, rhs) in rawRws do
     let rw ← Rewrite.mkDefEq lhs rhs cfg
@@ -112,11 +134,21 @@ To generate the structure projections, we first collect all the
 structures that occur in the rewrites. For each structure, we
 generate all the projections.
 -/
-def genStructureProjections (targets : Rewrites) (cfg : Rewrite.Config) :
+def genStructureProjections (targets : Rewrites) (goal : Congr) (cfg : Rewrite.Config) :
     MetaM Rewrites := do
-      let structures ← targets.foldlM (init := []) fun rws rw => do
+      let structures_targets ← targets.foldlM (init := []) fun rws rw => do
         return rws ++ (← getStructuresInRewrite rw)
       -- deduplicate names, convert to array
+      let structures := structures_targets
+        ++ (← getStructureNames goal.lhs).toList
+        ++ (← getStructureNames goal.rhs).toList
       structures.eraseDups
        |>.foldlM  (init := #[]) fun acc struct => do
         return acc ++ (← buildStructureProjEqns struct cfg)
+
+def example_prod (x1 x2 : α) : x1 = Prod.fst (Prod.mk x1 x2) := sorry
+
+#eval show MetaM Unit from do
+  let constinfo ← getConstInfo `example_prod
+  let names ← getStructureNames constinfo.value!
+  logInfo s!"Structure names of {constinfo.value!}: {names}"

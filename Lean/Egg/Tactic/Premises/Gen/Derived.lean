@@ -3,6 +3,7 @@ import Egg.Core.Gen.TcSpecs
 import Egg.Core.Gen.GoalTcSpecs
 import Egg.Core.Gen.Explosion
 import Egg.Core.Gen.NestedSplits
+import Egg.Core.Gen.StructureProjs
 import Lean
 
 open Lean hiding HashSet
@@ -144,4 +145,4 @@ where
       setTcProjCover cover
       return rws
     generate cfg .structureProj do
-      genStructureProjections (← todo .structureProj) cfg.toDefEq
+      genStructureProjections (← todo .structureProj) goal {cfg with amb}

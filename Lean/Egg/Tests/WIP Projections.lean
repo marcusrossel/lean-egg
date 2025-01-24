@@ -7,7 +7,23 @@ example (x1 x2 : α) : x1 = (x1,x2).1 := by rfl
 
 example (x1 x2 : α) : x1 = (x1,x2).1 := by egg
 
+
+set_option trace.egg true in
 example (x1 x2 : α) : x1 = Prod.fst (Prod.mk x1 x2) := by egg
+
+#reduce  Prod.fst (Prod.mk ?Prod.fst ?Prod.snd)
+
+open Lean in
+#eval show MetaM Unit from do
+  let α ← mkFreshLMVarId
+  let β ← mkFreshLMVarId
+  let x ← mkFreshLMVarId
+  let y ← mkFreshLMVarId
+  let lhs ← mkAppN (mkConst `Prod.fst) #[mkAppN `Prod.mk #[mkMVar x, mkMVar y]]
+  let rhs ← getConstInfo `rhs
+  Lean.logInfo s!"{lhs.value!}"
+  Lean.logInfo s!"{(← Lean.Meta.isDefEq lhs.value! rhs.value!)}"
+
 
 example T x1 x2 : @Eq T x1 (@Prod.mk T T x1 x2).1 := by rfl
 
