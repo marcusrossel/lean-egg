@@ -47,12 +47,22 @@ info: [egg.rewrites] Rewrites
 example (f : {α : Type} → α → α) (h : ∀ α (x : α), f x = x) : true = true := by
   egg [h]
 
+-- TODO: Without type class instance erasure, the following rewrite #0 was only applicable in the
+--       forward direction, but had not condition. Now it's applicable in both directions, but has
+--       a condition. Thus, it seems we should be more conservative about adding type class
+--       instances as conditions. Best case scenario here would be: we first only generate the
+--       rewrite in the single applicable direction as before, without the condition. Then, we have
+--       a rewrite generator, similar to type class specialization, which tries to increase the
+--       applicable rewrite directions by adding type class instances as conditions.
+
 /--
 info: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
-    [egg.rewrites] #0(⇒): h
+    [egg.rewrites] #0(⇔): h
       [egg.rewrites] ?x + ?x = ?x
+      [egg.rewrites] Conditions
+        [egg.rewrites] Add α
       [egg.rewrites] LHS MVars
           [?x: [.unconditionallyVisible], ?inst✝: [.inTcInstTerm, .isTcInst]]
       [egg.rewrites] RHS MVars
@@ -61,7 +71,14 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Pruned (0)
+  [egg.rewrites] Pruned (1)
+    [egg.rewrites] #0<←>(⇔)
+      [egg.rewrites] ?m.180 + ?m.180 = ?m.180
+      [egg.rewrites] Conditions
+        [egg.rewrites] Add α
+      [egg.rewrites] LHS MVars
+          [?m.180: [.unconditionallyVisible], ?m.183: [.inTcInstTerm, .isTcInst]]
+      [egg.rewrites] RHS MVars [?m.180: [.unconditionallyVisible]]
 -/
 #guard_msgs(info) in
 example (h : ∀ [Add α] (x : α), x + x = x) : true = true := by

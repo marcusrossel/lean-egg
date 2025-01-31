@@ -23,9 +23,9 @@ private partial def exprReferencesMVar (e : Expr) (m : MVarId) : MetaM Bool := d
     | _ => pure ()
     exprReferencesMVar (← inferType e) m
 
-private partial def genExplosionsForRw (rw : Rewrite) (cfg : Config.Erasure) : MetaM Rewrites := do
-  let missingOnLhs := (rw.mvars.rhs.visibleExpr cfg).subtract (rw.mvars.lhs.visibleExpr cfg)
-  let missingOnRhs := (rw.mvars.lhs.visibleExpr cfg).subtract (rw.mvars.rhs.visibleExpr cfg)
+private partial def genExplosionsForRw (rw : Rewrite) : MetaM Rewrites := do
+  let missingOnLhs := rw.mvars.rhs.visibleExpr.subtract rw.mvars.lhs.visibleExpr
+  let missingOnRhs := rw.mvars.lhs.visibleExpr.subtract rw.mvars.rhs.visibleExpr
   return (← genDir .forward  missingOnLhs) ++ (← genDir .backward missingOnRhs)
 where
   genDir (dir : Direction) (missing : MVarIdSet) : MetaM Rewrites := do
@@ -51,5 +51,5 @@ where
       explosions := explosions ++ (← core fresh dir miss <| loc ++ [minIdx])
     return explosions
 
-def genExplosions (targets : Rewrites) (cfg : Config.Erasure) : MetaM Rewrites := do
-  targets.foldlM (init := #[]) fun acc rw => return acc ++ (← genExplosionsForRw rw cfg)
+def genExplosions (targets : Rewrites) : MetaM Rewrites := do
+  targets.foldlM (init := #[]) fun acc rw => return acc ++ (← genExplosionsForRw rw)

@@ -10,7 +10,6 @@ info: [egg.encoded] Encoded
 -/
 #guard_msgs(info) in
 set_option trace.egg.encoded true in
-set_option egg.eraseTCInstances true in
 set_option egg.builtins false in
 set_option egg.genTcProjRws false in
 example (a : Nat) : a + a = a + a := by

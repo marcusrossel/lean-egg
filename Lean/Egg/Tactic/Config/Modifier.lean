@@ -7,8 +7,6 @@ namespace Egg.Config
 
 structure Modifier where
   slotted             : Option Bool            := none
-  eraseProofs         : Option Bool            := none
-  eraseTCInstances    : Option Bool            := none
   shapes              : Option Bool            := none
   betaReduceRws       : Option Bool            := none
   etaReduceRws        : Option Bool            := none
@@ -44,8 +42,6 @@ structure Modifier where
 
 def modify (cfg : Config) (mod : Modifier) : Config where
   slotted             := mod.slotted.getD cfg.slotted
-  eraseProofs         := mod.eraseProofs.getD cfg.eraseProofs
-  eraseTCInstances    := mod.eraseTCInstances.getD cfg.eraseTCInstances
   shapes              := mod.shapes.getD cfg.shapes
   betaReduceRws       := mod.betaReduceRws.getD cfg.betaReduceRws
   etaReduceRws        := mod.etaReduceRws.getD cfg.etaReduceRws

@@ -42,12 +42,12 @@ def bvarName? (id : FVarId) : EncodeM (Option String) := do
   let some bvarIdx := (← get).bvars.indexOf? id | return none
   return if (← config).slotted then s!"${id.uniqueIdx!}" else s!"{bvarIdx}"
 
-def needsProofErasure (e : Expr) : EncodeM Bool := do
-  (return (← config).eraseProofs) <&&> Meta.isProof e
+open Meta
 
-open Meta in
+def needsProofErasure (e : Expr) : EncodeM Bool := do
+  isProof e
+
 def needsInstErasure? (e : Expr) : EncodeM (Option Expr) := do
-  unless (← config).eraseTCInstances do return none
   let ty ← inferType e
   -- Note: `isClass?` does not require the type operator to be fully applied. That is, if `ty` is
   --       `Inhabited` instead of `Inhabited Nat`, `isClass?` will still succeed. This shouldn't

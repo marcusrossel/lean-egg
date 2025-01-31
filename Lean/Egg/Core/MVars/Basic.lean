@@ -28,8 +28,8 @@ namespace Egg.MVars
    as `Iff` has neither a universe level nor a type argument.
 
 A commonly required composite property is whether an mvar will appear in the final encoded term. We
-say that such an mvar is "visible". Visibility depends on Properties 1, 3, 4, 5, 6, and 7 as well as
-the erasure configuration. The visibility property is used for the following:
+say that such an mvar is "visible". Visibility depends on Properties 1, 4, and 6. The visibility
+property is used for the following:
 * To implement explosion.
 * To determine the valid directions of a rewrite.
 * To determine which mvars are conditions of a rewrite.
@@ -49,24 +49,23 @@ inductive Property where
   | inEqType
   deriving BEq, Hashable
 
+def Property.isVisible : Property → Bool
+  | .unconditionallyVisible | .inErasedTcInst | .inErasedProof => true
+  | _                                                          => false
+
+def Property.inTarget : Property → Bool
+  | .unconditionallyVisible | .inProofTerm | .isTcInst | .inTcInstTerm | .inEqType => true
+  | _                                                                              => false
+
 abbrev Properties := HashSet Property
 
 namespace Properties
 
-def isVisible (ps : Properties) (cfg : Config.Erasure) : Bool :=
-  ps.contains .unconditionallyVisible
-  || (ps.contains .isTcInst       && !cfg.eraseTCInstances)
-  || (ps.contains .inTcInstTerm   && !cfg.eraseTCInstances)
-  || (ps.contains .inErasedTcInst && cfg.eraseTCInstances)
-  || (ps.contains .inProofTerm    && !cfg.eraseProofs)
-  || (ps.contains .inErasedProof  && cfg.eraseProofs)
+def isVisible (ps : Properties) : Bool :=
+  ps.any (·.isVisible)
 
 def inTarget (ps : Properties) : Bool :=
-  ps.contains .unconditionallyVisible
-  || ps.contains .inProofTerm
-  || ps.contains .isTcInst
-  || ps.contains .inTcInstTerm
-  || ps.contains .inEqType
+  ps.any (·.inTarget)
 
 def insertIf (ps : Properties) (condition : Bool) (p : Property) : Properties :=
   if condition then ps.insert p else ps
@@ -81,13 +80,13 @@ structure _root_.Egg.MVars where
 def isEmpty (mvars : MVars) : Bool :=
   mvars.expr.isEmpty && mvars.lvl.isEmpty
 
-def visibleExpr (mvars : MVars) (cfg : Config.Erasure) : MVarIdSet :=
+def visibleExpr (mvars : MVars) : MVarIdSet :=
   mvars.expr.fold (init := ∅) fun result m ps =>
-    if ps.isVisible cfg then result.insert m else result
+    if ps.isVisible then result.insert m else result
 
-def visibleLevel (mvars : MVars) (cfg : Config.Erasure) : LMVarIdSet :=
+def visibleLevel (mvars : MVars) : LMVarIdSet :=
   mvars.lvl.fold (init := ∅) fun result m ps =>
-    if ps.isVisible cfg then result.insert m else result
+    if ps.isVisible then result.insert m else result
 
 def tcInsts (mvars : MVars) : MVarIdSet :=
   mvars.expr.fold (init := ∅) fun result m ps =>

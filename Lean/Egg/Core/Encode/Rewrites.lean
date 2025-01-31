@@ -25,7 +25,7 @@ def encode (rw : Rewrite) (ctx : EncodingCtx) : MetaM Encoded :=
     name  := rw.src.description
     lhs   := ← Egg.encode rw.lhs ctx
     rhs   := ← Egg.encode rw.rhs ctx
-    dirs  := rw.validDirs ctx.cfg.toErasure
+    dirs  := rw.validDirs
     conds := ← rw.conds.filterMapM (Condition.encode? · ctx)
   }
 

@@ -11,16 +11,7 @@ def Normalization.noReduce : Normalization where
   etaReduceRws  := false
   natReduceRws  := false
 
-structure Erasure where
-  eraseProofs      := true
-  eraseTCInstances := true
-  deriving Inhabited, BEq
-
-def Erasure.noErase : Erasure where
-  eraseProofs      := false
-  eraseTCInstances := false
-
-structure Encoding extends Normalization, Erasure where
+structure Encoding extends Normalization where
   -- TODO: Currently, this option implicitly disables `retryWithShapes` as slotted cannot handle shapes, yet.
   slotted := false
   -- TODO: Currently, this option implicitly disables defeq rewrites as they can not handle shapes, yet.
@@ -39,7 +30,7 @@ structure Gen where
   genGroundEqs    := true
   deriving BEq
 
-structure DefEq extends Erasure where
+structure DefEq where
   natLit    := true
   eta       := true
   etaExpand := false

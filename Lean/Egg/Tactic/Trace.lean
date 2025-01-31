@@ -81,9 +81,8 @@ def Congr.Rel.format : Congr.Rel → Format
 def Congr.toMessageData (cgr : Congr) : MetaM MessageData :=
   return (← ppExpr cgr.lhs) ++ " " ++ cgr.rel.format ++ " " ++ (← ppExpr cgr.rhs)
 
-def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cfg : Config.Erasure) (cls : Name) :
-    TacticM Unit := do
-  let mut header := m!"{rw.src.description}({rw.validDirs cfg |>.format})"
+def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) : TacticM Unit := do
+  let mut header := m!"{rw.src.description}({rw.validDirs.format})"
   if let some stx := stx? then header := m!"{header}: {stx}"
   withTraceNode cls (fun _ => return header) do
     traceM cls fun _ => rw.toCongr.toMessageData
@@ -98,11 +97,10 @@ def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cfg : Config.Erasure) (
     traceM cls fun _ => return m!"LHS MVars\n{← rw.mvars.lhs.toMessageData}"
     traceM cls fun _ => return m!"RHS MVars\n{← rw.mvars.rhs.toMessageData}"
 
-def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cfg : Config.Erasure) (cls : Name) :
-    TacticM Unit := do
+def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cls : Name) : TacticM Unit := do
   for rw in rws, idx in [:rws.size] do
     let stx? := stx[idx]? >>= fun s => if s.getAtomVal == "*" then none else s
-    rw.trace stx? cfg cls
+    rw.trace stx? cls
 
 def Rewrite.Encoded.trace (rw : Rewrite.Encoded) (cls : Name) : TacticM Unit := do
   let header := m!"{rw.name}({rw.dirs.format})"
@@ -130,20 +128,17 @@ nonrec def Config.trace (cfg : Config) (cls : Name) : TacticM Unit := do
     withTraceNode cls (fun _ => return "Encoding") (collapsed := false) do
       trace cls fun _ => m!"{toEmoji cfg.betaReduceRws} β-Reduce Rewrites"
       trace cls fun _ => m!"{toEmoji cfg.etaReduceRws} η-Reduces Rewrites"
-      trace cls fun _ => m!"{toEmoji cfg.eraseProofs} Erase Proofs"
     withTraceNode cls (fun _ => return "Debug") (collapsed := false) do
       trace cls fun _ => m!"Exit Point: {cfg.exitPoint.format}"
       trace cls fun _ => m!"E-Graph Visualization Export Path: {cfg.vizPath.getD "None"}"
 
 nonrec def Config.DefEq.trace (cfg : Config.DefEq) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Definitional") do
-    if cfg.beta             then Lean.trace cls fun _ => "β-Reduction"
-    if cfg.eta              then Lean.trace cls fun _ => "η-Reduction"
-    if cfg.etaExpand        then Lean.trace cls fun _ => "η-Expansion"
-    if cfg.natLit           then Lean.trace cls fun _ => "Natural Number Literals"
-    if cfg.levels           then Lean.trace cls fun _ => "Universe Levels"
-    if cfg.eraseProofs      then Lean.trace cls fun _ => "Proof Irrelevance"
-    if cfg.eraseTCInstances then Lean.trace cls fun _ => "Type Class Instances"
+    if cfg.beta      then Lean.trace cls fun _ => "β-Reduction"
+    if cfg.eta       then Lean.trace cls fun _ => "η-Reduction"
+    if cfg.etaExpand then Lean.trace cls fun _ => "η-Expansion"
+    if cfg.natLit    then Lean.trace cls fun _ => "Natural Number Literals"
+    if cfg.levels    then Lean.trace cls fun _ => "Universe Levels"
 
 nonrec def Request.trace (req : Request) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Goal") do

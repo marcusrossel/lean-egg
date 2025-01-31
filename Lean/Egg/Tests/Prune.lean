@@ -53,8 +53,8 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #1(⇔)
       [egg.rewrites] ?a + ?b = ?b + ?a
       [egg.rewrites] LHS MVars
-          [?b: [.unconditionallyVisible], ?a: [.unconditionallyVisible]]
-      [egg.rewrites] RHS MVars [?b: [.unconditionallyVisible], ?a: [.unconditionallyVisible]]
+          [?a: [.unconditionallyVisible], ?b: [.unconditionallyVisible]]
+      [egg.rewrites] RHS MVars [?a: [.unconditionallyVisible], ?b: [.unconditionallyVisible]]
 -/
 #guard_msgs in
 set_option linter.unusedVariables false in

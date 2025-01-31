@@ -3,7 +3,6 @@ open scoped Egg
 
 -- These tests show how type class specialization is applied to conditions of conditional rewrites.
 
-set_option egg.eraseTCInstances false
 egg_no_defeq
 set_option egg.builtins false
 set_option egg.genGroundEqs false

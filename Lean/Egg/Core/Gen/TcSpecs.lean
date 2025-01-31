@@ -33,8 +33,8 @@ where
 
 -- TODO: With type class instance erasure enabled, all type class instances become conditions, so we
 --       should only need condition specialization.
-private def genTcSpecializationsForRw
-    (rw : Rewrite) (norm : Config.Normalization) (cfg : Config.Erasure) : MetaM Rewrites := do
+private def genTcSpecializationsForRw (rw : Rewrite) (norm : Config.Normalization) :
+    MetaM Rewrites := do
   let mut specs : Rewrites := #[]
   let missingOnLhs := rw.mvars.rhs.tcInsts.subtract rw.mvars.lhs.tcInsts
   let missingOnRhs := rw.mvars.lhs.tcInsts.subtract rw.mvars.rhs.tcInsts
@@ -49,15 +49,14 @@ where
     let freshMissing := missing.map subst.expr.get!
     let conds := freshRw.tcConditionMVars
     let (spec, _) ← genSpecialization freshRw (freshMissing.union conds) norm
-    return if (spec.validDirs cfg).contains dir then spec else none
+    return if spec.validDirs.contains dir then spec else none
   genCondSpecOnly : MetaM (Option Rewrite) := do
     let freshRw ← rw.fresh (src := .tcSpec rw.src .cond)
     let conds := freshRw.tcConditionMVars
     let (spec, changed) ← genSpecialization freshRw conds norm
     return if changed then spec else none
 
-def genTcSpecializations (targets : Rewrites) (norm : Config.Normalization) (cfg : Config.Erasure) :
-    MetaM Rewrites := do
+def genTcSpecializations (targets : Rewrites) (norm : Config.Normalization) : MetaM Rewrites := do
   let mut result := #[]
-  for rw in targets do result := result ++ (← genTcSpecializationsForRw rw norm cfg)
+  for rw in targets do result := result ++ (← genTcSpecializationsForRw rw norm)
   return result

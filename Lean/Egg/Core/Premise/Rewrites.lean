@@ -70,14 +70,11 @@ structure _root_.Egg.Rewrite extends Congr where
   mvars : Rewrite.MVars
   deriving Inhabited
 
-structure Config extends Config.Normalization, Config.Erasure where
+structure Config extends Config.Normalization where
   amb : MVars.Ambient
 
 instance : Coe Config Config.Normalization where
   coe := Config.toNormalization
-
-instance : Coe Config Config.Erasure where
-  coe := Config.toErasure
 
 def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
     MetaM (Option Rewrite) := do
@@ -87,6 +84,7 @@ def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) 
   let cgr ←
     if let some cgr ← Congr.from? prop then
       pure cgr
+    -- Note: We need this to reduce abbrevs which don't unfold to `∀ ...`, but rather just `_ ~ _`.
     else if let some cgr ← Congr.from? (← withReducible do reduce (skipTypes := false) prop) then
       pure cgr
     else if (← inferType prop).isProp then
@@ -101,25 +99,24 @@ def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) 
 where
   collectConds (args : Array Expr) (mLhs mRhs : MVars) : MetaM (Array Rewrite.Condition) := do
     let mut conds := #[]
-    -- When type class instance erasure is active, we still need to make sure that all required type
-    -- class instances are synthesizable, so we add them as conditions to the rewrite. We only do
-    -- this for type class instances though which are erased as part of a type class instance term,
-    -- because "standalone" type class instances are represented by their erased term.
+    -- Because of type class instance erasure, we need to make sure that all required type class
+    -- instances are synthesizable, so we add them as conditions to the rewrite. We only do this for
+    -- type class instances though which are erased as part of a type class instance term, because
+    -- "standalone" type class instances are represented by their erased term.
     -- For example, we wouldn't add `?i` as a condition in `@Inhabited.default α ?i` as the erasure
     -- of `?i` is precisely its type `Inhabited α`. In constrast, we would add `?j` as a condition
     -- in `@HAdd.hAdd α α α (@instHAdd α j?)`, as the type of the entire type class instance term is
     -- `HAdd α α α`, which doesn't match the type of `?j : Add α`.
-    if cfg.eraseTCInstances then
-      for tcInstMVar in mLhs.nestedTcInsts.union mRhs.nestedTcInsts do
-        -- TODO: Collecting all this information seems a bit superfluos. Perhaps we should redefine
-        --       `Condition` (or split it into two types) as we only consider propositions and type
-        --       class instances anyway.
-        conds := conds.push {
-          kind  := .tcInst,
-          expr  := .mvar tcInstMVar,
-          type  := ← tcInstMVar.getType,
-          mvars := ← MVars.collect (← tcInstMVar.getType) cfg.amb
-        }
+    for tcInstMVar in mLhs.nestedTcInsts.union mRhs.nestedTcInsts do
+      -- TODO: Collecting all this information seems a bit superfluos. Perhaps we should redefine
+      --       `Condition` (or split it into two types) as we only consider propositions and type
+      --       class instances anyway.
+      conds := conds.push {
+        kind  := .tcInst,
+        expr  := .mvar tcInstMVar,
+        type  := ← tcInstMVar.getType,
+        mvars := ← MVars.collect (← tcInstMVar.getType) cfg.amb
+      }
     -- Even when erasure is active, we still do not consider the mvars contained in erased terms to
     -- be conditions. Thus, we start by considering all mvars in the target as non-conditions and
     -- take their type mvar closure. This closure will necessarily contain the mvars contained in
@@ -152,18 +149,18 @@ def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config) (normalize := 
   let proof ← mkEqTrue proof
   return some { cgr with proof, src, conds := #[], mvars.lhs := {}, mvars.rhs := {}, }
 
-def validDirs (rw : Rewrite) (cfg : Config.Erasure) : Directions :=
+def validDirs (rw : Rewrite) : Directions :=
   -- MVars appearing in propositional conditions are definitely going to be part of the rewrite's
   -- LHS, so they can (and should be) ignored when computing valid directions.
   -- TODO: How does visibility work in conditions?
-  let propCondExpr  : MVarIdSet  := rw.conds.filter (·.kind.isProof) |>.foldl (init := ∅) (·.union <| ·.mvars.visibleExpr  cfg)
-  let propCondLevel : LMVarIdSet := rw.conds.filter (·.kind.isProof) |>.foldl (init := ∅) (·.union <| ·.mvars.visibleLevel cfg)
-  let visibleExprLhs    := rw.mvars.lhs.visibleExpr  cfg |>.filter (!propCondExpr.contains ·)
-  let visibleExprRhs    := rw.mvars.rhs.visibleExpr  cfg |>.filter (!propCondExpr.contains ·)
-  let visibleLevelLhs   := rw.mvars.lhs.visibleLevel cfg |>.filter (!propCondLevel.contains ·)
-  let visibleLevelRhs   := rw.mvars.rhs.visibleLevel cfg |>.filter (!propCondLevel.contains ·)
-  let exprDirs          := Directions.satisfyingSuperset visibleExprLhs visibleExprRhs
-  let lvlDirs           := Directions.satisfyingSuperset visibleLevelLhs visibleLevelRhs
+  let propCondExpr  : MVarIdSet  := rw.conds.filter (·.kind.isProof) |>.foldl (init := ∅) (·.union ·.mvars.visibleExpr)
+  let propCondLevel : LMVarIdSet := rw.conds.filter (·.kind.isProof) |>.foldl (init := ∅) (·.union ·.mvars.visibleLevel)
+  let visibleExprLhs  := rw.mvars.lhs.visibleExpr.filter (!propCondExpr.contains ·)
+  let visibleExprRhs  := rw.mvars.rhs.visibleExpr.filter (!propCondExpr.contains ·)
+  let visibleLevelLhs := rw.mvars.lhs.visibleLevel.filter (!propCondLevel.contains ·)
+  let visibleLevelRhs := rw.mvars.rhs.visibleLevel.filter (!propCondLevel.contains ·)
+  let exprDirs        := Directions.satisfyingSuperset visibleExprLhs visibleExprRhs
+  let lvlDirs         := Directions.satisfyingSuperset visibleLevelLhs visibleLevelRhs
   exprDirs.meet lvlDirs
 
 -- Returns the same rewrite but with its type and proof potentially flipped to match the given

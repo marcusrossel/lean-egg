@@ -39,7 +39,6 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] RHS MVars [?m.62: [.unconditionallyVisible]]
 -/
 #guard_msgs(info) in
-set_option egg.eraseTCInstances false in
 example (h : ∀ [inst : Neg Int] (x : Int), @Neg.neg Int inst x = x) : (0 : Int) = (0 : Int) := by
   egg [h]
 
@@ -79,7 +78,6 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] RHS MVars [?m.132: [.unconditionallyVisible]]
 -/
 -- #guard_msgs(info) in
-set_option egg.eraseTCInstances true in
 example (h : ∀ [inst : Neg Int] (x : Int), @Neg.neg Int inst x = x) : (0 : Int) = (0 : Int) := by
   -- TODO: Why does type class specialization specialize as `<←>` instead of `<?>`, if the original
   --       rewrite is already bidirectional? Is it because it only looks at `.isTcInst`, instead of

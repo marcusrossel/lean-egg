@@ -9,7 +9,6 @@ import Egg
 error: egg received invalid explanation: step contains non-defeq type-level rewrite in proof or type class instance
 -/
 #guard_msgs in
-set_option egg.eraseProofs true in
 theorem Array.extract_extract {s1 e2 e1 s2 : Nat} {a : Array α} (h : s1 + e2 ≤ e1) :
     (a.extract s1 e1).extract s2 e2 = a.extract (s1 + s2) (s1 + e2) := by
   apply ext

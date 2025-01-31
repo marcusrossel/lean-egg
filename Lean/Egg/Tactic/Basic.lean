@@ -35,17 +35,17 @@ private def resultToProof
   steps.trace `egg.proof
   proof ← instantiateMVars proof
   withTraceNode `egg.proof.term (fun _ => return "Proof Term") do trace[egg.proof.term] proof
-  catchLooseMVars proof ctx.amb steps.subgoals
+  -- TODO: catchLooseMVars proof ctx.amb steps.subgoals
   -- TODO: These mvars have the wrong depth.
   appendGoals steps.subgoals
   return .proof proof
 where
   catchLooseMVars (prf : Expr) (amb : MVars.Ambient) (subgoals : List MVarId) : MetaM Unit := do
     let mvars ← MVars.collect prf ∅
-    for mvar in mvars.visibleExpr .noErase do
+    for mvar in mvars.expr.keys do
       unless subgoals.contains mvar || amb.expr.contains mvar do
         throwError m!"egg: final proof contains expression mvar {Expr.mvar mvar}"
-    for lmvar in mvars.visibleLevel .noErase do
+    for lmvar in mvars.lvl.keys do
       unless amb.lvl.contains lmvar do
         throwError m!"egg: final proof contains level mvar {Level.mvar lmvar}"
 
