@@ -12,16 +12,20 @@ def String.isInfixOf (needle : String) (hey : String) := Id.run do
 
 def ciFlag := "ci"
 
+def testName (file : FS.DirEntry) : String :=
+  file.fileName.stripSuffix ".lean"
+
+def excludeFromTests (file : FS.DirEntry) : Bool :=
+  testName file == "TestDriver" ||
+  file.fileName.startsWith "WIP"
+
 def getTests : IO (Array FS.DirEntry) := do
   let testsDir := (← currentDir) / "Lean" / "Egg" / "Tests"
   let entries ← testsDir.readDir
   let files ← entries.filterM fun e => return !(← e.path.isDir)
   let leanFiles := files.filter (·.fileName.endsWith ".lean")
-  let tests := leanFiles.filter (!·.fileName.startsWith "WIP")
+  let tests := leanFiles.filter (!excludeFromTests ·)
   return tests.insertionSort (·.fileName < ·.fileName)
-
-def testName (file : FS.DirEntry) : String :=
-  file.fileName.stripSuffix ".lean"
 
 inductive TestResult where
   | success
