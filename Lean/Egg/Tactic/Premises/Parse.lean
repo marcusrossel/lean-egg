@@ -75,7 +75,7 @@ private abbrev Premise.Mk  (α) := Expr → Expr → Source → TacticM (Array �
 private abbrev Premise.Mk?     := Premise.Mk
 
 private def Premise.Mk.rewrites
-    (genGroundEqs : Bool) (stx : Syntax) (cfg : Rewrite.Config) : Premise.Mk Rewrite :=
+    (genGroundEqs : Bool) (stx : Syntax) (cfg : Config.Normalization) : Premise.Mk Rewrite :=
   fun proof type src => do
     let mut rws := #[]
     let some rw ← Rewrite.from? proof type src cfg
@@ -87,7 +87,7 @@ private def Premise.Mk.rewrites
     return rws
 
 private def Premise.Mk?.rewrites
-    (genGroundEqs : Bool) (cfg : Rewrite.Config) : Premise.Mk? Rewrite :=
+    (genGroundEqs : Bool) (cfg : Config.Normalization) : Premise.Mk? Rewrite :=
   fun proof type src => do
     let mut rws := #[]
     if let some rw ← Rewrite.from? proof type src cfg then rws := rws.push rw
@@ -133,7 +133,7 @@ structure Premises where
   rws : WithSyntax Rewrites := ∅
 
 def Premises.elab
-    (cfg : Rewrite.Config) (genGroundEqs : Bool) : (TSyntax `egg_premises) → TacticM Premises
+    (cfg : Config.Normalization) (genGroundEqs : Bool) : (TSyntax `egg_premises) → TacticM Premises
   | `(egg_premises|) => return {}
   | `(egg_premises|[$rws,*]) =>
     let mk  := (Premise.Mk.rewrites genGroundEqs · cfg)
@@ -156,7 +156,7 @@ where
       | _ => throwUnsupportedSyntax
     return result
 
-def Premises.elabTagged (prems : Array Name) (cfg : Rewrite.Config) : TacticM Rewrites := do
+def Premises.elabTagged (prems : Array Name) (cfg : Config.Normalization) : TacticM Rewrites := do
   let mut rws : Rewrites := #[]
   for prem in prems, idx in [:prems.size] do
     rws := rws ++ (← taggedRw prem idx)

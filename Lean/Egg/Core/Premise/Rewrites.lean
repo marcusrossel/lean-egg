@@ -70,13 +70,7 @@ structure _root_.Egg.Rewrite extends Congr where
   mvars : Rewrite.MVars
   deriving Inhabited
 
-structure Config extends Config.Normalization where
-  amb : MVars.Ambient
-
-instance : Coe Config Config.Normalization where
-  coe := Config.toNormalization
-
-def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
+def from? (proof type : Expr) (src : Source) (cfg : Config.Normalization) (normalize := true) :
     MetaM (Option Rewrite) := do
   let type ← if normalize then Egg.normalize type cfg else pure type
   let mut (args, _, prop) ← withReducible do forallMetaTelescopeReducing type
@@ -92,8 +86,8 @@ def from? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) 
       pure { rel := .eq, lhs := prop, rhs := .const ``True [] }
     else
       return none
-  let mLhs  ← MVars.collect cgr.lhs cfg.amb
-  let mRhs  ← MVars.collect cgr.rhs cfg.amb
+  let mLhs  ← MVars.collect cgr.lhs
+  let mRhs  ← MVars.collect cgr.rhs
   let conds ← collectConds args mLhs mRhs
   return some { cgr with proof, src, conds, mvars.lhs := mLhs, mvars.rhs := mRhs }
 where
@@ -115,7 +109,7 @@ where
         kind  := .tcInst,
         expr  := .mvar tcInstMVar,
         type  := ← tcInstMVar.getType,
-        mvars := ← MVars.collect (← tcInstMVar.getType) cfg.amb
+        mvars := ← MVars.collect (← tcInstMVar.getType)
       }
     -- Even when erasure is active, we still do not consider the mvars contained in erased terms to
     -- be conditions. Thus, we start by considering all mvars in the target as non-conditions and
@@ -123,21 +117,21 @@ where
     -- the types of erased terms, which therefore don't need to be added separately (as in,
     -- contingent upon the erasure configuration).
     let inTarget : MVarIdSet := mLhs.inTarget.union mRhs.inTarget
-    let mut noCond ← inTarget.typeMVarClosure (ignore := cfg.amb.expr)
+    let mut noCond ← inTarget.typeMVarClosure
     for arg in args.reverse do
       if noCond.contains arg.mvarId! then continue
       -- As we encode conditions as part of a rewrite's searcher its mvars also become
       -- non-conditions. That's why we traverse the list of arguments above in reverse.
-      noCond := noCond.union (← MVarIdSet.typeMVarClosure {arg.mvarId!} (ignore := cfg.amb.expr))
+      noCond := noCond.union (← MVarIdSet.typeMVarClosure {arg.mvarId!})
       let ty ← arg.mvarId!.getType
-      let mvars ← MVars.collect ty cfg.amb
+      let mvars ← MVars.collect ty
       let some kind ← Condition.Kind.forType? ty
         | throwError m!"Rewrite {src} requires condition of type '{ty}' which is neither a proof nor an instance."
       conds := conds.push { kind, expr := arg, type := ty, mvars }
     return conds
 
 -- Returns `none` if the given type is already ground.
-def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config) (normalize := true) :
+def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config.Normalization) (normalize := true) :
     MetaM (Option Rewrite) := do
   unless (← inferType type).isProp do return none
   let type ← if normalize then Egg.normalize type cfg else pure type
@@ -194,7 +188,7 @@ where
     let mut subst := init
     let mut conds := #[]
     for cond in rw.conds do
-      let (_, s) ← (← MVars.collect cond.expr ∅).fresh (init := subst)
+      let (_, s) ← (← MVars.collect cond.expr).fresh (init := subst)
       let (mvars, s) ← cond.mvars.fresh (init := s)
       conds := conds.push {
         kind := cond.kind,

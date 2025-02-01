@@ -1,6 +1,5 @@
 import Egg.Core.Request.Basic
 import Egg.Core.Explanation.Proof
-import Egg.Core.MVars.Ambient
 import Egg.Tactic.Premises.Parse
 import Lean
 open Lean Meta Elab Tactic Std Format
@@ -182,13 +181,3 @@ nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
       | .factAnd =>
         withTraceNode cls (fun _ => instantiateMVars step.rhs) do
           trace cls fun _ => m!"Fact ∧ Fact"
-
-nonrec def MVars.Ambient.trace (amb : MVars.Ambient) (cls : Name) : TacticM Unit := do
-  withTraceNode cls (fun _ => return "Ambient MVars") do
-    let (exprs, lvls) ← amb.unassigned
-    withTraceNode cls (fun _ => return "Expression") (collapsed := false) do
-      for m in exprs do
-        trace cls fun _ => m!"{Expr.mvar m}"
-    withTraceNode cls (fun _ => return "Level") (collapsed := false) do
-      for m in lvls do
-        trace cls fun _ => m!"{Level.mvar m}"

@@ -54,15 +54,17 @@ This terminates because the types of mvars aren't simply mvars again:
   let .sort m ← m.mvarId!.getType | failure
   logInfo m -- ?u.1
 ```
+
+Note: We only consider mvars of the current mctx depth.
 -/
-partial def MVarIdSet.typeMVarClosure (init ignore : MVarIdSet) : MetaM MVarIdSet := do
+partial def MVarIdSet.typeMVarClosure (init : MVarIdSet) : MetaM MVarIdSet := do
   let mut closure : MVarIdSet := ∅
   let mut todos := init
   let mut nextTodo? := todos.min
   while h : nextTodo?.isSome do
     let m := nextTodo?.get h
     todos := todos.erase m
-    unless ignore.contains m do
+    if ← m.isAssignable then
       closure := closure.insert m
       let { result, .. } := (← m.getType).collectMVars {}
       for r in result do todos := todos.insert r

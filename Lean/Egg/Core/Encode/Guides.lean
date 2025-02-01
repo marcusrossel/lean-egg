@@ -9,5 +9,5 @@ abbrev Guide.Encoded := Expression
 
 abbrev Guides.Encoded := Array Guide.Encoded
 
-def Guides.encode (guides : Guides) (ctx : EncodingCtx) : MetaM Guides.Encoded :=
-  guides.mapM fun guide => Egg.encode guide.expr ctx
+def Guides.encode (guides : Guides) (cfg : Config.Encoding) : MetaM Guides.Encoded :=
+  guides.mapM fun guide => Egg.encode guide.expr cfg

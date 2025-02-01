@@ -29,7 +29,6 @@ import Egg.Core.Encode.Guides
 import Egg.Core.Premise.Rewrites
 import Egg.Core.Directions
 import Egg.Core.Congr
-import Egg.Core.MVars.Ambient
 import Egg.Core.MVars.Collect
 import Egg.Core.MVars.Basic
 import Egg.Core.MVars.Subst

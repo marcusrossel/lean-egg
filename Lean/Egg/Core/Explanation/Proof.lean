@@ -56,7 +56,7 @@ where
 mutual
 
 private partial def Explanation.proof
-    (expl : Explanation) (rws : Rewrites) (egraph : EGraph) (ctx : EncodingCtx)
+    (expl : Explanation) (rws : Rewrites) (egraph : EGraph) (cfg : Config.Encoding)
     (fuel? : Option Nat := none) : MetaM Proof := do
   let mut current := expl.start
   let mut steps : Array Proof.Step := #[]
@@ -200,12 +200,12 @@ where
 
   mkSubproof (lhs rhs : Expr) : MetaM (Option Expr) := do
     if let some fuel := fuel? then unless fuel > 0 do fail "ran out of fuel"
-    let req ← Request.Equiv.encoding lhs rhs ctx
+    let req ← Request.Equiv.encoding lhs rhs cfg
     let some rawExpl := egraph.run req | return none
     withTraceNode `egg.explanation (fun _ => return m!"Nested Explanation for '{lhs}' = '{rhs}'") do
       trace[egg.explanation] rawExpl.str
     let expl ← rawExpl.parse
-    expl.prove { lhs, rhs, rel := .eq } rws egraph ctx <| fuel?.map (· - 1)
+    expl.prove { lhs, rhs, rel := .eq } rws egraph cfg <| fuel?.map (· - 1)
 
   synthLingeringTcErasureMVars (e : Expr) : MetaM Unit := do
     let mvars := (← instantiateMVars e).collectMVars {} |>.result
@@ -221,9 +221,9 @@ where
         throwError "egg: internal error in 'Egg.Proof.Explanation.proof.synthLingeringTcErasureMVars'"
 
 partial def Explanation.prove'
-    (expl : Explanation) (cgr : Congr) (rws : Rewrites) (egraph : EGraph) (ctx : EncodingCtx)
+    (expl : Explanation) (cgr : Congr) (rws : Rewrites) (egraph : EGraph) (cfg : Config.Encoding)
     (fuel? : Option Nat := none) : MetaM (Expr × Proof) := do
-  let proof ← expl.proof rws egraph ctx fuel?
+  let proof ← expl.proof rws egraph cfg fuel?
   match expl.kind with
   | .sameEClass => return (← proof.prove cgr, proof)
   | .eqTrue =>
@@ -232,8 +232,8 @@ partial def Explanation.prove'
     return (← mkOfEqTrue p, proof)
 
 partial def Explanation.prove
-    (expl : Explanation) (cgr : Congr) (rws : Rewrites) (egraph : EGraph) (ctx : EncodingCtx)
+    (expl : Explanation) (cgr : Congr) (rws : Rewrites) (egraph : EGraph) (cfg : Config.Encoding)
     (fuel? : Option Nat := none) : MetaM Expr :=
-  Prod.fst <$> expl.prove' cgr rws egraph ctx fuel?
+  Prod.fst <$> expl.prove' cgr rws egraph cfg fuel?
 
 end

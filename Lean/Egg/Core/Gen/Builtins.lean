@@ -15,7 +15,7 @@ private def builtinTheorems := #[
   ``gt_iff_lt
 ]
 
-def builtins (cfg : Rewrite.Config) : MetaM Rewrites := do
+def builtins (cfg : Config.Normalization) : MetaM Rewrites := do
   let mut rws := #[]
   let env ← getEnv
   for thm in builtinTheorems, idx in [:builtinTheorems.size] do
@@ -29,5 +29,5 @@ def builtins (cfg : Rewrite.Config) : MetaM Rewrites := do
 
 end Rewrites
 
-def genBuiltins (cfg : Config) (amb : MVars.Ambient) : MetaM Rewrites := do
-  if cfg.builtins then Rewrites.builtins { cfg with amb } else return #[]
+def genBuiltins (cfg : Config) : MetaM Rewrites := do
+  if cfg.builtins then Rewrites.builtins cfg else return #[]

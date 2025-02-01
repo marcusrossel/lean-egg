@@ -13,9 +13,8 @@ open Lean Meta Elab Tactic
 
 namespace Egg.Premises
 
-def gen
-    (goal : Goal) (ps : TSyntax `egg_premises) (guides : Guides) (cfg : Config)
-    (amb : MVars.Ambient) : TacticM Rewrites := do
+def gen (goal : Goal) (ps : TSyntax `egg_premises) (guides : Guides) (cfg : Config) :
+    TacticM Rewrites := do
   withTraceNode `egg.rewrites (fun _ => return "Rewrites") do
     let { all, pruned } ← GenM.run core
     let cls := `egg.rewrites
@@ -24,8 +23,8 @@ def gen
     return all
 where
   core : GenM Unit := open GenM in do
-    generate  .intros   do genIntros goal.intros.unzip.fst cfg amb
-    generate' .basic    do Premises.elab { cfg with amb } cfg.genGroundEqs ps
-    generate  .tagged   do genTagged cfg amb
-    generate  .builtins do genBuiltins cfg amb
-    generate  .derived  do genDerived goal.toCongr (← allExceptGeneratedGroundEqs) guides cfg amb
+    generate  .intros   do genIntros goal.intros.unzip.fst cfg
+    generate' .basic    do Premises.elab cfg cfg.genGroundEqs ps
+    generate  .tagged   do genTagged cfg
+    generate  .builtins do genBuiltins cfg
+    generate  .derived  do genDerived goal.toCongr (← allExceptGeneratedGroundEqs) guides cfg

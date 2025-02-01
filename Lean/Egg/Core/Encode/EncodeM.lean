@@ -1,6 +1,5 @@
 import Egg.Core.Config
 import Egg.Core.Source
-import Egg.Core.MVars.Ambient
 open Lean hiding HashMap
 open Std (HashMap)
 
@@ -11,7 +10,6 @@ abbrev Expression := String
 structure EncodeM.State where
   config     : Config.Encoding
   bvars      : List FVarId := []
-  amb        : MVars.Ambient
   cache      : HashMap Expr Expression := ∅
   usedBinder : Bool := false
 
@@ -21,12 +19,6 @@ namespace EncodeM
 
 def config : EncodeM Config.Encoding :=
   State.config <$> get
-
-def isAmbientExpr (mvar : MVarId) : EncodeM Bool := do
-  return (← get).amb.expr.contains mvar
-
-def isAmbientLvl (lmvar : LMVarId) : EncodeM Bool := do
-  return (← get).amb.lvl.contains lmvar
 
 -- Note: This only works as intended if `m` does not add any additional bvars (permanently).
 def withInstantiatedBVar (ty body : Expr) (m : String → Expr → EncodeM α) : EncodeM α := do

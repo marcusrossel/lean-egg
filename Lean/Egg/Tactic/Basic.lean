@@ -19,16 +19,16 @@ private inductive Proof? where
   | retryWithShapes
 
 private def resultToProof
-    (result : Request.Result) (goal : Goal) (rws : Rewrites) (ctx : EncodingCtx)
+    (result : Request.Result) (goal : Goal) (rws : Rewrites) (cfg : Config.Encoding)
     (retryWithShapes : Bool) (proofFuel? : Option Nat) : TacticM Proof? := do
   let mut (proof, steps) ←
     try
-      result.expl.prove' goal.toCongr rws result.egraph ctx proofFuel?
+      result.expl.prove' goal.toCongr rws result.egraph cfg proofFuel?
     catch err =>
       -- If proof reconstruction fails but we haven't tried using shapes yet, retry with shapes
       -- (assuming the corresponding option is enabled).
       -- TODO: Using slotted e-graphs doesn't support shaped yet.
-      if ctx.cfg.shapes || !retryWithShapes || ctx.cfg.slotted then
+      if cfg.shapes || !retryWithShapes || cfg.slotted then
         throw err
       else
         return .retryWithShapes
@@ -56,15 +56,13 @@ where
     let goal ← Goal.gen goal
     goal.id.withContext do
       let guides := (← guides.mapM Guides.parseGuides).getD #[]
-      let amb ← MVars.Ambient.collect
-      amb.trace `egg.ambient
       -- We increase the mvar context depth, so that ambient mvars aren't unified during rewrite
       -- generation proof and reconstruction. Note that this also means that we can't assign the
       -- `goal` mvar inside of this `do`-block .
-      let res ← withNewMCtxDepth do
-        let rws ← Premises.gen goal prems guides cfg amb
-        let guides ← do if cfg.derivedGuides then pure (guides ++ (← genDerivedGuides goal.toCongr rws amb)) else pure guides
-        runEqSat goal rws guides cfg amb
+      let res ← withNewMCtxDepth (allowLevelAssignments := true) do
+        let rws ← Premises.gen goal prems guides cfg
+        let guides ← do if cfg.derivedGuides then pure (guides ++ (← genDerivedGuides goal.toCongr rws)) else pure guides
+        runEqSat goal rws guides cfg
       match res with
       | some (proof, proofTime, result, goalContainsBinder) =>
         if cfg.reporting then
@@ -76,20 +74,20 @@ where
         if let some tk := calcifyTk? then calcify tk proof goal.intros.unzip.snd
       | none => goal.id.admit
   runEqSat
-      (goal : Goal) (rws : Rewrites) (guides : Guides) (cfg : Config) (amb : MVars.Ambient) :
+      (goal : Goal) (rws : Rewrites) (guides : Guides) (cfg : Config) :
       TacticM <| Option (AbstractMVarsResult × Nat × Request.Result × Bool) := do
-    let (req, goalContainsBinder) ← Request.encoding' goal.toCongr rws guides cfg amb
+    let (req, goalContainsBinder) ← Request.encoding' goal.toCongr rws guides cfg
     withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
     if let .beforeEqSat := cfg.exitPoint then return none
     let result ← req.run cfg.explLengthLimit (onEqSatFailure cfg goalContainsBinder)
     result.expl.trace `egg.explanation.steps
     if let .beforeProof := cfg.exitPoint then return none
     let beforeProof ← IO.monoMsNow
-    match ← resultToProof result goal rws {amb, cfg} cfg.retryWithShapes cfg.proofFuel? with
+    match ← resultToProof result goal rws cfg cfg.retryWithShapes cfg.proofFuel? with
     | .proof prf =>
       let proofTime := (← IO.monoMsNow) - beforeProof
       return some (prf, proofTime, result, goalContainsBinder)
-    | .retryWithShapes => runEqSat goal rws guides { cfg with shapes := true } amb
+    | .retryWithShapes => runEqSat goal rws guides { cfg with shapes := true }
   onEqSatFailure (cfg : Config) (goalContainsBinder : Bool) (report : Request.Result.Report) :
       Request.Failure → MetaM MessageData
     | .backend msg? => do

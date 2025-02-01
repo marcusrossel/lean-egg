@@ -11,8 +11,8 @@ structure Equiv where
   init : Expression
   goal : Expression
 
-def Equiv.encoding (init goal : Expr) (ctx : EncodingCtx) : MetaM Equiv :=
-  return { init := ← encode init ctx, goal := ← encode goal ctx }
+def Equiv.encoding (init goal : Expr) (cfg : Config.Encoding) : MetaM Equiv :=
+  return { init := ← encode init cfg, goal := ← encode goal cfg }
 
 end Request
 

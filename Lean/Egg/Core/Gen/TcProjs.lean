@@ -19,7 +19,7 @@ private structure TcProj.SrcPrefix where
 
 -- Note: This function expects `proj` to be normalized (cf. `Egg.normalize`).
 private def TcProj.reductionRewrites
-    (proj : TcProj) (src : TcProj.SrcPrefix) (cfg : Rewrite.Config) :
+    (proj : TcProj) (src : TcProj.SrcPrefix) (cfg : Config.Normalization) :
     MetaM (Array Rewrite) := do
   let mut rws := #[]
   let mut proj := proj
@@ -117,7 +117,7 @@ def Guides.tcProjTargets (guides : Guides) : Array TcProjTarget :=
 --
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
 def genTcProjReductions
-    (targets : Array TcProjTarget) (covered : HashSet TcProj) (cfg : Rewrite.Config) :
+    (targets : Array TcProjTarget) (covered : HashSet TcProj) (cfg : Config.Normalization) :
     MetaM (Rewrites × HashSet TcProj) := do
   let mut covered := covered
   let mut rws := #[]

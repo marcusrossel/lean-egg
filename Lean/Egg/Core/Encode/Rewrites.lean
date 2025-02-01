@@ -13,20 +13,21 @@ structure Encoded where
   dirs  : Directions
   conds : Array Expression
 
-def Condition.encode? (c : Rewrite.Condition) (ctx : EncodingCtx) : MetaM (Option Expression) := do
+def Condition.encode? (c : Rewrite.Condition) (cfg : Config.Encoding) :
+    MetaM (Option Expression) := do
   if c.isProven then return none
-  let type ← encode c.type ctx
+  let type ← encode c.type cfg
   match c.kind with
   | .proof  => return s!"(proof {type})"
   | .tcInst => return s!"(inst {type})"
 
-def encode (rw : Rewrite) (ctx : EncodingCtx) : MetaM Encoded :=
+def encode (rw : Rewrite) (cfg : Config.Encoding) : MetaM Encoded :=
   return {
     name  := rw.src.description
-    lhs   := ← Egg.encode rw.lhs ctx
-    rhs   := ← Egg.encode rw.rhs ctx
+    lhs   := ← Egg.encode rw.lhs cfg
+    rhs   := ← Egg.encode rw.rhs cfg
     dirs  := rw.validDirs
-    conds := ← rw.conds.filterMapM (Condition.encode? · ctx)
+    conds := ← rw.conds.filterMapM (Condition.encode? · cfg)
   }
 
 end Rewrite
@@ -35,5 +36,5 @@ namespace Rewrites
 
 abbrev Encoded := Array Rewrite.Encoded
 
-def encode (rws : Rewrites) (ctx : EncodingCtx) : MetaM Rewrites.Encoded :=
-  rws.mapM (·.encode ctx)
+def encode (rws : Rewrites) (cfg : Config.Encoding) : MetaM Rewrites.Encoded :=
+  rws.mapM (·.encode cfg)

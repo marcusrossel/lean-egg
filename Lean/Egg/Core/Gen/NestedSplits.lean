@@ -37,12 +37,12 @@ private def Split.proof (split : Split) : MetaM Expr :=
 private def Split.src (split : Split) : Source :=
   .nestedSplit split.rwSrc split.dir
 
-private def Split.genRewrite (split : Split) (cfg : Rewrite.Config) : MetaM Rewrite := do
+private def Split.genRewrite (split : Split) (cfg : Config.Normalization) : MetaM Rewrite := do
   let some rw ← Rewrite.from? (← split.proof) (← split.type) split.src cfg (normalize := false)
     | throwError "egg: internal error: 'Egg.genSingleSplit' failed to construct rewrite"
   return rw
 
-private def genSplitsForRw (rw : Rewrite) (cfg : Rewrite.Config) : MetaM Rewrites := do
+private def genSplitsForRw (rw : Rewrite) (cfg : Config.Normalization) : MetaM Rewrites := do
   let some (lhs, rhs) ← rw.nested? | return #[]
   let mvars := rw.mvars.lhs.merge rw.mvars.rhs
   let (lhs, subst) ← lhs.fresh mvars
@@ -50,5 +50,5 @@ private def genSplitsForRw (rw : Rewrite) (cfg : Rewrite.Config) : MetaM Rewrite
   #[Direction.forward, .backward].mapM fun dir => do
     Split.genRewrite { lhs, rhs, rwSrc := rw.src, dir, rwProof := rw.proof, rwRel := rw.rel } cfg
 
-def genNestedSplits (targets : Rewrites) (cfg : Rewrite.Config) : MetaM Rewrites := do
+def genNestedSplits (targets : Rewrites) (cfg : Config.Normalization) : MetaM Rewrites := do
   targets.foldlM (init := #[]) fun acc rw => return acc ++ (← genSplitsForRw rw cfg)

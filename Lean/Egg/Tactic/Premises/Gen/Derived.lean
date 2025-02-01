@@ -108,8 +108,7 @@ open DerivedM
 
 -- TODO: We need to be careful about making sure that we don't loop infinitely.
 --       For example, tc proj and explosion might easily loop.
-partial def genDerived
-    (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) (amb : MVars.Ambient) :
+partial def genDerived (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) :
     TacticM Rewrites := do
   let all ← DerivedM.run do
     add' (cat? := none) rws
@@ -120,13 +119,13 @@ where
   addInitialTcProjs : DerivedM Unit := do
     unless cfg.genTcProjRws do return
     let targets := rws.tcProjTargets ++ goal.tcProjTargets .goal ++ guides.tcProjTargets
-    let (rws, cover) ← genTcProjReductions targets (covered := ∅) { cfg with amb }
+    let (rws, cover) ← genTcProjReductions targets (covered := ∅) cfg
     add .tcProj rws
     setTcProjCover cover
 
   core : DerivedM Unit := do
     generate cfg .splits do
-      genNestedSplits (← todo .splits) { cfg with amb }
+      genNestedSplits (← todo .splits) cfg
     generate cfg .explosion do
       genExplosions (← todo .explosion)
     generate cfg .goalTcSpec do
@@ -135,6 +134,6 @@ where
       genTcSpecializations (← todo .tcSpec) cfg.toNormalization
     generate cfg .tcProj do
       let targets := (← todo .tcProj).tcProjTargets
-      let (rws, cover) ← genTcProjReductions targets (← tcProjCover) { cfg with amb }
+      let (rws, cover) ← genTcProjReductions targets (← tcProjCover) cfg
       setTcProjCover cover
       return rws

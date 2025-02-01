@@ -1,5 +1,4 @@
 import Egg.Core.MVars.Basic
-import Egg.Core.MVars.Ambient
 import Lean
 
 open Lean Meta
@@ -9,19 +8,15 @@ namespace Egg.MVars.CollectionM
 private structure State where
   mvars  : MVars
   active : Properties
-  amb    : Ambient
 
 private abbrev _root_.Egg.MVars.CollectionM := StateT CollectionM.State MetaM
 
-private nonrec def run (m : CollectionM Unit) (amb : Ambient) : MetaM MVars := do
-  let (_, state) ← m.run { mvars := {}, active := ∅, amb }
+private nonrec def run (m : CollectionM Unit) : MetaM MVars := do
+  let (_, state) ← m.run { mvars := {}, active := ∅ }
   return state.mvars
 
 private def active : CollectionM Properties :=
   return (← get).active
-
-private def amb : CollectionM Ambient :=
-  return (← get).amb
 
 private def withProperty (p : Property) (m : CollectionM α) : CollectionM α := do
   let { active, .. } ← getModify fun s => { s with active := s.active.insert p }
@@ -30,7 +25,7 @@ private def withProperty (p : Property) (m : CollectionM α) : CollectionM α :=
   return a
 
 private def collectMVar (mvar : MVarId) : CollectionM Unit := do
-  if (← amb).expr.contains mvar then return
+  unless ← mvar.isAssignable do return
   let isTcInst ← Meta.isTCInstance (.mvar mvar)
   modify fun s =>
     let ps := s.active
@@ -39,7 +34,7 @@ private def collectMVar (mvar : MVarId) : CollectionM Unit := do
     { s with mvars := s.mvars.insertExpr mvar ps }
 
 private def collectLMVar (lmvar : LMVarId) : CollectionM Unit := do
-  if (← amb).lvl.contains lmvar then return
+  unless ← isLevelMVarAssignable lmvar do return
   modify fun s =>
     let ps := s.active.insertIf s.active.isEmpty .unconditionallyVisible
     { s with mvars := s.mvars.insertLevel lmvar ps }
@@ -72,7 +67,7 @@ private partial def collect (e : Expr) : CollectionM Unit := do
 where
   isAmbientMVar (e : Expr) : CollectionM Bool := do
     let .mvar m := e | return false
-    return (← amb).expr.contains m
+    return !(← m.isAssignable)
 
   core (e : Expr) : CollectionM Unit := do
     unless e.hasMVar do return
@@ -98,5 +93,5 @@ where
 
 end CollectionM
 
-def collect (e : Expr) (amb : Ambient) : MetaM MVars :=
-  CollectionM.collect e |>.run amb
+def collect (e : Expr) : MetaM MVars :=
+  CollectionM.collect e |>.run
