@@ -3,7 +3,7 @@ open Lean Meta
 
 namespace Egg.Explanation
 
-partial def replaceSubexprs
+partial def replaceSubexprs'
     (replace : (sub₁ sub₂ : Expr) → MetaM (Expr × Expr × ζ)) (p : SubExpr.Pos) (root₁ root₂ : Expr) :
     MetaM (Expr × Expr × ζ) :=
   go replace p.toArray.toList root₁ root₂
@@ -72,3 +72,11 @@ where
 
   throwDifferent (e₁ e₂ : Expr) {α} : MetaM α :=
     throwError "Egg.Explanation.replaceSubexprs' tried to lens on different expressions:\n  {e₁}\nvs\n {e₂}"
+
+def replaceSubexprs
+    (replace : (sub₁ sub₂ : Expr) → MetaM (Expr × Expr)) (p : SubExpr.Pos) (root₁ root₂ : Expr) :
+    MetaM (Expr × Expr) := do
+  let (e₁, e₂, _) ← replaceSubexprs' (p := p) (root₁ := root₁) (root₂ := root₂) fun s₁ s₂ => do
+    let (s₁, s₂) ← replace s₁ s₂
+    return (s₁, s₂, Unit.unit)
+  return (e₁, e₂)

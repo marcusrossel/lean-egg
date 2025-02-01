@@ -160,7 +160,7 @@ nonrec def Explanation.trace (expl : Explanation) (cls : Name) : TacticM Unit :=
 
 nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Proof") do
-    for step in prf.steps, idx in [:prf.steps.size] do
+    for step in prf, idx in [:prf.size] do
       if idx == 0 then
         let lhs ← instantiateMVars step.lhs
         trace cls fun _ => lhs

@@ -8,8 +8,6 @@ open Lean Meta
 
 namespace Egg.Proof
 
-abbrev Subgoals := List MVarId
-
 inductive Step.Rewrite where
   | rw    (rw : Egg.Rewrite) (isRefl : Bool)
   | defeq (src : Source)
@@ -34,18 +32,16 @@ structure Step where
 
 end Proof
 
-structure Proof where
-  steps    : Array Proof.Step
-  subgoals : Proof.Subgoals
+abbrev Proof := Array Proof.Step
 
 private def Proof.prove (prf : Proof) (cgr : Congr) : MetaM Expr := do
-  let some first := prf.steps[0]? | return (← cgr.rel.mkRefl cgr.lhs)
+  let some first := prf[0]? | return (← cgr.rel.mkRefl cgr.lhs)
   unless ← isDefEq first.lhs cgr.lhs do
     fail s!"initial expression is not defeq to LHS of proof goal:\n\n  {first.lhs}\n\nvs\n\n  {cgr.lhs}"
   let mut proof := first.proof
-  for step in prf.steps[1:] do
+  for step in prf[1:] do
     if !step.rw.isRefl then proof ← mkEqTrans proof step.proof
-  unless ← isDefEq prf.steps.back!.rhs cgr.rhs do fail "final expression is not defeq to rhs of proof goal"
+  unless ← isDefEq prf.back!.rhs cgr.rhs do fail "final expression is not defeq to rhs of proof goal"
   match cgr.rel with
   | .eq  => return proof
   | .iff => mkIffOfEq proof
@@ -60,51 +56,43 @@ private partial def Explanation.proof
     (fuel? : Option Nat := none) : MetaM Proof := do
   let mut current := expl.start
   let mut steps : Array Proof.Step := #[]
-  let mut subgoals : Proof.Subgoals := []
   for step in expl.steps, idx in [:expl.steps.size] do
     let next := step.dst
-    let (prf, sub) ← proofStep idx current next step.toInfo
-    steps    := steps.push prf
-    subgoals := subgoals ++ sub
-    current  := next
+    let prf ← proofStep idx current next step.toInfo
+    steps   := steps.push prf
+    current := next
   for step in steps do synthLingeringTcErasureMVars step.rhs
-  return { steps, subgoals }
+  return steps
 where
   fail {α} (msg : MessageData) (step? : Option Nat := none) : MetaM α := do
     let step := step?.map (s!" step {·}") |>.getD ""
     throwError m!"egg failed to build proof{step}: {msg}"
 
-  proofStep (idx : Nat) (current next : Expr) (rwInfo : Rewrite.Info) :
-      MetaM (Proof.Step × Proof.Subgoals) := do
+  proofStep (idx : Nat) (current next : Expr) (rwInfo : Rewrite.Info) : MetaM Proof.Step := do
     if let .factAnd := rwInfo.src then
-      let step := {
+      return {
         lhs := current, rhs := next, proof := ← mkFactAndStep idx current next,
         rw := .factAnd, dir := rwInfo.dir
       }
-      return (step, [])
     if rwInfo.src.isDefEq then
-      let step := {
+      return {
         lhs := current, rhs := next, proof := ← mkReflStep idx current next rwInfo.src,
         rw := .defeq rwInfo.src, dir := rwInfo.dir
       }
-      return (step, [])
     if let some rw := rws.find? rwInfo.src then
       -- TODO: Can there be conditional rfl proofs?
       if ← isRflProof rw.proof then
-        let step := {
+        return {
           lhs := current, rhs := next, proof := ← mkReflStep idx current next rwInfo.src,
           rw := .rw rw (isRefl := true), dir := rwInfo.dir
         }
-        return (step, [])
-      let (prf, subgoals) ← mkCongrStep idx current next rwInfo.pos?.get! <| .inl (← rw.forDir rwInfo.dir)
-      let step := {
+      let prf ← mkCongrStep idx current next rwInfo.pos?.get! <| .inl (← rw.forDir rwInfo.dir)
+      return {
         lhs := current, rhs := next, proof := prf, rw := .rw rw (isRefl := false), dir := rwInfo.dir
       }
-      return (step, subgoals)
     else if rwInfo.src.isReifiedEq then
-      let (prf, subgoals) ← mkCongrStep idx current next rwInfo.pos?.get! <| .inr rwInfo.dir
-      let step := { lhs := current, rhs := next, proof := prf, rw := .reifiedEq, dir := rwInfo.dir }
-      return (step, subgoals)
+      let prf ← mkCongrStep idx current next rwInfo.pos?.get! <| .inr rwInfo.dir
+      return { lhs := current, rhs := next, proof := prf, rw := .reifiedEq, dir := rwInfo.dir }
     else
       fail s!"unknown rewrite {rwInfo.src.description}" idx
 
@@ -120,14 +108,14 @@ where
     mkAppM ``true_and #[.const ``True []]
 
   mkCongrStep (idx : Nat) (current next : Expr) (pos : SubExpr.Pos) (rw? : Sum Rewrite Direction) :
-      MetaM (Expr × Proof.Subgoals) := do
+      MetaM Expr := do
     let mvc := (← getMCtx).mvarCounter
-    let (lhs, rhs, subgoals) ← placeCHoles idx current next pos rw?
-    try return (← (← mkCongrOf 0 mvc lhs rhs).eq, subgoals)
+    let (lhs, rhs) ← placeCHoles idx current next pos rw?
+    try (← mkCongrOf 0 mvc lhs rhs).eq
     catch err => fail m!"'mkCongrOf' failed with\n  {err.toMessageData}" idx
 
   placeCHoles (idx : Nat) (current next : Expr) (pos : SubExpr.Pos) (rw? : Sum Rewrite Direction) :
-      MetaM (Expr × Expr × Proof.Subgoals) := do
+      MetaM (Expr × Expr) := do
     replaceSubexprs (root₁ := current) (root₂ := next) (p := pos) fun lhs rhs => do
       -- It's necessary that we create the fresh rewrite (that is, create the fresh mvars) in *this*
       -- local context as otherwise the mvars can't unify with variables under binders.
@@ -136,14 +124,12 @@ where
         let proof ← proveReifiedEq idx lhs rhs reifiedEqDir
         return (
           ← mkCHole (forLhs := true) lhs proof,
-          ← mkCHole (forLhs := false) rhs proof,
-          []
+          ← mkCHole (forLhs := false) rhs proof
         )
       | .inl rw =>
         let rw ← rw.fresh
         unless ← isDefEq lhs rw.lhs do failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs current next idx
         unless ← isDefEq rhs rw.rhs do failIsDefEq "RHS" rw.src rhs rw.rhs rw.mvars.rhs current next idx
-        let mut subgoals := []
         let conds := rw.conds.filter (!·.isProven)
         for cond in conds do
           let cond ← cond.instantiateMVars
@@ -161,8 +147,7 @@ where
         let proof ← rw.eqProof
         return (
           ← mkCHole (forLhs := true) lhs proof,
-          ← mkCHole (forLhs := false) rhs proof,
-          subgoals
+          ← mkCHole (forLhs := false) rhs proof
         )
 
   proveReifiedEq (idx : Nat) (current next : Expr) (dir : Direction) : MetaM Expr := do
