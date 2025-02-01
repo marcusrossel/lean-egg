@@ -64,10 +64,10 @@ where
         let guides ← do if cfg.derivedGuides then pure (guides ++ (← genDerivedGuides goal.toCongr rws)) else pure guides
         runEqSat goal rws guides cfg
       match res with
-      | some (proof, proofTime, result, goalContainsBinder) =>
+      | some (proof, proofTime, result) =>
         if cfg.reporting then
           let totalTime := (← IO.monoMsNow) - startTime
-          logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl goalContainsBinder)
+          logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl)
         let (subgoals, _, proof) ← openAbstractMVarsResult proof
         appendGoals <| Array.toList <| subgoals.map (·.mvarId!)
         goal.id.assignIfDefeq' proof
@@ -75,32 +75,31 @@ where
       | none => goal.id.admit
   runEqSat
       (goal : Goal) (rws : Rewrites) (guides : Guides) (cfg : Config) :
-      TacticM <| Option (AbstractMVarsResult × Nat × Request.Result × Bool) := do
-    let (req, goalContainsBinder) ← Request.encoding' goal.toCongr rws guides cfg
+      TacticM <| Option (AbstractMVarsResult × Nat × Request.Result) := do
+    let req ← Request.encoding goal.toCongr rws guides cfg
     withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
     if let .beforeEqSat := cfg.exitPoint then return none
-    let result ← req.run cfg.explLengthLimit (onEqSatFailure cfg goalContainsBinder)
+    let result ← req.run cfg.explLengthLimit (onEqSatFailure cfg)
     result.expl.trace `egg.explanation.steps
     if let .beforeProof := cfg.exitPoint then return none
     let beforeProof ← IO.monoMsNow
     match ← resultToProof result goal rws cfg cfg.retryWithShapes cfg.proofFuel? with
     | .proof prf =>
       let proofTime := (← IO.monoMsNow) - beforeProof
-      return some (prf, proofTime, result, goalContainsBinder)
+      return some (prf, proofTime, result)
     | .retryWithShapes => runEqSat goal rws guides { cfg with shapes := true }
-  onEqSatFailure (cfg : Config) (goalContainsBinder : Bool) (report : Request.Result.Report) :
-      Request.Failure → MetaM MessageData
+  onEqSatFailure (cfg : Config) (report : Request.Result.Report) : Request.Failure → MetaM MessageData
     | .backend msg? => do
       let mut msg := msg?
       if msg.isEmpty then
         let reasonMsg := if report.reasonMsg.isEmpty then "" else s!": {report.reasonMsg}"
         msg := s!"egg failed to prove the goal ({report.stopReason.description}{reasonMsg}) "
       unless cfg.reporting do return msg
-      return msg ++ formatReport cfg.flattenReports report (goalContainsBinder := goalContainsBinder)
+      return msg ++ formatReport cfg.flattenReports report
     | .explLength len => do
       let msg := s!"egg found an explanation exceeding the length limit ({len} vs {cfg.explLengthLimit})\nYou can increase this limit using 'set_option egg.explLengthLimit <num>'.\n"
       unless cfg.reporting do return msg
-      return msg ++ formatReport cfg.flattenReports report (goalContainsBinder := goalContainsBinder)
+      return msg ++ formatReport cfg.flattenReports report
 
 syntax &"egg " egg_cfg_mod egg_premises (egg_guides)? : tactic
 elab_rules : tactic

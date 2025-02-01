@@ -30,14 +30,14 @@ def Config.Debug.ExitPoint.format : Config.Debug.ExitPoint → Format
 
 nonrec def formatReport
     (flat : Bool) (rep : Request.Result.Report) (totalDuration? proofDuration? : Option Nat := none)
-    (expl? : Option Explanation := none) (goalContainsBinder : Bool) : Format :=
+    (expl? : Option Explanation := none) : Format :=
   if flat then
     "(" ++ (if let some d := totalDuration? then format d else "-") ++ "," ++
     (format <| (1000 * rep.time).toUInt64.toNat) ++ "," ++
     (if let some d := proofDuration? then format d else "-") ++ "," ++ (format rep.iterations) ++
     "," ++ (format rep.nodeCount) ++ "," ++ (format rep.classCount) ++ "," ++
     (if let some e := expl? then format e.steps.size ++ s!",{e.involvesBinderRewrites}" else "-,-")
-    ++ "," ++ s!"{goalContainsBinder}" ++ ")"
+    ++ ")"
   else
     (if let some d := totalDuration? then "\ntotal time: " ++ format d ++ "ms\n" else "") ++
     "eqsat time: " ++ (format <| (1000 * rep.time).toUInt64.toNat) ++ "ms\n" ++
@@ -46,7 +46,6 @@ nonrec def formatReport
     "nodes:      " ++ (format rep.nodeCount)  ++ "\n" ++
     "classes:    " ++ (format rep.classCount) ++ "\n" ++
     (if let some e := expl? then "expl steps: " ++ format e.steps.size ++ s!"\nbinder rws: {e.involvesBinderRewrites}\n" else "") ++
-    s!"⊢ binders:  {goalContainsBinder}" ++
     (if rep.rwStats.isEmpty then "" else s!"\nrw stats:\n{rep.rwStats}")
 
 def MVars.Property.toMessageData : MVars.Property → MessageData

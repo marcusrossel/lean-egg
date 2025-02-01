@@ -21,11 +21,8 @@ private def encodeLevel : Level → EncodeM Expression
     else return s!"(uvar {id.uniqueIdx!})"
 
 -- Note: This function expects its input expression to be normalized (cf. `Egg.normalize`).
---
--- Returns the encoded expression with a flag indicating whether it contains a binder.
-partial def encode' (e : Expr) (cfg : Config.Encoding) : MetaM (Expression × Bool) := do
-  let (expr, { usedBinder, .. }) ← (go e).run { config := cfg }
-  return (expr, usedBinder)
+partial def encode (e : Expr) (cfg : Config.Encoding) : MetaM Expression := do
+  Prod.fst <$> (go e).run { config := cfg }
 where
   go (e : Expr) : EncodeM Expression :=
     withCache e do
@@ -75,19 +72,13 @@ where
     lvls.foldlM (init := "") (return s!"{·} {← encodeLevel ·}")
 
   encodeLambda (ty b : Expr) : EncodeM Expression := do
-    setUsedBinder
     -- It's critical that we encode `ty` outside of the `withInstantiatedBVar` block, as otherwise
     -- the bvars in `encTy` are incorrectly shifted by 1.
     let encTy ← go ty
     withInstantiatedBVar ty b fun var? body => return s!"(λ {var?}{encTy} {← go body})"
 
   encodeForall (ty b : Expr) : EncodeM Expression := do
-    setUsedBinder
     -- It's critical that we encode `ty` outside of the `withInstantiatedBVar` block, as otherwise
     -- the bvars in `encTy` are incorrectly shifted by 1.
     let encTy ← go ty
     withInstantiatedBVar ty b fun var? body => return s!"(∀ {var?}{encTy} {← go body})"
-
--- Note: This function expects its input expression to be normalized (cf. `Egg.normalize`).
-def encode (e : Expr) (cfg : Config.Encoding) : MetaM Expression :=
-  Prod.fst <$> encode' e cfg

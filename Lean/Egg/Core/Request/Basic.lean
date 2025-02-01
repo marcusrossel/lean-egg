@@ -54,22 +54,15 @@ structure _root_.Egg.Request where
   vizPath : String
   cfg     : Request.Config
 
--- Returns the encoded request with a flag indicating whether the proof goal contains a binder.
-def encoding' (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) :
-    MetaM (Request × Bool) := do
-  let (lhs, lhsBinder) ← encode' goal.lhs cfg
-  let (rhs, rhsBinder) ← encode' goal.rhs cfg
-  let req := {
-    lhs, rhs
+def encoding (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) : MetaM Request :=
+  return {
+    lhs     := ← encode goal.lhs cfg
+    rhs     := ← encode goal.rhs cfg
     rws     := ← rws.encode cfg
     guides  := ← guides.encode cfg
     vizPath := cfg.vizPath.getD ""
     cfg
   }
-  return (req, lhsBinder || rhsBinder)
-
-def encoding (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) : MetaM Request :=
-  Prod.fst <$> encoding' goal rws guides cfg
 
 -- IMPORTANT: The C interface to egg depends on the order of these constructors.
 inductive Result.StopReason where
