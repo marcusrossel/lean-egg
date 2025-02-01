@@ -15,7 +15,7 @@ open Lean Meta Elab Tactic
 namespace Egg
 
 private inductive Proof? where
-  | proof (p : Expr)
+  | proof (a : AbstractMVarsResult)
   | retryWithShapes
 
 private def resultToProof
@@ -26,7 +26,7 @@ private def resultToProof
       result.expl.prove' goal.toCongr rws result.egraph ctx proofFuel?
     catch err =>
       -- If proof reconstruction fails but we haven't tried using shapes yet, retry with shapes
-      -- (assuming the correcspoding option is enabled).
+      -- (assuming the corresponding option is enabled).
       -- TODO: Using slotted e-graphs doesn't support shaped yet.
       if ctx.cfg.shapes || !retryWithShapes || ctx.cfg.slotted then
         throw err
@@ -35,19 +35,8 @@ private def resultToProof
   steps.trace `egg.proof
   proof ← instantiateMVars proof
   withTraceNode `egg.proof.term (fun _ => return "Proof Term") do trace[egg.proof.term] proof
-  -- TODO: catchLooseMVars proof ctx.amb steps.subgoals
-  -- TODO: These mvars have the wrong depth.
-  appendGoals steps.subgoals
-  return .proof proof
-where
-  catchLooseMVars (prf : Expr) (amb : MVars.Ambient) (subgoals : List MVarId) : MetaM Unit := do
-    let mvars ← MVars.collect prf ∅
-    for mvar in mvars.expr.keys do
-      unless subgoals.contains mvar || amb.expr.contains mvar do
-        throwError m!"egg: final proof contains expression mvar {Expr.mvar mvar}"
-    for lmvar in mvars.lvl.keys do
-      unless amb.lvl.contains lmvar do
-        throwError m!"egg: final proof contains level mvar {Level.mvar lmvar}"
+  -- Note: This only abstracts mvars of the current mctx depth, which is exactly what we want.
+  return .proof (← abstractMVars proof)
 
 open Config.Modifier (egg_cfg_mod)
 
@@ -69,8 +58,9 @@ where
       let guides := (← guides.mapM Guides.parseGuides).getD #[]
       let amb ← MVars.Ambient.collect
       amb.trace `egg.ambient
-      -- We increase the mvar context depth, so that ambient mvars aren't unified during proof
-      -- reconstruction. Note that this also means that we can't assign the `goal` mvar here.
+      -- We increase the mvar context depth, so that ambient mvars aren't unified during rewrite
+      -- generation proof and reconstruction. Note that this also means that we can't assign the
+      -- `goal` mvar inside of this `do`-block .
       let res ← withNewMCtxDepth do
         let rws ← Premises.gen goal prems guides cfg amb
         let guides ← do if cfg.derivedGuides then pure (guides ++ (← genDerivedGuides goal.toCongr rws amb)) else pure guides
@@ -80,12 +70,14 @@ where
         if cfg.reporting then
           let totalTime := (← IO.monoMsNow) - startTime
           logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl goalContainsBinder)
+        let (subgoals, _, proof) ← openAbstractMVarsResult proof
+        appendGoals <| Array.toList <| subgoals.map (·.mvarId!)
         goal.id.assignIfDefeq' proof
         if let some tk := calcifyTk? then calcify tk proof goal.intros.unzip.snd
       | none => goal.id.admit
   runEqSat
       (goal : Goal) (rws : Rewrites) (guides : Guides) (cfg : Config) (amb : MVars.Ambient) :
-      TacticM <| Option (Expr × Nat × Request.Result × Bool) := do
+      TacticM <| Option (AbstractMVarsResult × Nat × Request.Result × Bool) := do
     let (req, goalContainsBinder) ← Request.encoding' goal.toCongr rws guides cfg amb
     withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
     if let .beforeEqSat := cfg.exitPoint then return none
