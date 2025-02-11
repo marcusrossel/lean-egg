@@ -64,6 +64,7 @@ inductive Source where
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos) (depth : Nat)
   | tcSpec (src : Source) (spec : Source.TcSpec)
   | nestedSplit (src : Source) (dir : Direction)
+  | defEq (lhs rhs : Expr)
   | explosion (src : Source) (dir : Direction) (loc : List Nat)
   | natLit (src : Source.NatLit)
   | subst (src : Source.SubstShift)
@@ -138,6 +139,7 @@ def description : Source → String
   | natLit src              => src.description
   | subst src               => s!"↦{src.description}"
   | shift src               => s!"↑{src.description}"
+  | defEq _ _               => "≡≡"
   | eta false               => "≡η"
   | eta true                => "≡η+"
   | beta                    => "≡β"

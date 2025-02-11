@@ -3,6 +3,7 @@ import Egg.Core.Gen.TcSpecs
 import Egg.Core.Gen.GoalTcSpecs
 import Egg.Core.Gen.Explosion
 import Egg.Core.Gen.NestedSplits
+import Egg.Core.Gen.StructureProjs
 import Lean
 
 open Lean hiding HashSet
@@ -17,9 +18,10 @@ private inductive DerivationCategory where
   | goalTcSpec
   | splits
   | explosion
+  | structureProj
 
 private def DerivationCategory.all : Array DerivationCategory :=
-  #[tcProj, tcSpec, goalTcSpec, splits, explosion]
+  #[tcProj, tcSpec, goalTcSpec, splits, explosion, structureProj]
 
 -- We maintain this theorem to ensure that we don't forget to add elements to
 -- `DerivationCategory.all`.
@@ -32,6 +34,7 @@ private def DerivationCategory.isEnabled (cfg : Config.Gen): DerivationCategory 
   | goalTcSpec => cfg.genGoalTcSpec
   | splits     => cfg.genNestedSplits
   | explosion  => cfg.explosion
+  | structureProj => cfg.genStructProj
 
 -- Each index in this structure indicates to which point in `State.derived` a given derivation
 -- category has been applied. More precisely, these indices indicate the first element that has not
@@ -42,6 +45,7 @@ private structure State.Progress where
   goalTcSpec : Nat
   splits     : Nat
   explosion  : Nat
+  structProj : Nat
 
 private def State.Progress.get (p : Progress) : DerivationCategory → Nat
   | .tcProj     => p.tcProj
@@ -49,6 +53,7 @@ private def State.Progress.get (p : Progress) : DerivationCategory → Nat
   | .goalTcSpec => p.goalTcSpec
   | .splits     => p.splits
   | .explosion  => p.explosion
+  | .structureProj => p.structProj
 
 private def State.Progress.set (p : Progress) : DerivationCategory → Nat → Progress
   | .tcProj,     n => { p with tcProj     := n }
@@ -56,6 +61,7 @@ private def State.Progress.set (p : Progress) : DerivationCategory → Nat → P
   | .goalTcSpec, n => { p with goalTcSpec := n }
   | .splits,     n => { p with splits     := n }
   | .explosion,  n => { p with explosion  := n }
+  | .structureProj, n => { p with structProj := n }
 
 private structure State where
   derived     : Rewrites
@@ -65,7 +71,7 @@ private structure State where
 private instance : EmptyCollection State where
   emptyCollection := {
     derived     := #[]
-    progress    := ⟨0, 0, 0, 0, 0⟩
+    progress    := ⟨0, 0, 0, 0, 0, 0⟩
     tcProjCover := ∅
   }
 
@@ -137,3 +143,5 @@ where
       let (rws, cover) ← genTcProjReductions targets (← tcProjCover) cfg
       setTcProjCover cover
       return rws
+    generate cfg .structureProj do
+      genStructureProjections (← todo .structureProj) goal {cfg with amb}

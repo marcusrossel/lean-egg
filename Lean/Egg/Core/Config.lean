@@ -28,6 +28,7 @@ structure Gen where
   explosion       := false
   derivedGuides   := true
   genGroundEqs    := true
+  genStructProj   := true
   deriving BEq
 
 structure DefEq where
@@ -36,6 +37,7 @@ structure DefEq where
   etaExpand := false
   beta      := true
   levels    := true
+  structProj:= true
 
 structure Backend where
   blockInvalidMatches := true
