@@ -42,9 +42,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): Nat.add_comm
       [egg.rewrites] ?n + ?m = ?m + ?n
       [egg.rewrites] LHS MVars
-          [?m: [.unconditionallyVisible], ?n: [.unconditionallyVisible]]
+          [?m: [unconditionallyVisible], ?n: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m: [.unconditionallyVisible], ?n: [.unconditionallyVisible]]
+          [?m: [unconditionallyVisible], ?n: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
@@ -53,8 +53,8 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #1(⇔)
       [egg.rewrites] ?a + ?b = ?b + ?a
       [egg.rewrites] LHS MVars
-          [?a: [.unconditionallyVisible], ?b: [.unconditionallyVisible]]
-      [egg.rewrites] RHS MVars [?a: [.unconditionallyVisible], ?b: [.unconditionallyVisible]]
+          [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
 -/
 #guard_msgs in
 set_option linter.unusedVariables false in

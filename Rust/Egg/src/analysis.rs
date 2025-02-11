@@ -48,7 +48,7 @@ impl Analysis<LeanExpr> for LeanAnalysis {
         loose_bvar_m
     }
 
-    fn make(egraph: &EGraph<LeanExpr, Self>, enode: &LeanExpr) -> Self::Data {      
+    fn make(egraph: &mut EGraph<LeanExpr, Self>, enode: &LeanExpr) -> Self::Data {      
         match enode {
             LeanExpr::Nat(n) => 
                 Self::Data { 

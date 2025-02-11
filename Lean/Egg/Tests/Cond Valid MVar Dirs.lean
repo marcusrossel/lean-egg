@@ -13,9 +13,9 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] Conditions
         [egg.rewrites] ?a = ?b
       [egg.rewrites] LHS MVars
-          [?b: [.unconditionallyVisible]]
+          [?b: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?a: [.unconditionallyVisible]]
+          [?a: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)

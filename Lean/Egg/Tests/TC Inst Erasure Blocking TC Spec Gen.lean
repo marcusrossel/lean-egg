@@ -18,25 +18,25 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇒): h
       [egg.rewrites] -?x = ?x
       [egg.rewrites] LHS MVars
-          [?x: [.unconditionallyVisible], ?inst: [.isTcInst, .unconditionallyVisible]]
+          [?x: [unconditionallyVisible], ?inst: [isTcInst, unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?x: [.unconditionallyVisible]]
+          [?x: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (1)
     [egg.rewrites] #0<⊢0>(⇔)
       [egg.rewrites] -?m.55 = ?m.55
       [egg.rewrites] LHS MVars
-          [?m.55: [.unconditionallyVisible]]
+          [?m.55: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m.55: [.unconditionallyVisible]]
+          [?m.55: [unconditionallyVisible]]
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (1)
     [egg.rewrites] #0<←>(⇔)
       [egg.rewrites] -?m.62 = ?m.62
       [egg.rewrites] LHS MVars
-          [?m.62: [.unconditionallyVisible]]
-      [egg.rewrites] RHS MVars [?m.62: [.unconditionallyVisible]]
+          [?m.62: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars [?m.62: [unconditionallyVisible]]
 -/
 #guard_msgs(info) in
 example (h : ∀ [inst : Neg Int] (x : Int), @Neg.neg Int inst x = x) : (0 : Int) = (0 : Int) := by

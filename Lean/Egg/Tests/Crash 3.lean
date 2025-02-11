@@ -15,4 +15,4 @@ theorem Array.extract_extract {s1 e2 e1 s2 : Nat} {a : Array α} (h : s1 + e2 �
   · simp only [size_extract]
     omega
   · intro i h1 h2
-    egg [get_extract, Nat.add_assoc]
+    egg [getElem_extract, Nat.add_assoc]

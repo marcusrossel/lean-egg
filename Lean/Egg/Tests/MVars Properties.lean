@@ -14,9 +14,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] ?x = ?x
       [egg.rewrites] LHS MVars
-          [?x: [.unconditionallyVisible]]
+          [?x: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?x: [.unconditionallyVisible]]
+          [?x: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
@@ -34,9 +34,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇒): h
       [egg.rewrites] f ?x = ?x
       [egg.rewrites] LHS MVars
-          [?x: [.unconditionallyVisible], ?α: [.unconditionallyVisible]]
+          [?x: [unconditionallyVisible], ?α: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?x: [.unconditionallyVisible]]
+          [?x: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
@@ -64,9 +64,9 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] Conditions
         [egg.rewrites] Add α
       [egg.rewrites] LHS MVars
-          [?x: [.unconditionallyVisible], ?inst✝: [.inTcInstTerm, .isTcInst]]
+          [?x: [unconditionallyVisible], ?inst✝: [inTcInstTerm, isTcInst]]
       [egg.rewrites] RHS MVars
-          [?x: [.unconditionallyVisible]]
+          [?x: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
@@ -77,8 +77,8 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] Conditions
         [egg.rewrites] Add α
       [egg.rewrites] LHS MVars
-          [?m.180: [.unconditionallyVisible], ?m.183: [.inTcInstTerm, .isTcInst]]
-      [egg.rewrites] RHS MVars [?m.180: [.unconditionallyVisible]]
+          [?m.180: [unconditionallyVisible], ?m.183: [inTcInstTerm, isTcInst]]
+      [egg.rewrites] RHS MVars [?m.180: [unconditionallyVisible]]
 -/
 #guard_msgs(info) in
 example (h : ∀ [Add α] (x : α), x + x = x) : true = true := by
@@ -91,9 +91,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] f ?n ⋯ = ?n
       [egg.rewrites] LHS MVars
-          [?n: [.inErasedProof, .inProofTerm, .unconditionallyVisible]]
+          [?n: [inErasedProof, inProofTerm, unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?n: [.unconditionallyVisible]]
+          [?n: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)

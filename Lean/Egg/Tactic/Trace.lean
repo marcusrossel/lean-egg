@@ -48,17 +48,17 @@ nonrec def formatReport
     (if let some e := expl? then "expl steps: " ++ format e.steps.size ++ s!"\nbinder rws: {e.involvesBinderRewrites}\n" else "") ++
     (if rep.rwStats.isEmpty then "" else s!"\nrw stats:\n{rep.rwStats}")
 
-def MVars.Property.toMessageData : MVars.Property → MessageData
-  | .unconditionallyVisible => m!".unconditionallyVisible"
-  | .isTcInst               => m!".isTcInst"
-  | .inTcInstTerm           => m!".inTcInstTerm"
-  | .inErasedTcInst         => m!".inErasedTcInst"
-  | .inProofTerm            => m!".inProofTerm"
-  | .inErasedProof          => m!".inErasedProof"
-  | .inEqType               => m!".inEqType"
+def MVars.Property.toString : MVars.Property → String
+  | .unconditionallyVisible => "unconditionallyVisible"
+  | .isTcInst               => "isTcInst"
+  | .inTcInstTerm           => "inTcInstTerm"
+  | .inErasedTcInst         => "inErasedTcInst"
+  | .inProofTerm            => "inProofTerm"
+  | .inErasedProof          => "inErasedProof"
+  | .inEqType               => "inEqType"
 
 def MVars.Properties.toMessageData (ps : MVars.Properties) : MessageData :=
-  ps.toList.map Property.toMessageData
+  ps.toList.map Property.toString |>.mergeSort |>.map (m!"{·}")
 
 nonrec def MVars.toMessageData (mvars : MVars) : MetaM MessageData := do
   let mut data := []
