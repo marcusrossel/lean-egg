@@ -9,6 +9,7 @@ use crate::expl::*;
 use crate::lean_expr::*;
 use crate::levels::*;
 use crate::nat_lit::*;
+use crate::proj::proj_rw;
 use crate::result::*;
 use crate::rewrite::*;
 use crate::shift::*;
@@ -26,6 +27,7 @@ pub struct Config {
     eta_expand:                 bool,
     beta:                       bool,
     levels:                     bool,
+    // TODO: struct_info:       ???,
     shapes:                     bool,
     pub block_invalid_matches:  bool,
     pub shift_captured_bvars:   bool,
@@ -117,11 +119,11 @@ fn mk_rewrites(
         }
     }
 
-    if cfg.nat_lit    { rws.append(&mut nat_lit_rws(cfg.shapes)) }
-    if cfg.eta        { rws.push(eta_reduction_rw()) }
-    if cfg.eta_expand { rws.push(eta_expansion_rw()) }
-    if cfg.beta       { rws.push(beta_reduction_rw()) }
-    if cfg.levels     { rws.append(&mut level_rws()) }
+    if cfg.nat_lit     { rws.append(&mut nat_lit_rws(cfg.shapes)) }
+    if cfg.eta         { rws.push(eta_reduction_rw()) }
+    if cfg.eta_expand  { rws.push(eta_expansion_rw()) }
+    if cfg.beta        { rws.push(beta_reduction_rw()) }
+    if cfg.levels      { rws.append(&mut level_rws()) }
     // TODO: Only add these rws if one of the following is active: beta, eta, eta-expansion, 
     //       bvar index correction. Anything else?
     rws.append(&mut subst_rws());

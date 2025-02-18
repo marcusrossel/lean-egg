@@ -5,9 +5,11 @@ use crate::util::*;
 
 #[derive(Debug)]
 pub struct LeanAnalysisData {
-    pub nat_val:      Option<u64>,
-    pub dir_val:      Option<bool>,
-    pub loose_bvars:  HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
+    // TODO: Remove `nat_val` and `dir_val`, as they can be obtained as the only member (and thus 
+    //       representative) of their e-class.
+    pub nat_val:     Option<u64>,
+    pub dir_val:     Option<bool>,
+    pub loose_bvars: HashSet<u64>, // A bvar is in this set only iff it is referenced by *some* e-node in the e-class.
 }
 
 impl Default for LeanAnalysisData {

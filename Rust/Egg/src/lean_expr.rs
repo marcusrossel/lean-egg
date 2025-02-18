@@ -25,6 +25,10 @@ define_language! {
         "∀"     = Forall([Id; 2]),  // (<expr>, <expr>)
         "lit"   = Lit(Id),          // (Nat | Str)
 
+        // Constructs for structures:
+        "proj" = Proj([Id; 2]), // (Str, Nat)
+        "mk"   = Mk(Box<[Id]>), // (Str, <level>*)
+
         // Constructs for erasure:
         // Note that we also use these constructors to tag rewrite conditions (depending on whether
         // it's a type class or propositional condition).

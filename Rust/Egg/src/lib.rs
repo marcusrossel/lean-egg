@@ -19,6 +19,7 @@ mod lean_expr;
 mod levels;
 mod expl;
 mod nat_lit;
+mod proj;
 mod result;
 mod rewrite;
 mod shift;
@@ -142,6 +143,19 @@ impl CRewritesArray {
     }
 }
 
+#[repr(C)]
+pub struct CStructInfo {
+    name:   *const c_char,
+    params: usize,
+    fields: usize,
+    levels: usize
+}
+
+#[repr(C)]
+pub struct CStructInfoArray {
+    ptr: *const CStructInfo,
+    len: usize, 
+}
 
 pub fn u8_from_stop_reason(r: StopReason) -> (u8, String) {
     match r {
@@ -207,6 +221,7 @@ pub extern "C" fn egg_explain_congr(
     rws: CRewritesArray, 
     guides: CStringArray, 
     cfg: Config,
+    struct_infos: CStructInfoArray,
     viz_path_ptr: *const c_char,
     env: *const c_void,
 ) -> EqsatResult {

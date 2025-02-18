@@ -137,6 +137,44 @@ lean_config config_from_lean_obj(lean_obj_arg cfg) {
 }
 
 /*
+structure StructInfo where
+  name   : String
+  params : Nat
+  fields : Nat
+  levels : Nat
+*/
+typedef struct struct_info {
+    char*  name;
+    size_t params;
+    size_t fields;
+    size_t levels;
+} struct_info;
+
+struct_info struct_info_from_lean_obj(lean_obj_arg info) {
+    return (struct_info) {
+        .name   = lean_string_cstr(lean_ctor_get(info, 0)),
+        .params = nat_from_lean_obj(lean_ctor_get(info, 1)),
+        .fields = nat_from_lean_obj(lean_ctor_get(info, 2)),
+        .levels = nat_from_lean_obj(lean_ctor_get(info, 3)),
+    };
+}
+
+typedef struct struct_info_array {
+    struct_info* ptr;
+    size_t       len;
+} struct_info_array;
+
+struct_info_array struct_infos_from_lean_obj(lean_obj_arg infos) {
+    lean_object** infos_c_ptr = lean_array_cptr(infos);
+    size_t infos_count = lean_array_size(infos);
+    struct_info* rust_infos = malloc(infos_count * sizeof(struct_info));
+    for (int idx = 0; idx < infos_count; idx++) {
+        rust_infos[idx] = struct_info_from_lean_obj(infos_c_ptr[idx]);
+    }
+    return (struct_info_array) { .ptr = rust_infos, .len = infos_count };
+}
+
+/*
 structure Report where
   iterations: Nat
   stopReason: StopReason
@@ -148,13 +186,13 @@ structure Report where
 */
 
 typedef struct report {
-    size_t      iterations;
+    size_t  iterations;
     uint8_t reason;
-    char*       reason_msg;
-    size_t      node_count;
-    size_t      class_count;
-    double      time;
-    char*       rw_stats;
+    char*   reason_msg;
+    size_t  node_count;
+    size_t  class_count;
+    double  time;
+    char*   rw_stats;
 } report;
 
 lean_obj_res report_to_lean(report rep) {
@@ -259,6 +297,7 @@ extern egg_result egg_explain_congr(
     rws_array rws, 
     str_array guides, 
     config cfg,
+    struct_info_array struct_infos,
     const char* viz_path,
     void* e
 );
@@ -274,20 +313,22 @@ extern slotted_result slotted_explain_congr(
 
 /*
 structure Egg.Request where
-  lhs     : String
-  rhs     : String
-  rws     : Array Rewrite.Encoded
-  guides  : Array String
-  vizPath : String
-  cfg     : Request.Config
+  lhs         : String
+  rhs         : String
+  rws         : Array Rewrite.Encoded
+  guides      : Array String
+  structInfos : Array Request.StructInfo
+  vizPath     : String
+  cfg         : Request.Config
 */
 eqsat_result run_eqsat_request_core(lean_obj_arg req, env* e) {
-    const char* lhs      = lean_string_cstr(lean_ctor_get(req, 0));
-    const char* rhs      = lean_string_cstr(lean_ctor_get(req, 1));
-    rws_array rws        = rewrites_from_lean_obj(lean_ctor_get(req, 2));
-    str_array guides     = str_array_from_lean_obj(lean_ctor_get(req, 3));
-    const char* viz_path = lean_string_cstr(lean_ctor_get(req, 4));
-    lean_config cfg      = config_from_lean_obj(lean_ctor_get(req, 5));
+    const char* lhs                = lean_string_cstr(lean_ctor_get(req, 0));
+    const char* rhs                = lean_string_cstr(lean_ctor_get(req, 1));
+    rws_array rws                  = rewrites_from_lean_obj(lean_ctor_get(req, 2));
+    str_array guides               = str_array_from_lean_obj(lean_ctor_get(req, 3));
+    struct_info_array struct_infos = struct_infos_from_lean_obj(lean_ctor_get(req, 4));
+    const char* viz_path           = lean_string_cstr(lean_ctor_get(req, 5));
+    lean_config cfg                = config_from_lean_obj(lean_ctor_get(req, 6));
 
     eqsat_result result;
     if (cfg.slotted) {
@@ -300,7 +341,7 @@ eqsat_result run_eqsat_request_core(lean_obj_arg req, env* e) {
             .rep     = res.rep,
         };
     } else {
-        egg_result res = egg_explain_congr(lhs, rhs, rws, guides, cfg.rust_config, viz_path, e);
+        egg_result res = egg_explain_congr(lhs, rhs, rws, guides, cfg.rust_config, struct_infos, viz_path, e);
         result = (eqsat_result) {
             .slotted = false,
             .kind    = res.kind,
@@ -312,6 +353,7 @@ eqsat_result run_eqsat_request_core(lean_obj_arg req, env* e) {
     
     // TODO: Is it safe to free this?
     free_rws_array(rws);
+    free(struct_infos.ptr);
     free(guides.ptr);
     
     return result;
