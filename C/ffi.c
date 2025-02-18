@@ -144,10 +144,10 @@ structure StructInfo where
   levels : Nat
 */
 typedef struct struct_info {
-    char*  name;
-    size_t params;
-    size_t fields;
-    size_t levels;
+    const char* name;
+    size_t      params;
+    size_t      fields;
+    size_t      levels;
 } struct_info;
 
 struct_info struct_info_from_lean_obj(lean_obj_arg info) {

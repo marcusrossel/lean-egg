@@ -16,11 +16,8 @@ structure StructInfo where
 
 abbrev StructInfos := HashMap Name StructInfo
 
-def StructInfos.params (infos : StructInfos) : List Nat :=
-  infos.values.map (·.params) |>.eraseDups
-
 -- Note: We only consider structures for which there appears a projection.
-private partial def StructInfos.ofExpr (e : Expr) (init : StructInfos := ∅) : MetaM StructInfos := do
+private def StructInfos.ofExpr (e : Expr) (init : StructInfos := ∅) : MetaM StructInfos := do
   match e with
   | .const c _                                       => ofConst c init
   | .app e₁ e₂ | .lam _ e₁ e₂ _ | .forallE _ e₁ e₂ _ => ofExpr e₂ (← ofExpr e₁ init)

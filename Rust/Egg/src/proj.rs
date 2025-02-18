@@ -3,10 +3,11 @@ use egg::*;
 use crate::analysis::*;
 use crate::lean_expr::*;
 
-struct StructInfo {
-    params: u64,
-    fields: u64,
-    levels: u64
+#[derive(Clone)]
+pub struct StructInfo {
+    pub params: usize,
+    pub fields: usize,
+    pub levels: usize
 }
 
 impl StructInfo {
@@ -48,13 +49,31 @@ impl Applier<LeanExpr, LeanAnalysis> for ProjApplier {
     }
 }
 
-pub fn proj_rw(struct_info : HashMap<String, StructInfo>) -> LeanRewrite {
-    let outer_pat: Pattern<_> = "(app (proj ?S ?idx) ?s)".parse().unwrap();
+fn proj_rw(params: usize, struct_info : HashMap<String, StructInfo>) -> LeanRewrite {
+    let mut outer_pat = "(app (proj ?S ?idx) ?s)".to_string();
+    for idx in 0..params {
+        outer_pat = format!("(app {} ?o{})", outer_pat, idx);
+    }
+    let outer_pat: Pattern<_> = outer_pat.parse().unwrap();
+    
     let applier = ProjApplier { 
         struct_name: "?S".parse().unwrap(), 
         proj_idx: "?idx".parse().unwrap(),
         struct_val: "?s".parse().unwrap(),
         struct_info: struct_info
     };
-    Rewrite::new("≡proj", outer_pat, applier).unwrap()
+    
+    Rewrite::new(format!("≡proj<{}>", params), outer_pat, applier).unwrap()
+}
+
+pub fn proj_rws(struct_info : HashMap<String, StructInfo>) -> Vec<LeanRewrite> {
+    let mut params: Vec<_> = struct_info.values().map(|i| i.params).collect();
+    params.sort();
+    params.dedup();
+
+    let mut rws = vec![];
+    for p in params {
+        rws.push(proj_rw(p, struct_info.clone()));
+    }   
+    rws
 }
