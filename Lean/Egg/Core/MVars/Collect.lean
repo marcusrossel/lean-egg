@@ -75,11 +75,12 @@ where
     | .mvar id      => collectMVar id
     | .const _ lvls => collectLevels lvls
     | .sort lvl     => collectLevel lvl
+    | .proj _ _ b   => coreRec b
     | .app fn arg   => coreRec fn; coreRec arg
     | .forallE _ ty b _ | .lam _ ty b _ =>
       coreRec ty
       withLocalDecl .anonymous .default ty fun fvar => coreRec (b.instantiate #[fvar])
-    | .letE .. | .mdata .. | .proj .. =>
+    | .letE .. | .mdata .. =>
       panic! "'Egg.MVars.CollectionM.collect.core' received non-normalized expression"
     -- Note: This should not be reachable as we check whether `e` contains mvars at the beginning.
     | _ => return

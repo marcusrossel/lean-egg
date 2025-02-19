@@ -16,24 +16,27 @@ structure StructInfo where
 
 abbrev StructInfos := HashMap Name StructInfo
 
--- Note: We only consider structures for which there appears a projection.
+-- Note: We only consider structures for which there appears a (naive or internalized) projection.
 private def StructInfos.ofExpr (e : Expr) (init : StructInfos := ∅) : MetaM StructInfos := do
   match e with
   | .const c _                                       => ofConst c init
+  | .proj ty _ b                                     => ofExpr b (← ofStructName ty init)
   | .app e₁ e₂ | .lam _ e₁ e₂ _ | .forallE _ e₁ e₂ _ => ofExpr e₂ (← ofExpr e₁ init)
-  | .mdata .. | .proj .. | .letE ..                  => throwError "egg: internal error: 'Egg.StructInfo.ofExpr' received non-normalized expression"
+  | .mdata .. | .letE ..                             => throwError "egg: internal error: 'Egg.StructInfo.ofExpr' received non-normalized expression"
   | _                                                => return init
 where
   ofConst (const : Name) (infos : StructInfos) : MetaM StructInfos := do
-    let some structName := (← getEnv).getProjectionStructureName? const    | return infos
-    if infos.contains structName then                                        return infos
-    let some projInfo ← getProjectionFnInfo? const                         | return infos
-    let some { fieldNames, .. } := getStructureInfo? (← getEnv) structName | return infos
-    let some structDecl := (← getEnv).find? structName                     | return infos
-    return infos.insert structName {
-      params := projInfo.numParams
+    let some structName := (← getEnv).getProjectionStructureName? const | return infos
+    ofStructName structName infos
+
+  ofStructName (name : Name) (infos : StructInfos) : MetaM StructInfos := do
+    if infos.contains name then                                        return infos
+    let some { fieldNames, .. } := getStructureInfo? (← getEnv) name | return infos
+    let some (.inductInfo inductInfo) := (← getEnv).find? name          | return infos
+    return infos.insert name {
+      params := inductInfo.numParams
       fields := fieldNames.size
-      levels := structDecl.numLevelParams
+      levels := inductInfo.levelParams.length
     }
 
 def Congr.structInfos (cgr : Congr) (init : StructInfos := ∅) : MetaM StructInfos := do

@@ -24,14 +24,9 @@ where
     | .forallE n ty b i => do
       withLocalDecl n i (← go ty) fun fvar => do
         mkForallFVars #[fvar] (← go <| b.instantiate1 fvar)
+    | .proj ty idx b => return .proj ty idx (← go b)
     | e@(.letE ..)   => do go (← zetaReduce e)
-    | .proj ty idx b => do go (← expandProj ty idx b)
     | e              => return e
-
-  expandProj (ty : Name) (idx : Nat) (b : Expr) : MetaM Expr := do
-    let some field := (getStructureFields (← getEnv) ty)[idx]?
-      | throwError "'Egg.normalize' failed to reduce proj"
-    mkProjection b field
 
   natReduce (e : Expr) : MetaM Expr := do
     if let some n ← evalNat e
