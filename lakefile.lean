@@ -32,30 +32,34 @@ extern_lib ffi pkg := do
 
 extern_lib egg_for_lean pkg := do
   pkg.afterBuildCacheAsync do
-    proc {
-      cmd := "cargo",
-      args := #["rustc", "--release", "--", "-C", "relocation-model=pic"],
-      cwd := pkg.dir / "Rust" / "Egg"
-    }
-    let name := nameToStaticLib "egg_for_lean"
-    let srcPath := pkg.dir / "Rust" / "Egg" / "target" / "release" / name
-    IO.FS.createDirAll pkg.nativeLibDir
-    let tgtPath := pkg.nativeLibDir / name
-    IO.FS.writeBinFile tgtPath (← IO.FS.readBinFile srcPath)
+    let name      := nameToStaticLib "egg_for_lean"
+    let srcPath   := pkg.dir / "Rust" / "Egg" / "target" / "release" / name
+    let tgtPath   := pkg.nativeLibDir / name
+    let traceFile := pkg.buildDir / "rust" / "egg.trace"
+    let _ ← buildUnlessUpToDate? traceFile (← getTrace) traceFile do
+      proc {
+        cmd := "cargo",
+        args := #["rustc", "--release", "--", "-C", "relocation-model=pic"],
+        cwd := pkg.dir / "Rust" / "Egg"
+      }
+      IO.FS.createDirAll pkg.nativeLibDir
+      IO.FS.writeBinFile tgtPath (← IO.FS.readBinFile srcPath)
     return pure tgtPath
 
 extern_lib slotted_for_lean pkg := do
   pkg.afterBuildCacheAsync do
-    proc {
-      cmd := "cargo",
-      args := #["rustc", "--release", "--", "-C", "relocation-model=pic"],
-      cwd := pkg.dir / "Rust" / "Slotted"
-    }
     let name := nameToStaticLib "slotted_for_lean"
     let srcPath := pkg.dir / "Rust" / "Slotted" / "target" / "release" / name
-    IO.FS.createDirAll pkg.nativeLibDir
     let tgtPath := pkg.nativeLibDir / name
-    IO.FS.writeBinFile tgtPath (← IO.FS.readBinFile srcPath)
+    let traceFile := pkg.buildDir / "rust" / "slotted.trace"
+    let _ ← buildUnlessUpToDate? traceFile (← getTrace) traceFile do
+      proc {
+        cmd := "cargo",
+        args := #["rustc", "--release", "--", "-C", "relocation-model=pic"],
+        cwd := pkg.dir / "Rust" / "Slotted"
+      }
+      IO.FS.createDirAll pkg.nativeLibDir
+      IO.FS.writeBinFile tgtPath (← IO.FS.readBinFile srcPath)
     return pure tgtPath
 
 @[test_driver]
