@@ -2,6 +2,7 @@ import Egg.Core.Request.EGraph
 import Egg.Core.Encode.Rewrites
 import Egg.Core.Encode.Guides
 import Egg.Core.Config
+import Egg.Core.StructInfo
 import Egg.Core.Explanation.Parse.Basic
 open Lean
 
@@ -45,24 +46,39 @@ instance : Coe Config Request.Config where
   }
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
+structure StructInfo where
+  name   : String
+  params : Nat
+  fields : Nat
+  levels : Nat
+
+-- IMPORTANT: The C interface to egg depends on the order of these fields.
 structure _root_.Egg.Request where
   private mk ::
-  lhs     : Expression
-  rhs     : Expression
-  rws     : Rewrites.Encoded
-  guides  : Guides.Encoded
-  vizPath : String
-  cfg     : Request.Config
+  lhs         : Expression
+  rhs         : Expression
+  rws         : Rewrites.Encoded
+  guides      : Guides.Encoded
+  structInfos : Array StructInfo
+  vizPath     : String
+  cfg         : Request.Config
 
 def encoding (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) : MetaM Request :=
   return {
-    lhs     := ← encode goal.lhs cfg
-    rhs     := ← encode goal.rhs cfg
-    rws     := ← rws.encode cfg
-    guides  := ← guides.encode cfg
-    vizPath := cfg.vizPath.getD ""
+    lhs         := ← encode goal.lhs cfg
+    rhs         := ← encode goal.rhs cfg
+    rws         := ← rws.encode cfg
+    guides      := ← guides.encode cfg
+    structInfos := ← structInfos
+    vizPath     := cfg.vizPath.getD ""
     cfg
   }
+where
+  structInfos : MetaM (Array StructInfo) := do
+    let infos ← guides.structInfos <| ← rws.structInfos <| ← goal.structInfos
+    return infos.toArray.map fun ⟨n, i⟩ => {
+      name := s!"{n}", params := i.params, fields := i.fields, levels := i.levels
+    }
 
 -- IMPORTANT: The C interface to egg depends on the order of these constructors.
 inductive Result.StopReason where

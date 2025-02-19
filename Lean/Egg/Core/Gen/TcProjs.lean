@@ -65,7 +65,8 @@ where
     | .const c lvls                   => visitConst c lvls
     | .app fn arg                     => (visitFn fn arg) >=> (visitArg arg)
     | .lam _ d b _ | .forallE _ d b _ => (visitBindingDomain d) >=> (visitBindingBody b)
-    | .mdata .. | .proj .. | .letE .. => fun _ => throwError "egg: internal error: 'Egg.tcProjs.go' received non-normalized expression"
+    | .proj ty idx b                  => sorry
+    | .mdata .. | .letE ..            => fun _ => throwError "egg: internal error: 'Egg.tcProjs.go' received non-normalized expression"
     | _                               => pure
 
   visitConst (const : Name) (lvls : List Level) (s : State) : MetaM State := do
