@@ -9,7 +9,7 @@ namespace Egg
 
 abbrev TcProj := Expr
 
-private def TcProj.mk (const : Name) (args : Array Expr) (lvls : List Level) : TcProj :=
+private def TcProj.ofConst (const : Name) (args : Array Expr) (lvls : List Level) : TcProj :=
   mkAppN (.const const lvls) args
 
 private structure TcProj.SrcPrefix where
@@ -24,24 +24,20 @@ private def TcProj.reductionRewrites
   let mut rws := #[]
   let mut proj := proj
   while true do
-    if let some u ← unfoldProjInst? proj then
-      -- Since we have type class instance erasure, we are not interested in type class projections
-      -- which only transform a given type class instance into another type class instance.
-      if ← Meta.isTCInstance u then break
-      let uNorm ← normalize u cfg
-      let eq ← mkEq proj uNorm
-      let proof ← mkEqRefl proj
-      let some rw ← Rewrite.from? proof eq (.tcProj src.src src.loc src.pos rws.size) cfg (normalize := false)
-        | throwError "egg: internal error in 'TcProj.reductionRewrite?'"
-      -- TODO: This is a bandaid. How do we handle unboundedd mvars in the types of tc instance
-      --       conditions in general?
-      let rw := rw.eraseConditions
-      rws := rws.push rw
-      -- TODO: If normalization for rewrites is turned off, this entails that we might generate
-      --       fewer type class projection rewrites 😬
-      proj := uNorm
-    else
-      break
+    let some unfolded ← if proj.isProj then reduceProj? proj else unfoldProjInst? proj | break
+    -- Since we have type class instance erasure, we are not interested in type class projections
+    -- which only transform a given type class instance into another type class instance.
+    if ← Meta.isTCInstance unfolded then break
+    let uNorm ← normalize unfolded cfg
+    let eq ← mkEq proj uNorm
+    let proof ← mkEqRefl proj
+    let some rw ← Rewrite.from? proof eq (.tcProj src.src src.loc src.pos rws.size) cfg (normalize := false)
+      | throwError "egg: internal error in 'TcProj.reductionRewrites'"
+    -- TODO: This is a bandaid. How do we handle unbounded mvars in the types of tc instance
+    --       conditions in general?
+    let rw := rw.eraseConditions
+    rws    := rws.push rw
+    proj   := uNorm
   return rws
 
 private abbrev TcProjIndex := HashMap TcProj TcProj.SrcPrefix
@@ -65,16 +61,27 @@ where
     | .const c lvls                   => visitConst c lvls
     | .app fn arg                     => (visitFn fn arg) >=> (visitArg arg)
     | .lam _ d b _ | .forallE _ d b _ => (visitBindingDomain d) >=> (visitBindingBody b)
-    | .proj ty idx b                  => sorry
+    | .proj ty idx b                   => visitProj ty idx b
     | .mdata .. | .letE ..            => fun _ => throwError "egg: internal error: 'Egg.tcProjs.go' received non-normalized expression"
     | _                               => pure
 
+  visitProj (structName : Name) (idx : Nat) (body : Expr) (s : State) : MetaM State := do
+    unless isClass (← getEnv) structName do return s
+    let proj := .proj structName idx body
+    let projs :=
+      if s.covers proj
+      then s.projs
+      else s.projs.insert (.proj structName idx body) { src, loc, pos := s.pos }
+    go body { s with projs, args := #[], pos := s.pos.pushProj }
+
+  -- TODO: This doesn't seem quite right. For example, why are we checking whether the number of
+  --       args is > numParams?
   visitConst (const : Name) (lvls : List Level) (s : State) : MetaM State := do
     let some info ← getProjectionFnInfo? const | return s
     unless info.fromClass && s.args.size > info.numParams do return s
     let args := s.args[:info.numParams + 1].toArray
     if args.back!.isMVar || args.any (·.hasLooseBVars) then return s
-    let proj := TcProj.mk const args lvls
+    let proj := TcProj.ofConst const args lvls
     if s.covers proj
     then return s
     else return { s with projs := s.projs.insert proj { src, loc, pos := s.pos } }
@@ -115,7 +122,7 @@ def Rewrites.tcProjTargets (rws : Rewrites) : Array TcProjTarget := Id.run do
 
 def Guides.tcProjTargets (guides : Guides) : Array TcProjTarget :=
   guides.map fun guide => { expr := guide.expr, src := guide.src, loc := .root }
---
+
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
 def genTcProjReductions
     (targets : Array TcProjTarget) (covered : HashSet TcProj) (cfg : Config.Normalization) :
