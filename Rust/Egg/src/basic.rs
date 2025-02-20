@@ -9,6 +9,7 @@ use crate::expl::*;
 use crate::lean_expr::*;
 use crate::levels::*;
 use crate::nat_lit::*;
+use crate::proj::*;
 use crate::result::*;
 use crate::rewrite::*;
 use crate::shift::*;
@@ -42,11 +43,12 @@ pub struct ExplainedCongr {
 }
 
 pub fn explain_congr(
-    init: String, goal: String, rw_templates: Vec<RewriteTemplate>, 
-    guides: Vec<String>, cfg: Config, viz_path: Option<String>, env: *const c_void
+    init: String, goal: String, rw_templates: Vec<RewriteTemplate>, guides: Vec<String>, 
+    struct_info: HashMap<String, StructInfo>, cfg: Config, viz_path: Option<String>, 
+    env: *const c_void
 ) -> Result<ExplainedCongr, Error> {    
     let Initialized { mut egraph, init_id, init_expr, goal_id, goal_expr } = mk_initial_egraph(init, goal, guides, &cfg)?;
-    let (eqs, rws) = mk_rewrites(rw_templates, &cfg, env)?;
+    let (eqs, rws) = mk_rewrites(rw_templates, struct_info, &cfg, env)?;
 
     // Adds ground equalities to the e-graph.
     for eq in eqs { 
@@ -103,7 +105,8 @@ fn mk_initial_egraph(
 }
  
 fn mk_rewrites(
-    rw_templates: Vec<RewriteTemplate>, cfg: &Config, env: *const c_void
+    rw_templates: Vec<RewriteTemplate>, struct_info: HashMap<String, StructInfo>, cfg: &Config, 
+    env: *const c_void
 ) -> Result<(Vec<GroundEq>, Vec<LeanRewrite>), Error> {
     let mut eqs = vec![];
     let mut rws = vec![
@@ -122,6 +125,8 @@ fn mk_rewrites(
     if cfg.eta_expand { rws.push(eta_expansion_rw()) }
     if cfg.beta       { rws.push(beta_reduction_rw()) }
     if cfg.levels     { rws.append(&mut level_rws()) }
+    rws.append(&mut proj_rws(struct_info));
+
     // TODO: Only add these rws if one of the following is active: beta, eta, eta-expansion, 
     //       bvar index correction. Anything else?
     rws.append(&mut subst_rws());

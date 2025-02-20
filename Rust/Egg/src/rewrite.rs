@@ -105,7 +105,7 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
         for tc_cond in &self.tc_conds {
             if !cond_is_synthable(tc_cond, graph, subst, self.cfg.env) {
                 // TODO: Is it correct to simply return the empty vector, or do we need to indicate
-                //       which e-cclasses were potentially changed/added by `add_instantiation`?
+                //       which e-classes were potentially changed/added by `add_instantiation`?
                 return vec![]
             }
         }

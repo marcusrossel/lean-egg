@@ -3,10 +3,11 @@ use egg::*;
 use expl::{mk_explanation, ExplanationKind};
 use lean_expr::LeanExpr;
 use util::sub_expr;
-use std::ffi::{c_char, CStr, CString, c_void};
+use std::{collections::HashMap, ffi::{c_char, c_void, CStr, CString}};
 use libc::c_double;
 use std::str::FromStr;
 use basic::*;
+use proj::*;
 use result::*;
 use rewrite::*;
 
@@ -19,6 +20,7 @@ mod lean_expr;
 mod levels;
 mod expl;
 mod nat_lit;
+mod proj;
 mod result;
 mod rewrite;
 mod shift;
@@ -142,6 +144,33 @@ impl CRewritesArray {
     }
 }
 
+#[repr(C)]
+pub struct CStructInfo {
+    name:   *const c_char,
+    params: usize,
+    fields: usize,
+    levels: usize
+}
+
+#[repr(C)]
+pub struct CStructInfoArray {
+    ptr: *const CStructInfo,
+    len: usize, 
+}
+
+impl CStructInfoArray {
+    
+    fn to_struct_info_map(&self) -> HashMap<String, StructInfo> {
+        let infos = unsafe { std::slice::from_raw_parts(self.ptr, self.len) };
+        let mut res: HashMap<String, StructInfo> = Default::default();
+        for info in infos {
+            let name = c_str_to_string(info.name);
+            let info = StructInfo { params: info.params, fields: info.fields, levels: info.levels };
+            res.insert(name, info);
+        }
+        res
+    }
+}
 
 pub fn u8_from_stop_reason(r: StopReason) -> (u8, String) {
     match r {
@@ -207,6 +236,7 @@ pub extern "C" fn egg_explain_congr(
     rws: CRewritesArray, 
     guides: CStringArray, 
     cfg: Config,
+    struct_infos: CStructInfoArray,
     viz_path_ptr: *const c_char,
     env: *const c_void,
 ) -> EqsatResult {
@@ -225,10 +255,12 @@ pub extern "C" fn egg_explain_congr(
     }
     let rw_templates = rw_templates.unwrap();
 
+    let struct_info = struct_infos.to_struct_info_map();
+
     let raw_viz_path = c_str_to_string(viz_path_ptr);
     let viz_path = if raw_viz_path.is_empty() { None } else { Some(raw_viz_path) };
 
-    let res = explain_congr(init, goal, rw_templates, guides, cfg, viz_path, env);
+    let res = explain_congr(init, goal, rw_templates, guides, struct_info, cfg, viz_path, env);
     if let Err(res_err) = res {
         return EqsatResult { 
             kind: ExplanationKind::None.to_c(),
