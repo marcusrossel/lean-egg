@@ -148,8 +148,7 @@ impl CRewritesArray {
 pub struct CStructInfo {
     name:   *const c_char,
     params: usize,
-    fields: usize,
-    levels: usize
+    fields: usize
 }
 
 #[repr(C)]
@@ -165,7 +164,7 @@ impl CStructInfoArray {
         let mut res: HashMap<String, StructInfo> = Default::default();
         for info in infos {
             let name = c_str_to_string(info.name);
-            let info = StructInfo { params: info.params, fields: info.fields, levels: info.levels };
+            let info = StructInfo { params: info.params, fields: info.fields };
             res.insert(name, info);
         }
         res

@@ -81,24 +81,27 @@ where
     let encTy ← go ty
     withInstantiatedBVar ty b fun var? body => return s!"(∀ {var?}{encTy} {← go body})"
 
-  encodeConstLvls (lvls : List Level) : EncodeM Expression :=
-    lvls.foldlM (init := "") (return s!"{·} {← encodeLevel ·}")
+  encodeConstLvls (lvls : List Level) : EncodeM Expression := do
+    let body ← lvls.foldlM (init := "⋯") (return s!"{·} {← encodeLevel ·}")
+    return s!"({body})"
 
+  -- TODO: Can names from different open namespaces collide here? If so, should we resolve the
+  --       global names of constant?
   encodeConst (name : Name) (lvls : List Level) : EncodeM Expression := do
     let env ← getEnv
     if let some projInfo ← getProjectionFnInfo? name then
       if let some (.ctorInfo { induct, .. }) := env.find? projInfo.ctorName then
-        return s!"(proj \"{induct}\" {projInfo.i})"
+        return s!"(proj \"{induct}\" {projInfo.i} {← encodeConstLvls lvls})"
     else if let some (.ctorInfo { induct, .. }) := env.find? name then
       if isStructure env induct then
-        return s!"(mk \"{induct}\"{← encodeConstLvls lvls})"
-    return s!"(const \"{name}\"{← encodeConstLvls lvls})"
+        return s!"(mk \"{induct}\" {← encodeConstLvls lvls})"
+    return s!"(const \"{name}\" {← encodeConstLvls lvls})"
 
   encodeProj (structName : Name) (idx : Nat) (body : Expr) : EncodeM Expression := do
-    -- TODO: Is there a better way of obtaining the values of implicit arguments in the application,
-    --       than calling `mkAppM`? What happens if some of them are supposed to be mvars? In that
-    --       case it seems like it might be better to simply eliminate `proj` during normalization
-    --       again.
+    -- TODO: Is there a better way of obtaining the values of implicit arguments and levels in the
+    --       application, than calling `mkAppM`? What happens if some of them are supposed to be
+    --       mvars? In that case it seems like it might be better to simply eliminate `proj` during
+    --       normalization again.
     let some projFn := (getStructureFields (← getEnv) structName)[idx]?
       | throwError "'Egg.normalize' failed to encode 'proj'"
     let app ← Meta.mkAppM projFn #[body]

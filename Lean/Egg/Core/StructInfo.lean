@@ -12,7 +12,6 @@ namespace Egg
 structure StructInfo where
   params : Nat
   fields : Nat
-  levels : Nat
 
 abbrev StructInfos := HashMap Name StructInfo
 
@@ -32,11 +31,10 @@ where
   ofStructName (name : Name) (infos : StructInfos) : MetaM StructInfos := do
     if infos.contains name then                                        return infos
     let some { fieldNames, .. } := getStructureInfo? (← getEnv) name | return infos
-    let some (.inductInfo inductInfo) := (← getEnv).find? name          | return infos
+    let some (.inductInfo inductInfo) := (← getEnv).find? name       | return infos
     return infos.insert name {
       params := inductInfo.numParams
       fields := fieldNames.size
-      levels := inductInfo.levelParams.length
     }
 
 def Congr.structInfos (cgr : Congr) (init : StructInfos := ∅) : MetaM StructInfos := do

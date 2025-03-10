@@ -14,6 +14,8 @@ private inductive Expression where
   | lam    (ty body : Expression)
   | forall (ty body : Expression)
   | lit    (l : Literal)
+  | proj   (struct : Name) (idx : Nat) (lvls : List Level)
+  | mk     (struct : Name) (lvls : List Level)
   | eq     (lhs rhs : Expression)
   | proof  (prop : Expression)
   | inst   (cls : Expression)
@@ -23,22 +25,33 @@ private inductive Expression where
   deriving Inhabited
 
 private def Expression.toExpr : Expression → MetaM Expr
-  | bvar idx        => return .bvar idx
-  | fvar id         => return .fvar id
-  | mvar id         => return .mvar id
-  | sort lvl        => return .sort lvl
-  | const name lvls => return .const name lvls
-  | app fn arg      => return .app (← toExpr fn) (← toExpr arg)
-  | lam ty body     => return .lam .anonymous (← toExpr ty) (← toExpr body) .default
-  | .forall ty body => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
-  | lit l           => return .lit l
-  | eq lhs rhs      => do mkEq (← toExpr lhs) (← toExpr rhs)
-  | proof prop      => do mkFreshExprMVar (← toExpr prop)
-  | inst cls        => do mkFreshExprMVar (← toExpr cls)
-  | subst idx to e  => return applySubst idx (← toExpr to) (← toExpr e)
-  | shift off cut e => return applyShift off cut (← toExpr e)
-  | unknown         => mkFreshExprMVar none
+  | bvar idx             => return .bvar idx
+  | fvar id              => return .fvar id
+  | mvar id              => return .mvar id
+  | sort lvl             => return .sort lvl
+  | const name lvls      => return .const name lvls
+  | app fn arg           => return .app (← toExpr fn) (← toExpr arg)
+  | lam ty body          => return .lam .anonymous (← toExpr ty) (← toExpr body) .default
+  | .forall ty body      => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
+  | lit l                => return .lit l
+  | proj struct idx lvls => mkProj struct idx lvls
+  | mk struct lvls       => mkStructCtor struct lvls
+  | eq lhs rhs           => do mkEq (← toExpr lhs) (← toExpr rhs)
+  | proof prop           => do mkFreshExprMVar (← toExpr prop)
+  | inst cls             => do mkFreshExprMVar (← toExpr cls)
+  | subst idx to e       => return applySubst idx (← toExpr to) (← toExpr e)
+  | shift off cut e      => return applyShift off cut (← toExpr e)
+  | unknown              => mkFreshExprMVar none
 where
+  mkProj (structName : Name) (idx : Nat) (lvls : List Level) : MetaM Expr := do
+    let some projFn := (getStructureFields (← getEnv) structName)[idx]?
+      | throwError "'Egg.Explanation.Expression.toExpr.mkProj' failed to obtain projection function"
+    return .const (structName ++ projFn) lvls
+
+  mkStructCtor (structName : Name) (lvls : List Level) : MetaM Expr := do
+    let { name := ctorName, .. } := getStructureCtor (← getEnv) structName
+    return .const ctorName lvls
+
   mkEq (lhs rhs : Expr) : MetaM Expr := do
     -- This doesn't work immediately, because `lhs` and `rhs` can contains bvars:
     -- mkEq (← toExpr lhs) (← toExpr rhs)
@@ -60,6 +73,7 @@ where
     | e                => e
 
 declare_syntax_cat egg_lvl
+declare_syntax_cat egg_lvls
 declare_syntax_cat egg_expr
 declare_syntax_cat egg_expl
 
@@ -71,15 +85,20 @@ syntax "(" &"max" egg_lvl egg_lvl ")"                : egg_lvl
 syntax "(" &"imax" egg_lvl egg_lvl ")"               : egg_lvl
 syntax "(" &"Rewrite" noWs rw_dir rw_src egg_lvl ")" : egg_lvl
 
+syntax &"⋯"                  : egg_lvls
+syntax "(" &"⋯" egg_lvl* ")" : egg_lvls
+
 syntax "(" &"bvar" num ")"                            : egg_expr
 syntax "(" &"fvar" num ")"                            : egg_expr
 syntax "(" &"mvar" num ")"                            : egg_expr
 syntax "(" &"sort" egg_lvl ")"                        : egg_expr
-syntax "(" &"const" ident egg_lvl* ")"                : egg_expr
+syntax "(" &"const" ident egg_lvls ")"                : egg_expr
 syntax "(" &"app" egg_expr egg_expr ")"               : egg_expr
 syntax "(" &"λ" egg_expr egg_expr ")"                 : egg_expr
 syntax "(" &"∀" egg_expr egg_expr ")"                 : egg_expr
 syntax "(" &"lit" lit ")"                             : egg_expr
+syntax "(" &"proj" ident num egg_lvls ")"             : egg_expr
+syntax "(" &"mk" ident egg_lvls ")"                   : egg_expr
 syntax "(" &"=" egg_expr egg_expr ")"                 : egg_expr
 syntax "(" &"proof" egg_expr ")"                      : egg_expr
 syntax "(" &"inst" egg_expr ")"                       : egg_expr
@@ -109,6 +128,11 @@ where
     set <| some { info with dir, pos? := none : Rewrite.Info }
     parseLevel body
 
+private partial def parseLevels : (TSyntax `egg_lvls) → ParseStepM (List Level)
+  | `(egg_lvls|⋯)          => return []
+  | `(egg_lvls|(⋯ $lvls*)) => return (← lvls.mapM parseLevel).toList
+  | _                      => unreachable!
+
 private abbrev ParseStepResult := Except ParseError <| Expression × (Option Rewrite.Info)
 
 partial def parseExpr (stx : TSyntax `egg_expr) : ParseStepResult :=
@@ -120,11 +144,13 @@ where
     | `(egg_expr|(fvar $id))               => return .fvar (.fromUniqueIdx id.getNat)
     | `(egg_expr|(mvar $id))               => return .mvar (.fromUniqueIdx id.getNat)
     | `(egg_expr|(sort $lvl))              => return .sort (← parseLevel lvl)
-    | `(egg_expr|(const $name $lvls*))     => return .const name.getId (← lvls.mapM parseLevel).toList
+    | `(egg_expr|(const $name $lvls))      => return .const name.getId (← parseLevels lvls)
     | `(egg_expr|(app $fn $arg))           => return .app (← go pos.pushAppFn fn) (← go pos.pushAppArg arg)
     | `(egg_expr|(λ $ty $body))            => return .lam (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(egg_expr|(∀ $ty $body))            => return .forall (← go pos.pushBindingDomain ty) (← go pos.pushBindingBody body)
     | `(egg_expr|(lit $l))                 => return .lit (parseLit l)
+    | `(egg_expr|(proj $name $idx $lvls))  => return .proj name.getId idx.getNat (← parseLevels lvls)
+    | `(egg_expr|(mk $name $lvls))         => return .mk name.getId (← parseLevels lvls)
     | `(egg_expr|(= $lhs $rhs))            => return .eq (← go (eqLhsPos pos) lhs) (← go (eqRhsPos pos) rhs)
     | `(egg_expr|(proof $p))               => return .proof (← parseTypeOfErased p pos)
     | `(egg_expr|(inst $c))                => return .inst (← parseTypeOfErased c pos)

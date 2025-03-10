@@ -50,7 +50,6 @@ structure StructInfo where
   name   : String
   params : Nat
   fields : Nat
-  levels : Nat
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 structure _root_.Egg.Request where
@@ -77,7 +76,7 @@ where
   structInfos : MetaM (Array StructInfo) := do
     let infos ← guides.structInfos <| ← rws.structInfos <| ← goal.structInfos
     return infos.toArray.map fun ⟨n, i⟩ => {
-      name := s!"{n}", params := i.params, fields := i.fields, levels := i.levels
+      name := s!"{n}", params := i.params, fields := i.fields
     }
 
 -- IMPORTANT: The C interface to egg depends on the order of these constructors.

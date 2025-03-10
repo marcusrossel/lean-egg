@@ -64,7 +64,7 @@ impl RewriteTemplate {
             let mut str = format!("(= {} {})", self.lhs, self.lhs);
 
             for cond in self.prop_conds { 
-                str = format!("(app (app (const \"And\") {}) {})", str, cond);
+                str = format!("(app (app (const \"And\" ⋯) {}) {})", str, cond);
             }
 
             str = format!("(fact {})", str);
@@ -151,17 +151,10 @@ fn in_fresh_graph(cond: &Pattern<LeanExpr>, graph: &LeanEGraph, subst: &Subst) -
 fn is_primitive_pattern_subst(pat: &Pattern<LeanExpr>, graph: &LeanEGraph, subst: &Subst) -> bool {
     match &pat.ast.as_ref().last().unwrap() {
         ENodeOrVar::Var(x) => is_primitive(subst[*x], graph),
-        ENodeOrVar::ENode(n) => is_primitive_node(n),
+        ENodeOrVar::ENode(n) => n.is_primitive(),
     }
 }
 
-pub fn is_primitive_node(node: &LeanExpr) -> bool {
-    matches!(node, 
-            LeanExpr::Nat(_) | LeanExpr::Str(_) | LeanExpr::Fun(_) | LeanExpr::UVar(_) | LeanExpr::Param(_) | 
-            LeanExpr::Succ(_) | LeanExpr::Max(_) | LeanExpr::IMax(_) | LeanExpr::Fact(_) | LeanExpr::Unknown
-    )
-}
-
 pub fn is_primitive(x: Id, graph: &LeanEGraph) -> bool {
-    is_primitive_node(&graph[x].nodes.first().unwrap())
+    graph[x].nodes.first().unwrap().is_primitive()
 }

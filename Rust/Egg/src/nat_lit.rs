@@ -26,8 +26,8 @@ impl Applier<LeanExpr, LeanAnalysis> for ToSucc {
             if !(nat_val > 0) { return vec![] }
             
             let res = 
-                if self.shapes { format!("(app (◇ (→ * *) (const Nat.succ)) (◇ * (lit {})))", nat_val - 1) } 
-                else           { format!("(app (const Nat.succ) (lit {}))",                   nat_val - 1) }
+                if self.shapes { format!("(app (◇ (→ * *) (const Nat.succ ⋯)) (◇ * (lit {})))", nat_val - 1) } 
+                else           { format!("(app (const Nat.succ ⋯) (lit {}))",                   nat_val - 1) }
             .parse().unwrap();
                 
             let (id, did_union) = egraph.union_instantiations(ast, &res, subst, rule);
@@ -45,8 +45,8 @@ struct OfSucc {
 impl OfSucc {
 
     fn rewrite(shapes: bool) -> LeanRewrite {
-        if shapes { rewrite!("≡S→"; "(app (◇ (→ * *) (const Nat.succ)) (◇ * (lit ?n)))" => { OfSucc { nat_val : "?n".parse().unwrap() }}) } 
-        else      { rewrite!("≡S→"; "(app (const Nat.succ) (lit ?n))"                   => { OfSucc { nat_val : "?n".parse().unwrap() }}) }   
+        if shapes { rewrite!("≡S→"; "(app (◇ (→ * *) (const Nat.succ ⋯)) (◇ * (lit ?n)))" => { OfSucc { nat_val : "?n".parse().unwrap() }}) } 
+        else      { rewrite!("≡S→"; "(app (const Nat.succ ⋯) (lit ?n))"                   => { OfSucc { nat_val : "?n".parse().unwrap() }}) }   
     }
 }
 
@@ -74,8 +74,8 @@ impl Op {
 
     fn rewrite(rule: &str, op_name: &str, op: fn(u64, u64) -> u64, shapes: bool) -> LeanRewrite {
         let pattern: Pattern<_> = 
-            if shapes { format!("(app (◇ (→ * *) (app (◇ (→ * (→ * *)) (const Nat.{})) (◇ * (lit ?l)))) (◇ * (lit ?r)))", op_name) } 
-            else      { format!("(app (app (const Nat.{}) (lit ?l)) (lit ?r))",                                           op_name) }
+            if shapes { format!("(app (◇ (→ * *) (app (◇ (→ * (→ * *)) (const Nat.{} ⋯)) (◇ * (lit ?l)))) (◇ * (lit ?r)))", op_name) } 
+            else      { format!("(app (app (const Nat.{} ⋯) (lit ?l)) (lit ?r))",                                           op_name) }
         .parse().unwrap();
 
         let applier = Op { op, lhs_nat_val : "?l".parse().unwrap(), rhs_nat_val : "?r".parse().unwrap() };
@@ -103,7 +103,7 @@ impl Applier<LeanExpr, LeanAnalysis> for Op {
 // https://github.com/leanprover/lean4/blob/1e74c6a348416677987cd71a59a451db0aef9e26/src/kernel/type_checker.cpp#L1138
 pub fn nat_lit_rws(shapes: bool) -> Vec<LeanRewrite> {
     let mut rws = vec![];
-    rws.append(&mut rewrite!("≡0"; "(lit 0)" <=> "(const Nat.zero)"));
+    rws.append(&mut rewrite!("≡0"; "(lit 0)" <=> "(const Nat.zero ⋯)"));
     rws.push(ToSucc::rewrite(shapes));
     rws.push(OfSucc::rewrite(shapes));
     rws.push(Op::rewrite("≡+", "add", u64::add,            shapes));

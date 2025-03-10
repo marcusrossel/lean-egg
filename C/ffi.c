@@ -141,13 +141,11 @@ structure StructInfo where
   name   : String
   params : Nat
   fields : Nat
-  levels : Nat
 */
 typedef struct struct_info {
     const char* name;
     size_t      params;
     size_t      fields;
-    size_t      levels;
 } struct_info;
 
 struct_info struct_info_from_lean_obj(lean_obj_arg info) {
@@ -155,7 +153,6 @@ struct_info struct_info_from_lean_obj(lean_obj_arg info) {
         .name   = lean_string_cstr(lean_ctor_get(info, 0)),
         .params = nat_from_lean_obj(lean_ctor_get(info, 1)),
         .fields = nat_from_lean_obj(lean_ctor_get(info, 2)),
-        .levels = nat_from_lean_obj(lean_ctor_get(info, 3)),
     };
 }
 

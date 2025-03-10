@@ -45,6 +45,7 @@ inductive Source.SubstShift where
   | fvar
   | mvar
   | sort
+  | const
   | lit
   | proof
   | inst
@@ -70,6 +71,7 @@ inductive Source where
   | shift (src : Source.SubstShift)
   | eta (expansion : Bool)
   | beta
+  | proj (idx : Nat)
   | level (src : Source.Level)
   | builtin (idx : Nat)
   | tagged (idx : Nat) (eqn? : Option Nat)
@@ -113,6 +115,7 @@ def SubstShift.description : SubstShift → String
   | fvar    => "fvar"
   | mvar    => "mvar"
   | sort    => "sort"
+  | const   => "const"
   | lit     => "lit"
   | proof   => "proof"
   | inst    => "inst"
@@ -141,6 +144,7 @@ def description : Source → String
   | eta false               => "≡η"
   | eta true                => "≡η+"
   | beta                    => "≡β"
+  | proj idx                => s!"≡proj<{idx}>"
   | level src               => src.description
   | builtin idx             => s!"◯{idx}"
   | tagged idx none         => s!"□{idx}"
@@ -150,8 +154,8 @@ instance : ToString Source where
   toString := description
 
 def isDefEq : Source → Bool
-  | natLit _ | eta _ | beta | level _ | subst _ | shift _ => true
-  | _                                                     => false
+  | natLit _ | eta _ | beta | proj _ | level _ | subst _ | shift _ => true
+  | _                                                              => false
 
 def containsTcProj : Source → Bool
   | tcProj ..     => true

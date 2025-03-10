@@ -107,20 +107,20 @@ impl Applier<LeanExpr, LeanAnalysis> for BinderShift {
 // TODO: Is this ok when using intersection semantics?
 pub fn shift_rws() -> Vec<LeanRewrite> {
     let mut rws = vec![];
-    rws.push(rewrite!("↑bvar";  "(↑ ?d ?o ?c (bvar ?b))"   => { BVarShift   { dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), bvar_idx: "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↑app";   "(↑ ?d ?o ?c (app ?a ?b))" => { BasicShift  { ctor: "app".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), left:   "?a".parse().unwrap(), right: "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↑=";     "(↑ ?d ?o ?c (= ?a ?b))"   => { BasicShift  { ctor: "=".to_string(),   dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), left:   "?a".parse().unwrap(), right: "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↑λ";     "(↑ ?d ?o ?c (λ ?a ?b))"   => { BinderShift { binder: "λ".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), domain: "?a".parse().unwrap(), body:  "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↑∀";     "(↑ ?d ?o ?c (∀ ?a ?b))"   => { BinderShift { binder: "∀".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), domain: "?a".parse().unwrap(), body:  "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↑fvar";  "(↑ ?d ?o ?c (fvar ?x))"   => "(fvar ?x)"));
-    rws.push(rewrite!("↑mvar";  "(↑ ?d ?o ?c (mvar ?x))"   => "(mvar ?x)"));
-    rws.push(rewrite!("↑sort";  "(↑ ?d ?o ?c (sort ?x))"   => "(sort ?x)"));
-    // TODO: "↑const" - how do we match an unknown number of level arguments?
-    rws.push(rewrite!("↑lit";   "(↑ ?d ?o ?c (lit ?x))"    => "(lit ?x)"));
+    rws.push(rewrite!("↑bvar";  "(↑ ?d ?o ?c (bvar ?b))"     => { BVarShift   { dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), bvar_idx: "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↑app";   "(↑ ?d ?o ?c (app ?a ?b))"   => { BasicShift  { ctor: "app".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), left:   "?a".parse().unwrap(), right: "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↑=";     "(↑ ?d ?o ?c (= ?a ?b))"     => { BasicShift  { ctor: "=".to_string(),   dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), left:   "?a".parse().unwrap(), right: "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↑λ";     "(↑ ?d ?o ?c (λ ?a ?b))"     => { BinderShift { binder: "λ".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), domain: "?a".parse().unwrap(), body:  "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↑∀";     "(↑ ?d ?o ?c (∀ ?a ?b))"     => { BinderShift { binder: "∀".to_string(), dir: "?d".parse().unwrap(), offset: "?o".parse().unwrap(), cutoff: "?c".parse().unwrap(), domain: "?a".parse().unwrap(), body:  "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↑fvar";  "(↑ ?d ?o ?c (fvar ?x))"     => "(fvar ?x)"));
+    rws.push(rewrite!("↑mvar";  "(↑ ?d ?o ?c (mvar ?x))"     => "(mvar ?x)"));
+    rws.push(rewrite!("↑sort";  "(↑ ?d ?o ?c (sort ?x))"     => "(sort ?x)"));
+    rws.push(rewrite!("↑const"; "(↑ ?d ?o ?c (const ?x ?l))" => "(const ?x ?l)"));
+    rws.push(rewrite!("↑lit";   "(↑ ?d ?o ?c (lit ?x))"      => "(lit ?x)"));
     // TODO: We don't propagate shifts over erased terms at the moment.
-    rws.push(rewrite!("↑proof"; "(↑ ?d ?o ?c (proof ?x))"  => "(proof ?x)"));
-    rws.push(rewrite!("↑inst";  "(↑ ?d ?o ?c (inst ?x))"   => "(inst ?x)"));
-    rws.push(rewrite!("↑_";     "(↑ ?d ?o ?c _)"           => "_"));
+    rws.push(rewrite!("↑proof"; "(↑ ?d ?o ?c (proof ?x))"    => "(proof ?x)"));
+    rws.push(rewrite!("↑inst";  "(↑ ?d ?o ?c (inst ?x))"     => "(inst ?x)"));
+    rws.push(rewrite!("↑_";     "(↑ ?d ?o ?c _)"             => "_"));
     // Note: We don't handle the propagation of shifts over facts, as a shift should never even be
     //       applied to a fact.
     rws

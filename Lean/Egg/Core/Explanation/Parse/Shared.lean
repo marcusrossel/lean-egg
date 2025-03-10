@@ -75,6 +75,7 @@ syntax "↦∀"                                         : fwd_rw_src
 syntax "↦fvar"                                      : fwd_rw_src
 syntax "↦mvar"                                      : fwd_rw_src
 syntax "↦sort"                                      : fwd_rw_src
+syntax "↦const"                                     : fwd_rw_src
 syntax "↦lit"                                       : fwd_rw_src
 syntax "↦proof"                                     : fwd_rw_src
 syntax "↦inst"                                      : fwd_rw_src
@@ -87,6 +88,7 @@ syntax "↑∀"                                         : fwd_rw_src
 syntax "↑fvar"                                      : fwd_rw_src
 syntax "↑mvar"                                      : fwd_rw_src
 syntax "↑sort"                                      : fwd_rw_src
+syntax "↑const"                                     : fwd_rw_src
 syntax "↑lit"                                       : fwd_rw_src
 syntax "↑proof"                                     : fwd_rw_src
 syntax "↑inst"                                      : fwd_rw_src
@@ -98,6 +100,7 @@ syntax "≡imaxS"                                     : fwd_rw_src
 syntax "≡η"                                         : fwd_rw_src
 syntax "≡η+"                                        : fwd_rw_src
 syntax "≡β"                                         : fwd_rw_src
+syntax "≡proj" "<" num ">"                          : fwd_rw_src
 syntax "≡0"                                         : fwd_rw_src
 syntax "≡→S"                                        : fwd_rw_src
 syntax "≡S→"                                        : fwd_rw_src
@@ -162,45 +165,48 @@ private def parseTcExtension (src : Source) : (TSyntax `tc_extension) → Source
   | _                               => unreachable!
 
 private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
-  | `(fwd_rw_src|↦bvar)  => .subst .bvar
-  | `(fwd_rw_src|↦app)   => .subst .app
-  | `(fwd_rw_src|↦λ)     => .subst .lam
-  | `(fwd_rw_src|↦∀)     => .subst .forall
-  | `(fwd_rw_src|↦fvar)  => .subst .fvar
-  | `(fwd_rw_src|↦mvar)  => .subst .mvar
-  | `(fwd_rw_src|↦sort)  => .subst .sort
-  | `(fwd_rw_src|↦lit)   => .subst .lit
-  | `(fwd_rw_src|↦proof) => .subst .proof
-  | `(fwd_rw_src|↦inst)  => .subst .inst
-  | `(fwd_rw_src|↦_)     => .subst .unknown
-  | `(fwd_rw_src|↦|)     => .subst .abort
-  | `(fwd_rw_src|↑bvar)  => .shift .bvar
-  | `(fwd_rw_src|↑app)   => .shift .app
-  | `(fwd_rw_src|↑λ)     => .shift .lam
-  | `(fwd_rw_src|↑∀)     => .shift .forall
-  | `(fwd_rw_src|↑fvar)  => .shift .fvar
-  | `(fwd_rw_src|↑mvar)  => .shift .mvar
-  | `(fwd_rw_src|↑sort)  => .shift .sort
-  | `(fwd_rw_src|↑lit)   => .shift .lit
-  | `(fwd_rw_src|↑proof) => .shift .proof
-  | `(fwd_rw_src|↑inst)  => .shift .inst
-  | `(fwd_rw_src|↑_)     => .shift .unknown
-  | `(fwd_rw_src|≡maxS)  => .level .maxSucc
-  | `(fwd_rw_src|≡max↔)  => .level .maxComm
-  | `(fwd_rw_src|≡imax0) => .level .imaxZero
-  | `(fwd_rw_src|≡imaxS) => .level .imaxSucc
-  | `(fwd_rw_src|≡η)     => .eta false
-  | `(fwd_rw_src|≡η+)    => .eta true
-  | `(fwd_rw_src|≡β)     => .beta
-  | `(fwd_rw_src|≡0)     => .natLit .zero
-  | `(fwd_rw_src|≡→S)    => .natLit .toSucc
-  | `(fwd_rw_src|≡S→)    => .natLit .ofSucc
-  | `(fwd_rw_src|≡+)     => .natLit .add
-  | `(fwd_rw_src|≡-)     => .natLit .sub
-  | `(fwd_rw_src|≡*)     => .natLit .mul
-  | `(fwd_rw_src|≡^)     => .natLit .pow
-  | `(fwd_rw_src|≡/)     => .natLit .div
-  | `(fwd_rw_src|"≡%")   => .natLit .mod
+  | `(fwd_rw_src|↦bvar)     => .subst .bvar
+  | `(fwd_rw_src|↦app)      => .subst .app
+  | `(fwd_rw_src|↦λ)        => .subst .lam
+  | `(fwd_rw_src|↦∀)        => .subst .forall
+  | `(fwd_rw_src|↦fvar)     => .subst .fvar
+  | `(fwd_rw_src|↦mvar)     => .subst .mvar
+  | `(fwd_rw_src|↦sort)     => .subst .sort
+  | `(fwd_rw_src|↦const)    => .subst .const
+  | `(fwd_rw_src|↦lit)      => .subst .lit
+  | `(fwd_rw_src|↦proof)    => .subst .proof
+  | `(fwd_rw_src|↦inst)     => .subst .inst
+  | `(fwd_rw_src|↦_)        => .subst .unknown
+  | `(fwd_rw_src|↦|)        => .subst .abort
+  | `(fwd_rw_src|↑bvar)     => .shift .bvar
+  | `(fwd_rw_src|↑app)      => .shift .app
+  | `(fwd_rw_src|↑λ)        => .shift .lam
+  | `(fwd_rw_src|↑∀)        => .shift .forall
+  | `(fwd_rw_src|↑fvar)     => .shift .fvar
+  | `(fwd_rw_src|↑mvar)     => .shift .mvar
+  | `(fwd_rw_src|↑sort)     => .shift .sort
+  | `(fwd_rw_src|↑const)    => .shift .const
+  | `(fwd_rw_src|↑lit)      => .shift .lit
+  | `(fwd_rw_src|↑proof)    => .shift .proof
+  | `(fwd_rw_src|↑inst)     => .shift .inst
+  | `(fwd_rw_src|↑_)        => .shift .unknown
+  | `(fwd_rw_src|≡maxS)     => .level .maxSucc
+  | `(fwd_rw_src|≡max↔)     => .level .maxComm
+  | `(fwd_rw_src|≡imax0)    => .level .imaxZero
+  | `(fwd_rw_src|≡imaxS)    => .level .imaxSucc
+  | `(fwd_rw_src|≡η)        => .eta false
+  | `(fwd_rw_src|≡η+)       => .eta true
+  | `(fwd_rw_src|≡β)        => .beta
+  | `(fwd_rw_src|≡proj<$i>) => .proj i.getNat
+  | `(fwd_rw_src|≡0)        => .natLit .zero
+  | `(fwd_rw_src|≡→S)       => .natLit .toSucc
+  | `(fwd_rw_src|≡S→)       => .natLit .ofSucc
+  | `(fwd_rw_src|≡+)        => .natLit .add
+  | `(fwd_rw_src|≡-)        => .natLit .sub
+  | `(fwd_rw_src|≡*)        => .natLit .mul
+  | `(fwd_rw_src|≡^)        => .natLit .pow
+  | `(fwd_rw_src|≡/)        => .natLit .div
+  | `(fwd_rw_src|"≡%")      => .natLit .mod
   | `(fwd_rw_src|$src:basic_fwd_rw_src$tcExts:tc_extension*) =>
     tcExts.foldl (init := parseBasicFwdRwSrc src) parseTcExtension
   | `(fwd_rw_src|$src:basic_fwd_rw_src💥→[$idxs:num,*]) =>

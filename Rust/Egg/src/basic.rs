@@ -93,12 +93,12 @@ fn mk_initial_egraph(
     }
 
     // Adds `True` as a fact to the e-graph.
-    let true_expr = "(const \"True\")".parse().unwrap();
+    let true_expr = "(const \"True\" ⋯)".parse().unwrap();
     let true_fact = format!("(fact {})", true_expr).parse().unwrap();
     egraph.add_expr(&true_fact); 
 
     // Marks `p ∧ q` as a fact for any given facts `p` and `q`.
-    let and_true_expr = "(app (app (const \"And\") (const \"True\")) (const \"True\"))".parse().unwrap();
+    let and_true_expr = "(app (app (const \"And\" ⋯) (const \"True\" ⋯)) (const \"True\" ⋯))".parse().unwrap();
     egraph.union_instantiations(&true_expr, &and_true_expr, &Subst::with_capacity(0), "∧");
 
     Ok(Initialized { egraph, init_id, init_expr, goal_id, goal_expr })
@@ -138,8 +138,8 @@ fn mk_rewrites(
 fn mk_runner(
     egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_path: Option<String>
 ) -> Runner<LeanExpr, LeanAnalysis> {
-    let true_expr = "(const \"True\")".parse().unwrap();
-    let true_id = egraph.lookup_expr(&"(const \"True\")".parse().unwrap()).unwrap();
+    let true_expr = "(const \"True\" ⋯)".parse().unwrap();
+    let true_id = egraph.lookup_expr(&"(const \"True\" ⋯)".parse().unwrap()).unwrap();
     
     let mut runner = Runner::default()
         .with_egraph(egraph)
@@ -183,7 +183,7 @@ fn collect_rw_stats(runner: &Runner<LeanExpr, LeanAnalysis>) -> String {
         for (rw, count) in &iter.applied {
             let rw_str    = rw.to_string();
             let normal_rw = rw_str.strip_suffix("-rev").unwrap_or(&rw_str);
-            longest_rw = longest_rw.max(normal_rw.chars().count());
+            longest_rw    = longest_rw.max(normal_rw.chars().count());
 
             let current   = stats.get(normal_rw).unwrap_or(&0);
             stats.insert(normal_rw.to_string(), current + count);

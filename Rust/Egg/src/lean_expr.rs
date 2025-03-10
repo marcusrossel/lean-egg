@@ -8,26 +8,27 @@ define_language! {
 
         // Encoding of universe levels:
         // Note, we don't encode `zero` explicitly and use `Nat(0)` for that instead.
-        "uvar"  = UVar(Id),      // (Nat)
-        "param" = Param(Id),     // (Str)
-        "succ"  = Succ(Id),      // (<level>)
-        "max"   = Max([Id; 2]),  // (<level>, <level>)
-        "imax"  = IMax([Id; 2]), // (<level>, <level>)
+        "uvar"  = UVar(Id),          // (Nat)
+        "param" = Param(Id),         // (Str)
+        "succ"  = Succ(Id),          // (<level>)
+        "max"   = Max([Id; 2]),      // (<level>, <level>)
+        "imax"  = IMax([Id; 2]),     // (<level>, <level>)
+        "⋯"     = Levels(Box<[Id]>), // (<level>*)
         
         // Encoding of expressions:
-        "bvar"  = BVar(Id),         // (Nat)
-        "fvar"  = FVar(Id),         // (Nat)
-        "mvar"  = MVar(Id),         // (Nat)
-        "sort"  = Sort(Id),         // (<level>)
-        "const" = Const(Box<[Id]>), // (Str, <level>*)
-        "app"   = App([Id; 2]),     // (<expr>, <expr>)
-        "λ"     = Lam([Id; 2]),     // (<expr>, <expr>)
-        "∀"     = Forall([Id; 2]),  // (<expr>, <expr>)
-        "lit"   = Lit(Id),          // (Nat | Str)
+        "bvar"  = BVar(Id),        // (Nat)
+        "fvar"  = FVar(Id),        // (Nat)
+        "mvar"  = MVar(Id),        // (Nat)
+        "sort"  = Sort(Id),        // (<level>)
+        "const" = Const([Id; 2]),  // (Str, <levels>)
+        "app"   = App([Id; 2]),    // (<expr>, <expr>)
+        "λ"     = Lam([Id; 2]),    // (<expr>, <expr>)
+        "∀"     = Forall([Id; 2]), // (<expr>, <expr>)
+        "lit"   = Lit(Id),         // (Nat | Str)
 
         // Constructs for structures:
-        "proj" = Proj([Id; 2]), // (Str, Nat)
-        "mk"   = Mk(Box<[Id]>), // (Str, <level>*)
+        "proj" = Proj([Id; 3]), // (Str, Nat, <levels>)
+        "mk"   = Mk([Id; 2]),   // (Str, <levels>)
 
         // Constructs for erasure:
         // Note that we also use these constructors to tag rewrite conditions (depending on whether
@@ -83,5 +84,13 @@ impl LeanExpr {
             LeanExpr::Lam(_) | LeanExpr::Forall(_) => true,
             _                                      => false
         }
+    }
+
+    pub fn is_primitive(&self) -> bool {
+        matches!(self, 
+            LeanExpr::Nat(_) | LeanExpr::Str(_) | LeanExpr::UVar(_) | LeanExpr::Param(_) | 
+            LeanExpr::Succ(_) | LeanExpr::Max(_) | LeanExpr::IMax(_) | LeanExpr::Levels(_) | 
+            LeanExpr::Fact(_) | LeanExpr::Fun(_) | LeanExpr::Unknown
+        )
     }
 }

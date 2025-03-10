@@ -102,20 +102,20 @@ impl Applier<LeanExpr, LeanAnalysis> for BinderSubst {
 // TODO: Is this ok when using intersection semantics?
 pub fn subst_rws() -> Vec<LeanRewrite> {
     let mut rws = vec![];
-    rws.push(rewrite!("↦bvar";  "(↦ ?f ?t (bvar ?b))"   => { BVarSubst   { from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), bvar_idx : "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↦app";   "(↦ ?f ?t (app ?a ?b))" => { BasicSubst  { ctor: "app".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), left   : "?a".parse().unwrap(), right : "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↦=";     "(↦ ?f ?t (= ?a ?b))"  => { BasicSubst  { ctor: "=".to_string(),   from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), left   : "?a".parse().unwrap(), right : "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↦λ";     "(↦ ?f ?t (λ ?a ?b))"   => { BinderSubst { binder: "λ".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), domain : "?a".parse().unwrap(), body  : "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↦∀";     "(↦ ?f ?t (∀ ?a ?b))"   => { BinderSubst { binder: "∀".to_string(), from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), domain : "?a".parse().unwrap(), body  : "?b".parse().unwrap() }}));
-    rws.push(rewrite!("↦fvar";  "(↦ ?f ?t (fvar ?x))"   => "(fvar ?x)"));
-    rws.push(rewrite!("↦mvar";  "(↦ ?f ?t (mvar ?x))"   => "(mvar ?x)"));
-    rws.push(rewrite!("↦sort";  "(↦ ?f ?t (sort ?x))"   => "(sort ?x)"));
-    // TODO: "↦const" - how do we match an unknown number of level arguments?
-    rws.push(rewrite!("↦lit";   "(↦ ?f ?t (lit ?x))"    => "(lit ?x)"));
+    rws.push(rewrite!("↦bvar";  "(↦ ?f ?t (bvar ?b))"     => { BVarSubst   { from_idx : "?f".parse().unwrap(), to : "?t".parse().unwrap(), bvar_idx : "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↦app";   "(↦ ?f ?t (app ?a ?b))"   => { BasicSubst  { ctor: "app".to_string(), from_idx: "?f".parse().unwrap(), to: "?t".parse().unwrap(), left:   "?a".parse().unwrap(), right: "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↦=";     "(↦ ?f ?t (= ?a ?b))"     => { BasicSubst  { ctor: "=".to_string(),   from_idx: "?f".parse().unwrap(), to: "?t".parse().unwrap(), left:   "?a".parse().unwrap(), right: "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↦λ";     "(↦ ?f ?t (λ ?a ?b))"     => { BinderSubst { binder: "λ".to_string(), from_idx: "?f".parse().unwrap(), to: "?t".parse().unwrap(), domain: "?a".parse().unwrap(), body:  "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↦∀";     "(↦ ?f ?t (∀ ?a ?b))"     => { BinderSubst { binder: "∀".to_string(), from_idx: "?f".parse().unwrap(), to: "?t".parse().unwrap(), domain: "?a".parse().unwrap(), body:  "?b".parse().unwrap() }}));
+    rws.push(rewrite!("↦fvar";  "(↦ ?f ?t (fvar ?x))"     => "(fvar ?x)"));
+    rws.push(rewrite!("↦mvar";  "(↦ ?f ?t (mvar ?x))"     => "(mvar ?x)"));
+    rws.push(rewrite!("↦sort";  "(↦ ?f ?t (sort ?x))"     => "(sort ?x)"));
+    rws.push(rewrite!("↦const"; "(↦ ?f ?t (const ?x ?l))" => "(const ?x ?l)"));
+    rws.push(rewrite!("↦lit";   "(↦ ?f ?t (lit ?x))"      => "(lit ?x)"));
     // TODO: We don't propagate substitutions over erased terms at the moment.
-    rws.push(rewrite!("↦proof"; "(↦ ?f ?t (proof ?x))"  => "(proof ?x)"));
-    rws.push(rewrite!("↦inst";  "(↦ ?f ?t (inst ?x))"   => "(inst ?x)"));
-    rws.push(rewrite!("↦_";     "(↦ ?f ?t _)"           => "_"));
+    rws.push(rewrite!("↦proof"; "(↦ ?f ?t (proof ?x))"    => "(proof ?x)"));
+    rws.push(rewrite!("↦inst";  "(↦ ?f ?t (inst ?x))"     => "(inst ?x)"));
+    rws.push(rewrite!("↦_";     "(↦ ?f ?t _)"             => "_"));
     // Note: We don't handle the propagation of substitutions over facts, as a substitution should 
     //       never even be applied to a fact.
     rws

@@ -70,13 +70,6 @@ impl Analysis<LeanExpr> for LeanAnalysis {
                     ..Default::default() 
                 },
 
-            LeanExpr::Str(_) | LeanExpr::Fun(_) | LeanExpr::UVar(_) | LeanExpr::Param(_) | 
-            LeanExpr::Succ(_) | LeanExpr::Max(_) | LeanExpr::IMax(_) | LeanExpr::Fact(_) | 
-            LeanExpr::Unknown => 
-                Self::Data { 
-                    ..Default::default() 
-                },
-            
             LeanExpr::BVar(idx) => 
                 Self::Data { 
                     loose_bvars: match egraph[*idx].data.nat_val { 
@@ -88,7 +81,10 @@ impl Analysis<LeanExpr> for LeanAnalysis {
             
             LeanExpr::App([fun, arg]) => 
                 Self::Data { 
-                    loose_bvars: union_clone(&egraph[*fun].data.loose_bvars, &egraph[*arg].data.loose_bvars),
+                    loose_bvars: union_clone(
+                        &egraph[*fun].data.loose_bvars, 
+                        &egraph[*arg].data.loose_bvars
+                    ),
                     ..Default::default() 
                 },
             

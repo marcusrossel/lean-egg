@@ -27,7 +27,7 @@ impl ExplanationKind {
         }
 
         let eq_expr = format!("(= {} {})", init_expr, goal_expr).parse().unwrap();
-        let true_expr = "(const \"True\")".parse().unwrap();
+        let true_expr = "(const \"True\" ⋯)".parse().unwrap();
         let true_id = egraph.lookup_expr(&true_expr).unwrap();
         
         // Note: `lookup_expr` canonicalizes ids.
