@@ -135,6 +135,17 @@ fn mk_rewrites(
     Ok((eqs, rws))
 }
 
+pub struct AstSizeAvoidingBVars;
+impl CostFunction<LeanExpr> for AstSizeAvoidingBVars {
+    type Cost = usize;
+    fn cost<C>(&mut self, enode: &LeanExpr, mut costs: C) -> Self::Cost where C: FnMut(Id) -> Self::Cost {
+        match enode {
+            LeanExpr::BVar(_) => 1000000,
+            _                 => enode.fold(1, |sum, id| sum.saturating_add(costs(id)))
+        }
+    }
+}
+
 fn mk_runner(
     egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_path: Option<String>
 ) -> Runner<LeanExpr, LeanAnalysis> {
@@ -157,7 +168,9 @@ fn mk_runner(
         .with_hook(move |runner| {
             for class in runner.egraph.classes().map(|x| x.id).collect::<Vec<_>>() {
                 if is_primitive(class, &runner.egraph) { continue }
-                let (_, rep) = Extractor::new(&runner.egraph, AstSize).find_best(class);
+                // TODO: This can extract bound variables, which we need to handle in proof 
+                //       reconstruction.
+                let (_, rep) = Extractor::new(&runner.egraph, AstSizeAvoidingBVars).find_best(class);
                 let eq_expr = format!("(= {} {})", rep, rep).parse().unwrap();
                 runner.egraph.union_instantiations(&eq_expr, &true_expr, &Subst::with_capacity(0), "=");
             }

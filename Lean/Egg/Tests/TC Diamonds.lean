@@ -55,7 +55,7 @@ theorem test [Ring α] (a b : α) : a + b = b + a := by
   egg!
 
 theorem just_nested [Ring α] (a : α) : (a + zero) * one = a := by
- egg!
+  egg!
 
 theorem combine_classes [Ring α] (a b c : α) (h : b + c = one) : (a + (b + -b)) * (b + c) = a := by
   egg! [h]

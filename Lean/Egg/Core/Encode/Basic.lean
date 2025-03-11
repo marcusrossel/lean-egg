@@ -99,10 +99,9 @@ where
 
   encodeProj (structName : Name) (idx : Nat) (body : Expr) : EncodeM Expression := do
     -- TODO: Is there a better way of obtaining the values of implicit arguments and levels in the
-    --       application, than calling `mkAppM`? What happens if some of them are supposed to be
-    --       mvars? In that case it seems like it might be better to simply eliminate `proj` during
-    --       normalization again.
-    let some projFn := (getStructureFields (← getEnv) structName)[idx]?
+    --       application, than calling `mkProjection`? What happens if some of them are supposed to
+    --       be mvars? In that case it seems like it might be better to simply eliminate `proj`
+    --       during normalization again.
+    let some field := (getStructureFields (← getEnv) structName)[idx]?
       | throwError "'Egg.normalize' failed to encode 'proj'"
-    let app ← Meta.mkAppM projFn #[body]
-    go app
+    go (← Meta.mkProjection body field)

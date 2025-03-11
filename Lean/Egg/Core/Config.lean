@@ -31,11 +31,12 @@ structure Gen where
   deriving BEq
 
 structure DefEq where
-  natLit    := true
-  eta       := true
-  etaExpand := false
-  beta      := true
-  levels    := true
+  natLit     := true
+  eta        := true
+  etaExpand  := false
+  beta       := true
+  levels     := true
+  structProj := true
 
 structure Backend where
   blockInvalidMatches := true

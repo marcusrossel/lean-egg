@@ -1,6 +1,7 @@
 import Egg.Core.Explanation.Parse.Shared
 import Lean
-open Lean Meta
+open Lean hiding HashMap
+open Meta Std
 
 namespace Egg.Explanation
 
@@ -22,7 +23,7 @@ private inductive Expression where
   | subst  (idx : Nat) (to e : Expression)
   | shift  (offset : Int) (cutoff : Nat) (e : Expression)
   | unknown
-  deriving Inhabited
+  deriving Inhabited, BEq, Hashable
 
 private def Expression.toExpr : Expression → MetaM Expr
   | bvar idx             => return .bvar idx
@@ -186,11 +187,28 @@ def parseEggExpl : (TSyntax `egg_expl) → MetaM Explanation.Steps
   | `(egg_expl|$steps:egg_expr*) => do
     let some start := steps[0]? | throwError ParseError.noSteps
     let .ok (start, none) := parseExpr start | throwError ParseError.startContainsRw
-    let mut tl : Array Step := #[]
+    let mut dupMap : HashMap Expression Nat := {}
+    let mut exprs : Array Expression        := #[]
+    let mut infos : Array Rewrite.Info      := #[]
+    let mut idx := 0
     for step in steps[1:] do
       match parseExpr step with
       | .error e             => throwError e
       | .ok (_, none)        => throwError ParseError.missingRw
-      | .ok (dst, some info) => tl := tl.push { info with dst := ← dst.toExpr }
+      | .ok (dst, some info) =>
+        if let some dupIdx := dupMap[dst]? then
+          exprs := exprs[:dupIdx + 1]
+          infos := infos[:dupIdx + 1]
+          idx   := dupIdx + 1
+          -- TODO: We're not clearing the dupMap elements with an index of > dupIdx. This could
+          --       cause problems if we have multiple duplications.
+        else
+          exprs  := exprs.push dst
+          infos  := infos.push info
+          dupMap := dupMap.insert dst idx
+          idx    := idx + 1
+    let mut tl : Array Step := #[]
+    for expr in exprs, info in infos do
+      tl := tl.push { info with dst := ← expr.toExpr }
     return { start := ← start.toExpr, steps := tl }
   | _ => unreachable!

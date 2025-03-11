@@ -36,18 +36,23 @@ struct ProjApplier {
 impl Applier<LeanExpr, LeanAnalysis> for ProjApplier {
 
     fn apply_one(&self, graph: &mut LeanEGraph, id: Id, subst: &Subst, ast: Option<&PatternAst<LeanExpr>>, rule: Symbol) -> Vec<Id> {
+        use std::fs::OpenOptions;
+        use std::io::prelude::*;
+        let mut file = OpenOptions::new().write(true).append(true).open("/Users/marcus/Desktop/dot/log.txt").unwrap();
+        let _ = writeln!(file, "start {}", rule);
+        
         let Some(LeanExpr::Str(struct_name)) = graph[subst[self.struct_name]].nodes.first() else { return vec![] };
         let Some(info) = self.struct_info.get(struct_name) else { return vec![] };
         let Some(LeanExpr::Nat(proj_idx)) = graph[subst[self.proj_idx]].nodes.first() else { return vec![] };
         let (struct_val_pat, field_vars) = info.pattern(struct_name);
         let field_var = field_vars[*proj_idx as usize];
-        
+
         // TODO: This is a hacky way of combining `ast` with `struct_val_pat`. Is there a nicer way?
-        let complete_pat: Pattern<_> = ast.unwrap().to_string().replace(
+        let complete_pat: Pattern<_> = ast.unwrap().to_string().replace( 
             &self.struct_val.to_string(), 
             &struct_val_pat.to_string()
         ).parse().unwrap();
-        
+
         // TODO: It would be more efficient to only search the `struct_val_id` e-class with the 
         //       `struct_val_pat`, instead of repeating the search of the outer pattern as part of
         //       `complete_pat`. The only problem with this is that the resulting subst from the 
@@ -65,7 +70,12 @@ impl Applier<LeanExpr, LeanAnalysis> for ProjApplier {
         //     if did_change { changed.push(i); }
         // }
         graph.rebuild();
-        let Some(matches) = complete_pat.search_eclass(graph, id) else { return vec![] };
+        let _ = writeln!(file, "after rebuild: {complete_pat}");
+        let Some(matches) = complete_pat.search_eclass(graph, id) else { 
+            let _ = writeln!(file, "no match");
+            return vec![] 
+        };
+        let _ = writeln!(file, "match");
 
         let mut changed = vec![];
         for subst in matches.substs {

@@ -21,6 +21,7 @@ structure Modifier where
   etaExpand           : Option Bool            := none
   beta                : Option Bool            := none
   levels              : Option Bool            := none
+  structProj          : Option Bool            := none
   explosion           : Option Bool            := none
   derivedGuides       : Option Bool            := none
   genGroundEqs        : Option Bool            := none
@@ -56,6 +57,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   etaExpand           := mod.etaExpand.getD cfg.etaExpand
   beta                := mod.beta.getD cfg.beta
   levels              := mod.levels.getD cfg.levels
+  structProj          := mod.structProj.getD cfg.structProj
   explosion           := mod.explosion.getD cfg.explosion
   derivedGuides       := mod.derivedGuides.getD cfg.derivedGuides
   genGroundEqs        := mod.genGroundEqs.getD cfg.genGroundEqs

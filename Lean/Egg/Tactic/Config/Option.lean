@@ -54,6 +54,7 @@ register_egg_options
   etaExpand
   beta
   levels
+  structProj
   explosion
   derivedGuides
   genGroundEqs

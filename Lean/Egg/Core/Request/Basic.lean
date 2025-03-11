@@ -74,6 +74,7 @@ def encoding (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) : 
   }
 where
   structInfos : MetaM (Array StructInfo) := do
+    unless cfg.structProj do return #[]
     let infos ← guides.structInfos <| ← rws.structInfos <| ← goal.structInfos
     return infos.toArray.map fun ⟨n, i⟩ => {
       name := s!"{n}", params := i.params, fields := i.fields
