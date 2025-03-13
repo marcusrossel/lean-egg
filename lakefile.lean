@@ -48,4 +48,4 @@ extern_lib slotted_for_lean pkg := do
   IO.FS.writeBinFile tgtPath (← IO.FS.readBinFile srcPath)
   return pure tgtPath
 
-require "nomeata" / "calcify" @ git "master"
+require "nomeata" / "calcify" @ git "eb8ace02fd6782960567f55462897375d9ae8ae6"
