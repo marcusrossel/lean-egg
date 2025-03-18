@@ -101,23 +101,17 @@ where
       unless cfg.reporting do return msg
       return msg ++ formatReport cfg.flattenReports report
 
-syntax &"egg " egg_cfg_mod egg_premises (egg_guides)? : tactic
+syntax &"egg " (ident)? egg_cfg_mod egg_premises (egg_guides)? : tactic
 elab_rules : tactic
-  | `(tactic| egg $mod $prems $[$guides]?) => Egg.eval mod prems guides
+  | `(tactic| egg $[$basket?]? $mod $prems $[$guides]?) =>
+    Egg.eval mod prems guides (basket? := basket?.map (·.getId))
 
 -- WORKAROUND: This fixes `Tests/EndOfInput *`.
-macro "egg " mod:egg_cfg_mod : tactic => `(tactic| egg $mod)
-
--- The syntax `egg!` calls egg with the global egg basket.
-elab "egg! " mod:egg_cfg_mod prems:egg_premises guides:(egg_guides)? : tactic =>
-  Egg.eval mod prems guides (basket? := `egg)
-
--- WORKAROUND: This fixes a problem analogous to `Tests/EndOfInput *` for `egg!`.
-macro "egg! " mod:egg_cfg_mod : tactic => `(tactic| egg! $mod)
+macro "egg " basket?:(ident)? mod:egg_cfg_mod : tactic => `(tactic| egg $[$basket?]? $mod)
 
 -- The syntax `egg?` calls calcify after running egg.
-elab tk:"egg? " mod:egg_cfg_mod prems:egg_premises guides:(egg_guides)? : tactic =>
-  Egg.eval mod prems guides (basket? := none) (calcifyTk? := tk)
+elab tk:"egg? " basket?:(ident)? mod:egg_cfg_mod prems:egg_premises guides:(egg_guides)? : tactic =>
+  Egg.eval mod prems guides (basket? := basket?.map (·.getId)) (calcifyTk? := tk)
 
 -- WORKAROUND: This fixes a problem analogous to `Tests/EndOfInput *` for `egg?`.
-macro "egg? " mod:egg_cfg_mod : tactic => `(tactic| egg? $mod)
+macro "egg? " basket?:(ident)? mod:egg_cfg_mod : tactic => `(tactic| egg? $[$basket?]? $mod)

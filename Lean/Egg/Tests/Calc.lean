@@ -32,7 +32,6 @@ example (h₁ : a = b) (h₂ : b = c) : a = c := by
     a = b with [h₁]
     _ = c with [h₂]
 
-set_option trace.egg true in
 example (h₁ : 0 = 0 → a = b) : a = b := by
   egg calc [h₁, (rfl : 0 = 0)]
     _ = _

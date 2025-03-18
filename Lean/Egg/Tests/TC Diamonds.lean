@@ -32,18 +32,18 @@ class Semiring (α : Type _) extends AddCommMonoid α where
 
 class Ring (α : Type _) extends Semiring α, AddCommGroup α where
 
-attribute [egg] AddCommMonoid.add_zero
-attribute [egg] AddCommMonoid.zero_add
-attribute [egg] AddCommMonoid.add_comm
-attribute [egg] AddCommGroup.add_neg
-attribute [egg] AddCommGroup.neg_add
-attribute [egg] Semiring.mul_assoc
-attribute [egg] Semiring.mul_one
-attribute [egg] Semiring.one_mul
-attribute [egg] Semiring.left_distrib
-attribute [egg] Semiring.right_distrib
-attribute [egg] Semiring.zero_mul
-attribute [egg] Semiring.mul_zero
+attribute [egg ring] AddCommMonoid.add_zero
+attribute [egg ring] AddCommMonoid.zero_add
+attribute [egg ring] AddCommMonoid.add_comm
+attribute [egg ring] AddCommGroup.add_neg
+attribute [egg ring] AddCommGroup.neg_add
+attribute [egg ring] Semiring.mul_assoc
+attribute [egg ring] Semiring.mul_one
+attribute [egg ring] Semiring.one_mul
+attribute [egg ring] Semiring.left_distrib
+attribute [egg ring] Semiring.right_distrib
+attribute [egg ring] Semiring.zero_mul
+attribute [egg ring] Semiring.mul_zero
 
 open AddCommMonoid AddCommGroup Semiring Ring
 
@@ -52,13 +52,13 @@ infixl:70 (priority := high) " * " => mul
 prefix:75 (priority := high) "-"   => Ring.neg
 
 theorem test [Ring α] (a b : α) : a + b = b + a := by
-  egg!
+  egg ring
 
 theorem just_nested [Ring α] (a : α) : (a + zero) * one = a := by
- egg!
+  egg ring
 
 theorem combine_classes [Ring α] (a b c : α) (h : b + c = one) : (a + (b + -b)) * (b + c) = a := by
-  egg! [h]
+  egg ring [h]
 
 end Nested
 
@@ -83,18 +83,18 @@ class Ring (α : Type _) where
   add_neg : ∀ a : α, add (neg a) a = zero
   neg_add : ∀ a : α, add a (neg a) = zero
 
-attribute [egg] Ring.add_zero
-attribute [egg] Ring.zero_add
-attribute [egg] Ring.add_comm
-attribute [egg] Ring.add_neg
-attribute [egg] Ring.neg_add
-attribute [egg] Ring.mul_assoc
-attribute [egg] Ring.mul_one
-attribute [egg] Ring.one_mul
-attribute [egg] Ring.left_distrib
-attribute [egg] Ring.right_distrib
-attribute [egg] Ring.zero_mul
-attribute [egg] Ring.mul_zero
+attribute [egg ring] Ring.add_zero
+attribute [egg ring] Ring.zero_add
+attribute [egg ring] Ring.add_comm
+attribute [egg ring] Ring.add_neg
+attribute [egg ring] Ring.neg_add
+attribute [egg ring] Ring.mul_assoc
+attribute [egg ring] Ring.mul_one
+attribute [egg ring] Ring.one_mul
+attribute [egg ring] Ring.left_distrib
+attribute [egg ring] Ring.right_distrib
+attribute [egg ring] Ring.zero_mul
+attribute [egg ring] Ring.mul_zero
 
 open Ring
 
@@ -103,12 +103,12 @@ infixl:70 (priority := high) " * " => mul
 prefix:75 (priority := high) "-"   => neg
 
 theorem test [Ring α] (a b : α) : a + b = b + a := by
-  egg!
+  egg ring
 
 theorem just_nested [Ring α] (a : α) : (a + zero) * one = a := by
-  egg!
+  egg ring
 
 theorem combine_classes [Ring α] (a b c : α) (h : b + c = one) : (a + (b + -b)) * (b + c) = a := by
-  egg! [h]
+  egg ring [h]
 
 end Flat

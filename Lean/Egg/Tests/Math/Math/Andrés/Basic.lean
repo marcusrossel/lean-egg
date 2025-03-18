@@ -89,26 +89,26 @@ section SemilatticeSup
 
 variable [SemilatticeSup α] {a b c : α}
 
-attribute [egg] Mathlib.Tactic.PushNeg.not_not_eq
-attribute [egg] Mathlib.Tactic.PushNeg.not_and_eq
-attribute [egg] Mathlib.Tactic.PushNeg.not_and_or_eq
-attribute [egg] Mathlib.Tactic.PushNeg.not_or_eq
-attribute [egg] Mathlib.Tactic.PushNeg.not_forall_eq
-attribute [egg] Mathlib.Tactic.PushNeg.not_exists_eq
-attribute [egg] Mathlib.Tactic.PushNeg.not_implies_eq
-attribute [egg] Mathlib.Tactic.PushNeg.not_ne_eq
-attribute [egg] Mathlib.Tactic.PushNeg.not_iff
+attribute [egg neg] Mathlib.Tactic.PushNeg.not_not_eq
+attribute [egg neg] Mathlib.Tactic.PushNeg.not_and_eq
+attribute [egg neg] Mathlib.Tactic.PushNeg.not_and_or_eq
+attribute [egg neg] Mathlib.Tactic.PushNeg.not_or_eq
+attribute [egg neg] Mathlib.Tactic.PushNeg.not_forall_eq
+attribute [egg neg] Mathlib.Tactic.PushNeg.not_exists_eq
+attribute [egg neg] Mathlib.Tactic.PushNeg.not_implies_eq
+attribute [egg neg] Mathlib.Tactic.PushNeg.not_ne_eq
+attribute [egg neg] Mathlib.Tactic.PushNeg.not_iff
 
 set_option egg.slotted true in
 example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
   have  h : ∀ (a_1 b : α), a_1 ⊔ b = a ∧ ¬a_1 = a ∧ ¬b = a ↔ a_1 ⊔ b = a ∧ a_1 < a ∧ b < a  := by
     simp (config := { contextual := true }) [@eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
-  egg! [SupIrred, exists₂_congr h]
+  egg neg [SupIrred, exists₂_congr h]
 
 set_option egg.slotted false in
 example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
   have  h : ∀ (a_1 b : α), a_1 ⊔ b = a ∧ ¬a_1 = a ∧ ¬b = a ↔ a_1 ⊔ b = a ∧ a_1 < a ∧ b < a  := by
     simp (config := { contextual := true }) [@eq_comm _ _ a, ne_eq, and_congr_right_iff, sup_eq_left, sup_eq_right, left_lt_sup, right_lt_sup, implies_true]
-  egg! [SupIrred, exists₂_congr h]
+  egg neg [SupIrred, exists₂_congr h]
 
 end SemilatticeSup

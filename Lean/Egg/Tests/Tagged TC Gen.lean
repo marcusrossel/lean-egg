@@ -11,7 +11,7 @@ instance : C Nat where
 
 open C
 
-@[egg]
+@[egg basket]
 theorem r [c : C α] : z (self := c) = z := rfl
 
 /--
@@ -57,4 +57,4 @@ set_option trace.egg.rewrites true in
 egg_no_defeq in
 set_option egg.builtins false in
 example : Nat.zero = Nat.zero := by
-  egg!
+  egg basket

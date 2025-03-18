@@ -4,43 +4,34 @@ open Std (HashMap)
 
 namespace Egg
 
+abbrev Basket.Key := Name
+
 -- TODO: Have this be a `Lean.Meta.SimpEntry`.
 abbrev Basket.Entry := Name
 
 -- TODO: Have this be a discrimination tree.
-abbrev Basket := Array Basket.Entry
+abbrev Basket.Entries := Array Basket.Entry
 
-abbrev Extension := SimpleScopedEnvExtension Basket.Entry Basket
+open Basket in
+abbrev Extension := SimpleScopedEnvExtension (Key × Entry) (HashMap Key Entries)
 
-namespace Extension
+initialize extension : Extension ← registerSimpleScopedEnvExtension {
+  initial    := ∅,
+  addEntry s := fun ⟨key, entry⟩ => s.alter key (·.getD #[] |>.push entry)
+}
 
-def getBasket (ext : Extension) : CoreM Basket :=
-  return ext.getState (← getEnv)
+def Extension.getBasket (ext : Extension) (key : Basket.Key) : CoreM Basket.Entries :=
+  return (ext.getState <| ← getEnv)[key]?.getD #[]
 
-def addEntry (ext : Extension) (entry : Basket.Entry) (kind : AttributeKind) : MetaM Unit := do
-  -- TODO: Validate the entry.
-  ext.add entry kind
-
-abbrev Map := Std.HashMap Name Extension
-
-initialize mapRef : IO.Ref Map ← IO.mkRef {}
-
--- Remark: `registerAttribute` will fail if it is not performed during initialization.
-def register (attrName : Name) (attrDescr : String) (name := decl_name%) : IO Extension := do
-  let ext ← registerSimpleScopedEnvExtension { name, initial := #[], addEntry := Array.push }
-  registerAttribute attrName attrDescr ext name
-  mapRef.modify (·.insert attrName ext)
-  return ext
-where
-  registerAttribute (name : Name) (descr : String) (ext : Extension) (ref := decl_name%) : IO Unit :=
-    -- TODO: I'm guessing we should use some other function, which does not mention "builtin".
-    registerBuiltinAttribute {
-      ref, name, descr
-      applicationTime := .afterCompilation
-      add   := fun entry _ attrKind => discard <| (ext.addEntry entry attrKind).run {} {}
-      erase := fun entry => modifyEnv fun env => ext.modifyState env (·.erase entry)
-    }
-
-end Extension
-
-initialize extension : Extension ← Extension.register `egg "equality saturation theorem"
+initialize
+  -- TODO: I'm guessing we should use some other function, which does not mention "builtin".
+  registerBuiltinAttribute {
+    name  := `egg
+    descr := "equality saturation theorem"
+    applicationTime := .afterCompilation
+    add entry stx attrKind :=
+      -- TODO: Validate the entry.
+      match stx with
+      | `(Parser.Attr.simple|egg $key:ident) => extension.add (key.getId, entry) attrKind
+      | _                                    => throwError "'egg' attribute expectes a basket name"
+  }

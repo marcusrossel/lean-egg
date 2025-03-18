@@ -1,7 +1,7 @@
 import Egg
 
-macro "#basket" : command => `(
-  #eval show Lean.Meta.MetaM _ from return Egg.extension.getState (← Lean.getEnv)
+macro "#basket" key:ident : command => `(
+  #eval show Lean.Meta.MetaM _ from Egg.extension.getBasket $(Lean.quote key.getId)
 )
 
 class One (α) where one : α
@@ -19,11 +19,11 @@ class Group (α) extends Mul α, One α, Inv α where
 
 variable [Group α] (a b x y : α)
 
-attribute [egg] Group.mul_assoc
-attribute [egg] Group.one_mul
-attribute [egg] Group.mul_one
-attribute [egg] Group.inv_mul_self
-attribute [egg] Group.mul_inv_self
+attribute [egg group] Group.mul_assoc
+attribute [egg group] Group.one_mul
+attribute [egg group] Group.mul_one
+attribute [egg group] Group.inv_mul_self
+attribute [egg group] Group.mul_inv_self
 
 /-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
@@ -32,21 +32,21 @@ example : a⁻¹ * (a * b) = b := by egg
 /--
 info: #[`Group.mul_assoc, `Group.one_mul, `Group.mul_one, `Group.inv_mul_self, `Group.mul_inv_self]
 -/
-#guard_msgs in #basket
+#guard_msgs in #basket group
 
-@[egg]
-theorem inv_mul_cancel_left : a⁻¹ * (a * b) = b := by egg!
+@[egg group]
+theorem inv_mul_cancel_left : a⁻¹ * (a * b) = b := by egg group
 
 /--
 info: #[`Group.mul_assoc, `Group.one_mul, `Group.mul_one, `Group.inv_mul_self, `Group.mul_inv_self, `inv_mul_cancel_left]
 -/
-#guard_msgs in #basket
+#guard_msgs in #basket group
 
-@[egg]
-theorem mul_inv_cancel_left : a * (a⁻¹ * b) = b := by egg!
+@[egg group]
+theorem mul_inv_cancel_left : a * (a⁻¹ * b) = b := by egg group
 
 /--
 info: #[`Group.mul_assoc, `Group.one_mul, `Group.mul_one, `Group.inv_mul_self, `Group.mul_inv_self, `inv_mul_cancel_left,
   `mul_inv_cancel_left]
 -/
-#guard_msgs in #basket
+#guard_msgs in #basket group

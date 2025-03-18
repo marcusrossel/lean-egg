@@ -46,19 +46,17 @@ private def parseSteps : (TSyntax ``egg_calc_steps) → TacticM Steps
       $tail]*) => return { head := ← parseStep head, tail := ← tail.mapM parseStep }
   | _ => throwUnsupportedSyntax
 
-syntax &"egg " &"calc " egg_premises egg_calc_steps : tactic
+syntax &"egg " (ident)? &" calc " egg_premises egg_calc_steps : tactic
 
 private def eval
-    (prems : TSyntax `egg_premises) (steps : TSyntax ``egg_calc_steps) (bang : Bool := false) :
+    (basket? : Option Ident) (prems : TSyntax `egg_premises) (steps : TSyntax ``egg_calc_steps) :
     TacticM Unit := do
   withMainContext do
     let steps ← parseSteps steps
     let goals := steps.tail.map (·.goal)
     let stepToEgg (step : Step) : TacticM (TSyntax `tactic) := do
       let allPrems ← appendPremises step.prems prems
-      if bang
-      then `(tactic| egg! $step.mod $allPrems $[$step.guides]?)
-      else `(tactic| egg  $step.mod $allPrems $[$step.guides]?)
+      `(tactic| egg $[$basket?]? $step.mod $allPrems $[$step.guides]?)
     let tailEggs ← steps.tail.mapM stepToEgg
     let headEgg : Option (TSyntax `tactic) ← do
       if (← elabTerm steps.head.goal none).eqOrIff?.isSome
@@ -69,8 +67,5 @@ private def eval
                 $goals := by $tailEggs:tactic]*)
     evalTactic stx
 
-elab "egg " "calc " prems:egg_premises steps:egg_calc_steps : tactic =>
-  eval prems steps
-
-elab "egg! " "calc " prems:egg_premises steps:egg_calc_steps : tactic =>
-  eval prems steps (bang := true)
+elab "egg " basket?:(ident)? " calc " prems:egg_premises steps:egg_calc_steps : tactic =>
+  eval basket? prems steps

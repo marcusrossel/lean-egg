@@ -76,7 +76,6 @@ theorem right_lt_sup : b < a ⊔ b ↔ ¬a ≤ b := sorry
 
 -- Manual version: rw + simp
 example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
-  --egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
   rw [SupIrred, PushNeg.not_and_or]
   rw [ PushNeg.not_not, PushNeg.not_forall]
   simp[ PushNeg.not_forall]
@@ -86,7 +85,6 @@ example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a 
 
 -- Manual version: rw + simp
 example : ¬SupIrred a ↔ IsMin a ∨ ∃ b c, b ⊔ c = a ∧ b < a ∧ c < a := by
-  --egg! [SupIrred, not_and_or, exists₂_congr, eq_comm]
   rw [SupIrred, PushNeg.not_and_or]
   rw [ PushNeg.not_not, PushNeg.not_forall]
   simp[ PushNeg.not_forall]
