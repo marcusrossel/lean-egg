@@ -29,7 +29,10 @@ initialize
     name  := `egg
     descr := "equality saturation theorem"
     applicationTime := .afterCompilation
-    add entry stx attrKind :=
+    add entry stx attrKind := do
+      -- TODO: I feel like we would want `resolveGlobalConstNoOverload`, but when we pass an
+      --       identifier of the form `_root_.<name>` the `_root_` does not appear in the `entry`.
+      let entry ← unresolveNameGlobal entry
       -- TODO: Validate the entry.
       match stx with
       | `(Parser.Attr.simple|egg $key:ident) => extension.add (key.getId, entry) attrKind
