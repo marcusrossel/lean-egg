@@ -1,5 +1,6 @@
 import Egg.Core.Gen.Builtins
 import Egg.Core.Gen.Tagged
+import Egg.Core.Gen.StructProjs
 import Egg.Tactic.Goal
 import Egg.Tactic.Tags
 import Egg.Tactic.Premises.Parse
@@ -23,8 +24,9 @@ def gen (goal : Goal) (ps : TSyntax `egg_premises) (guides : Guides) (cfg : Conf
     return all
 where
   core : GenM Unit := open GenM in do
-    generate  .intros   do genIntros goal.intros.unzip.fst cfg
-    generate' .basic    do Premises.elab cfg cfg.genGroundEqs ps
-    generate  .tagged   do genTagged cfg
-    generate  .builtins do genBuiltins cfg
-    generate  .derived  do genDerived goal.toCongr (← allExceptGeneratedGroundEqs) guides cfg
+    generate  .intros     do genIntros goal.intros.unzip.fst cfg
+    generate' .basic      do Premises.elab cfg cfg.genGroundEqs ps
+    generate  .tagged     do genTagged cfg
+    generate  .builtins   do genBuiltins cfg
+    generate  .derived    do genDerived goal.toCongr (← allExceptGeneratedGroundEqs) guides cfg
+    generate  .structProj do genStructProjRws goal.toCongr (← all) guides cfg

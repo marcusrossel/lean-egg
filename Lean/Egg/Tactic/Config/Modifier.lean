@@ -12,6 +12,7 @@ structure Modifier where
   etaReduceRws        : Option Bool            := none
   natReduceRws        : Option Bool            := none
   builtins            : Option Bool            := none
+  genStructProjRws    : Option Bool            := none
   genTcProjRws        : Option Bool            := none
   genTcSpecRws        : Option Bool            := none
   genGoalTcSpec       : Option Bool            := none
@@ -47,6 +48,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   etaReduceRws        := mod.etaReduceRws.getD cfg.etaReduceRws
   natReduceRws        := mod.natReduceRws.getD cfg.natReduceRws
   builtins            := mod.builtins.getD cfg.builtins
+  genStructProjRws    := mod.genStructProjRws.getD cfg.genStructProjRws
   genTcProjRws        := mod.genTcProjRws.getD cfg.genTcProjRws
   genTcSpecRws        := mod.genTcSpecRws.getD cfg.genTcSpecRws
   genGoalTcSpec       := mod.genGoalTcSpec.getD cfg.genGoalTcSpec

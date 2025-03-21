@@ -83,18 +83,18 @@ class Ring (α : Type _) where
   add_neg : ∀ a : α, add (neg a) a = zero
   neg_add : ∀ a : α, add a (neg a) = zero
 
-attribute [egg ring] Ring.add_zero
-attribute [egg ring] Ring.zero_add
-attribute [egg ring] Ring.add_comm
-attribute [egg ring] Ring.add_neg
-attribute [egg ring] Ring.neg_add
-attribute [egg ring] Ring.mul_assoc
-attribute [egg ring] Ring.mul_one
-attribute [egg ring] Ring.one_mul
-attribute [egg ring] Ring.left_distrib
-attribute [egg ring] Ring.right_distrib
-attribute [egg ring] Ring.zero_mul
-attribute [egg ring] Ring.mul_zero
+attribute [egg ring'] Ring.add_zero
+attribute [egg ring'] Ring.zero_add
+attribute [egg ring'] Ring.add_comm
+attribute [egg ring'] Ring.add_neg
+attribute [egg ring'] Ring.neg_add
+attribute [egg ring'] Ring.mul_assoc
+attribute [egg ring'] Ring.mul_one
+attribute [egg ring'] Ring.one_mul
+attribute [egg ring'] Ring.left_distrib
+attribute [egg ring'] Ring.right_distrib
+attribute [egg ring'] Ring.zero_mul
+attribute [egg ring'] Ring.mul_zero
 
 open Ring
 
@@ -103,12 +103,12 @@ infixl:70 (priority := high) " * " => mul
 prefix:75 (priority := high) "-"   => neg
 
 theorem test [Ring α] (a b : α) : a + b = b + a := by
-  egg ring
+  egg ring'
 
 theorem just_nested [Ring α] (a : α) : (a + zero) * one = a := by
-  egg ring
+  egg ring'
 
 theorem combine_classes [Ring α] (a b c : α) (h : b + c = one) : (a + (b + -b)) * (b + c) = a := by
-  egg ring [h]
+  egg ring' [h]
 
 end Flat

@@ -25,47 +25,53 @@ private inductive RewriteCategory where
   | basic
   | builtins
   | derived
+  | structProj
 
 private def RewriteCategory.title : RewriteCategory → String
-  | .tagged   => "Tagged"
-  | .intros   => "Intros"
-  | .basic    => "Basic"
-  | .builtins => "Builtin"
-  | .derived  => "Derived"
+  | .tagged     => "Tagged"
+  | .intros     => "Intros"
+  | .basic      => "Basic"
+  | .builtins   => "Builtin"
+  | .derived    => "Derived"
+  | .structProj => "Structure Projections"
 
 private structure State where
-  all       : Rewrites
-  pruned    : Rewrites
-  tagged    : Rewrites
-  intros    : Rewrites
-  basic     : Rewrites
-  builtins  : Rewrites
-  derived   : Rewrites
+  all        : Rewrites
+  pruned     : Rewrites
+  tagged     : Rewrites
+  intros     : Rewrites
+  basic      : Rewrites
+  builtins   : Rewrites
+  derived    : Rewrites
+  structProj : Rewrites
 
 private instance : EmptyCollection State where
   emptyCollection := {
-    all      := {}
-    pruned   := {}
-    tagged   := {}
-    intros   := {}
-    basic    := {}
-    builtins := {}
-    derived  := {}
+    all        := {}
+    pruned     := {}
+    tagged     := {}
+    intros     := {}
+    basic      := {}
+    builtins   := {}
+    derived    := {}
+    structProj := {}
   }
 
 private def State.get (s : State) : RewriteCategory → Rewrites
-  | .tagged   => s.tagged
-  | .intros   => s.basic
-  | .basic    => s.basic
-  | .builtins => s.builtins
-  | .derived  => s.derived
+  | .tagged     => s.tagged
+  | .intros     => s.basic
+  | .basic      => s.basic
+  | .builtins   => s.builtins
+  | .derived    => s.derived
+  | .structProj => s.structProj
 
 private def State.set (s : State) : RewriteCategory → Rewrites → State
-  | .tagged,   rws => { s with tagged   := rws }
-  | .intros,   rws => { s with intros   := rws }
-  | .basic,    rws => { s with basic    := rws }
-  | .builtins, rws => { s with builtins := rws }
-  | .derived,  rws => { s with derived  := rws }
+  | .tagged,     rws => { s with tagged     := rws }
+  | .intros,     rws => { s with intros     := rws }
+  | .basic,      rws => { s with basic      := rws }
+  | .builtins,   rws => { s with builtins   := rws }
+  | .derived,    rws => { s with derived    := rws }
+  | .structProj, rws => { s with structProj := rws }
 
 abbrev _root_.Egg.Premises.GenM := StateT State TacticM
 

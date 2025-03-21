@@ -19,15 +19,16 @@ structure Encoding extends Normalization where
   deriving BEq
 
 structure Gen where
-  builtins        := true
-  basket?         := (none : Option Lean.Name)
-  genTcProjRws    := true
-  genTcSpecRws    := true
-  genGoalTcSpec   := true -- This option requires `genTcSpecRws` to be true.
-  genNestedSplits := true
-  explosion       := false
-  derivedGuides   := true
-  genGroundEqs    := true
+  builtins         := true
+  basket?          := (none : Option Lean.Name)
+  genStructProjRws := true
+  genTcProjRws     := true
+  genTcSpecRws     := true
+  genGoalTcSpec    := true -- This option requires `genTcSpecRws` to be true.
+  genNestedSplits  := true
+  explosion        := false
+  derivedGuides    := true
+  genGroundEqs     := true
   deriving BEq
 
 structure DefEq where

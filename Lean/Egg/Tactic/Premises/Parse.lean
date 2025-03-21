@@ -79,7 +79,7 @@ private def Premise.Mk.rewrites
   fun proof type src => do
     let mut rws := #[]
     let some rw ← Rewrite.from? proof type src cfg
-      | throwErrorAt stx "egg requires premises to be (proofs of) propositions or (non-propositional) definitions: {stx}"
+      | throwErrorAt stx "egg requires premises to be (proofs of) propositions or (non-propositional) definitions"
     rws := rws.push rw
     if genGroundEqs then
       if let some eq ← Rewrite.mkGroundEq? proof type (.ground src) cfg then

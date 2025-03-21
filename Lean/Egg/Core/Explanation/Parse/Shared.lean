@@ -68,6 +68,7 @@ syntax basic_fwd_rw_src (noWs tc_extension)*        : fwd_rw_src
 syntax basic_fwd_rw_src noWs explosion_extension    : fwd_rw_src
 syntax basic_fwd_rw_src noWs nested_split_extension : fwd_rw_src
 syntax basic_fwd_rw_src noWs "↓"                    : fwd_rw_src
+syntax "▵" noWs num                                 : fwd_rw_src
 syntax "↦bvar"                                      : fwd_rw_src
 syntax "↦app"                                       : fwd_rw_src
 syntax "↦λ"                                         : fwd_rw_src
@@ -162,6 +163,7 @@ private def parseTcExtension (src : Source) : (TSyntax `tc_extension) → Source
   | _                               => unreachable!
 
 private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
+  | `(fwd_rw_src|▵$idx)  => .structProj idx.getNat
   | `(fwd_rw_src|↦bvar)  => .subst .bvar
   | `(fwd_rw_src|↦app)   => .subst .app
   | `(fwd_rw_src|↦λ)     => .subst .lam

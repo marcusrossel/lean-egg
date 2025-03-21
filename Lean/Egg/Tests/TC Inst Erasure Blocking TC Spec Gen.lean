@@ -30,6 +30,7 @@ info: [egg.rewrites] Rewrites
           [?m.55: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
           [?m.55: [unconditionallyVisible]]
+  [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (1)
     [egg.rewrites] #0<←>(⇔)

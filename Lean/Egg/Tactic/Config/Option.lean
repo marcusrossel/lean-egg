@@ -45,6 +45,7 @@ register_egg_options
   etaReduceRws
   natReduceRws
   builtins
+  genStructProjRws
   genTcProjRws
   genTcSpecRws
   genGoalTcSpec

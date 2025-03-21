@@ -20,6 +20,7 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
+  [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
 -/
@@ -40,6 +41,7 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
+  [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
 -/
@@ -70,6 +72,7 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
+  [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (1)
     [egg.rewrites] #0<←>(⇔)
@@ -97,6 +100,7 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
+  [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
 -/

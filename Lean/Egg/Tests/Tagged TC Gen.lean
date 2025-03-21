@@ -49,6 +49,7 @@ info: [egg.rewrites] Rewrites
           []
       [egg.rewrites] RHS MVars
           []
+  [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
 -/

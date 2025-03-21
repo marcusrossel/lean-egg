@@ -61,6 +61,7 @@ inductive Source where
   | ground (src : Source)
   | reifiedEq
   | factAnd
+  | structProj (idx : Nat)
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos) (depth : Nat)
   | tcSpec (src : Source) (spec : Source.TcSpec)
   | nestedSplit (src : Source) (dir : Direction)
@@ -131,6 +132,7 @@ def description : Source → String
   | .ground src             => s!"{src.description}↓"
   | reifiedEq               => "="
   | factAnd                 => "∧"
+  | structProj idx          => s!"▵{idx}"
   | tcProj src loc pos dep  => s!"{src.description}[{loc.description}{pos.asNat},{dep}]"
   | tcSpec src spec         => s!"{src.description}<{spec.description}>"
   | nestedSplit src dir     => s!"{src.description}⁅{dir.description}⁆"

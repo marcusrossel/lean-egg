@@ -39,6 +39,11 @@ def filterM [Monad m] (map : HashMap α β) (keep : α → m Bool) : m (HashMap 
   map.foldM (init := map) fun result a _ => do
     if ← keep a then return result else return result.erase a
 
+def alterD (m : HashMap α β) (a : α) (default : β) (f : β → β) : HashMap α β :=
+  m.alter a fun
+    | none => f default
+    | some b => f b
+
 end Std.HashMap
 
 namespace Lean
