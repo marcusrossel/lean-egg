@@ -14,7 +14,7 @@ use crate::util::*;
 pub struct RewriteConfig {
     block_invalid_matches: bool, 
     shift_captured_bvars: bool, 
-    _allow_unsat_conditions: bool,
+    allow_unsat_conditions: bool,
     env: *const c_void
 }
 
@@ -24,7 +24,7 @@ impl Config {
         RewriteConfig {
             block_invalid_matches: self.block_invalid_matches,
             shift_captured_bvars: self.shift_captured_bvars,
-            _allow_unsat_conditions: self.allow_unsat_conditions,
+            allow_unsat_conditions: self.allow_unsat_conditions,
             env
         }
     }
@@ -58,7 +58,7 @@ impl RewriteTemplate {
             return Ok(Either::Right(GroundEq { name: self.name, lhs: self.lhs.ast, rhs: self.rhs.ast }))
         }
 
-        let lhs = if self.prop_conds.is_empty() {
+        let lhs = if self.prop_conds.is_empty() || cfg.allow_unsat_conditions {
             self.lhs.clone()
         } else {
             let mut str = format!("(= {} {})", self.lhs, self.lhs);

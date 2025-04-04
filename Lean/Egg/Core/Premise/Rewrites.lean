@@ -143,19 +143,24 @@ def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config.Normalization) 
   let proof ← mkEqTrue proof
   return some { cgr with proof, src, conds := #[], mvars.lhs := {}, mvars.rhs := {}, }
 
-def validDirs (rw : Rewrite) : Directions :=
-  -- MVars appearing in propositional conditions are definitely going to be part of the rewrite's
-  -- LHS, so they can (and should be) ignored when computing valid directions.
-  -- TODO: How does visibility work in conditions?
-  let propCondExpr  : MVarIdSet  := rw.conds.filter (·.kind.isProof) |>.foldl (init := ∅) (·.union ·.mvars.visibleExpr)
-  let propCondLevel : LMVarIdSet := rw.conds.filter (·.kind.isProof) |>.foldl (init := ∅) (·.union ·.mvars.visibleLevel)
-  let visibleExprLhs  := rw.mvars.lhs.visibleExpr.filter (!propCondExpr.contains ·)
-  let visibleExprRhs  := rw.mvars.rhs.visibleExpr.filter (!propCondExpr.contains ·)
-  let visibleLevelLhs := rw.mvars.lhs.visibleLevel.filter (!propCondLevel.contains ·)
-  let visibleLevelRhs := rw.mvars.rhs.visibleLevel.filter (!propCondLevel.contains ·)
-  let exprDirs        := Directions.satisfyingSuperset visibleExprLhs visibleExprRhs
-  let lvlDirs         := Directions.satisfyingSuperset visibleLevelLhs visibleLevelRhs
-  exprDirs.meet lvlDirs
+def validDirs (rw : Rewrite) (conditionSubgoals : Bool) : Directions := Id.run do
+  let mut visibleExprLhs  := rw.mvars.lhs.visibleExpr
+  let mut visibleExprRhs  := rw.mvars.rhs.visibleExpr
+  let mut visibleLevelLhs := rw.mvars.lhs.visibleLevel
+  let mut visibleLevelRhs := rw.mvars.rhs.visibleLevel
+  if !conditionSubgoals then
+    -- MVars appearing in propositional conditions are going to be part of the rewrite's LHS, so
+    -- they can (and should be) ignored when computing valid directions.
+    -- TODO: How does visibility work in conditions?
+    let propCondExpr  : MVarIdSet  := rw.conds.filter (·.kind.isProof) |>.foldl (init := ∅) (·.union ·.mvars.visibleExpr)
+    let propCondLevel : LMVarIdSet := rw.conds.filter (·.kind.isProof) |>.foldl (init := ∅) (·.union ·.mvars.visibleLevel)
+    visibleExprLhs  := visibleExprLhs.filter  (!propCondExpr.contains ·)
+    visibleExprRhs  := visibleExprRhs.filter  (!propCondExpr.contains ·)
+    visibleLevelLhs := visibleLevelLhs.filter (!propCondLevel.contains ·)
+    visibleLevelRhs := visibleLevelRhs.filter (!propCondLevel.contains ·)
+  let exprDirs := Directions.satisfyingSuperset visibleExprLhs visibleExprRhs
+  let lvlDirs  := Directions.satisfyingSuperset visibleLevelLhs visibleLevelRhs
+  return exprDirs.meet lvlDirs
 
 -- Returns the same rewrite but with its type and proof potentially flipped to match the given
 -- direction.

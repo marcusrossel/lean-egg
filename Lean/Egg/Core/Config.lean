@@ -42,7 +42,6 @@ structure Backend where
   blockInvalidMatches := true
   shiftCapturedBVars  := true -- This option implies `blockInvalidMatches`.
   unionSemantics      := true
-  conditionSubgoals   := false
   -- TODO: For slotted e-graphs, this option can be used to inspect the tree explanation by setting
   --       this option to `false`.
   optimizeExpl        := true
@@ -66,8 +65,9 @@ structure Debug where
   deriving BEq
 
 structure _root_.Egg.Config extends Encoding, DefEq, Gen, Backend, Debug where
-  retryWithShapes := false
-  explLengthLimit := 1000
+  retryWithShapes   := false
+  explLengthLimit   := 1000
+  conditionSubgoals := false
 
 -- TODO: Why aren't these coercions automatic?
 

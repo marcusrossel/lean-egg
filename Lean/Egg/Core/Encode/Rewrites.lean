@@ -21,12 +21,12 @@ def Condition.encode? (c : Rewrite.Condition) (cfg : Config.Encoding) :
   | .proof  => return s!"(proof {type})"
   | .tcInst => return s!"(inst {type})"
 
-def encode (rw : Rewrite) (cfg : Config.Encoding) : MetaM Encoded :=
+def encode (rw : Rewrite) (cfg : Config.Encoding) (conditionSubgoals : Bool) : MetaM Encoded :=
   return {
     name  := rw.src.description
     lhs   := ← Egg.encode rw.lhs cfg
     rhs   := ← Egg.encode rw.rhs cfg
-    dirs  := rw.validDirs
+    dirs  := rw.validDirs conditionSubgoals
     conds := ← rw.conds.filterMapM (Condition.encode? · cfg)
   }
 
@@ -36,5 +36,5 @@ namespace Rewrites
 
 abbrev Encoded := Array Rewrite.Encoded
 
-def encode (rws : Rewrites) (cfg : Config.Encoding) : MetaM Rewrites.Encoded :=
-  rws.mapM (·.encode cfg)
+def encode (rws : Rewrites) (cfg : Config.Encoding) (conditionSubgoals : Bool) : MetaM Rewrites.Encoded :=
+  rws.mapM (·.encode cfg conditionSubgoals)

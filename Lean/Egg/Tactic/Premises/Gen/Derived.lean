@@ -131,7 +131,7 @@ where
     generate cfg .goalTcSpec do
       genGoalTcSpecializations (← todo .goalTcSpec) cfg.toNormalization goal
     generate cfg .tcSpec do
-      genTcSpecializations (← todo .tcSpec) cfg.toNormalization
+      genTcSpecializations (← todo .tcSpec) cfg.toNormalization cfg.conditionSubgoals
     generate cfg .tcProj do
       let targets := (← todo .tcProj).tcProjTargets
       let (rws, cover) ← genTcProjReductions targets (← tcProjCover) cfg

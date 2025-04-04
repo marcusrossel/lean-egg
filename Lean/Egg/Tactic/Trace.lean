@@ -79,8 +79,9 @@ def Congr.Rel.format : Congr.Rel → Format
 def Congr.toMessageData (cgr : Congr) : MetaM MessageData :=
   return (← ppExpr cgr.lhs) ++ " " ++ cgr.rel.format ++ " " ++ (← ppExpr cgr.rhs)
 
-def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) : TacticM Unit := do
-  let mut header := m!"{rw.src.description}({rw.validDirs.format})"
+def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) (conditionSubgoals : Bool) :
+    TacticM Unit := do
+  let mut header := m!"{rw.src.description}({rw.validDirs conditionSubgoals |>.format})"
   if let some stx := stx? then header := m!"{header}: {stx}"
   withTraceNode cls (fun _ => return header) do
     traceM cls fun _ => rw.toCongr.toMessageData
@@ -95,10 +96,11 @@ def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) : TacticM U
     traceM cls fun _ => return m!"LHS MVars\n{← rw.mvars.lhs.toMessageData}"
     traceM cls fun _ => return m!"RHS MVars\n{← rw.mvars.rhs.toMessageData}"
 
-def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cls : Name) : TacticM Unit := do
+def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cls : Name) (conditionSubgoals : Bool) :
+    TacticM Unit := do
   for rw in rws, idx in [:rws.size] do
     let stx? := stx[idx]? >>= fun s => if s.getAtomVal == "*" then none else s
-    rw.trace stx? cls
+    rw.trace stx? cls conditionSubgoals
 
 def Rewrite.Encoded.trace (rw : Rewrite.Encoded) (cls : Name) : TacticM Unit := do
   let header := m!"{rw.name}({rw.dirs.format})"

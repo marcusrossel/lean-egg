@@ -58,7 +58,7 @@ def encoding (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) : 
   return {
     lhs     := ← encode goal.lhs cfg
     rhs     := ← encode goal.rhs cfg
-    rws     := ← rws.encode cfg
+    rws     := ← rws.encode cfg cfg.conditionSubgoals
     guides  := ← guides.encode cfg
     vizPath := cfg.vizPath.getD ""
     cfg

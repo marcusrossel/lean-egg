@@ -20,10 +20,10 @@ private inductive Proof? where
 
 private def resultToProof
     (result : Request.Result) (goal : Goal) (rws : Rewrites) (cfg : Config.Encoding)
-    (retryWithShapes : Bool) (proofFuel? : Option Nat) : TacticM Proof? := do
+    (retryWithShapes conditionSubgoals : Bool) (proofFuel? : Option Nat) : TacticM Proof? := do
   let mut (proof, steps) ←
     try
-      result.expl.prove' goal.toCongr rws result.egraph cfg proofFuel?
+      result.expl.prove' goal.toCongr rws result.egraph cfg conditionSubgoals proofFuel?
     catch err =>
       -- If proof reconstruction fails but we haven't tried using shapes yet, retry with shapes
       -- (assuming the corresponding option is enabled).
@@ -83,7 +83,7 @@ where
     result.expl.trace `egg.explanation.steps
     if let .beforeProof := cfg.exitPoint then return none
     let beforeProof ← IO.monoMsNow
-    match ← resultToProof result goal rws cfg cfg.retryWithShapes cfg.proofFuel? with
+    match ← resultToProof result goal rws cfg cfg.retryWithShapes cfg.conditionSubgoals cfg.proofFuel? with
     | .proof prf =>
       let proofTime := (← IO.monoMsNow) - beforeProof
       return some (prf, proofTime, result)

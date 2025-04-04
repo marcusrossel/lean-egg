@@ -115,13 +115,13 @@ private def prune (rws : Rewrites) (stx? : Option (Array Syntax) := none) :
   addPruned pruned
   return (keep, keepStx)
 
-def generate' (cat : RewriteCategory) (g : GenM Premises) : GenM Unit := do
+def generate' (cat : RewriteCategory) (conditionSubgoals : Bool) (g : GenM Premises) : GenM Unit := do
   let { rws := ⟨new, stxs⟩ } ← g
   let mut (new, stx) ← prune new (if stxs.isEmpty then none else stxs)
   let cls := `egg.rewrites
-  withTraceNode cls (fun _ => return m!"{cat.title} ({new.size})") do new.trace stx cls
+  withTraceNode cls (fun _ => return m!"{cat.title} ({new.size})") do new.trace stx cls conditionSubgoals
   set cat new
   addAll new
 
-def generate (cat : RewriteCategory) (g : GenM Rewrites) : GenM Unit := do
-  generate' cat do return { rws.elems := ← g, rws.stxs := #[] }
+def generate (cat : RewriteCategory) (conditionSubgoals : Bool) (g : GenM Rewrites) : GenM Unit := do
+  generate' cat conditionSubgoals do return { rws.elems := ← g, rws.stxs := #[] }

@@ -20,13 +20,13 @@ def gen (goal : Goal) (ps : TSyntax `egg_premises) (guides : Guides) (cfg : Conf
     let { all, pruned } ← GenM.run core
     let cls := `egg.rewrites
     cfg.toDefEq.trace cls
-    withTraceNode cls (fun _ => return m!"Pruned ({pruned.size})") do pruned.trace #[] cls
+    withTraceNode cls (fun _ => return m!"Pruned ({pruned.size})") do pruned.trace #[] cls cfg.conditionSubgoals
     return all
 where
   core : GenM Unit := open GenM in do
-    generate  .intros     do genIntros goal.intros.unzip.fst cfg
-    generate' .basic      do Premises.elab cfg cfg.genGroundEqs ps
-    generate  .tagged     do genTagged cfg
-    generate  .builtins   do genBuiltins cfg
-    generate  .derived    do genDerived goal.toCongr (← allExceptGeneratedGroundEqs) guides cfg
-    generate  .structProj do genStructProjRws goal.toCongr (← all) guides cfg
+    generate  .intros     cfg.conditionSubgoals do genIntros goal.intros.unzip.fst cfg
+    generate' .basic      cfg.conditionSubgoals do Premises.elab cfg cfg.genGroundEqs ps
+    generate  .tagged     cfg.conditionSubgoals do genTagged cfg
+    generate  .builtins   cfg.conditionSubgoals do genBuiltins cfg
+    generate  .derived    cfg.conditionSubgoals do genDerived goal.toCongr (← allExceptGeneratedGroundEqs) guides cfg
+    generate  .structProj cfg.conditionSubgoals do genStructProjRws goal.toCongr (← all) guides cfg
