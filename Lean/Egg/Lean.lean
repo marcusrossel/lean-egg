@@ -138,3 +138,7 @@ def RBTree.subtract (t₁ t₂ : RBTree α cmp) : RBTree α cmp :=
 
 def RBTree.singleton (a : α) : RBTree α cmp :=
   insert ∅ a
+
+def Syntax.Term.isWildcard : Term → Bool
+  | `(_) => true
+  | _    => false
