@@ -35,9 +35,13 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
     have toReal : ↑((n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!)) =
                   n﹗ / ((r - 1)﹗ * (n - r + 1)﹗) + n﹗ / (r ﹗ * (n - r)﹗) := by
       egg cast [Real.Gamma_nat_eq_factorial] <;> try omega
-      · sorry
+      · have h' : n ≥ r - 1 := by exact sub_le_of_le_add h
+        have n_r_1 : (n - r + 1) = (n - (r - 1)) := by omega
+        rw [n_r_1]
+        apply factorial_mul_factorial_dvd_factorial h'
       · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
-      · sorry
+      · have h' : n ≥ r := by omega
+        apply factorial_mul_factorial_dvd_factorial h'
       · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
 
     calc
