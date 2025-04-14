@@ -25,6 +25,7 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
     by_cases hr : r = 0 <;> try subst hr
     all_goals try by_cases hn : r = n + 1 <;> try subst hn
     all_goals try simp; rw [Nat.div_self <| factorial_pos _]
+    have ho : (n - r + 1) = n - (r - 1) := by omega
 
     have fromReal : (n + 1)﹗ / (r﹗ * (n + 1 - r)﹗) = ↑((n + 1)! / (r ! * (n + 1 - r)!)) := by
       egg cast [Real.Gamma_nat_eq_factorial]
@@ -35,20 +36,18 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
     have toReal : ↑((n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!)) =
                   n﹗ / ((r - 1)﹗ * (n - r + 1)﹗) + n﹗ / (r ﹗ * (n - r)﹗) := by
       egg cast [Real.Gamma_nat_eq_factorial] <;> try omega
-      · have h' : n ≥ r - 1 := by exact sub_le_of_le_add h
-        have n_r_1 : (n - r + 1) = (n - (r - 1)) := by omega
-        rw [n_r_1]
-        apply factorial_mul_factorial_dvd_factorial h'
+      · exact ho ▸ factorial_mul_factorial_dvd_factorial (sub_le_of_le_add h)
       · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
-      · have h' : n ≥ r := by omega
-        apply factorial_mul_factorial_dvd_factorial h'
+      · exact factorial_mul_factorial_dvd_factorial <| by omega
       · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
 
     calc
-      _ = (n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!) := by egg [proposition_1_14, ih, (by omega : n - (r - 1) = n - r + 1)] <;> omega
+      _ = (n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!) := by egg [proposition_1_14, ih, ho] <;> omega
       _ = _ := cast_inj (R := Real) |>.mp ?_
 
+    -- TODO: Add the fromReal and toReal steps inline by allowing for multiple egg baskets.
     egg real calc [Real.Gamma_add_one, *]
+      _ = n﹗ / ((r - 1)﹗ * (n - r + 1)﹗) + n﹗ / (r ﹗ * (n - r)﹗)
       _ = (n﹗ / ((r - 1)﹗ * (n - r + 1)﹗) + n﹗ / (r ﹗ * (n - r)﹗))
       _ = n﹗ / ((r - 1)﹗ * (n - r)﹗) * (1 / (n - r + 1) + 1 / r)
       _ = n﹗ / ((r - 1)﹗ * (n - r)﹗) * ((r + (n - r + 1)) / (r * (n - r + 1)))
