@@ -17,6 +17,8 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇒): h
       [egg.rewrites] -?x = ?x
+      [egg.rewrites] Conditions
+        [egg.rewrites] Neg Int
       [egg.rewrites] LHS MVars
           [?x: [unconditionallyVisible], ?inst: [isTcInst, unconditionallyVisible]]
       [egg.rewrites] RHS MVars
@@ -25,19 +27,25 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (1)
     [egg.rewrites] #0<⊢0>(⇔)
-      [egg.rewrites] -?m.55 = ?m.55
+      [egg.rewrites] -?m.57 = ?m.57
+      [egg.rewrites] Conditions
+        [egg.rewrites] Proven
+          [egg.rewrites] Neg Int
       [egg.rewrites] LHS MVars
-          [?m.55: [unconditionallyVisible]]
+          [?m.57: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m.55: [unconditionallyVisible]]
+          [?m.57: [unconditionallyVisible]]
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (1)
     [egg.rewrites] #0<←>(⇔)
-      [egg.rewrites] -?m.62 = ?m.62
+      [egg.rewrites] -?m.64 = ?m.64
+      [egg.rewrites] Conditions
+        [egg.rewrites] Proven
+          [egg.rewrites] Neg Int
       [egg.rewrites] LHS MVars
-          [?m.62: [unconditionallyVisible]]
-      [egg.rewrites] RHS MVars [?m.62: [unconditionallyVisible]]
+          [?m.64: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars [?m.64: [unconditionallyVisible]]
 -/
 #guard_msgs(info) in
 example (h : ∀ [inst : Neg Int] (x : Int), @Neg.neg Int inst x = x) : (0 : Int) = (0 : Int) := by

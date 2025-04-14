@@ -5,13 +5,16 @@ import Egg.Core.Normalize
 import Egg.Core.Congr
 import Egg.Core.Source
 import Egg.Lean
-open Lean Meta
+
+open Lean hiding HashSet
+open Meta Std
 
 namespace Egg.Rewrite
 
 protected structure MVars where
   lhs : MVars
   rhs : MVars
+  all : MVarIdSet
   deriving Inhabited
 
 namespace Condition
@@ -88,46 +91,28 @@ def from? (proof type : Expr) (src : Source) (cfg : Config.Normalization) (norma
       return none
   let mLhs  ← MVars.collect cgr.lhs
   let mRhs  ← MVars.collect cgr.rhs
-  let conds ← collectConds args mLhs mRhs
-  return some { cgr with proof, src, conds, mvars.lhs := mLhs, mvars.rhs := mRhs }
+  let all   ← collectAllMVars args mLhs mRhs
+  let conds ← collectConds all
+  return some { cgr with proof, src, conds, mvars.lhs := mLhs, mvars.rhs := mRhs, mvars.all := all }
 where
-  collectConds (args : Array Expr) (mLhs mRhs : MVars) : MetaM (Array Rewrite.Condition) := do
+  -- Note: The set of all relevant mvars is not only that contained in `mLhs` and `mRhs`, but also
+  --       those in `args`! For example in `∀ (n) (h : n ≠ 0), n / n = 1`, the variable `h` is only
+  --       in `args`, and not in the body mvars. However, note also that `args` does not necessarily
+  --       contain all mvars, because elaboration sometimes causes some quantified variables to
+  --       already be instantiated as mvars.
+  collectAllMVars (args : Array Expr) (mLhs mRhs : MVars) : MetaM MVarIdSet := do
+    let mut result := ∅
+    for m in mLhs.expr.keys do result := result.insert m
+    for m in mRhs.expr.keys do result := result.insert m
+    for m in args           do result := result.insert m.mvarId!
+    return result
+  collectConds (mvars : MVarIdSet) : MetaM (Array Rewrite.Condition) := do
     let mut conds := #[]
-    -- Because of type class instance erasure, we need to make sure that all required type class
-    -- instances are synthesizable, so we add them as conditions to the rewrite. We only do this for
-    -- type class instances though which are erased as part of a type class instance term, because
-    -- "standalone" type class instances are represented by their erased term.
-    -- For example, we wouldn't add `?i` as a condition in `@Inhabited.default α ?i` as the erasure
-    -- of `?i` is precisely its type `Inhabited α`. In constrast, we would add `?j` as a condition
-    -- in `@HAdd.hAdd α α α (@instHAdd α j?)`, as the type of the entire type class instance term is
-    -- `HAdd α α α`, which doesn't match the type of `?j : Add α`.
-    for tcInstMVar in mLhs.nestedTcInsts.union mRhs.nestedTcInsts do
-      -- TODO: Collecting all this information seems a bit superfluos. Perhaps we should redefine
-      --       `Condition` (or split it into two types) as we only consider propositions and type
-      --       class instances anyway.
-      conds := conds.push {
-        kind  := .tcInst,
-        expr  := .mvar tcInstMVar,
-        type  := ← tcInstMVar.getType,
-        mvars := ← MVars.collect (← tcInstMVar.getType)
-      }
-    -- Even when erasure is active, we still do not consider the mvars contained in erased terms to
-    -- be conditions. Thus, we start by considering all mvars in the target as non-conditions and
-    -- take their type mvar closure. This closure will necessarily contain the mvars contained in
-    -- the types of erased terms, which therefore don't need to be added separately (as in,
-    -- contingent upon the erasure configuration).
-    let inTarget : MVarIdSet := mLhs.inTarget.union mRhs.inTarget
-    let mut noCond ← inTarget.typeMVarClosure
-    for arg in args.reverse do
-      if noCond.contains arg.mvarId! then continue
-      -- As we encode conditions as part of a rewrite's searcher its mvars also become
-      -- non-conditions. That's why we traverse the list of arguments above in reverse.
-      noCond := noCond.union (← MVarIdSet.typeMVarClosure {arg.mvarId!})
-      let ty ← arg.mvarId!.getType
-      let mvars ← MVars.collect ty
-      let some kind ← Condition.Kind.forType? ty
-        | throwError m!"Rewrite {src} requires condition of type '{ty}' which is neither a proof nor an instance."
-      conds := conds.push { kind, expr := arg, type := ty, mvars }
+    for m in mvars do
+      let type ← m.getType
+      let some kind ← Condition.Kind.forType? type | continue
+      let mvars ← MVars.collect type
+      conds := conds.push { kind, expr := (.mvar m), type, mvars }
     return conds
 
 -- Returns `none` if the given type is already ground.
@@ -141,26 +126,55 @@ def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config.Normalization) 
   if type.hasLevelMVar then return none
   let cgr : Congr := { rel := .eq, lhs := type, rhs := .const ``True [] }
   let proof ← mkEqTrue proof
-  return some { cgr with proof, src, conds := #[], mvars.lhs := {}, mvars.rhs := {}, }
+  return some { cgr with proof, src, conds := #[], mvars.lhs := {}, mvars.rhs := {}, mvars.all := {} }
 
-def validDirs (rw : Rewrite) (conditionSubgoals : Bool) : Directions := Id.run do
-  let mut visibleExprLhs  := rw.mvars.lhs.visibleExpr
-  let mut visibleExprRhs  := rw.mvars.rhs.visibleExpr
-  let mut visibleLevelLhs := rw.mvars.lhs.visibleLevel
-  let mut visibleLevelRhs := rw.mvars.rhs.visibleLevel
-  if !conditionSubgoals then
-    -- MVars appearing in propositional conditions are going to be part of the rewrite's LHS, so
-    -- they can (and should be) ignored when computing valid directions.
-    -- TODO: How does visibility work in conditions?
-    let propCondExpr  : MVarIdSet  := rw.conds.filter (·.kind.isProof) |>.foldl (init := ∅) (·.union ·.mvars.visibleExpr)
-    let propCondLevel : LMVarIdSet := rw.conds.filter (·.kind.isProof) |>.foldl (init := ∅) (·.union ·.mvars.visibleLevel)
-    visibleExprLhs  := visibleExprLhs.filter  (!propCondExpr.contains ·)
-    visibleExprRhs  := visibleExprRhs.filter  (!propCondExpr.contains ·)
-    visibleLevelLhs := visibleLevelLhs.filter (!propCondLevel.contains ·)
-    visibleLevelRhs := visibleLevelRhs.filter (!propCondLevel.contains ·)
-  let exprDirs := Directions.satisfyingSuperset visibleExprLhs visibleExprRhs
-  let lvlDirs  := Directions.satisfyingSuperset visibleLevelLhs visibleLevelRhs
-  return exprDirs.meet lvlDirs
+def validDirs (rw : Rewrite) (conditionSubgoals : Bool) : MetaM Directions := do
+  let mut proofVars := ∅
+  let mut visibleProofTypeVars := ∅
+  let mut typeClassVars := ∅
+  for cond in rw.conds do
+    if cond.isProven then continue
+    match cond.kind with
+    | .proof =>
+      if conditionSubgoals then continue
+      proofVars := proofVars.insert cond.expr.mvarId!
+      visibleProofTypeVars := visibleProofTypeVars.union cond.mvars.visibleExpr
+    | .tcInst =>
+      typeClassVars := typeClassVars.insert cond.expr.mvarId!
+  let forward  ← isValidWithLhsRhs rw.mvars.lhs rw.mvars.rhs rw.mvars.all proofVars visibleProofTypeVars typeClassVars
+  let backward ← isValidWithLhsRhs rw.mvars.rhs rw.mvars.lhs rw.mvars.all proofVars visibleProofTypeVars typeClassVars
+  let exprDirs := Directions.ofBool forward backward
+  return exprDirs
+  -- TODO: Levels. Should follow the same rules as expr mvars, shouldnt they?
+  -- let lvlDirs := sorry
+  -- return exprDirs.meet lvlDirs
+where
+  isValidWithLhsRhs
+      (lhs rhs : MVars) (all : MVarIdSet)
+      (proofVars visibleProofTypeVars typeClassVars : MVarIdSet) : MetaM Bool := do
+    -- Checks that the LHS variables are a superset of the RHS variables.
+    for mvar in rhs.visibleExpr do
+      unless lhs.visibleExpr.contains mvar || visibleProofTypeVars.contains mvar do return false
+    -- Checks that the variables appearing in type class conditions are matched.
+    for cond in rw.conds do
+      for mvar in cond.mvars.expr.keys do
+        unless lhs.visibleExpr.contains mvar || visibleProofTypeVars.contains mvar do return false
+    -- When condition subgoals are enabled, covering does not include proof conditions and we don't
+    -- require variables appearing in proof conditions to be covered.
+    if conditionSubgoals then
+      -- Constructs ω(ℒ(t) ∪ 𝒞(t)).
+      let mut covered := lhs.visibleExpr
+      for mvar in typeClassVars do covered := covered.insert mvar
+      covered ← covered.typeMVarClosure
+      let exempt ← proofVars.typeMVarClosure
+      return (all.diff exempt).subset covered
+    else
+      -- Constructs ω(ℒ(t) ∪ 𝒫(t) ∪ 𝒞(t)).
+      let mut covered := lhs.visibleExpr
+      for mvar in typeClassVars do covered := covered.insert mvar
+      for mvar in proofVars     do covered := covered.insert mvar
+      covered ← covered.typeMVarClosure
+      return all.subset covered
 
 -- Returns the same rewrite but with its type and proof potentially flipped to match the given
 -- direction.
@@ -177,15 +191,16 @@ def freshWithSubst (rw : Rewrite) (src : Source := rw.src) : MetaM (Rewrite × M
   let (mLhs, subst)  ← rw.mvars.lhs.fresh
   let (mRhs, subst)  ← rw.mvars.rhs.fresh (init := subst)
   let (conds, subst) ← freshConds (init := subst)
-  -- Note: The `conds` already have `subst` applied. So If you have more substitution targets in the
-  --       future, you might need to consider that.
+  let (all, subst)   ← freshAll (init := subst)
   let rw' := { rw with
     src
     lhs   := subst.apply rw.lhs
     rhs   := subst.apply rw.rhs
     proof := subst.apply rw.proof
     conds := conds
-    mvars := { lhs := mLhs, rhs := mRhs }
+    mvars.lhs := mLhs
+    mvars.rhs := mRhs
+    mvars.all := all
   }
   return (rw', subst)
 where
@@ -203,6 +218,14 @@ where
       }
       subst := s
     return (conds, subst)
+  freshAll (init : MVars.Subst) : MetaM (MVarIdSet × MVars.Subst) := do
+    let mut subst := init
+    let mut all := ∅
+    for mvar in rw.mvars.all do
+      let (m, s) ← (← MVars.collect (.mvar mvar)).fresh (init := subst)
+      all := all.insert m.expr.keys[0]!
+      subst := s
+    return (all, subst)
 
 -- Returns the same rewrite but with all (expression and level) mvars replaced by fresh mvars. This
 -- is used during proof reconstruction, as rewrites may be used multiple times but instantiated
@@ -218,6 +241,7 @@ def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
     proof     := ← Lean.instantiateMVars rw.proof
     mvars.lhs := ← rw.mvars.lhs.removeAssigned
     mvars.rhs := ← rw.mvars.rhs.removeAssigned
+    mvars.all := ← rw.mvars.all.filterM fun var => return !(← var.isAssigned)
     conds     := ← rw.conds.mapM (·.instantiateMVars)
   }
 

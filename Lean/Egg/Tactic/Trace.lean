@@ -81,7 +81,7 @@ def Congr.toMessageData (cgr : Congr) : MetaM MessageData :=
 
 def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) (conditionSubgoals : Bool) :
     TacticM Unit := do
-  let mut header := m!"{rw.src.description}({rw.validDirs conditionSubgoals |>.format})"
+  let mut header := m!"{rw.src.description}({(← rw.validDirs conditionSubgoals).format})"
   if let some stx := stx? then header := m!"{header}: {stx}"
   withTraceNode cls (fun _ => return header) do
     traceM cls fun _ => rw.toCongr.toMessageData

@@ -21,6 +21,8 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Tagged (1)
     [egg.rewrites] □0(⇔)
       [egg.rewrites] z = z
+      [egg.rewrites] Conditions
+        [egg.rewrites] C ?α
       [egg.rewrites] LHS MVars
           [?α: [inErasedTcInst, unconditionallyVisible],
            ?c: [isTcInst, unconditionallyVisible],
@@ -33,6 +35,9 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Derived (3)
     [egg.rewrites] □0<⊢0>(⇔)
       [egg.rewrites] z = z
+      [egg.rewrites] Conditions
+        [egg.rewrites] Proven
+          [egg.rewrites] C Nat
       [egg.rewrites] LHS MVars
           []
       [egg.rewrites] RHS MVars

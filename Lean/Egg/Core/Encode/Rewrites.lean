@@ -26,7 +26,7 @@ def encode (rw : Rewrite) (cfg : Config.Encoding) (conditionSubgoals : Bool) : M
     name  := rw.src.description
     lhs   := ← Egg.encode rw.lhs cfg
     rhs   := ← Egg.encode rw.rhs cfg
-    dirs  := rw.validDirs conditionSubgoals
+    dirs  := ← rw.validDirs conditionSubgoals
     conds := ← rw.conds.filterMapM (Condition.encode? · cfg)
   }
 

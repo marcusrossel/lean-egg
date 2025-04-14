@@ -26,6 +26,12 @@ inductive Directions where
 
 namespace Directions
 
+def ofBool : (forward backward : Bool) → Directions
+  | false, false => none
+  | true,  false => forward
+  | false, true => backward
+  | true,  true => both
+
 def contains : Directions → Direction → Bool
   | both, _ | forward, .forward | backward, .backward => true
   | _, _                                              => false

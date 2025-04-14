@@ -1,4 +1,6 @@
 import Egg
+import Lean
+open Lean Meta Elab Term
 
 -- This used to fail because we were not considering proof mvars when refreshing a rewrite's mvars.
 -- As a result, rewrites produced by type class specialization could contain unrefreshed mvars for
@@ -13,6 +15,8 @@ variable
   {find : [DecidablePred p] → (∃ n, p n) → Nat}
   {find_lt_iff : ∀ (h : ∃ y : Nat, p y) (n : Nat), find h < n ↔ ∃ m < n, p m}
 
+-- TODO: Why is the condition of find_lt_iff encoded incorrectly?
+set_option trace.egg true in
 include find_lt_iff in
 theorem find_le_iff (h : ∃ z : Nat, p z) (n : Nat) : find h ≤ n ↔ ∃ m ≤ n, p m := by
   egg [exists_prop, Nat.lt_succ_iff, find_lt_iff]

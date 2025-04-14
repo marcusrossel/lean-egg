@@ -10,11 +10,11 @@ example (arr : Array α) (i : Nat) (h₁ h₂ : i < arr.size) : arr[i]'h₁ = ar
 --       condition. Thus, we need to handle proof terms specially when determining preconditions.
 example (i : Nat) (h : i < 10) : (Fin.mk i h).val = i := by
   have : ∀ n m (g : n < m), (Fin.mk n g).val = n := by simp
-  egg [this]
+  egg [this, h]
 
 example (i : Nat) (h : ∀ i : Nat, i < 10) : (Fin.mk i (h i)).val = i := by
   have : ∀ n m (g : n < m), (Fin.mk n g).val = n := by simp
-  egg [this]
+  egg [this, h]
 
 -- The following test is an attempt to construct a rewrite where the mvar `x` does appear in the
 -- proof term on the rhs, but not in the *type* of the proof term. If this succeeded, proof erasure
