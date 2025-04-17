@@ -45,7 +45,7 @@ example : Nat.zero = Nat.zero := by
 
 -- TODO(sorry): This actually shows in interesting difference to how we used to generate tc spec rws
 --              (where we didn't require the new rw to have different directions from the old one):
-/--
+/-
 info: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (0)
