@@ -35,14 +35,11 @@ theorem freshmans_dream₂ : (x + y) ^ 2 = x ^ 2 + y ^ 2 := by
     _ = x * (x + y) + y * (x + y)
     _ = _
 
--- TODO: This stopped working when we fixed pruning
-/- sorry
 theorem freshmans_dream₃ : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
   egg calc [comm_add, comm_mul, add_assoc, mul_assoc, sub_canon, neg_add, div_canon, zero_add, zero_mul, one_mul, distrib, pow_zero, pow_succ, char_two, Nat.succ_eq_add_one]
     _ = (x + y) * (x + y) * (x + y)
     _ = (x + y) * (x * (x + y) + y * (x + y))
-    _ = (x + y) * (x ^ 2 + y ^ 2)
+    -- _ = (x + y) * (x ^ 2 + y ^ 2)
     _ = x * (x ^ 2 + y ^ 2) + y * (x ^ 2 + y ^ 2)
     _ = (x * x ^ 2) + x * y ^ 2 + y * x ^ 2 + y * y ^ 2
     _ = _
--/

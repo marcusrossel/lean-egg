@@ -129,7 +129,7 @@ where
     generate cfg .explosion do
       genExplosions (← todo .explosion)
     generate cfg .goalTcSpec do
-      genGoalTcSpecializations (← todo .goalTcSpec) cfg.toNormalization goal
+      genGoalTcSpecializations (← todo .goalTcSpec) cfg.toNormalization cfg.conditionSubgoals goal
     generate cfg .tcSpec do
       genTcSpecializations (← todo .tcSpec) cfg.toNormalization cfg.conditionSubgoals
     generate cfg .tcProj do

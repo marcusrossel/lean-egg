@@ -31,7 +31,8 @@ That is, the goal's unification target is independent of the rewrite's unificati
 versa. It can be determined completely from the shape.
 -/
 private partial def genGoalTypeSpecializations
-    (rw : Rewrite) (goal : Congr) (norm : Config.Normalization) : MetaM (Array Rewrite) := do
+    (rw : Rewrite) (goal : Congr) (norm : Config.Normalization) (conditionSubgoals : Bool) :
+    MetaM (Array Rewrite) := do
   let goalTargets ← unificationTargets goal
   let rwTargets   ← unificationTargets rw.toCongr
   let mut result := #[]
@@ -45,15 +46,14 @@ private partial def genGoalTypeSpecializations
 where
   core (idx : Nat) (target : Rewrite) (goalUnif rwUnif : Expr) : MetaM (Option Rewrite) := do
     let mut (rw, subst) ← target.freshWithSubst (src := .tcSpec target.src (.goalType idx))
-    let mvarsInTcCondsBefore : MVars := rw.conds.foldl (init := {}) (·.merge ·.mvars)
     unless ← isDefEq goalUnif (subst.apply rwUnif) do return none
     rw ← rw.instantiateMVars
-    let mvarsInTcCondsAfter : MVars := rw.conds.foldl (init := {}) (·.merge ·.mvars)
-    let mvarsInTcCondsChanged := mvarsInTcCondsBefore.expr.size != mvarsInTcCondsAfter.expr.size ||
-                                 mvarsInTcCondsBefore.lvl.size  != mvarsInTcCondsAfter.lvl.size
     let missing := rw.mvars.lhs.tcInsts |>.union rw.mvars.rhs.tcInsts |>.union rw.tcConditionMVars
     let (spec, changed) ← genSpecialization rw missing norm
-    if changed || mvarsInTcCondsChanged then return spec else return none
+    if changed && (target.validDirs conditionSubgoals != spec.validDirs conditionSubgoals) then
+      return spec
+    else
+      return none
 
   unificationTargets (cgr : Congr) : MetaM (List Expr) := do
     let cgrType ← cgr.type
@@ -67,8 +67,9 @@ where
     else
       return [cgrType]
 
-def genGoalTcSpecializations (targets : Rewrites) (norm : Config.Normalization) (goal : Congr) :
+def genGoalTcSpecializations
+    (targets : Rewrites) (norm : Config.Normalization) (conditionSubgoals : Bool) (goal : Congr) :
     MetaM Rewrites := do
   let mut result := #[]
-  for rw in targets do result := result ++ (← genGoalTypeSpecializations rw goal norm)
+  for rw in targets do result := result ++ (← genGoalTypeSpecializations rw goal norm conditionSubgoals)
   return result

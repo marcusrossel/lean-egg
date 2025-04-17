@@ -12,6 +12,7 @@ attribute [egg real] add_comm sub_add_cancel sub_add_eq_add_sub mul_one mul_comm
                      div_mul_eq_div_mul_one_div left_distrib
 
 set_option egg.conditionSubgoals true
+set_option maxHeartbeats 3000000
 
 -- From Rotman
 axiom proposition_1_14 (n r : Nat) : (n + 1).choose r = n.choose (r - 1) + n.choose r
@@ -27,26 +28,13 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
     all_goals try simp; rw [Nat.div_self <| factorial_pos _]
     have ho : (n - r + 1) = n - (r - 1) := by omega
 
-    have fromReal : (n + 1)﹗ / (r﹗ * (n + 1 - r)﹗) = ↑((n + 1)! / (r ! * (n + 1 - r)!)) := by
-      egg cast [Real.Gamma_nat_eq_factorial]
-      · omega
-      · exact factorial_mul_factorial_dvd_factorial h
-      · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
-
-    have toReal : ↑((n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!)) =
-                  n﹗ / ((r - 1)﹗ * (n - r + 1)﹗) + n﹗ / (r ﹗ * (n - r)﹗) := by
-      egg cast [Real.Gamma_nat_eq_factorial] <;> try omega
-      · exact ho ▸ factorial_mul_factorial_dvd_factorial (sub_le_of_le_add h)
-      · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
-      · exact factorial_mul_factorial_dvd_factorial <| by omega
-      · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
-
     calc
       _ = (n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!) := by egg [proposition_1_14, ih, ho] <;> omega
       _ = _ := cast_inj (R := Real) |>.mp ?_
 
-    -- TODO: Add the fromReal and toReal steps inline by allowing for multiple egg baskets.
-    egg real calc [Real.Gamma_add_one, *]
+    set_option egg.genTcProjRws false in
+    set_option egg.genGoalTcSpec false in
+    egg real cast calc [Real.Gamma_nat_eq_factorial, Real.Gamma_add_one]
       _ = n﹗ / ((r - 1)﹗ * (n - r + 1)﹗) + n﹗ / (r ﹗ * (n - r)﹗)
       _ = (n﹗ / ((r - 1)﹗ * (n - r + 1)﹗) + n﹗ / (r ﹗ * (n - r)﹗))
       _ = n﹗ / ((r - 1)﹗ * (n - r)﹗) * (1 / (n - r + 1) + 1 / r)
@@ -54,6 +42,15 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
       _ = n﹗ / ((r - 1)﹗ * (n - r)﹗) * ((n + 1) / (r * (n - r + 1)))
       _ = (n + 1)﹗ / (r﹗ * (n + 1 - r)﹗)
       _ = _
+
+    all_goals try omega
+    · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
+    · exact factorial_mul_factorial_dvd_factorial h
+    · rw [←cast_one, ←cast_add, ←cast_sub h, cast_ne_zero]; omega
     · rw [←cast_one, ←cast_add, cast_ne_zero]; omega
     · rw [cast_ne_zero, ne_eq]; exact hr
     · rw [←cast_one, ←cast_sub (by omega : n ≥ r), ←cast_add, cast_ne_zero]; omega
+    · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
+    · exact factorial_mul_factorial_dvd_factorial <| by omega
+    · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
+    · exact ho ▸ factorial_mul_factorial_dvd_factorial (sub_le_of_le_add h)

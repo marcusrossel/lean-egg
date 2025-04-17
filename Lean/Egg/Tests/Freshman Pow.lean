@@ -59,6 +59,7 @@ theorem freshmans_dream₃ : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3
 -- Note: The tests below show that proof reconstruction can be the bottle neck.
 --       And guides can help constructing smaller proofs.
 
+set_option egg.explLengthLimit 400 in
 theorem freshmans_dream₃' : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
   char_two_ring using (x + y) * (x + y)
 

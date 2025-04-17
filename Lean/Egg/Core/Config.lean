@@ -66,7 +66,7 @@ structure Debug where
 
 structure _root_.Egg.Config extends Encoding, DefEq, Gen, Backend, Debug where
   retryWithShapes   := false
-  explLengthLimit   := 1000
+  explLengthLimit   := 200
   conditionSubgoals := false
 
 -- TODO: Why aren't these coercions automatic?

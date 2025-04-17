@@ -1,8 +1,11 @@
 import Mathlib.Algebra.Lie.Basic
 import Egg
 
-set_option egg.timeLimit 10
 set_option egg.genNestedSplits false
+set_option egg.genTcProjRws false -- TODO: Things still work if we keep this, but it seems not to be necessary.
+set_option egg.genTcSpecRws false -- TODO: Things still work if we keep this, but it seems not to be necessary.
+set_option egg.genGoalTcSpec true -- TODO: This is actually necessary.
+set_option egg.genGroundEqs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
 
 universe u v w w₁ w₂
 

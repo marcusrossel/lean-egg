@@ -114,7 +114,7 @@ def Rewrites.tcProjTargets (rws : Rewrites) : Array TcProjTarget := Id.run do
 
 def Guides.tcProjTargets (guides : Guides) : Array TcProjTarget :=
   guides.map fun guide => { expr := guide.expr, src := guide.src, loc := .root }
---
+
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
 def genTcProjReductions
     (targets : Array TcProjTarget) (covered : HashSet TcProj) (cfg : Config.Normalization) :

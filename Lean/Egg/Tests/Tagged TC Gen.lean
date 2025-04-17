@@ -30,6 +30,37 @@ info: [egg.rewrites] Rewrites
            ?c: [isTcInst, unconditionallyVisible],
            ?u.80: [inErasedTcInst, unconditionallyVisible]]
   [egg.rewrites] Builtin (0)
+  [egg.rewrites] Derived (0)
+  [egg.rewrites] Structure Projections (0)
+  [egg.rewrites] Definitional
+  [egg.rewrites] Pruned (0)
+-/
+#guard_msgs in
+set_option trace.egg.rewrites true in
+egg_no_defeq in
+set_option egg.builtins false in
+example : Nat.zero = Nat.zero := by
+  egg basket
+
+
+-- TODO(sorry): This actually shows in interesting difference to how we used to generate tc spec rws
+--              (where we didn't require the new rw to have different directions from the old one):
+/--
+info: [egg.rewrites] Rewrites
+  [egg.rewrites] Intros (0)
+  [egg.rewrites] Basic (0)
+  [egg.rewrites] Tagged (1)
+    [egg.rewrites] □r(⇔)
+      [egg.rewrites] z = z
+      [egg.rewrites] LHS MVars
+          [?α: [inErasedTcInst, unconditionallyVisible],
+           ?c: [isTcInst, unconditionallyVisible],
+           ?u.80: [inErasedTcInst, unconditionallyVisible]]
+      [egg.rewrites] RHS MVars
+          [?α: [inErasedTcInst, unconditionallyVisible],
+           ?c: [isTcInst, unconditionallyVisible],
+           ?u.80: [inErasedTcInst, unconditionallyVisible]]
+  [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (3)
     [egg.rewrites] □r<⊢0>(⇔)
       [egg.rewrites] z = z
@@ -53,9 +84,3 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
 -/
-#guard_msgs in
-set_option trace.egg.rewrites true in
-egg_no_defeq in
-set_option egg.builtins false in
-example : Nat.zero = Nat.zero := by
-  egg basket

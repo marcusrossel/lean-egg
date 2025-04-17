@@ -1,7 +1,8 @@
 import Mathlib
 import Egg
 
-set_option egg.timeLimit 10
+set_option egg.genTcProjRws false -- TODO: Things still work if we keep this, but it seems not to be necessary.
+set_option egg.genGoalTcSpec true -- TODO: This is actually necessary.
 
 attribute [egg group] mul_assoc one_mul mul_one inv_mul_self mul_inv_self
 

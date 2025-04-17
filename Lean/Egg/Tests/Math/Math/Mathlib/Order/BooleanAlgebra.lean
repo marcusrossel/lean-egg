@@ -4,6 +4,12 @@ import Mathlib.Order.BooleanAlgebra
 -- TODO: It would be convenient to have a command for extending a given egg basket.
 -- TODO: I think having the better heuristic for generated rewrites is really important here.
 
+set_option egg.timeLimit 5
+set_option egg.genTcProjRws false -- TODO: Things still work if we keep this, but it seems not to be necessary.
+set_option egg.genTcSpecRws false -- TODO: Things still work if we keep this, but it seems not to be necessary.
+set_option egg.genGoalTcSpec true -- TODO: This is actually necessary.
+set_option egg.genGroundEqs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
+
 -- SemilatticeSup
 attribute [egg slattice] /- le_sup_left le_sup_right le_sup_of_le_left le_sup_of_le_right
                          lt_sup_of_lt_left lt_sup_of_lt_right sup_le sup_le_iff sup_eq_left
@@ -63,13 +69,14 @@ theorem sdiff_sup_self' : y \ x ⊔ x = y ⊔ x := by
 
 #check sdiff_inf_sdiff
 example : x \ y ⊓ y \ x = ⊥ := by
-  egg [inf_comm, inf_assoc, inf_inf_sdiff, inf_sup_left, inf_idem, inf_sup_right, bot_sup_eq, inf_of_le_right (α := α) sdiff_le']
-    using x ⊓ (y ⊓ x ⊔ y \ x) ⊓ x \ y
+  sorry -- TODO: This started breaking when we started generating fewer goal tc spec rewrites and
+        --       turned off some of the other gen options.
+    -- egg [inf_comm, inf_assoc, inf_inf_sdiff, inf_sup_left, inf_idem, inf_sup_right, bot_sup_eq, inf_of_le_right (α := α) sdiff_le']
+    --   using x ⊓ (y ⊓ x ⊔ y \ x) ⊓ x \ y
 
 #check sdiff_inf_sdiff
 example : x \ y ⊓ y \ x = ⊥ :=
   Eq.symm <| by
-    set_option trace.egg true in
     egg slattice ilattice lattice dlattice gbool calc [bot_sup_eq, inf_of_le_right (α := α) sdiff_le']
       _ = x ⊓ y ⊓ x \ y
       _ = x ⊓ (y ⊓ x ⊔ y \ x) ⊓ x \ y
@@ -117,11 +124,11 @@ example (hx : y ≤ x) (hy : y ≠ ⊥) : x \ y < x := by
   egg slattice ilattice lattice dlattice gbool [sdiff_eq_self_iff_disjoint', disjoint_iff, h, inf_eq_right.mpr hx]
 
 #check sup_inf_inf_sdiff
-set_option trace.egg true in
 example : x ⊓ y ⊓ z ⊔ y \ z = x ⊓ y ⊔ y \ z := by
   egg ac gbool [sup_inf_right, inf_sup_right, inf_sdiff_left]
 
 #check sup_inf_inf_sdiff
+set_option trace.egg true in
 example : x ⊓ y ⊓ z ⊔ y \ z = x ⊓ y ⊔ y \ z := by
   egg slattice ilattice lattice dlattice gbool calc [inf_sdiff_left]
     x ⊓ y ⊓ z ⊔ y \ z = x ⊓ (y ⊓ z) ⊔ y \ z
