@@ -53,17 +53,26 @@ where
     else
       return output.stdout
 
-def runTest (test : FS.DirEntry) (printErr : Bool) : IO Unit := do
+def runTest (test : FS.DirEntry) (printErr : Bool) : IO Bool := do
   match ← runFile test with
-  | .success     => println s!"✅ {testName test}"
-  | .sorry       => println s!"🟡 {testName test}"
-  | .failure msg => println s!"❌ {testName test}{if printErr then s!"\n{msg}" else ""}"
+  | .success =>
+    println s!"✅ {testName test}"
+    return true
+  | .sorry =>
+    println s!"🟡 {testName test}"
+    return true
+  | .failure msg =>
+    println s!"❌ {testName test}{if printErr then s!"\n{msg}" else ""}"
+    return false
 
-def runAllTests (printErr : Bool) : IO Unit := do
+def runAllTests (printErr : Bool) : IO Bool := do
+  let mut overallSuccess := true
   for test in ← getTests do
-    runTest test printErr
+    let success ← runTest test printErr
+    overallSuccess := overallSuccess && success
+  return overallSuccess
 
-def runSingleTest (name : String) : IO Unit := do
+def runSingleTest (name : String) : IO Bool := do
   runTest (printErr := true) {
     root := (← currentDir) / "Lean" / "Egg" / "Tests",
     fileName := s!"{name}.lean"
@@ -71,7 +80,9 @@ def runSingleTest (name : String) : IO Unit := do
 
 def main (args : List String) : IO Unit := do
   assert! args.length ≤ 1
+  let mut success := true
   match args[0]? with
-  | none      => runAllTests (printErr := false)
-  | some "ci" => runAllTests (printErr := true)
-  | some test => runSingleTest test
+  | none      => success ← runAllTests (printErr := false)
+  | some "ci" => success ← runAllTests (printErr := true)
+  | some test => success ← runSingleTest test
+  unless success do Process.exit 1
