@@ -24,7 +24,7 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (1)
-    [egg.rewrites] #1(⇔)
+    [egg.rewrites] #1(⇔) by #0
       [egg.rewrites] 0 = 0
       [egg.rewrites] LHS MVars
           []
@@ -52,7 +52,7 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (1)
-    [egg.rewrites] #1(⇔)
+    [egg.rewrites] #1(⇔) by #0
       [egg.rewrites] ?a + ?b = ?b + ?a
       [egg.rewrites] LHS MVars
           [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]

@@ -66,7 +66,7 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] Conditions
         [egg.rewrites] Add α
       [egg.rewrites] LHS MVars
-          [?x: [unconditionallyVisible], ?inst✝: [inTcInstTerm, isTcInst]]
+          [?inst✝: [inTcInstTerm, isTcInst], ?x: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
           [?x: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
@@ -75,13 +75,13 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (1)
-    [egg.rewrites] #0<←>(⇔)
-      [egg.rewrites] ?m.180 + ?m.180 = ?m.180
+    [egg.rewrites] #0<←>(⇔) by #0
+      [egg.rewrites] ?m.175 + ?m.175 = ?m.175
       [egg.rewrites] Conditions
         [egg.rewrites] Add α
       [egg.rewrites] LHS MVars
-          [?m.180: [unconditionallyVisible], ?m.183: [inTcInstTerm, isTcInst]]
-      [egg.rewrites] RHS MVars [?m.180: [unconditionallyVisible]]
+          [?m.172: [inTcInstTerm, isTcInst], ?m.175: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars [?m.175: [unconditionallyVisible]]
 -/
 #guard_msgs(info) in
 example (h : ∀ [Add α] (x : α), x + x = x) : true = true := by

@@ -96,7 +96,7 @@ private def Premise.Mk?.rewrites
     return rws
 
 private def Premises.explicit
-    (prem : Term) (idx : Nat) (mk : Premise.Mk α) (mkSrc : Nat → Option Nat → Source) :
+    (prem : Term) (idx : Idx) (mk : Premise.Mk α) (mkSrc : Idx → Option Nat → Source) :
     TacticM <| WithSyntax (Array α) := do
   match ← Premise.Raw.elab prem with
   | .single e type? =>
@@ -158,12 +158,12 @@ where
 
 def Premises.elabTagged (prems : Array Name) (cfg : Config.Normalization) : TacticM Rewrites := do
   let mut rws : Rewrites := #[]
-  for prem in prems, idx in [:prems.size] do
-    rws := rws ++ (← taggedRw prem idx)
+  for prem in prems do
+    rws := rws ++ (← taggedRw prem)
   return rws
 where
-  taggedRw (prem : Name) (idx : Nat) : TacticM Rewrites := do
+  taggedRw (prem : Name) : TacticM Rewrites := do
     let ident := mkIdent prem
     let mk := Premise.Mk.rewrites (genGroundEqs := false) ident cfg
-    let rws ← Premises.explicit ident idx mk .tagged
+    let rws ← Premises.explicit ident prem mk .tagged
     return rws.elems

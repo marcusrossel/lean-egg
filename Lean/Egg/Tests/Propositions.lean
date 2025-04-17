@@ -36,7 +36,7 @@ example (a b c : Nat) (h₁ : a = b) (h₂ : b = c) : a = c := by
   egg [h₁, h₂]
 
 example (h : p ∧ q ∧ r) : r ∧ r ∧ q ∧ p ∧ q ∧ r ∧ p := by
-  egg [and_comm, and_assoc, and_self, h]
+  egg [and_comm, and_self, and_assoc, h]
 
 example (P : Nat → Prop) (hp : P Nat.zero.succ) (h : ∀ n, P n ↔ P n.succ) :
     P Nat.zero.succ.succ.succ.succ := by

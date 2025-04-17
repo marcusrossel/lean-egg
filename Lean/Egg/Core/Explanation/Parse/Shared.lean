@@ -40,9 +40,9 @@ syntax "⊢"                               : basic_fwd_rw_src
 syntax "→" noWs num                      : basic_fwd_rw_src
 -- Note: We don't run rewrite generation after deriving guides, so a derived guide source can never
 --       be part of a rewrite source.
-syntax "↣" noWs num                      : basic_fwd_rw_src
-syntax "◯" noWs num                      : basic_fwd_rw_src
-syntax "□" noWs num (noWs "/" noWs num)? : basic_fwd_rw_src
+syntax "↣" noWs num                        : basic_fwd_rw_src
+syntax "◯" noWs num                        : basic_fwd_rw_src
+syntax "□" noWs ident (noWs "/" noWs num)? : basic_fwd_rw_src
 
 syntax "[" tc_proj_loc num "," num "]" : tc_proj
 
@@ -148,14 +148,14 @@ private def parseTcProjLocation : (TSyntax `tc_proj_loc) → Source.TcProjLocati
   | _                       => unreachable!
 
 private def parseBasicFwdRwSrc : (TSyntax `basic_fwd_rw_src) → Source
-  | `(basic_fwd_rw_src|#$idx$[/$eqn?]?) => .explicit idx.getNat (eqn?.map TSyntax.getNat)
-  | `(basic_fwd_rw_src|□$idx$[/$eqn?]?) => .tagged idx.getNat (eqn?.map TSyntax.getNat)
-  | `(basic_fwd_rw_src|*$idx)           => .star (.fromUniqueIdx idx.getNat)
-  | `(basic_fwd_rw_src|⊢)               => .goal
-  | `(basic_fwd_rw_src|→$idx)           => .intro idx.getNat
-  | `(basic_fwd_rw_src|↣$idx)           => .guide idx.getNat (derived := false)
-  | `(basic_fwd_rw_src|◯$idx)           => .builtin idx.getNat
-  | _                                   => unreachable!
+  | `(basic_fwd_rw_src|#$idx$[/$eqn?]?)  => .explicit idx.getNat (eqn?.map TSyntax.getNat)
+  | `(basic_fwd_rw_src|□$name$[/$eqn?]?) => .tagged name.getId (eqn?.map TSyntax.getNat)
+  | `(basic_fwd_rw_src|*$idx)            => .star (.fromUniqueIdx idx.getNat)
+  | `(basic_fwd_rw_src|⊢)                => .goal
+  | `(basic_fwd_rw_src|→$idx)            => .intro idx.getNat
+  | `(basic_fwd_rw_src|↣$idx)            => .guide idx.getNat (derived := false)
+  | `(basic_fwd_rw_src|◯$idx)            => .builtin idx.getNat
+  | _                                    => unreachable!
 
 private def parseTcExtension (src : Source) : (TSyntax `tc_extension) → Source
   | `(tc_extension|[$loc$pos,$dep]) => .tcProj src (parseTcProjLocation loc) pos.getNat dep.getNat

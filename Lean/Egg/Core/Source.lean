@@ -73,7 +73,7 @@ inductive Source where
   | beta
   | level (src : Source.Level)
   | builtin (idx : Nat)
-  | tagged (idx : Nat) (eqn? : Option Nat)
+  | tagged (name : Name) (eqn? : Option Nat)
   deriving Inhabited, BEq, Hashable
 
 namespace Source
@@ -145,8 +145,8 @@ def description : Source → String
   | beta                    => "≡β"
   | level src               => src.description
   | builtin idx             => s!"◯{idx}"
-  | tagged idx none         => s!"□{idx}"
-  | tagged idx (some eqn)   => s!"□{idx}/{eqn}"
+  | tagged name none         => s!"□{name}"
+  | tagged name (some eqn)   => s!"□{name}/{eqn}"
 
 instance : ToString Source where
   toString := description
