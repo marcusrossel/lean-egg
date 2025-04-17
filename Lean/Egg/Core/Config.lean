@@ -20,7 +20,7 @@ structure Encoding extends Normalization where
 
 structure Gen where
   builtins         := true
-  basket?          := (none : Option Lean.Name)
+  baskets          := (#[] : Array Lean.Name)
   genStructProjRws := true
   genTcProjRws     := true
   genTcSpecRws     := true

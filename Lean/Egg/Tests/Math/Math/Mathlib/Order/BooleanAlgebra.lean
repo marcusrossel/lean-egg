@@ -19,8 +19,6 @@ example (s : x ⊓ y ⊔ z = x) (i : x ⊓ y ⊓ z = ⊥) : x \ y = z := by
 theorem sdiff_le' : x \ y ≤ x := by
   egg [le_sup_right, sup_inf_sdiff] using x ⊓ y ⊔ x \ y
 
--- TODO: What do we need to replicate ac_rfl?
-
 theorem sdiff_sup_self' : y \ x ⊔ x = y ⊔ x := by
   egg ac [sup_inf_self, sup_inf_sdiff] using y \ x ⊔ (x ⊔ x ⊓ y)
 
@@ -97,6 +95,3 @@ example (x y z : α) : (x ⊓ y) \ z = x ⊓ y \ z := by
 #check sup_eq_sdiff_sup_sdiff_sup_inf
 example : x ⊔ y = x \ y ⊔ y \ x ⊔ x ⊓ y := by
   egg ac [sup_inf_left, sup_sdiff_right, sup_sdiff_self_right, sup_sdiff_self_left, inf_idem]
-
--- TODO: Check out some of the theorems in BooleanAlgebra.lean
-#check BooleanAlgebra
