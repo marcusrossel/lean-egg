@@ -26,13 +26,14 @@ import Egg.Core.Encode.Basic
 import Egg.Core.Encode.Rewrites
 import Egg.Core.Encode.EncodeM
 import Egg.Core.Encode.Guides
-import Egg.Core.Premise.Rewrites
 import Egg.Core.Directions
 import Egg.Core.Congr
 import Egg.Core.MVars.Collect
 import Egg.Core.MVars.Basic
 import Egg.Core.MVars.Subst
 import Egg.Core.Gen.Tagged
+import Egg.Core.Gen.StructProjs
+import Egg.Core.Gen.GoalTypeSpecialization
 import Egg.Core.Gen.Explosion
 import Egg.Core.Gen.Builtins
 import Egg.Core.Gen.GoalTcSpecs
@@ -40,6 +41,7 @@ import Egg.Core.Gen.NestedSplits
 import Egg.Core.Gen.TcProjs
 import Egg.Core.Gen.TcSpecs
 import Egg.Core.Gen.Guides
+import Egg.Core.Rewrites
 import Egg.Core.Normalize
 import Egg.Core.Source
 import Egg.Core.Request.EGraph

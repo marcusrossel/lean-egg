@@ -1,4 +1,4 @@
-import Egg.Core.Gen.TcSpecs
+import Egg.Core.Rewrites
 import Lean
 open Lean Meta
 

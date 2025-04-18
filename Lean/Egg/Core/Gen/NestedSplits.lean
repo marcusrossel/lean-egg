@@ -1,4 +1,4 @@
-import Egg.Core.Premise.Rewrites
+import Egg.Core.Rewrites
 import Egg.Core.MVars.Subst
 import Lean
 open Lean Meta

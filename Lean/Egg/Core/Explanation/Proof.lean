@@ -2,7 +2,7 @@ import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Congr
 import Egg.Core.Explanation.Parse.Basic
 import Egg.Core.Explanation.Expr
-import Egg.Core.Premise.Rewrites
+import Egg.Core.Rewrites
 import Egg.Core.Request.Equiv
 open Lean Meta
 
