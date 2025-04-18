@@ -148,7 +148,8 @@ where
     let mut noStar := true
     for prem in prems, idx in [:prems.size] do
       match prem with
-      | `(egg_premise|$prem:term) => result := result ++ (← explicit prem idx (mk prem) mkExplicitSrc)
+      | `(egg_premise|$prem:term) =>
+        result := result ++ (← explicit prem idx (mk prem) mkExplicitSrc)
       | `(egg_premise|*%$tk) =>
         unless noStar do throwErrorAt tk "duplicate '*'"
         noStar := false

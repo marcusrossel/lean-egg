@@ -22,13 +22,18 @@ initialize extension : Extension ← registerSimpleScopedEnvExtension {
 
 -- TODO: The `stx?` argument is a workaround for (seemingly) not having `try catch` in
 --       `CommandElabM`, which we would need in the elaborator for the `egg_basket` command.
-def Extension.getBasket (ext : Extension) (key : Basket.Key) (stx? : Option Syntax := none) : CoreM Basket.Entries := do
+def Extension.getBasket (ext : Extension) (key : Basket.Key) (stx? : Option Syntax := none) :
+    CoreM Basket.Entries := do
   if let some basket := (ext.getState <| ← getEnv)[key]? then
     return basket
   else if let some stx := stx? then
     throwErrorAt stx "Unknown egg basket"
   else
     throwError "Unknown egg basket '{key}'"
+
+def Extension.basketContains (ext : Extension) (key : Basket.Key) (entry : Basket.Entry) :
+    CoreM Bool :=
+  return (← ext.getBasket key).contains entry
 
 initialize
   -- TODO: I'm guessing we should use some other function, which does not mention "builtin".

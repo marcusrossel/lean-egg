@@ -1,7 +1,6 @@
 import Egg
 import Mathlib.Order.BooleanAlgebra
 
--- TODO: It would be convenient to have a command for extending a given egg basket.
 -- TODO: I think having the better heuristic for generated rewrites is really important here.
 
 set_option egg.timeLimit 5
@@ -47,85 +46,88 @@ attribute [egg ac] sup_comm sup_assoc inf_comm inf_assoc
 
 variable [GeneralizedBooleanAlgebra α] {x y z : α}
 
--- sdiff_unique
-set_option trace.egg true in
 example (s : x ⊓ y ⊔ z = x) (i : x ⊓ y ⊓ z = ⊥) : x \ y = z := by
-  conv_rhs at s => rw [← sup_inf_sdiff x y, sup_comm]
-  rw [sup_comm] at s
-  conv_rhs at i => rw [← inf_inf_sdiff x y, inf_comm]
-  rw [inf_comm] at i
-  -- TODO: eq_of_inf_eq_sup_eq is another example where we need the unbound vars for proof reconstr.
-  egg [eq_of_inf_eq_sup_eq, i, s]
-  -- exact (eq_of_inf_eq_sup_eq i s).symm
+  egg bool [sup_inf_sdiff x y, inf_inf_sdiff x y, i, s]
+
+/- Previous -/ attribute [egg bool] sdiff_unique
 
 theorem sdiff_le' : x \ y ≤ x := by
   egg bool [le_sup_right] using x ⊓ y ⊔ x \ y
 
-theorem sdiff_sup_self' : y \ x ⊔ x = y ⊔ x := by
-  egg bool using y \ x ⊔ (x ⊔ x ⊓ y)
+/- Previous -/ attribute [egg bool] sdiff_le'
 
-#check sdiff_inf_sdiff
+theorem sdiff_sup_self' : y \ x ⊔ x = y ⊔ x := by
+  egg bool using y ⊓ x ⊔ y \ x ⊔ x
+
+/- Previous -/ attribute [egg bool] sdiff_sup_self'
+
 example : x \ y ⊓ y \ x = ⊥ := by
   egg bool [inf_of_le_right (α := α) sdiff_le']
 
-#check inf_sdiff_self_right
+/- Previous -/ attribute [egg bool] sdiff_inf_sdiff
+
 example : x ⊓ y \ x = ⊥ := by
   egg bool using (x ⊓ y ⊔ x \ y)
 
-#check sdiff_sup
+/- Previous -/ attribute [egg bool] inf_sdiff_self_right
+
 example : y \ (x ⊔ z) = y \ x ⊓ y \ z := by
   apply sdiff_unique
   · egg bool using (y ⊓ z ⊔ (y ⊓ x ⊔ y \ x)) ⊓ (y ⊓ x ⊔ (y ⊓ z ⊔ y \ z))
-  · egg bool using (y ⊓ x ⊔ y ⊓ z) ⊓ (y \ x ⊓ y \ z)
+  · egg bool using y ⊓ x ⊓ (y \ x ⊓ y \ z) ⊔ y ⊓ z ⊓ (y \ x ⊓ y \ z)
 
-#check sdiff_eq_self_iff_disjoint
+/- Previous -/ attribute [egg bool] sdiff_sup
+
 example : x \ y = x ↔ Disjoint y x := by
   egg bool [sdiff_bot, sdiff_eq_sdiff_iff_inf_eq_inf, disjoint_iff] using x ⊓ ⊥
 
-#check sdiff_lt
+/- Previous -/ attribute [egg bool] sdiff_eq_self_iff_disjoint
+
 example (hx : y ≤ x) (hy : y ≠ ⊥) : x \ y < x := by
   refine sdiff_le.lt_of_ne fun h => hy ?_
-  egg bool [h, inf_eq_right.mpr hx]
+  egg bool [h, inf_eq_right, hx]
 
-#check sup_inf_inf_sdiff
+/- Previous -/ attribute [egg bool] sdiff_lt
+
 example : x ⊓ y ⊓ z ⊔ y \ z = x ⊓ y ⊔ y \ z := by
   egg bool
 
-#check sdiff_sdiff_right
+/- Previous -/ attribute [egg bool] sup_inf_inf_sdiff
+
 example : x \ (y \ z) = x \ y ⊔ x ⊓ y ⊓ z := by
   rw [sup_comm, inf_comm, ← inf_assoc, sup_inf_inf_sdiff]
   apply sdiff_unique
-  · egg bool [sdiff_sup_self'] using x ⊓ (y \ z ⊓ (z ⊔ y) ⊔ x ⊓ (z ⊔ y) ⊔ x \ y)
-  · egg bool [inf_sdiff_self_left, inf_sdiff_left, inf_sdiff_self_right]
-      using x ⊓ y \ z ⊓ (z ⊓ x) ⊔ x ⊓ y \ z ⊓ x \ y
+  · egg bool using x ⊓ (y \ z ⊓ (z ⊔ y) ⊔ x ⊓ (z ⊔ y) ⊔ x \ y)
+  · egg bool [inf_sdiff_left] using x ⊓ y \ z ⊓ (z ⊓ x) ⊔ x ⊓ y \ z ⊓ x \ y
 
-#check sdiff_sdiff_right'
+/- Previous -/ attribute [egg bool] sdiff_sdiff_right
+
 example : x \ (y \ z) = x \ y ⊔ x ⊓ z := by
-  egg bool [sdiff_sdiff_right, sup_inf_inf_sdiff]
+  egg bool
 
-#check sdiff_sdiff_sup_sdiff
+/- Previous -/ attribute [egg bool] sdiff_sdiff_right'
+
 example : z \ (x \ y ⊔ y \ x) = z ⊓ (z \ x ⊔ y) ⊓ (z \ y ⊔ x) := by
-  egg ac gbool [sdiff_sup, sdiff_sdiff_right, sup_inf_left, inf_idem]
-    using z ⊓ z ⊓ (z \ x ⊔ y) ⊓ (z \ y ⊔ x)
+  egg bool using (z \ x ⊔ z ⊓ x ⊓ y) ⊓ (z \ y ⊔ z ⊓ y ⊓ x)
 
-#check sdiff_sdiff_sup_sdiff'
+/- Previous -/ attribute [egg bool] sdiff_sdiff_sup_sdiff
+
 example : z \ (x \ y ⊔ y \ x) = z ⊓ x ⊓ y ⊔ z \ x ⊓ z \ y := by
-  egg bool [sdiff_sup, sdiff_sdiff_right]
+  egg bool
 
-#check inf_sdiff
+/- Previous -/ attribute [egg bool] sdiff_sdiff_sup_sdiff'
+
 example : (x ⊓ y) \ z = x \ z ⊓ y \ z := by
-  apply sdiff_unique
-  · egg bool [inf_sdiff_self_right, inf_bot_eq, bot_inf_eq, sup_inf_left, sup_inf_right,
-                    sup_sdiff_self_right, inf_sup_right, inf_sdiff_sup_right, inf_sup_self,
-                    sup_inf_inf_sdiff, sup_eq_left, (inf_le_inf (α := α) sdiff_le sdiff_le)]
-  · egg bool [inf_sdiff_self_right, inf_bot_eq, bot_inf_eq, sup_inf_left, sup_inf_right,
-                    sup_sdiff_self_right, inf_sup_right, inf_sdiff_sup_right, inf_sup_self,
-                    sup_inf_inf_sdiff, sup_eq_left, (inf_le_inf (α := α) sdiff_le sdiff_le)]
+  apply sdiff_unique <;> egg bool using (y ⊓ (x ⊓ (x ⊔ z)) ⊔ x \ z) ⊓ (x ⊓ y ⊓ z ⊔ y \ z)
 
-#check inf_sdiff_assoc
+/- Previous -/ attribute [egg bool] inf_sdiff
+
 example (x y z : α) : (x ⊓ y) \ z = x ⊓ y \ z := by
-  apply sdiff_unique <;> egg ac gbool [inf_sup_left, inf_bot_eq]
+  apply sdiff_unique <;> egg bool [inf_bot_eq]
 
-#check sup_eq_sdiff_sup_sdiff_sup_inf
+/- Previous -/ attribute [egg bool] inf_sdiff_assoc
+
 example : x ⊔ y = x \ y ⊔ y \ x ⊔ x ⊓ y := by
-  egg ac gbool [sup_inf_left, sup_sdiff_right, sup_sdiff_self_right, sup_sdiff_self_left, inf_idem]
+  egg bool
+
+/- Previous -/ attribute [egg bool] sup_eq_sdiff_sup_sdiff_sup_inf
