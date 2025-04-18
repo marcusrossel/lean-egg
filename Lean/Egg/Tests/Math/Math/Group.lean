@@ -3,7 +3,7 @@ import Egg
 
 set_option egg.genTcProjRws false -- TODO: Things still work if we keep this, but it seems not to be necessary.
 
-attribute [egg group] mul_assoc one_mul mul_one inv_mul_self mul_inv_self
+attribute [egg group] mul_assoc one_mul mul_one inv_mul_cancel mul_inv_cancel
 
 namespace Test
 

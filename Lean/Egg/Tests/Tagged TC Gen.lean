@@ -22,13 +22,13 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] □r(⇔)
       [egg.rewrites] z = z
       [egg.rewrites] LHS MVars
-          [?α: [inErasedTcInst, unconditionallyVisible],
-           ?c: [isTcInst, unconditionallyVisible],
-           ?u.80: [inErasedTcInst, unconditionallyVisible]]
+          [?c: [isTcInst, unconditionallyVisible],
+           ?α: [inErasedTcInst, unconditionallyVisible],
+           ?u.82: [inErasedTcInst, unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?α: [inErasedTcInst, unconditionallyVisible],
-           ?c: [isTcInst, unconditionallyVisible],
-           ?u.80: [inErasedTcInst, unconditionallyVisible]]
+          [?c: [isTcInst, unconditionallyVisible],
+           ?α: [inErasedTcInst, unconditionallyVisible],
+           ?u.82: [inErasedTcInst, unconditionallyVisible]]
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Structure Projections (0)

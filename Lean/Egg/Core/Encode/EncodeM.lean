@@ -30,7 +30,7 @@ def withInstantiatedBVar (ty body : Expr) (m : String → Expr → EncodeM α) :
     return a
 
 def bvarName? (id : FVarId) : EncodeM (Option String) := do
-  let some bvarIdx := (← get).bvars.indexOf? id | return none
+  let some bvarIdx := (← get).bvars.idxOf? id | return none
   return if (← config).slotted then s!"${id.uniqueIdx!}" else s!"{bvarIdx}"
 
 open Meta
