@@ -20,8 +20,15 @@ initialize extension : Extension ← registerSimpleScopedEnvExtension {
   addEntry s := fun ⟨key, entry⟩ => s.alter key (·.getD #[] |>.push entry)
 }
 
-def Extension.getBasket (ext : Extension) (key : Basket.Key) : CoreM Basket.Entries :=
-  return (ext.getState <| ← getEnv)[key]?.getD #[]
+-- TODO: The `stx?` argument is a workaround for (seemingly) not having `try catch` in
+--       `CommandElabM`, which we would need in the elaborator for the `egg_basket` command.
+def Extension.getBasket (ext : Extension) (key : Basket.Key) (stx? : Option Syntax := none) : CoreM Basket.Entries := do
+  if let some basket := (ext.getState <| ← getEnv)[key]? then
+    return basket
+  else if let some stx := stx? then
+    throwErrorAt stx "Unknown egg basket"
+  else
+    throwError "Unknown egg basket '{key}'"
 
 initialize
   -- TODO: I'm guessing we should use some other function, which does not mention "builtin".
@@ -38,3 +45,9 @@ initialize
       | `(Parser.Attr.simple|egg $key:ident) => extension.add (key.getId, entry) attrKind
       | _                                    => throwError "'egg' attribute expectes a basket name"
   }
+
+elab "egg_basket " dst:ident " extends " srcs:ident,+ : command => do
+  for src in srcs.getElems do
+    let src ← Elab.Command.liftCoreM <| extension.getBasket src.getId (stx? := src)
+    for entry in src do
+      extension.add (dst.getId, entry)
