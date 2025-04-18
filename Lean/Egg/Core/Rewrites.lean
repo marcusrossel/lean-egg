@@ -145,7 +145,12 @@ def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config.Normalization) 
   let proof ← mkEqTrue proof
   return some { cgr with proof, src, conds := #[], mvars.lhs := {}, mvars.rhs := {}, dirs? := none }
 
-def fixDirs (rw : Rewrite) (d : Directions) : Rewrite :=
+-- If `disallowLoneMVar` is set, we prune directions where the pattern is just an mvar.
+def fixDirs (rw : Rewrite) (dirs : Directions) (disallowLoneMVar := false) : Rewrite := Id.run do
+  let mut d := dirs
+  if disallowLoneMVar then
+    if rw.lhs.isMVar then d := d.without .forward
+    if rw.rhs.isMVar then d := d.without .backward
   { rw with dirs? := d }
 
 def validDirs (rw : Rewrite) (conditionSubgoals : Bool) : Directions := Id.run do
@@ -166,7 +171,12 @@ def validDirs (rw : Rewrite) (conditionSubgoals : Bool) : Directions := Id.run d
     visibleLevelRhs := visibleLevelRhs.filter (!propCondLevel.contains ·)
   let exprDirs := Directions.satisfyingSuperset visibleExprLhs visibleExprRhs
   let lvlDirs  := Directions.satisfyingSuperset visibleLevelLhs visibleLevelRhs
-  return exprDirs.meet lvlDirs
+  let mut dirs := exprDirs.meet lvlDirs
+  -- To avoid rewrites of the form "?m => ...", we disallow directions where the pattern is just an
+  -- mvar.
+  if rw.lhs.isMVar then dirs := dirs.without .forward
+  if rw.rhs.isMVar then dirs := dirs.without .backward
+  return dirs
 
 -- Returns the same rewrite but with its type and proof potentially flipped to match the given
 -- direction.

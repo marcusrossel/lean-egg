@@ -51,8 +51,6 @@ theorem freshmans_dream₂ : (x + y) ^ 2 = (x ^ 2) + (y ^ 2) := by
    _ = x ^ 2 + x * y + y * x + y ^ 2
    _ = x ^ 2 + y ^ 2  with [CharTwoRing.char_two]
 
-set_option egg.genGoalTypeSpec false
-
 theorem freshmans_dream₂' : (x + y) ^ 2 = (x ^ 2) + (y ^ 2) := by
   egg comm_ring [CharTwoRing.char_two]
 
@@ -66,6 +64,6 @@ theorem freshmans_dream₃ : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3
    _ = (x * x ^ 2) + x * y ^ 2 + y * x ^ 2 + y * y ^ 2
    _ = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3
 
--- TODO: The explanation is too long.
-theorem freshmans_dream₃' : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
-  sorry -- egg comm_ring [CharTwoRing.char_two]
+-- NOTE: The explanation is too long.
+-- theorem freshmans_dream₃' : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
+-- egg comm_ring [CharTwoRing.char_two]

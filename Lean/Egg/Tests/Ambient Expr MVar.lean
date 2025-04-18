@@ -1,21 +1,9 @@
 import Egg
 import Lean
 
-variable (h : ∀ x : Prop, True = x)
+variable (h : ∀ x : Prop, (x ∧ x) = True)
 
-example : True = True := by
-  apply Eq.trans
-  · egg [h]
-  · rfl -- This assigns the mvar resulting from `Eq.trans`.
-
-/--
-error: unsolved goals
-case b
-h : ∀ (x : Prop), True = x
-⊢ Prop
--/
-#guard_msgs in
-example : True = True := by
-  apply Eq.trans
-  · egg [h]
-  · egg [h]
+example : True = (True ∧ True) := by
+  refine Eq.trans (b := ?b ∧ ?b) ?eq₁ ?eq₂
+  case eq₁ => egg [h]
+  case eq₂ => exact rfl

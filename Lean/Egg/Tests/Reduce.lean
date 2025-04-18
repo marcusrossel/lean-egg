@@ -26,7 +26,7 @@ set_option allowUnsafeReducibility true in attribute [semireducible] P
 example : P := by
   egg
 
-abbrev Q := ∀ x : Nat, x = nat_lit 0
+abbrev Q := ∀ x : Nat, Nat.succ x = nat_lit 0
 
 -- Checks that we can "see through" definitions in rewrites where the body is an equality.
 example (h : Q) : 1 = 0 := by

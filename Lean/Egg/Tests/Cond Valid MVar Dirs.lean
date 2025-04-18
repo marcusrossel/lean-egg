@@ -8,8 +8,8 @@ open scoped Egg
 info: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
-    [egg.rewrites] #0(⇔): h
-      [egg.rewrites] ?b = ?a
+    [egg.rewrites] #0(⇔): _h
+      [egg.rewrites] f ?b = f ?a
       [egg.rewrites] Conditions
         [egg.rewrites] ?a = ?b
       [egg.rewrites] LHS MVars
@@ -28,5 +28,5 @@ set_option trace.egg.rewrites true in
 set_option egg.builtins false in
 set_option egg.genGroundEqs false in
 egg_no_defeq in
-example (h : ∀ a b : Nat, a = b → b = a) : true = true := by
-  egg [h]
+example (f : Nat → Nat) (_h : ∀ a b : Nat, a = b → f b = f a) : true = true := by
+  egg [_h]

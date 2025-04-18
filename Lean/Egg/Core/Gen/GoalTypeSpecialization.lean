@@ -52,7 +52,7 @@ private def specializeForTargets
   -- means that the specialization does not have any direction, then we discard it.
   let newDirs := (spec.validDirs subgoals).without rwDirs
   if newDirs.isNone then return none
-  return spec.fixDirs newDirs
+  return spec.fixDirs newDirs (disallowLoneMVar := true)
 
 private def specialize (rw : Rewrite) (goal : Congr) (subgoals : Bool) :
     MetaM (Array Rewrite) := do

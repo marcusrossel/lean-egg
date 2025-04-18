@@ -5,7 +5,6 @@ import Egg
 theorem getElem_fin [GetElem Cont Nat Elem Dom] (a : Cont) (i : Fin n) (h : Dom a i) :
   a[i] = a[i.val] := rfl
 
--- TODO: We're generating ill-typed rewrites here.
 /-- error: egg failed to prove the goal (reached time limit) -/
 #guard_msgs in
 example (a : Array α) {i j : Fin a.size} : a[i] = a[j] := by

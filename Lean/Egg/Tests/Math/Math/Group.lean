@@ -13,7 +13,8 @@ theorem inv_mul_cancel_left : a⁻¹ * (a * b) = b := by egg group
 
 theorem mul_inv_cancel_left : a * (a⁻¹ * b) = b := by egg group
 
-theorem inv_one : (1 : G)⁻¹ = 1 := by egg group
+theorem inv_one : (1 : G)⁻¹ = 1 := by egg
+  group using 1 * (1 : G)⁻¹
 
 theorem inv_mul : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   egg group calc
@@ -29,4 +30,4 @@ theorem inv_mul' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   egg group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
 
 theorem inv_inv' : a⁻¹⁻¹ = a := by
-  egg group using a⁻¹ * a
+  egg group using a⁻¹⁻¹ * a⁻¹ * a

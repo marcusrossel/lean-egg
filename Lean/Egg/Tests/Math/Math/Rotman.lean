@@ -32,8 +32,6 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
       _ = (n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!) := by egg [proposition_1_14, ih, ho] <;> omega
       _ = _ := cast_inj (R := Real) |>.mp ?_
 
-    set_option egg.genTcProjRws false in
-    set_option egg.genGoalTypeSpec false in
     egg real cast calc [Real.Gamma_nat_eq_factorial, Real.Gamma_add_one]
       _ = n﹗ / ((r - 1)﹗ * (n - r + 1)﹗) + n﹗ / (r ﹗ * (n - r)﹗)
       _ = (n﹗ / ((r - 1)﹗ * (n - r + 1)﹗) + n﹗ / (r ﹗ * (n - r)﹗))
@@ -46,8 +44,8 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
     all_goals try omega
     · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
     · exact factorial_mul_factorial_dvd_factorial h
-    · rw [←cast_one, ←cast_add, ←cast_sub h, cast_ne_zero]; omega
     · rw [←cast_one, ←cast_add, cast_ne_zero]; omega
+    · rw [←cast_one, ←cast_add, ←cast_sub h, cast_ne_zero]; omega
     · rw [cast_ne_zero, ne_eq]; exact hr
     · rw [←cast_one, ←cast_sub (by omega : n ≥ r), ←cast_add, cast_ne_zero]; omega
     · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)

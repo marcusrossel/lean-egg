@@ -42,7 +42,6 @@ theorem freshmans_dream₂ : (x + y) ^ 2 = (x ^ 2) + (y ^ 2) := by
    _ = x ^ 2 + x * y + y * x + y ^ 2 := by char_two_ring
    _ = x ^ 2 + y ^ 2                 := by char_two_ring
 
-set_option egg.genGoalTypeSpec false in
 theorem freshmans_dream₂' : (x + y) ^ 2 = (x ^ 2) + (y ^ 2) := by
   char_two_ring
 
@@ -56,7 +55,6 @@ theorem freshmans_dream₃ : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3
     _ = (x * x ^ 2) + x * y ^ 2 + y * x ^ 2 + y * y ^ 2 := by char_two_ring
     _ = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3           := by char_two_ring
 
--- TODO: The explanation is too long.
-set_option egg.genGoalTypeSpec false in
-theorem freshmans_dream₃' : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
-  sorry -- char_two_ring
+-- NOTE: The explanation is too long.
+-- theorem freshmans_dream₃' : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
+--   char_two_ring

@@ -66,10 +66,8 @@ theorem sdiff_sup_self' : y \ x ⊔ x = y ⊔ x := by
   egg ac gbool lattice ilattice using y \ x ⊔ (x ⊔ x ⊓ y)
 
 #check sdiff_inf_sdiff
-set_option maxHeartbeats 4000000 in
 example : x \ y ⊓ y \ x = ⊥ := by
   egg [inf_comm, inf_assoc, inf_inf_sdiff, inf_sup_left, inf_idem, inf_sup_right, bot_sup_eq, inf_of_le_right (α := α) sdiff_le']
-    using x ⊓ (y ⊓ x ⊔ y \ x) ⊓ x \ y
 
 #check sdiff_inf_sdiff
 example : x \ y ⊓ y \ x = ⊥ :=
@@ -107,6 +105,7 @@ example : y \ (x ⊔ z) = y \ x ⊓ y \ z := by
 #check sdiff_eq_self_iff_disjoint
 example : x \ y = x ↔ Disjoint y x := by
   egg ac gbool [sdiff_bot, sdiff_eq_sdiff_iff_inf_eq_inf, inf_bot_eq, disjoint_iff]
+    using x ⊓ ⊥
 
 #check sdiff_eq_self_iff_disjoint
 example : x \ y = x ↔ Disjoint y x := by
@@ -125,7 +124,6 @@ example : x ⊓ y ⊓ z ⊔ y \ z = x ⊓ y ⊔ y \ z := by
   egg ac gbool [sup_inf_right, inf_sup_right, inf_sdiff_left]
 
 #check sup_inf_inf_sdiff
-set_option trace.egg true in
 example : x ⊓ y ⊓ z ⊔ y \ z = x ⊓ y ⊔ y \ z := by
   egg slattice ilattice lattice dlattice gbool calc [inf_sdiff_left]
     x ⊓ y ⊓ z ⊔ y \ z = x ⊓ (y ⊓ z) ⊔ y \ z

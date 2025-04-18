@@ -24,11 +24,14 @@ macro "group" baskets:ident* mod:egg_cfg_mod guides:(egg_guides)? : tactic => `(
   $[$guides]?
 )
 
-theorem inv_mul_cancel_left : a⁻¹ * (a * b) = b := by group
+theorem inv_mul_cancel_left : a⁻¹ * (a * b) = b := by
+  group
 
-theorem mul_inv_cancel_left : a * (a⁻¹ * b) = b := by group
+theorem mul_inv_cancel_left : a * (a⁻¹ * b) = b := by
+  group
 
-theorem inv_one : (1 : G)⁻¹ = 1 := by group
+theorem inv_one : (1 : G)⁻¹ = 1 := by
+  group using 1 * (1 : G)⁻¹
 
 theorem inv_mul : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   calc _ = b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹ := by group
@@ -41,24 +44,8 @@ theorem inv_inv : a⁻¹⁻¹ = a := by
 theorem inv_mul' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
 
--- TODO: I'm confused. When using goal tc spec, #0 is applied a lot and #1<⊢>, #2<⊢> less.
---                     When using goal ty spec, #0 is barely applied, but #1<⊢>, #2<⊢> are a lot.
---                     The derived rewrites #1<⊢> and #2<⊢> are identical, except for their enabled
---                     rewrite directions.
---                     Is this related to inefficiency of type class synth during eq sat? Because in
---                     the latter case to do forward rw with #1/#2, we need type class synth,
---                     whereas the former case specializes this away.
-set_option egg.timeLimit 10 in
--- set_option egg.genGoalTypeSpec false in
--- set_option egg.genGoalTcSpec true in
 theorem inv_mul'' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
-  sorry -- group using a⁻¹ * (a * b) * (a * b)⁻¹
-
-/-- error: egg failed to prove the goal (reached time limit) -/
-#guard_msgs in
-set_option egg.timeLimit 10 in
-theorem inv_mul''' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
-  group using (a * b) * (a * b)⁻¹
+  group using a⁻¹ * (a * b) * (a * b)⁻¹
 
 theorem inv_inv' : a⁻¹⁻¹ = a := by
-  group using a⁻¹ * a
+  group using a⁻¹⁻¹ * a⁻¹ * a

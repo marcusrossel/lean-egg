@@ -13,4 +13,4 @@ set_option trace.egg.encoded true in
 set_option egg.builtins false in
 set_option egg.genTcProjRws false in
 example (a : Nat) : a + a = a + a := by
-  egg (config := { exitPoint := some .beforeEqSat })
+  egg

@@ -7,26 +7,27 @@ import Egg
 /--
 error: egg failed to build proof step 0: unification failure for LHS of rewrite #0:
 
-  Nat.add
+  id Nat.add
 vs
-  ?m.183
+  ?m.264 ?m.261
 in
-  Nat.add
+  id Nat.add
 and
   ()
 
 • Types: ⏎
-  ?m.183: Unit
+  ?m.264: Unit → Unit
+  ?m.261: Unit
 
 • Read Only Or Synthetic Opaque MVars: []
 -/
 #guard_msgs in
 set_option egg.retryWithShapes false in
-example (h : ∀ u : Unit, u = .unit) : Nat.add = Nat.mul := by
+example (h : ∀ (f : Unit → Unit) (u : Unit), f u = .unit) : id Nat.add = id Nat.mul := by
   egg [h]
 
-/-- error: egg failed to prove the goal (reached time limit) -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
 set_option egg.retryWithShapes true in
-example (h : ∀ u : Unit, u = .unit) : Nat.add = Nat.mul := by
+example (h : ∀ (f : Unit → Unit) (u : Unit), f u = .unit) : id Nat.add = id Nat.mul := by
   egg [h]

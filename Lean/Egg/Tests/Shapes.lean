@@ -37,10 +37,10 @@ example (h : ∀ x y : Nat, x + y = y + x) : 0 + 1 = 1 + 0 := by
   -- TODO: How should shapes interact with erased terms?
   sorry -- egg [h]
 
-/-- error: egg failed to prove the goal (reached time limit) -/
+/-- error: egg failed to prove the goal (saturated) -/
 #guard_msgs in
-example (h : ∀ u : Unit, u = .unit) : Nat.add = Nat.mul := by
-  egg (config := { exitPoint := some .beforeProof }) [h]
+example (h : ∀ (f : Unit → Unit) (u : Unit), f u = .unit) : id Nat.add = id Nat.mul := by
+  egg [h]
 
 section Basic
 
@@ -146,9 +146,9 @@ theorem inv_mul_cancel_left : a⁻¹ * (a * b) = b := by group
 
 theorem mul_inv_cancel_left : a * (a⁻¹ * b) = b := by group
 
-theorem inv_one : (1 : G)⁻¹ = 1 := by group
+theorem inv_one : (1 : G)⁻¹ = 1 := by
+  group using 1 * (1 : G)⁻¹
 
-set_option egg.timeLimit 7 in
 theorem inv_mul : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   calc _ = b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹ := by group
        _ = _                               := by group
@@ -157,11 +157,10 @@ theorem inv_inv : a⁻¹⁻¹ = a := by
   calc _ = a⁻¹⁻¹ * (a⁻¹ * a) := by group
        _ = _                 := by group
 
-set_option egg.timeLimit 10 in
 theorem inv_mul' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
 
 theorem inv_inv' : a⁻¹⁻¹ = a := by
-  group using a⁻¹ * a
+  group using a⁻¹⁻¹ * a⁻¹ * a
 
 end Groups

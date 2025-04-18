@@ -1,6 +1,6 @@
 import Egg
 
-example : (fun x : Nat => 0) = (fun x => 0 + 0) := by
+example : (fun _ : Nat => 0) = (fun _ => 0 + 0) := by
   egg [Nat.add_zero]
 
 example : (fun x => x) = (fun x => x + 0) := by

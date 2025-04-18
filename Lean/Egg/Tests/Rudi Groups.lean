@@ -39,13 +39,11 @@ theorem mul_inv_cancel_left : a * (a⁻¹ * b) = b := by group
 
 theorem mul_inv_cancel_left' : rudify a * (a⁻¹ * b) = b := by group
 
-theorem inv_one : (1 : G)⁻¹ = 1 := by group
+theorem inv_one : (1 : G)⁻¹ = 1 := by
+  group using 1 * (1 : G)⁻¹
 
--- TODO: This started breaking when we turned of type class specialization.
---       Could it stem from type class synth (during equality saturation) receiving a term which
---       contains a bvar?
 theorem inv_one' : rudify (1 : G)⁻¹ = 1 := by
-  sorry -- group
+  group using 1 * (1 : G)⁻¹
 
 theorem inv_mul : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
@@ -53,19 +51,8 @@ theorem inv_mul : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
 theorem inv_mul' : rudify (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
 
--- Cf related TODO in Groups.lean.
-theorem inv_mul'' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
-  sorry -- group using a⁻¹ * (a * b) * (a * b)⁻¹
-
--- TODO: Broken explanation.
-theorem inv_mul''' : rudify (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
-  sorry -- group using a⁻¹ * (a * b) * (a * b)⁻¹
-
 theorem inv_inv : a⁻¹⁻¹ = a := by
-  group using a⁻¹ * a
+  group using a⁻¹⁻¹ * a⁻¹ * a
 
--- TODO: This started breaking when we turned of type class specialization.
---       Could it stem from type class synth (during equality saturation) receiving a term which
---       contains a bvar?
 theorem inv_inv' : rudify a⁻¹⁻¹ = a := by
-  sorry -- group using a⁻¹ * a
+  group using a⁻¹⁻¹ * a⁻¹ * a
