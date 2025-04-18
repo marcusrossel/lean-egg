@@ -82,9 +82,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] f ?x ?y = f ?y ?x
       [egg.rewrites] LHS MVars
-          [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
+          [?x: [unconditionallyVisible], ?y: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
+          [?x: [unconditionallyVisible], ?y: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
@@ -108,22 +108,22 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] LHS MVars
           [?x: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?x: [unconditionallyVisible], ?y: [unconditionallyVisible]]
+          [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (2)
     [egg.rewrites] #0💥→[3](⇔)
-      [egg.rewrites] f ?m.247 ?m.247 = f a ?m.247
+      [egg.rewrites] f ?m.235 ?m.235 = f a ?m.235
       [egg.rewrites] LHS MVars
-          [?m.247: [unconditionallyVisible]]
+          [?m.235: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m.247: [unconditionallyVisible]]
+          [?m.235: [unconditionallyVisible]]
     [egg.rewrites] #0💥→[4](⇔)
-      [egg.rewrites] f ?m.256 ?m.256 = f b ?m.256
+      [egg.rewrites] f ?m.244 ?m.244 = f b ?m.244
       [egg.rewrites] LHS MVars
-          [?m.256: [unconditionallyVisible]]
+          [?m.244: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m.256: [unconditionallyVisible]]
+          [?m.244: [unconditionallyVisible]]
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)

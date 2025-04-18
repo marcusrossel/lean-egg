@@ -32,12 +32,7 @@ info: [egg.rewrites] Rewrites
           [?m.53: [unconditionallyVisible]]
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Pruned (1)
-    [egg.rewrites] #0<←>(⇔) by #0<⊢0>
-      [egg.rewrites] -?m.60 = ?m.60
-      [egg.rewrites] LHS MVars
-          [?m.60: [unconditionallyVisible]]
-      [egg.rewrites] RHS MVars [?m.60: [unconditionallyVisible]]
+  [egg.rewrites] Pruned (0)
 -/
 #guard_msgs(info) in
 example (h : ∀ [inst : Neg Int] (x : Int), @Neg.neg Int inst x = x) : (0 : Int) = (0 : Int) := by

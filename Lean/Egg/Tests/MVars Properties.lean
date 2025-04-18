@@ -35,7 +35,7 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇒): h
       [egg.rewrites] f ?x = ?x
       [egg.rewrites] LHS MVars
-          [?x: [unconditionallyVisible], ?α: [unconditionallyVisible]]
+          [?α: [unconditionallyVisible], ?x: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
           [?x: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
@@ -66,7 +66,7 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] Conditions
         [egg.rewrites] Add α
       [egg.rewrites] LHS MVars
-          [?inst✝: [inTcInstTerm, isTcInst], ?x: [unconditionallyVisible]]
+          [?x: [unconditionallyVisible], ?inst✝: [inTcInstTerm, isTcInst]]
       [egg.rewrites] RHS MVars
           [?x: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
@@ -74,14 +74,7 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Derived (0)
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Pruned (1)
-    [egg.rewrites] #0<←>(⇔) by #0
-      [egg.rewrites] ?m.175 + ?m.175 = ?m.175
-      [egg.rewrites] Conditions
-        [egg.rewrites] Add α
-      [egg.rewrites] LHS MVars
-          [?m.172: [inTcInstTerm, isTcInst], ?m.175: [unconditionallyVisible]]
-      [egg.rewrites] RHS MVars [?m.175: [unconditionallyVisible]]
+  [egg.rewrites] Pruned (0)
 -/
 #guard_msgs(info) in
 example (h : ∀ [Add α] (x : α), x + x = x) : true = true := by

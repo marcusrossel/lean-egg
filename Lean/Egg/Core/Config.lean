@@ -23,8 +23,8 @@ structure Gen where
   baskets          := (#[] : Array Lean.Name)
   genStructProjRws := true
   genTcProjRws     := true
-  genTcSpecRws     := true
-  genGoalTcSpec    := true -- This option requires `genTcSpecRws` to be true.
+  genTcSpecRws     := false
+  genGoalTcSpec    := true
   genNestedSplits  := true
   explosion        := false
   derivedGuides    := true

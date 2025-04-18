@@ -9,14 +9,14 @@ error: egg failed to build proof step 0: unification failure for LHS of rewrite 
 
   Nat.add
 vs
-  ?m.222
+  ?m.190
 in
   Nat.add
 and
   ()
 
 • Types: ⏎
-  ?m.222: Unit
+  ?m.190: Unit
 
 • Read Only Or Synthetic Opaque MVars: []
 -/
