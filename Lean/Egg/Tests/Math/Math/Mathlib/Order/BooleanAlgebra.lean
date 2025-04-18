@@ -6,7 +6,6 @@ import Mathlib.Order.BooleanAlgebra
 
 set_option egg.timeLimit 5
 set_option egg.genTcProjRws false -- TODO: Things still work if we keep this, but it seems not to be necessary.
-set_option egg.genGoalTcSpec true -- TODO: This is actually necessary.
 set_option egg.genGroundEqs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
 
 -- SemilatticeSup
@@ -67,11 +66,10 @@ theorem sdiff_sup_self' : y \ x ⊔ x = y ⊔ x := by
   egg ac gbool lattice ilattice using y \ x ⊔ (x ⊔ x ⊓ y)
 
 #check sdiff_inf_sdiff
+set_option maxHeartbeats 4000000 in
 example : x \ y ⊓ y \ x = ⊥ := by
-  sorry -- TODO: This started breaking when we started generating fewer goal tc spec rewrites and
-        --       turned off some of the other gen options.
-    -- egg [inf_comm, inf_assoc, inf_inf_sdiff, inf_sup_left, inf_idem, inf_sup_right, bot_sup_eq, inf_of_le_right (α := α) sdiff_le']
-    --   using x ⊓ (y ⊓ x ⊔ y \ x) ⊓ x \ y
+  egg [inf_comm, inf_assoc, inf_inf_sdiff, inf_sup_left, inf_idem, inf_sup_right, bot_sup_eq, inf_of_le_right (α := α) sdiff_le']
+    using x ⊓ (y ⊓ x ⊔ y \ x) ⊓ x \ y
 
 #check sdiff_inf_sdiff
 example : x \ y ⊓ y \ x = ⊥ :=

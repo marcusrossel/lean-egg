@@ -33,7 +33,7 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
       _ = _ := cast_inj (R := Real) |>.mp ?_
 
     set_option egg.genTcProjRws false in
-    set_option egg.genGoalTcSpec false in
+    set_option egg.genGoalTypeSpec false in
     egg real cast calc [Real.Gamma_nat_eq_factorial, Real.Gamma_add_one]
       _ = n﹗ / ((r - 1)﹗ * (n - r + 1)﹗) + n﹗ / (r ﹗ * (n - r)﹗)
       _ = (n﹗ / ((r - 1)﹗ * (n - r + 1)﹗) + n﹗ / (r ﹗ * (n - r)﹗))

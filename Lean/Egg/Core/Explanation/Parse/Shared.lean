@@ -64,6 +64,7 @@ syntax "⁅←⁆" : nested_split_extension
 syntax "💥→[" num,* "]" : explosion_extension
 syntax "💥←[" num,* "]" : explosion_extension
 
+syntax basic_fwd_rw_src "<" num "⊢>"                : fwd_rw_src
 syntax basic_fwd_rw_src (noWs tc_extension)*        : fwd_rw_src
 syntax basic_fwd_rw_src noWs explosion_extension    : fwd_rw_src
 syntax basic_fwd_rw_src noWs nested_split_extension : fwd_rw_src
@@ -203,6 +204,8 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
   | `(fwd_rw_src|≡^)     => .natLit .pow
   | `(fwd_rw_src|≡/)     => .natLit .div
   | `(fwd_rw_src|"≡%")   => .natLit .mod
+  | `(fwd_rw_src|$src:basic_fwd_rw_src<$idx⊢>) =>
+    .goalTypeSpec (parseBasicFwdRwSrc src) idx.getNat
   | `(fwd_rw_src|$src:basic_fwd_rw_src$tcExts:tc_extension*) =>
     tcExts.foldl (init := parseBasicFwdRwSrc src) parseTcExtension
   | `(fwd_rw_src|$src:basic_fwd_rw_src💥→[$idxs:num,*]) =>

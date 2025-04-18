@@ -62,6 +62,7 @@ inductive Source where
   | reifiedEq
   | factAnd
   | structProj (idx : Nat)
+  | goalTypeSpec (src : Source) (idx : Nat)
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos) (depth : Nat)
   | tcSpec (src : Source) (spec : Source.TcSpec)
   | nestedSplit (src : Source) (dir : Direction)
@@ -133,6 +134,7 @@ def description : Source → String
   | reifiedEq               => "="
   | factAnd                 => "∧"
   | structProj idx          => s!"▵{idx}"
+  | goalTypeSpec src idx    => s!"{src.description}<{idx}⊢>"
   | tcProj src loc pos dep  => s!"{src.description}[{loc.description}{pos.asNat},{dep}]"
   | tcSpec src spec         => s!"{src.description}<{spec.description}>"
   | nestedSplit src dir     => s!"{src.description}⁅{dir.description}⁆"
@@ -145,8 +147,8 @@ def description : Source → String
   | beta                    => "≡β"
   | level src               => src.description
   | builtin idx             => s!"◯{idx}"
-  | tagged name none         => s!"□{name}"
-  | tagged name (some eqn)   => s!"□{name}/{eqn}"
+  | tagged name none        => s!"□{name}"
+  | tagged name (some eqn)  => s!"□{name}/{eqn}"
 
 instance : ToString Source where
   toString := description

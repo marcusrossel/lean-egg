@@ -68,6 +68,8 @@ structure _root_.Egg.Rewrite extends Congr where
   src   : Source
   conds : Array Condition
   mvars : Rewrite.MVars
+  -- This is a means of fixing the set of directions for the rewrite manually.
+  private dirs? : Option Directions
   deriving Inhabited
 
 def from? (proof type : Expr) (src : Source) (cfg : Config.Normalization) (normalize := true) :
@@ -89,7 +91,7 @@ def from? (proof type : Expr) (src : Source) (cfg : Config.Normalization) (norma
   let mLhs  ← MVars.collect cgr.lhs
   let mRhs  ← MVars.collect cgr.rhs
   let conds ← collectConds args mLhs mRhs
-  return some { cgr with proof, src, conds, mvars.lhs := mLhs, mvars.rhs := mRhs }
+  return some { cgr with proof, src, conds, mvars.lhs := mLhs, mvars.rhs := mRhs, dirs? := none }
 where
   collectConds (args : Array Expr) (mLhs mRhs : MVars) : MetaM (Array Rewrite.Condition) := do
     let mut conds := #[]
@@ -141,9 +143,13 @@ def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config.Normalization) 
   if type.hasLevelMVar then return none
   let cgr : Congr := { rel := .eq, lhs := type, rhs := .const ``True [] }
   let proof ← mkEqTrue proof
-  return some { cgr with proof, src, conds := #[], mvars.lhs := {}, mvars.rhs := {}, }
+  return some { cgr with proof, src, conds := #[], mvars.lhs := {}, mvars.rhs := {}, dirs? := none }
+
+def fixDirs (rw : Rewrite) (d : Directions) : Rewrite :=
+  { rw with dirs? := d }
 
 def validDirs (rw : Rewrite) (conditionSubgoals : Bool) : Directions := Id.run do
+  if let some fixed := rw.dirs? then return fixed
   let mut visibleExprLhs  := rw.mvars.lhs.visibleExpr
   let mut visibleExprRhs  := rw.mvars.rhs.visibleExpr
   let mut visibleLevelLhs := rw.mvars.lhs.visibleLevel
@@ -220,6 +226,15 @@ def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
     mvars.rhs := ← rw.mvars.rhs.removeAssigned
     conds     := ← rw.conds.mapM (·.instantiateMVars)
   }
+
+def pruneSynthesizableConditions (rw : Rewrite) : MetaM Rewrite := do
+  let mut conds := #[]
+  for cond in rw.conds do
+    if cond.type.hasMVar then
+      conds := conds.push cond
+    else if (← Meta.synthInstance? cond.type).isNone then
+      conds := conds.push cond
+  return { rw with conds }
 
 def eraseConditions (rw : Rewrite) : Rewrite :=
   { rw with conds := #[] }

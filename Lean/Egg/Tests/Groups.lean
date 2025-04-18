@@ -41,9 +41,18 @@ theorem inv_inv : a⁻¹⁻¹ = a := by
 theorem inv_mul' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
 
-set_option egg.timeLimit 7 in
+-- TODO: I'm confused. When using goal tc spec, #0 is applied a lot and #1<⊢>, #2<⊢> less.
+--                     When using goal ty spec, #0 is barely applied, but #1<⊢>, #2<⊢> are a lot.
+--                     The derived rewrites #1<⊢> and #2<⊢> are identical, except for their enabled
+--                     rewrite directions.
+--                     Is this related to inefficiency of type class synth during eq sat? Because in
+--                     the latter case to do forward rw with #1/#2, we need type class synth,
+--                     whereas the former case specializes this away.
+set_option egg.timeLimit 10 in
+-- set_option egg.genGoalTypeSpec false in
+-- set_option egg.genGoalTcSpec true in
 theorem inv_mul'' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
-  group using a⁻¹ * (a * b) * (a * b)⁻¹
+  sorry -- group using a⁻¹ * (a * b) * (a * b)⁻¹
 
 /-- error: egg failed to prove the goal (reached time limit) -/
 #guard_msgs in

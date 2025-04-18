@@ -1,6 +1,7 @@
 import Egg.Core.Gen.TcProjs
 import Egg.Core.Gen.TcSpecs
 import Egg.Core.Gen.GoalTcSpecs
+import Egg.Core.Gen.GoalTypeSpecialization
 import Egg.Core.Gen.Explosion
 import Egg.Core.Gen.NestedSplits
 import Lean
@@ -15,11 +16,12 @@ private inductive DerivationCategory where
   | tcProj
   | tcSpec
   | goalTcSpec
+  | goalTypeSpec
   | splits
   | explosion
 
 private def DerivationCategory.all : Array DerivationCategory :=
-  #[tcProj, tcSpec, goalTcSpec, splits, explosion]
+  #[tcProj, tcSpec, goalTcSpec, goalTypeSpec, splits, explosion]
 
 -- We maintain this theorem to ensure that we don't forget to add elements to
 -- `DerivationCategory.all`.
@@ -27,35 +29,39 @@ theorem DerivationCategory.all_complete (c : DerivationCategory) : c ∈ all := 
   cases c <;> simp [all]
 
 private def DerivationCategory.isEnabled (cfg : Config.Gen): DerivationCategory → Bool
-  | tcProj     => cfg.genTcProjRws
-  | tcSpec     => cfg.genTcSpecRws
-  | goalTcSpec => cfg.genGoalTcSpec
-  | splits     => cfg.genNestedSplits
-  | explosion  => cfg.explosion
+  | tcProj       => cfg.genTcProjRws
+  | tcSpec       => cfg.genTcSpecRws
+  | goalTcSpec   => cfg.genGoalTcSpec
+  | goalTypeSpec => cfg.genGoalTypeSpec
+  | splits       => cfg.genNestedSplits
+  | explosion    => cfg.explosion
 
 -- Each index in this structure indicates to which point in `State.derived` a given derivation
 -- category has been applied. More precisely, these indices indicate the first element that has not
 -- been considered yet.
 private structure State.Progress where
-  tcProj     : Nat
-  tcSpec     : Nat
-  goalTcSpec : Nat
-  splits     : Nat
-  explosion  : Nat
+  tcProj       : Nat
+  tcSpec       : Nat
+  goalTcSpec   : Nat
+  goalTypeSpec : Nat
+  splits       : Nat
+  explosion    : Nat
 
 private def State.Progress.get (p : Progress) : DerivationCategory → Nat
-  | .tcProj     => p.tcProj
-  | .tcSpec     => p.tcSpec
-  | .goalTcSpec => p.goalTcSpec
-  | .splits     => p.splits
-  | .explosion  => p.explosion
+  | .tcProj       => p.tcProj
+  | .tcSpec       => p.tcSpec
+  | .goalTcSpec   => p.goalTcSpec
+  | .goalTypeSpec => p.goalTypeSpec
+  | .splits       => p.splits
+  | .explosion    => p.explosion
 
 private def State.Progress.set (p : Progress) : DerivationCategory → Nat → Progress
-  | .tcProj,     n => { p with tcProj     := n }
-  | .tcSpec,     n => { p with tcSpec     := n }
-  | .goalTcSpec, n => { p with goalTcSpec := n }
-  | .splits,     n => { p with splits     := n }
-  | .explosion,  n => { p with explosion  := n }
+  | .tcProj,       n => { p with tcProj       := n }
+  | .tcSpec,       n => { p with tcSpec       := n }
+  | .goalTcSpec,   n => { p with goalTcSpec   := n }
+  | .goalTypeSpec, n => { p with goalTypeSpec := n }
+  | .splits,       n => { p with splits       := n }
+  | .explosion,    n => { p with explosion    := n }
 
 private structure State where
   derived     : Rewrites
@@ -65,7 +71,7 @@ private structure State where
 private instance : EmptyCollection State where
   emptyCollection := {
     derived     := #[]
-    progress    := ⟨0, 0, 0, 0, 0⟩
+    progress    := ⟨0, 0, 0, 0, 0, 0⟩
     tcProjCover := ∅
   }
 
@@ -128,6 +134,8 @@ where
       genNestedSplits (← todo .splits) cfg
     generate cfg .explosion do
       genExplosions (← todo .explosion)
+    generate cfg .goalTypeSpec do
+      genGoalTypeSpecializations (← todo .goalTypeSpec) goal cfg.conditionSubgoals
     generate cfg .goalTcSpec do
       genGoalTcSpecializations (← todo .goalTcSpec) cfg.toNormalization cfg.conditionSubgoals goal
     generate cfg .tcSpec do

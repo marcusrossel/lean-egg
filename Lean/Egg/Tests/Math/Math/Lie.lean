@@ -3,7 +3,6 @@ import Egg
 
 set_option egg.genNestedSplits false
 set_option egg.genTcProjRws false -- TODO: Things still work if we keep this, but it seems not to be necessary.
-set_option egg.genGoalTcSpec true -- TODO: This is actually necessary.
 set_option egg.genGroundEqs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
 
 universe u v w w₁ w₂
@@ -36,7 +35,6 @@ example : ⁅x, m - n⁆ = ⁅x, m⁆ - ⁅x, n⁆ := by
 example : ⁅-x, m⁆ - -⁅x, m⁆ = 0 := by
   egg [sub_eq_zero, neg_lie]
 
-set_option egg.timeLimit 5 in
 example : ⁅-x, m⁆ = -⁅x, m⁆ := by
   egg [neg_add_cancel, zero_lie, sub_eq_zero, sub_neg_eq_add, add_lie]
 

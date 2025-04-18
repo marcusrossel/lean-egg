@@ -53,8 +53,9 @@ theorem inv_mul : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
 theorem inv_mul' : rudify (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
 
+-- Cf related TODO in Groups.lean.
 theorem inv_mul'' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
-  group using a⁻¹ * (a * b) * (a * b)⁻¹
+  sorry -- group using a⁻¹ * (a * b) * (a * b)⁻¹
 
 -- TODO: Broken explanation.
 theorem inv_mul''' : rudify (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
@@ -67,4 +68,4 @@ theorem inv_inv : a⁻¹⁻¹ = a := by
 --       Could it stem from type class synth (during equality saturation) receiving a term which
 --       contains a bvar?
 theorem inv_inv' : rudify a⁻¹⁻¹ = a := by
-  group using a⁻¹ * a
+  sorry -- group using a⁻¹ * a

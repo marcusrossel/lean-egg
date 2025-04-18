@@ -33,7 +33,7 @@ macro "char_two_ring" baskets:ident* mod:egg_cfg_mod guides:(egg_guides)? : tact
 
 variable [CharTwoRing α] (x y : α)
 
-set_option egg.genGoalTcSpec false
+set_option egg.genGoalTypeSpec false
 
 theorem freshmans_dream₂ : (x + y) ^ 2 = x ^ 2 + y ^ 2 := by
   calc (x + y) ^ 2

@@ -3,7 +3,6 @@ open scoped Egg
 
 egg_no_defeq
 set_option egg.genTcProjRws false
-set_option egg.genGoalTcSpec false
 set_option egg.builtins false
 
 set_option egg.explosion true

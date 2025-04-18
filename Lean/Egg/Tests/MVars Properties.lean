@@ -35,12 +35,18 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇒): h
       [egg.rewrites] f ?x = ?x
       [egg.rewrites] LHS MVars
-          [?α: [unconditionallyVisible], ?x: [unconditionallyVisible]]
+          [?x: [unconditionallyVisible], ?α: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
           [?x: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
-  [egg.rewrites] Derived (0)
+  [egg.rewrites] Derived (1)
+    [egg.rewrites] #0<0⊢>(⇐)
+      [egg.rewrites] f ?m.63 = ?m.63
+      [egg.rewrites] LHS MVars
+          [?m.63: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars
+          [?m.63: [unconditionallyVisible]]
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)

@@ -27,7 +27,7 @@ class CharTwoRing (α) extends CommRing α where
 open CommRing CharTwoRing
 variable [CharTwoRing α] (x y : α)
 
-set_option egg.genGoalTcSpec false
+set_option egg.genGoalTypeSpec false
 
 theorem freshmans_dream₂ : (x + y) ^ 2 = x ^ 2 + y ^ 2 := by
   egg calc [comm_add, comm_mul, add_assoc, mul_assoc, sub_canon, neg_add, div_canon, zero_add, zero_mul, one_mul, distrib, pow_zero, pow_succ, char_two, Nat.succ_eq_add_one]

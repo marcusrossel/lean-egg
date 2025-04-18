@@ -26,9 +26,23 @@ inductive Directions where
 
 namespace Directions
 
+def isNone : Directions → Bool
+  | none => true
+  | _    => false
+
+def isBoth : Directions → Bool
+  | both => true
+  | _    => false
+
 def contains : Directions → Direction → Bool
   | both, _ | forward, .forward | backward, .backward => true
   | _, _                                              => false
+
+def without : Directions → Directions → Directions
+  | d, none => d
+  | _, both | forward, forward | backward, backward | none, _ => none
+  | both, forward | backward, forward  => backward
+  | both, backward | forward, backward => forward
 
 -- The directions for which a given set is a superset of the other.
 def satisfyingSuperset (lhs rhs : RBTree α cmp) : Directions :=

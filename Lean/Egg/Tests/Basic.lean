@@ -18,6 +18,8 @@ def foo := true
 example : 0 = 0 := by
   egg [foo]
 
+set_option trace.egg true
+
 example : 0 = 0 := by
   egg
 
