@@ -49,7 +49,8 @@ example : ⁅x, m - n⁆ = ⁅x, m⁆ - ⁅x, n⁆ := by
 
 -- lie_skew
 example : -⁅y, x⁆ = ⁅x, y⁆ := by
-  egg [neg_eq_iff_add_eq_zero, lie_add, add_lie, lie_self, zero_add, add_zero] using ⁅x + y, x⁆ + ⁅x + y, y⁆
+  egg [neg_eq_iff_add_eq_zero, lie_add, add_lie, lie_self, zero_add, add_zero]
+    using ⁅x + y, x⁆ + ⁅x + y, y⁆
 
 namespace LieHom
 

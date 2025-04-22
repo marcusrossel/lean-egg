@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use egg::*;
 use std::ffi::c_void;
@@ -124,11 +125,23 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
     }
 }
 
+thread_local! {
+    static TC_CACHE: RefCell<HashMap<RecExpr<LeanExpr>, bool>> = RefCell::new(Default::default());
+}
+
 fn cond_is_synthable(cond: &Pattern<LeanExpr>, graph: &mut LeanEGraph, subst: &Subst, env: *const c_void) -> bool {
     let (fresh, i) = in_fresh_graph(cond, graph, subst);
     let ast = fresh.id_to_expr(i);
-    let str = string_to_c_str(ast.to_string());
-    unsafe { is_synthable(env, str) }
+    TC_CACHE.with_borrow_mut(|cache|
+        if let Some(result) = cache.get(&ast) {
+            *result 
+        } else {            
+            let str = string_to_c_str(ast.to_string());
+            let result = unsafe { is_synthable(env, str) };
+            cache.insert(ast, result);
+            result
+        }
+    )
 }
 
 // We create a fresh graph, as we don't want to bloat the original e-graph with new stuff,

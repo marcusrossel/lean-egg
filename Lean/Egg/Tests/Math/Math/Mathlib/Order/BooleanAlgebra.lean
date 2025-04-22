@@ -42,8 +42,6 @@ attribute [egg gbool] sup_inf_sdiff inf_inf_sdiff
 
 egg_basket bool extends gbool, dlattice, lattice, ilattice, slattice
 
-attribute [egg ac] sup_comm sup_assoc inf_comm inf_assoc
-
 variable [GeneralizedBooleanAlgebra α] {x y z : α}
 
 example (s : x ⊓ y ⊔ z = x) (i : x ⊓ y ⊓ z = ⊥) : x \ y = z := by
