@@ -15,7 +15,6 @@ set_option egg.conditionSubgoals true
 set_option maxHeartbeats 3000000
 
 -- From Rotman
-axiom proposition_1_14 (n r : Nat) : (n + 1).choose r = n.choose (r - 1) + n.choose r
 
 notation:100 r "﹗" => Real.Gamma (r + 1)
 
@@ -29,7 +28,7 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
     have ho : (n - r + 1) = n - (r - 1) := by omega
 
     calc
-      _ = (n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!) := by egg [proposition_1_14, ih, ho] <;> omega
+      _ = (n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!) := by egg [choose_succ_left, ih, ho] <;> omega
       _ = _ := cast_inj (R := Real) |>.mp ?_
 
     egg real cast calc [Real.Gamma_nat_eq_factorial, Real.Gamma_add_one]
