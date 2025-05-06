@@ -1,6 +1,6 @@
 import Lean
-open Lean hiding HashMap
-open Std (HashMap)
+
+open Lean Std
 
 namespace Egg
 

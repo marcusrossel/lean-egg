@@ -29,7 +29,7 @@ h : ∀ (m : Nat), m = 0 → 1 = 2
 ⊢ Nat
 
 h : ∀ (m : Nat), m = 0 → 1 = 2
-⊢ ?m.804 = 0
+⊢ ?m.868 = 0
 -/
 #guard_msgs in
 example (h : ∀ m, m = 0 → 1 = 2) : 1 = 2 := by

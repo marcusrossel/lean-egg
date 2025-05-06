@@ -1,8 +1,7 @@
 import Egg.Core.MVars.Basic
 import Lean
-open Lean hiding HashMap
-open Meta
-open Std (HashMap)
+
+open Lean Std Meta
 
 namespace Egg.MVars
 

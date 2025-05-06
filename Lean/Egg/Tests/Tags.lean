@@ -4,7 +4,6 @@ macro "#basket" key:ident : command => `(
   #eval show Lean.Meta.MetaM _ from Egg.extension.getBasket $(Lean.quote key.getId)
 )
 
-class One (α) where one : α
 instance [One α] : OfNat α 1 where ofNat := One.one
 
 class Inv (α) where inv : α → α

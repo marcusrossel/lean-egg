@@ -43,9 +43,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): Nat.add_comm
       [egg.rewrites] ?n + ?m = ?m + ?n
       [egg.rewrites] LHS MVars
-          [?m: [unconditionallyVisible], ?n: [unconditionallyVisible]]
+          [?n: [unconditionallyVisible], ?m: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m: [unconditionallyVisible], ?n: [unconditionallyVisible]]
+          [?n: [unconditionallyVisible], ?m: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)

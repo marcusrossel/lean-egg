@@ -27,14 +27,14 @@ target importTarget pkg : System.FilePath :=
 
 extern_lib ffi pkg := do
   let job ← fetch <| pkg.target ``importTarget
-  let libFile := pkg.nativeLibDir / nameToStaticLib "ffi"
+  let libFile := pkg.sharedLibDir / nameToStaticLib "ffi"
   buildStaticLib libFile #[job]
 
 extern_lib egg_for_lean pkg := do
   pkg.afterBuildCacheAsync do
     let name      := nameToStaticLib "egg_for_lean"
     let srcPath   := pkg.dir / "Rust" / "Egg" / "target" / "release" / name
-    let tgtPath   := pkg.nativeLibDir / name
+    let tgtPath   := pkg.sharedLibDir / name
     let traceFile := pkg.buildDir / "rust" / "egg.trace"
     let _ ← buildUnlessUpToDate? traceFile (← getTrace) traceFile do
       proc {
@@ -42,7 +42,7 @@ extern_lib egg_for_lean pkg := do
         args := #["rustc", "--release", "--", "-C", "relocation-model=pic"],
         cwd := pkg.dir / "Rust" / "Egg"
       }
-      IO.FS.createDirAll pkg.nativeLibDir
+      IO.FS.createDirAll pkg.sharedLibDir
       IO.FS.writeBinFile tgtPath (← IO.FS.readBinFile srcPath)
     return pure tgtPath
 
@@ -50,7 +50,7 @@ extern_lib slotted_for_lean pkg := do
   pkg.afterBuildCacheAsync do
     let name := nameToStaticLib "slotted_for_lean"
     let srcPath := pkg.dir / "Rust" / "Slotted" / "target" / "release" / name
-    let tgtPath := pkg.nativeLibDir / name
+    let tgtPath := pkg.sharedLibDir / name
     let traceFile := pkg.buildDir / "rust" / "slotted.trace"
     let _ ← buildUnlessUpToDate? traceFile (← getTrace) traceFile do
       proc {
@@ -58,7 +58,7 @@ extern_lib slotted_for_lean pkg := do
         args := #["rustc", "--release", "--", "-C", "relocation-model=pic"],
         cwd := pkg.dir / "Rust" / "Slotted"
       }
-      IO.FS.createDirAll pkg.nativeLibDir
+      IO.FS.createDirAll pkg.sharedLibDir
       IO.FS.writeBinFile tgtPath (← IO.FS.readBinFile srcPath)
     return pure tgtPath
 

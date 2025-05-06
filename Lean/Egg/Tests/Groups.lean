@@ -1,7 +1,5 @@
 import Egg
 
-class One (α) where one : α
-
 instance [One α] : OfNat α 1 where ofNat := One.one
 
 class Inv (α : Type u) where
@@ -44,6 +42,7 @@ theorem inv_inv : a⁻¹⁻¹ = a := by
 theorem inv_mul' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
 
+set_option egg.explLengthLimit 250 in
 theorem inv_mul'' : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using a⁻¹ * (a * b) * (a * b)⁻¹
 

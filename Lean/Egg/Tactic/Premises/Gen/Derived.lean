@@ -6,9 +6,7 @@ import Egg.Core.Gen.Explosion
 import Egg.Core.Gen.NestedSplits
 import Lean
 
-open Lean hiding HashSet
-open Std (HashSet)
-open Meta Elab Tactic
+open Lean Std Meta Elab Tactic
 
 namespace Egg.Premises.DerivedM
 

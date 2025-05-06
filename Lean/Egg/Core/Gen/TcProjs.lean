@@ -1,9 +1,8 @@
 import Egg.Core.Rewrites
 import Egg.Core.Guides
 import Lean
-open Lean hiding HashMap HashSet
-open Meta
-open Std (HashMap HashSet)
+
+open Lean Std Meta
 
 namespace Egg
 

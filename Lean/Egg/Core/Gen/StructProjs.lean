@@ -3,9 +3,7 @@ import Egg.Core.Guides
 import Lean
 import Std
 
-open Lean hiding HashMap HashSet
-open Std (HashMap HashSet)
-open Meta Elab Term
+open Lean Std Meta Elab Term
 
 namespace Egg
 

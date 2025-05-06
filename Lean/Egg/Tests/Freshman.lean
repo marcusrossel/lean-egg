@@ -3,7 +3,6 @@ import Egg
 class Inv (α) where inv : α → α
 postfix:max "⁻¹" => Inv.inv
 
-class One (α) where one : α
 instance [One α] : OfNat α 1 where ofNat := One.one
 
 class CommRing (α) extends Zero α, One α, Add α, Sub α, Mul α, Div α, Pow α Nat, Inv α, Neg α where

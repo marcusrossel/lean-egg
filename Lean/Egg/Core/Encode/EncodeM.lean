@@ -1,7 +1,7 @@
 import Egg.Core.Config
 import Egg.Core.Source
-open Lean hiding HashMap
-open Std (HashMap)
+
+open Lean Std
 
 namespace Egg
 

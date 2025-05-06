@@ -118,8 +118,6 @@ end «Class Def»
 
 section Groups
 
-class One (α) where one : α
-
 instance [One α] : OfNat α 1 where ofNat := One.one
 
 class Inv (α : Type u) where
