@@ -116,6 +116,8 @@ impl CRewritesArray {
                 }
             }
 
+            let weak_vars: Vec<Var> = Default::default();
+
             let rw_dirs = RewriteDirections::from_c(rw.dirs);
             if rw_dirs == RewriteDirections::Forward || rw_dirs == RewriteDirections::Both {
                 res.push(RewriteTemplate { 
@@ -123,7 +125,8 @@ impl CRewritesArray {
                     lhs:        lhs.clone(), 
                     rhs:        rhs.clone(), 
                     prop_conds: prop_conds.clone(),
-                    tc_conds:   tc_conds.clone()
+                    tc_conds:   tc_conds.clone(),
+                    weak_vars:  weak_vars.clone()
                 })
             }
 
@@ -134,7 +137,10 @@ impl CRewritesArray {
                 // `rw.dir == RewriteDirection::Both`. This is the case, for example, for the rewrite
                 // `?a + ?b = ?b + ?a`.
                 res.push(RewriteTemplate { 
-                    name: format!("{name_str}-rev"), lhs: rhs, rhs: lhs, prop_conds, tc_conds
+                    name: format!("{name_str}-rev"), 
+                    lhs: rhs, 
+                    rhs: lhs, 
+                    prop_conds, tc_conds, weak_vars
                 })
             }
         }

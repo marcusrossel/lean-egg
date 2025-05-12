@@ -37,6 +37,7 @@ pub struct RewriteTemplate {
     pub rhs:        Pattern<LeanExpr>,
     pub prop_conds: Vec<Pattern<LeanExpr>>,
     pub tc_conds:   Vec<Pattern<LeanExpr>>,
+    pub weak_vars:  Vec<Var>,
 }
 
 pub struct GroundEq {
@@ -47,11 +48,6 @@ pub struct GroundEq {
 
 impl RewriteTemplate {
 
-    // TODO: How do we handle `allow_unsat_conditions`? One option would be to simply not add
-    //       the conditional statements when the option is enabled. I'm not sure what to do 
-    //       about tc conditions though, because some of them are a result of tc inst erasure 
-    //       and should always be enforced. Perhaps, can we determine which tc conditions are a
-    //       result of tc inst erasure and still check those?
     pub fn to_rewrite(self, cfg: RewriteConfig) -> Res<Either<LeanRewrite, GroundEq>> {
         // If the rewrite contains neither conditions nor pattern variables, it's a ground equation.
         if self.prop_conds.is_empty() && self.tc_conds.is_empty() && 
@@ -72,7 +68,9 @@ impl RewriteTemplate {
             str.parse().expect("Failed to parse lhs in 'RewriteTemplate.to_rewrite'.")
         };
 
-        let applier = LeanApplier { lhs: self.lhs, rhs: self.rhs, tc_conds: self.tc_conds, cfg };
+        let applier = LeanApplier { 
+            lhs: self.lhs, rhs: self.rhs, tc_conds: self.tc_conds, weak_vars: self.weak_vars, cfg 
+        };
         match Rewrite::new(self.name, lhs, applier) {
             Ok(rw)   => Ok(Either::Left(rw)),
             Err(err) => Err(Error::Rewrite(err.to_string()))
@@ -84,10 +82,11 @@ unsafe impl Send for LeanApplier {}
 unsafe impl Sync for LeanApplier {}
 
 struct LeanApplier {
-    pub lhs:      Pattern<LeanExpr>,
-    pub rhs:      Pattern<LeanExpr>,
-    pub tc_conds: Vec<Pattern<LeanExpr>>,
-    pub cfg:      RewriteConfig,
+    pub lhs:       Pattern<LeanExpr>,
+    pub rhs:       Pattern<LeanExpr>,
+    pub tc_conds:  Vec<Pattern<LeanExpr>>,
+    pub weak_vars: Vec<Var>,
+    pub cfg:       RewriteConfig,
 }
 
 impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
@@ -107,6 +106,16 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
             if !cond_is_synthable(tc_cond, graph, subst, self.cfg.env) {
                 return vec![]
             }
+        }
+
+        let mut rule = rule;
+        if !self.weak_vars.is_empty() {
+            let mut r = rule.as_str().to_string();
+            for var in &self.weak_vars {
+                let assignment = format!("{}={}", var.to_string(), subst[*var]);
+                r.push_str(&assignment);
+            }
+            rule = Symbol::from(r);
         }
 
         // A substitution needs no shifting if it does not map any variables to e-classes containing 

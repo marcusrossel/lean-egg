@@ -6,7 +6,7 @@
    "name": "egg",
    "manifestFile": "lake-manifest.json",
    "inherited": false,
-   "dir": "./../../../..",
+   "dir": "../../../..",
    "configFile": "lakefile.lean"},
   {"url": "https://github.com/leanprover-community/mathlib4",
    "type": "git",
