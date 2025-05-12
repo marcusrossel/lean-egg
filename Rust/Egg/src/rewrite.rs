@@ -109,10 +109,10 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
         }
 
         let mut rule = rule;
-        if !self.weak_vars.is_empty() {
+        if !self.weak_vars.is_empty() && !self.cfg.allow_unsat_conditions {
             let mut r = rule.as_str().to_string();
             for var in &self.weak_vars {
-                let assignment = format!("{}={}", var.to_string(), subst[*var]);
+                let assignment = format!("{}={:?}", var.to_string(), subst.get(*var));
                 r.push_str(&assignment);
             }
             rule = Symbol::from(r);
@@ -158,8 +158,7 @@ fn in_fresh_graph(cond: &Pattern<LeanExpr>, graph: &LeanEGraph, subst: &Subst) -
 
     let mut fresh_subst = Subst::default();
     for pvar in cond.vars() {
-        let id = *subst.get(pvar).unwrap();
-        let expr = graph.id_to_expr(id);
+        let expr = graph.id_to_expr(subst[pvar]);
         let fresh_id = fresh.add_expr(&expr);
         fresh_subst.insert(pvar, fresh_id);
     }

@@ -3,7 +3,7 @@ use egg::*;
 use expl::{mk_explanation, ExplanationKind};
 use lean_expr::LeanExpr;
 use util::sub_expr;
-use std::ffi::{c_char, CStr, CString, c_void};
+use std::{collections::HashSet, ffi::{c_char, c_void, CStr, CString}};
 use libc::c_double;
 use std::str::FromStr;
 use basic::*;
@@ -104,7 +104,7 @@ impl CRewritesArray {
             let lhs           = Pattern::from_str(lhs_str).expect("Failed to parse lhs");
             let rhs           = Pattern::from_str(rhs_str).expect("Failed to parse rhs");
             
-            let mut prop_conds = vec![];
+            let mut prop_conds: Vec<Pattern<LeanExpr>> = vec![];
             let mut tc_conds = vec![];
             for str in conds_strs {
                 let pat: Pattern<_> = str.parse().map_err(|e : RecExprParseError<_>| Error::Condition(e.to_string()))?;
@@ -116,7 +116,16 @@ impl CRewritesArray {
                 }
             }
 
-            let weak_vars: Vec<Var> = Default::default();
+            // Computes the set of "weak" vars, which appear in a prop condition, but not the lhs.
+            let mut prop_vars: HashSet<Var> = Default::default();
+            for prop_cond in &prop_conds {
+                for var in prop_cond.vars() {
+                    prop_vars.insert(var);
+                }
+            }
+            prop_vars.retain(|var| !lhs.vars().contains(var));
+            let mut weak_vars: Vec<Var> = prop_vars.into_iter().collect();
+            weak_vars.sort();
 
             let rw_dirs = RewriteDirections::from_c(rw.dirs);
             if rw_dirs == RewriteDirections::Forward || rw_dirs == RewriteDirections::Both {
