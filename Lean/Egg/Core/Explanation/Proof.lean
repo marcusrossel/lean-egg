@@ -2,7 +2,7 @@ import Egg.Core.Explanation.Basic
 import Egg.Core.Explanation.Congr
 import Egg.Core.Explanation.Parse.Basic
 import Egg.Core.Explanation.Expr
-import Egg.Core.Rewrites
+import Egg.Core.Rewrite.Basic
 import Egg.Core.Request.Equiv
 open Lean Meta
 
@@ -127,7 +127,12 @@ where
           ← mkCHole (forLhs := false) rhs proof
         )
       | .inl rw =>
-        let rw ← rw.fresh
+        let (rw, subst) ← rw.freshWithSubst
+        -- TODO: The rewrite descriptor contains the weak vars.
+        --       Get each one, map it under `subst`, fetch a term for it from the e-graph and unify
+        --       that term with the mvar. You'll need an ffi function for fetching a term with a
+        --       given class id. Note that you probably want to intepret the e-class id as an e-node
+        --       id.
         unless ← isDefEq lhs rw.lhs do failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs current next idx
         unless ← isDefEq rhs rw.rhs do failIsDefEq "RHS" rw.src rhs rw.rhs rw.mvars.rhs current next idx
         let conds := rw.conds.filter (!·.isProven)

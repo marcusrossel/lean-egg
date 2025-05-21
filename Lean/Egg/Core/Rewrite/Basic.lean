@@ -1,97 +1,35 @@
-import Egg.Core.Directions
+import Egg.Core.Rewrite.Prerewrite
+import Egg.Core.Rewrite.Condition
 import Egg.Core.MVars.Subst
 import Egg.Core.MVars.Collect
-import Egg.Core.Normalize
-import Egg.Core.Congr
 import Egg.Core.Source
-import Egg.Lean
 open Lean Meta
 
-namespace Egg.Rewrite
+namespace Egg
 
-protected structure MVars where
-  lhs : MVars
-  rhs : MVars
-  deriving Inhabited
-
-namespace Condition
-
-inductive Kind where
-  | proof
-  | tcInst
-
-def Kind.isProof : Kind → Bool
-  | proof  => true
-  | tcInst => false
-
-def Kind.isTcInst : Kind → Bool
-  | proof  => false
-  | tcInst => true
-
-def Kind.forType? (ty : Expr) : MetaM (Option Kind) := do
-  -- Since type classes can also be propositions, we do the type class check first.
-  if (← Meta.isClass? ty).isSome then
-    return some .tcInst
-  else if ← Meta.isProp ty then
-    return some .proof
-  else
-    return none
-
-structure _root_.Egg.Rewrite.Condition where
-  kind  : Kind
-  -- Without instantiation, this `expr` is an mvar. When instantiated, the condition is considered
-  -- proven.
-  expr  : Expr
-  type  : Expr
-  -- These are the mvars of `type`.
-  mvars : MVars
-
--- Conditions can become proven during type class specialization. We still need to keep these
--- conditions in order to use their `expr` during proof reconstruction. Proven conditions are not
--- encoded and thus transparent to the backend.
-def isProven (cond : Condition) : Bool :=
-  !cond.expr.isMVar
-
-nonrec def instantiateMVars (cond : Condition) : MetaM Condition := do
-  return { cond with
-    expr  := ← instantiateMVars cond.expr
-    type  := ← instantiateMVars cond.type
-    mvars := ← cond.mvars.removeAssigned
-  }
-
-end Condition
-
--- Note: We don't create `Rewrite`s directly, but use `Rewrite.from` instead.
-structure _root_.Egg.Rewrite extends Congr where
+-- Note: We don't create `Rewrite`s directly, but use `Rewrite.from?` instead.
+structure Rewrite extends Congr where
   private mk ::
   proof : Expr
   src   : Source
-  conds : Array Condition
+  conds : Array Rewrite.Condition
   mvars : Rewrite.MVars
+  -- TODO: Remove this
   -- This is a means of fixing the set of directions for the rewrite manually.
   private dirs? : Option Directions
   deriving Inhabited
 
-def from? (proof type : Expr) (src : Source) (cfg : Config.Normalization) (normalize := true) :
-    MetaM (Option Rewrite) := do
-  let type ← if normalize then Egg.normalize type cfg else pure type
-  let mut (args, _, prop) ← withReducible do forallMetaTelescopeReducing type
-  let mut proof := mkAppN proof args
-  let cgr ←
-    if let some cgr ← Congr.from? prop then
-      pure cgr
-    -- Note: We need this to reduce abbrevs which don't unfold to `∀ ...`, but rather just `_ ~ _`.
-    else if let some cgr ← Congr.from? (← withReducible do reduce (skipTypes := false) prop) then
-      pure cgr
-    else if (← inferType prop).isProp then
-      proof ← mkEqTrue proof
-      pure { rel := .eq, lhs := prop, rhs := .const ``True [] }
-    else
-      return none
-  let mLhs  ← MVars.collect cgr.lhs
-  let mRhs  ← MVars.collect cgr.rhs
-  let conds ← collectConds args mLhs mRhs
-  return some { cgr with proof, src, conds, mvars.lhs := mLhs, mvars.rhs := mRhs, dirs? := none }
+namespace Rewrite
+
+def from?
+    (proof type : Expr) (src : Source) (cfg : Config.Normalization)
+    (normalize := true) (dir : Direction := .forward) : MetaM (Option Rewrite) := do
+  let mut some pre ← Prerewrite.from? proof type cfg normalize | return none
+  pre ← pre.forDir dir
+  let mLhs  ← MVars.collect pre.lhs
+  let mRhs  ← MVars.collect pre.rhs
+  let conds ← collectConds pre.qvars mLhs mRhs
+  return some { pre with src, conds, mvars.lhs := mLhs, mvars.rhs := mRhs, dirs? := none }
 where
   collectConds (args : Array Expr) (mLhs mRhs : MVars) : MetaM (Array Rewrite.Condition) := do
     let mut conds := #[]
@@ -153,6 +91,8 @@ def fixDirs (rw : Rewrite) (dirs : Directions) (disallowLoneMVar := false) : Rew
     if rw.rhs.isMVar then d := d.without .backward
   { rw with dirs? := d }
 
+-- TODO: Have directions be a pair of values indicating whether the given direction is allowed,
+--       and if not, then which restriction is not satisfied.
 def validDirs (rw : Rewrite) (conditionSubgoals : Bool) : Directions := Id.run do
   if let some fixed := rw.dirs? then return fixed
   let mut visibleExprLhs  := rw.mvars.lhs.visibleExpr

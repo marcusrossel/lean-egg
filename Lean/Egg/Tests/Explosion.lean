@@ -81,9 +81,9 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇔): h
       [egg.rewrites] f ?x ?y = f ?y ?x
       [egg.rewrites] LHS MVars
-          [?x: [unconditionallyVisible], ?y: [unconditionallyVisible]]
+          [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?x: [unconditionallyVisible], ?y: [unconditionallyVisible]]
+          [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)

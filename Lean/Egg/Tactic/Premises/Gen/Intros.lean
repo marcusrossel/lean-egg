@@ -5,7 +5,7 @@ open Lean Meta Elab Tactic
 
 namespace Egg
 
-def genIntros (fvars : Array FVarId) (cfg : Config)  : TacticM Rewrites := do
+def genIntros (fvars : Array FVarId) (cfg : Config) : TacticM Rewrites := do
   let mut rws := #[]
   for fvar in fvars, idx in [:fvars.size] do
     let proof := .fvar fvar

@@ -17,8 +17,9 @@ structure Raw where
 namespace Rewrite
 
 structure Descriptor where
-  src   : Source
-  dir   : Direction
+  src      : Source
+  dir      : Direction
+  weakVars : Array (Nat × Nat)
   deriving Inhabited
 
 structure Info extends Descriptor where

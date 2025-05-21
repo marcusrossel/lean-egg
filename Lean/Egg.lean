@@ -13,6 +13,9 @@ import Egg.Tactic.Basic
 import Egg.Tactic.Trace
 import Egg.Tactic.Goal
 import Egg.Tactic.Guides
+import Egg.Core.Rewrite.Basic
+import Egg.Core.Rewrite.Prerewrite
+import Egg.Core.Rewrite.Condition
 import Egg.Core.Explanation.Parse.Slotted
 import Egg.Core.Explanation.Parse.Basic
 import Egg.Core.Explanation.Parse.Egg
@@ -41,7 +44,6 @@ import Egg.Core.Gen.NestedSplits
 import Egg.Core.Gen.TcProjs
 import Egg.Core.Gen.TcSpecs
 import Egg.Core.Gen.Guides
-import Egg.Core.Rewrites
 import Egg.Core.Normalize
 import Egg.Core.Source
 import Egg.Core.Request.EGraph

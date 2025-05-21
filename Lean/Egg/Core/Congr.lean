@@ -15,29 +15,33 @@ structure _root_.Egg.Congr where
   rhs : Expr
   deriving Inhabited
 
-def Rel.relate (e₁ e₂ : Expr) : Rel → MetaM Expr
+namespace Rel
+
+def relate (e₁ e₂ : Expr) : Rel → MetaM Expr
   | eq  => mkEq e₁ e₂
   | iff => return mkIff e₁ e₂
 
-def Rel.mkRefl (expr : Expr) : Rel → MetaM Expr
+def mkRefl (expr : Expr) : Rel → MetaM Expr
   | eq  => mkEqRefl expr
   | iff => mkAppM ``Iff.refl #[expr]
 
-def Rel.mkSymm (proof : Expr) : Rel → MetaM Expr
+def mkSymm (proof : Expr) : Rel → MetaM Expr
   | eq  => mkEqSymm proof
   | iff => mkAppM ``Iff.symm #[proof]
 
-  def Rel.mkTrans (proof₁ proof₂ : Expr) : Rel → MetaM Expr
+def mkTrans (proof₁ proof₂ : Expr) : Rel → MetaM Expr
   | eq  => mkEqTrans proof₁ proof₂
   | iff => mkAppM ``Iff.trans #[proof₁, proof₂]
 
-def Rel.mkMP (proof : Expr) : Rel → MetaM Expr
+def mkMP (proof : Expr) : Rel → MetaM Expr
   | eq  => mkAppM ``Eq.mp #[proof]
   | iff => mkAppM ``Iff.mp #[proof]
 
-def Rel.mkMPR (proof : Expr) : Rel → MetaM Expr
+def mkMPR (proof : Expr) : Rel → MetaM Expr
   | eq  => mkAppM ``Eq.mpr #[proof]
   | iff => mkAppM ``Iff.mpr #[proof]
+
+end Rel
 
 def expr (cgr : Congr) : MetaM Expr := do
   match cgr.rel with

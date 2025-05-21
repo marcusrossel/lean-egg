@@ -35,7 +35,7 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] #0(⇒): h
       [egg.rewrites] f ?x = ?x
       [egg.rewrites] LHS MVars
-          [?α: [unconditionallyVisible], ?x: [unconditionallyVisible]]
+          [?x: [unconditionallyVisible], ?α: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
           [?x: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)

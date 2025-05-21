@@ -1,4 +1,4 @@
-import Egg.Core.Rewrites
+import Egg.Core.Rewrite.Basic
 import Egg.Core.Guides
 import Lean
 import Std

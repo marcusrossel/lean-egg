@@ -19,6 +19,7 @@ declare_syntax_cat nested_split_extension
 declare_syntax_cat explosion_extension
 declare_syntax_cat fwd_rw_src
 declare_syntax_cat rw_src
+declare_syntax_cat weak_vars
 
 syntax num : lit
 syntax str : lit
@@ -112,9 +113,11 @@ syntax "≡/"                                         : fwd_rw_src
 syntax str                                          : fwd_rw_src
 -- syntax "≡%"                                      : fwd_rw_src
 
-syntax fwd_rw_src (noWs "-rev")? : rw_src
-syntax &"="                      : rw_src
-syntax &"∧"                      : rw_src
+syntax ("?" noWs num "=" num)* : weak_vars
+
+syntax fwd_rw_src (noWs "-rev")? weak_vars : rw_src
+syntax &"="                                : rw_src
+syntax &"∧"                                : rw_src
 
 syntax "+" num : shift_offset
 syntax "-" num : shift_offset
@@ -218,17 +221,20 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
   | _ => unreachable!
 
 def parseRwSrc : (TSyntax `rw_src) → Rewrite.Descriptor
-  | `(rw_src|$fwdSrc:fwd_rw_src$[-rev%$rev]?) => {
-      src := parseFwdRwSrc fwdSrc
-      dir := if rev.isSome then .backward else .forward
+  | `(rw_src|$fwdSrc:fwd_rw_src$[-rev%$rev]? $[?$weakVars = $weakClasses]*) => {
+      src      := parseFwdRwSrc fwdSrc
+      dir      := if rev.isSome then .backward else .forward
+      weakVars := weakVars.zip weakClasses |>.map fun (v, c) => (v.getNat, c.getNat)
     }
   | `(rw_src|=) => {
-      src := .reifiedEq
-      dir := .forward
+      src      := .reifiedEq
+      dir      := .forward
+      weakVars := #[]
     }
   | `(rw_src|∧) => {
-      src := .factAnd
-      dir := .forward
+      src      := .factAnd
+      dir      := .forward
+      weakVars := #[]
     }
   | _ => unreachable!
 
