@@ -6,17 +6,23 @@ set_option egg.genNestedSplits true
 /--
 info: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
-  [egg.rewrites] Basic (1)
-    [egg.rewrites] #0(⇔): h
+  [egg.rewrites] Basic (2)
+    [egg.rewrites] #0(⇒): h
       [egg.rewrites] a = b ↔ c = d
+      [egg.rewrites] LHS MVars
+          []
+      [egg.rewrites] RHS MVars
+          []
+    [egg.rewrites] #0(⇐): h
+      [egg.rewrites] c = d ↔ a = b
       [egg.rewrites] LHS MVars
           []
       [egg.rewrites] RHS MVars
           []
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
-  [egg.rewrites] Derived (2)
-    [egg.rewrites] #0⁅→⁆(⇔)
+  [egg.rewrites] Derived (4)
+    [egg.rewrites] #0⁅→⁆(⇒)
       [egg.rewrites] c = d
       [egg.rewrites] Conditions
         [egg.rewrites] a = b
@@ -24,8 +30,24 @@ info: [egg.rewrites] Rewrites
           []
       [egg.rewrites] RHS MVars
           []
-    [egg.rewrites] #0⁅←⁆(⇔)
+    [egg.rewrites] #0⁅→⁆(⇐)
+      [egg.rewrites] d = c
+      [egg.rewrites] Conditions
+        [egg.rewrites] a = b
+      [egg.rewrites] LHS MVars
+          []
+      [egg.rewrites] RHS MVars
+          []
+    [egg.rewrites] #0⁅←⁆(⇒)
       [egg.rewrites] a = b
+      [egg.rewrites] Conditions
+        [egg.rewrites] c = d
+      [egg.rewrites] LHS MVars
+          []
+      [egg.rewrites] RHS MVars
+          []
+    [egg.rewrites] #0⁅←⁆(⇐)
+      [egg.rewrites] b = a
       [egg.rewrites] Conditions
         [egg.rewrites] c = d
       [egg.rewrites] LHS MVars

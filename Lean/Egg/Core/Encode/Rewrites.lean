@@ -5,6 +5,11 @@ open Lean
 
 namespace Egg.Rewrite
 
+def name (rw : Rewrite) : String :=
+  match rw.dir with
+  | .forward  => rw.src.description
+  | .backward => s!"{rw.src.description}-rev"
+
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 structure Encoded where
   name  : String
@@ -21,12 +26,12 @@ def Condition.encode? (c : Rewrite.Condition) (cfg : Config.Encoding) :
   | .proof  => return s!"(proof {type})"
   | .tcInst => return s!"(inst {type})"
 
-def encode (rw : Rewrite) (cfg : Config.Encoding) (conditionSubgoals : Bool) : MetaM Encoded :=
+def encode (rw : Rewrite) (cfg : Config.Encoding) : MetaM Encoded :=
   return {
-    name  := rw.src.description
+    name  := rw.name
     lhs   := ← Egg.encode rw.lhs cfg
     rhs   := ← Egg.encode rw.rhs cfg
-    dirs  := rw.validDirs conditionSubgoals
+    dirs  := .forward -- TODO: Remove this field
     conds := ← rw.conds.filterMapM (Condition.encode? · cfg)
   }
 
@@ -36,5 +41,5 @@ namespace Rewrites
 
 abbrev Encoded := Array Rewrite.Encoded
 
-def encode (rws : Rewrites) (cfg : Config.Encoding) (conditionSubgoals : Bool) : MetaM Rewrites.Encoded :=
-  rws.mapM (·.encode cfg conditionSubgoals)
+def encode (rws : Rewrites) (cfg : Config.Encoding) (subgoals : Bool) : MetaM Rewrites.Encoded :=
+  rws.filterMapM fun rw => do if ← rw.isValid subgoals then rw.encode cfg else return none

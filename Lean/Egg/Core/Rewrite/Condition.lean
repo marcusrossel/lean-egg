@@ -1,4 +1,4 @@
-import Egg.Core.MVars.Basic
+import Egg.Core.MVars.Collect
 open Lean
 
 namespace Egg.Rewrite
@@ -33,12 +33,30 @@ def Kind.forType? (ty : Expr) : MetaM (Option Kind) := do
 
 structure _root_.Egg.Rewrite.Condition where
   kind  : Kind
-  -- Without instantiation, this `expr` is an mvar. When instantiated, the condition is considered
-  -- proven.
+  -- TODO: Change (and rename) `expr` to be an `MVarId`, as it should never be anything else.
   expr  : Expr
   type  : Expr
   -- These are the mvars of `type`.
   mvars : MVars
+
+def from? (mvar : MVarId) (lhs : MVars) : MetaM <| Option Condition := do
+  let some kind ← kind? | return none
+  let type ← Meta.inferType (.mvar mvar)
+  return some { kind, expr := (.mvar mvar), type, mvars := ← MVars.collect type }
+where
+  -- If the mvar appears in the LHS, then it's a condition only if it's a nested instance or proof.
+  -- If it does not appear in the LHS, it's a condition immediately if it's an instance or proof.
+  kind? : MetaM <| Option Kind := do
+    if let some ps := lhs.expr[mvar]? then
+      if ps.contains .isTcInst && ps.contains .inTcInstTerm then
+        return some .tcInst
+      else if ps.contains .isProof && ps.contains .inProofTerm then
+        return some .proof
+    else if ← Meta.isTCInstance (.mvar mvar) then
+      return some .tcInst
+    else if ← Meta.isProof (.mvar mvar) then
+      return some .proof
+    return none
 
 -- Conditions can become proven during type class specialization. We still need to keep these
 -- conditions in order to use their `expr` during proof reconstruction. Proven conditions are not

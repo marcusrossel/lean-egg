@@ -21,7 +21,7 @@ example (h : ∀ {α} [Add α] (a : α), a + a = a) : 1 + 1 = 1 := by
 info: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
-    [egg.rewrites] #0(⇔): h
+    [egg.rewrites] #0(⇒): h
       [egg.rewrites] z = z
       [egg.rewrites] Conditions
         [egg.rewrites] x * y = z
@@ -31,22 +31,41 @@ info: [egg.rewrites] Rewrites
           []
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
-  [egg.rewrites] Derived (2)
-    [egg.rewrites] #0[0?69632,0](⇔)
+  [egg.rewrites] Derived (4)
+    [egg.rewrites] #0[0?69632,0](⇒)
       [egg.rewrites] HMul.hMul = Mul.mul
       [egg.rewrites] LHS MVars
           []
       [egg.rewrites] RHS MVars
           []
-    [egg.rewrites] #0[0?69632,1](⇔)
+    [egg.rewrites] #0[0?69632,0](⇐)
+      [egg.rewrites] Mul.mul = HMul.hMul
+      [egg.rewrites] LHS MVars
+          []
+      [egg.rewrites] RHS MVars
+          []
+    [egg.rewrites] #0[0?69632,2](⇒)
       [egg.rewrites] Mul.mul = Nat.mul
+      [egg.rewrites] LHS MVars
+          []
+      [egg.rewrites] RHS MVars
+          []
+    [egg.rewrites] #0[0?69632,2](⇐)
+      [egg.rewrites] Nat.mul = Mul.mul
       [egg.rewrites] LHS MVars
           []
       [egg.rewrites] RHS MVars
           []
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Pruned (0)
+  [egg.rewrites] Pruned (1)
+    [egg.rewrites] #0(⇐) by #0
+      [egg.rewrites] z = z
+      [egg.rewrites] Conditions
+        [egg.rewrites] x * y = z
+      [egg.rewrites] LHS MVars
+          []
+      [egg.rewrites] RHS MVars []
 -/
 #guard_msgs(info) in
 set_option trace.egg.rewrites true in

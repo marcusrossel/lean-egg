@@ -50,10 +50,13 @@ where
     rw ← rw.instantiateMVars
     let missing := rw.mvars.lhs.tcInsts |>.union rw.mvars.rhs.tcInsts |>.union rw.tcConditionMVars
     let (spec, changed) ← genSpecialization rw missing norm
+    panic! "Unimplemented"
+    /-
     if changed && (target.validDirs conditionSubgoals != spec.validDirs conditionSubgoals) then
       return spec
     else
       return none
+    -/
 
   unificationTargets (cgr : Congr) : MetaM (List Expr) := do
     let cgrType ← cgr.type

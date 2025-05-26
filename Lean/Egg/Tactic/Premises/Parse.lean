@@ -77,10 +77,8 @@ private abbrev Premise.Mk?     := Premise.Mk
 private def Premise.Mk.rewrites
     (genGroundEqs : Bool) (stx : Syntax) (cfg : Config.Normalization) : Premise.Mk Rewrite :=
   fun proof type src => do
-    let mut rws := #[]
-    let some rw ← Rewrite.from? proof type src cfg
+    let mut some rws ← Rewrites.from? proof type src cfg
       | throwErrorAt stx "egg requires premises to be (proofs of) propositions or (non-propositional) definitions"
-    rws := rws.push rw
     if genGroundEqs then
       if let some eq ← Rewrite.mkGroundEq? proof type (.ground src) cfg then
       rws := rws.push eq
@@ -89,8 +87,7 @@ private def Premise.Mk.rewrites
 private def Premise.Mk?.rewrites
     (genGroundEqs : Bool) (cfg : Config.Normalization) : Premise.Mk? Rewrite :=
   fun proof type src => do
-    let mut rws := #[]
-    if let some rw ← Rewrite.from? proof type src cfg then rws := rws.push rw
+    let mut rws := (← Rewrites.from? proof type src cfg).getD #[]
     if genGroundEqs then
       if let some eq ← Rewrite.mkGroundEq? proof type (.ground src) cfg then rws := rws.push eq
     return rws

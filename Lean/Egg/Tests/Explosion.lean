@@ -30,9 +30,15 @@ example : true = true := by
 /--
 info: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
-  [egg.rewrites] Basic (1)
-    [egg.rewrites] #0(⇔): h
+  [egg.rewrites] Basic (2)
+    [egg.rewrites] #0(⇒): h
       [egg.rewrites] true = false
+      [egg.rewrites] LHS MVars
+          []
+      [egg.rewrites] RHS MVars
+          []
+    [egg.rewrites] #0(⇐): h
+      [egg.rewrites] false = true
       [egg.rewrites] LHS MVars
           []
       [egg.rewrites] RHS MVars
@@ -54,7 +60,7 @@ example (h : true = false) : true = false := by
 info: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
-    [egg.rewrites] #0(⇔): h
+    [egg.rewrites] #0(⇒): h
       [egg.rewrites] f ?x ?y = f ?y ?x
       [egg.rewrites] LHS MVars
           [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
@@ -65,7 +71,12 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Derived (0)
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Pruned (0)
+  [egg.rewrites] Pruned (1)
+    [egg.rewrites] #0(⇐) by #0
+      [egg.rewrites] f ?y ?x = f ?x ?y
+      [egg.rewrites] LHS MVars
+          [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
 -/
 #guard_msgs in
 set_option trace.egg.rewrites true in
@@ -78,7 +89,7 @@ example (h : ∀ x y : Nat, f x y = f y x) : f 1 2 = f 2 1 := by
 info: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
-    [egg.rewrites] #0(⇔): h
+    [egg.rewrites] #0(⇒): h
       [egg.rewrites] f ?x ?y = f ?y ?x
       [egg.rewrites] LHS MVars
           [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
@@ -89,7 +100,12 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Derived (0)
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Pruned (0)
+  [egg.rewrites] Pruned (1)
+    [egg.rewrites] #0(⇐) by #0
+      [egg.rewrites] f ?y ?x = f ?x ?y
+      [egg.rewrites] LHS MVars
+          [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
 -/
 #guard_msgs in
 set_option trace.egg.rewrites true in
@@ -101,28 +117,34 @@ example (a b : Nat) (h : ∀ x y : Nat, f x y = f y x) : f a b = f b a := by
 /--
 info: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
-  [egg.rewrites] Basic (1)
-    [egg.rewrites] #0(⇐): h
+  [egg.rewrites] Basic (2)
+    [egg.rewrites] #0(⇒)(❌rhsMVarInclusion: [?y]): h
       [egg.rewrites] f ?x ?x = f ?y ?x
       [egg.rewrites] LHS MVars
           [?x: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?x: [unconditionallyVisible], ?y: [unconditionallyVisible]]
+          [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
+    [egg.rewrites] #0(⇐): h
+      [egg.rewrites] f ?y ?x = f ?x ?x
+      [egg.rewrites] LHS MVars
+          [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars
+          [?x: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (2)
-    [egg.rewrites] #0💥→[3](⇔)
-      [egg.rewrites] f ?m.247 ?m.247 = f a ?m.247
+    [egg.rewrites] #0💥→[3](⇒)(❌covering: [?x, ?y])
+      [egg.rewrites] f ?m.243 ?m.243 = f a ?m.243
       [egg.rewrites] LHS MVars
-          [?m.247: [unconditionallyVisible]]
+          [?m.243: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m.247: [unconditionallyVisible]]
-    [egg.rewrites] #0💥→[4](⇔)
-      [egg.rewrites] f ?m.256 ?m.256 = f b ?m.256
+          [?m.243: [unconditionallyVisible]]
+    [egg.rewrites] #0💥→[4](⇒)(❌covering: [?x, ?y])
+      [egg.rewrites] f ?m.252 ?m.252 = f b ?m.252
       [egg.rewrites] LHS MVars
-          [?m.256: [unconditionallyVisible]]
+          [?m.252: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?m.256: [unconditionallyVisible]]
+          [?m.252: [unconditionallyVisible]]
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)

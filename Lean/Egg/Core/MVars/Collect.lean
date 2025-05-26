@@ -27,10 +27,12 @@ private def withProperty (p : Property) (m : CollectionM α) : CollectionM α :=
 private def collectMVar (mvar : MVarId) : CollectionM Unit := do
   unless ← mvar.isAssignable do return
   let isTcInst ← Meta.isTCInstance (.mvar mvar)
+  let isProof  ← Meta.isProof (.mvar mvar)
   modify fun s =>
     let ps := s.active
       |>.insertIf isTcInst .isTcInst
-      |>.insertIf s.active.isEmpty .unconditionallyVisible
+      |>.insertIf (isProof && !isTcInst) .isProof
+    let ps := ps.insertIf ps.isEmpty .unconditionallyVisible
     { s with mvars := s.mvars.insertExpr mvar ps }
 
 private def collectLMVar (lmvar : LMVarId) : CollectionM Unit := do
@@ -48,7 +50,7 @@ private def collectLevels (lvls : List Level) : CollectionM Unit := do
 private partial def collect (e : Expr) : CollectionM Unit := do
   -- We check if `e` is an ambient mvar here (as opposed to only checking for ambient mvars in
   -- `collect{L}MVar`), in order to avoid looking at its type in that case.
-  if ← isAmbientMVar e then
+  if ← e.isAmbientMVar then
     return
   else if ← Meta.isTCInstance e then
     -- We don't want mvars which are `.isTcInst` to also be tagged with `.inTcInstTerm`, if they
@@ -57,7 +59,10 @@ private partial def collect (e : Expr) : CollectionM Unit := do
     if let .mvar m := e then collectMVar m else withProperty .inTcInstTerm do core e
     withProperty .inErasedTcInst do core (← inferType e)
   else if ← Meta.isProof e then
-    withProperty .inProofTerm   do core e
+    -- We don't want mvars which are `.isProof` to also be tagged with `.inProofTerm`, if they don't
+    -- appear within another proof term. Thus, we check whether `m` is an mvar to avoid the
+    -- `withProperty .inProofTerm` in that case.
+    if let .mvar m := e then collectMVar m else withProperty .inProofTerm do core e
     withProperty .inErasedProof do core (← inferType e)
   else if let (.app (.app (.app (.const ``Eq [u]) t) lhs) rhs) := e then
     withProperty .inEqType do collectLevel u; core t
@@ -65,10 +70,6 @@ private partial def collect (e : Expr) : CollectionM Unit := do
   else
     core e
 where
-  isAmbientMVar (e : Expr) : CollectionM Bool := do
-    let .mvar m := e | return false
-    return !(← m.isAssignable)
-
   core (e : Expr) : CollectionM Unit := do
     unless e.hasMVar do return
     match e with

@@ -24,9 +24,8 @@ private partial def exprReferencesMVar (e : Expr) (m : MVarId) : MetaM Bool := d
     exprReferencesMVar (← inferType e) m
 
 private partial def genExplosionsForRw (rw : Rewrite) : MetaM Rewrites := do
-  let missingOnLhs := rw.mvars.rhs.visibleExpr.subtract rw.mvars.lhs.visibleExpr
-  let missingOnRhs := rw.mvars.lhs.visibleExpr.subtract rw.mvars.rhs.visibleExpr
-  return (← genDir .forward  missingOnLhs) ++ (← genDir .backward missingOnRhs)
+  let missing := rw.mvars.rhs.visibleExpr.subtract rw.mvars.lhs.visibleExpr
+  return (← genDir .forward missing)
 where
   genDir (dir : Direction) (missing : MVarIdSet) : MetaM Rewrites := do
     unless !missing.isEmpty do return #[]
@@ -43,6 +42,8 @@ where
       let m := subst.expr[m]!
       let some (fvar, idx) ← findLocalDeclWithTypeMinIdx? (← m.getType) minIdx | break
       minIdx := idx + 1
+      -- TODO: It does not suffice to assign mvars and update the rw with `instantiateMVars`.
+      --       Assignment changes what might be a condition or not.
       unless ← isDefEq (.mvar m) (.fvar fvar) do throwError "egg: internal error in explosion gen"
       let fresh ← fresh.instantiateMVars
       let miss := miss.filterMap fun i =>

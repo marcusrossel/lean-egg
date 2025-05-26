@@ -50,7 +50,10 @@ where
     let freshMissing := missing.map subst.expr.get!
     let conds := freshRw.tcConditionMVars
     let (spec, _) ← genSpecialization freshRw (freshMissing.union conds) norm
+    panic! "Unimplemented"
+    /-
     return if (spec.validDirs conditionSubgoals).contains dir then spec else none
+    -/
   genCondSpecOnly : MetaM (Option Rewrite) := do
     let freshRw ← rw.fresh (src := .tcSpec rw.src .cond)
     let conds := freshRw.tcConditionMVars

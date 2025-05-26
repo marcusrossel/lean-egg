@@ -50,14 +50,19 @@ private def specializeForTargets
   spec ← spec.instantiateMVars
   -- We set the specialization's directions to not include those already covered by `rw`. If that
   -- means that the specialization does not have any direction, then we discard it.
+  panic! "To be implemented"
+  /-
   let newDirs := (spec.validDirs subgoals).without rwDirs
   if newDirs.isNone then return none
   return spec.fixDirs newDirs (disallowLoneMVar := true)
+  -/
 
 private def specialize (rw : Rewrite) (goal : Congr) (subgoals : Bool) :
     MetaM (Array Rewrite) := do
   -- If the given rewrite is already valid in both directions, then we don't generate any
   -- specializations for it.
+  panic! "To be implemented"
+  /-
   let rwDirs := rw.validDirs subgoals
   if rwDirs.isBoth then return #[]
   -- Computes the unification targets.
@@ -73,6 +78,7 @@ private def specialize (rw : Rewrite) (goal : Congr) (subgoals : Bool) :
       result := result.push spec'
       idx := idx + 1
   return result
+  -/
 
 def genGoalTypeSpecializations (targets : Rewrites) (goal : Congr) (subgoals : Bool) :
     MetaM Rewrites := do

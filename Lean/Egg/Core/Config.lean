@@ -22,7 +22,7 @@ structure Gen where
   builtins         := true
   baskets          := (#[] : Array Lean.Name)
   genStructProjRws := true
-  genGoalTypeSpec  := true
+  genGoalTypeSpec  := false -- TODO: Turn this back on
   genTcProjRws     := true
   genTcSpecRws     := false
   genGoalTcSpec    := false

@@ -53,6 +53,7 @@ def MVars.Property.toString : MVars.Property → String
   | .isTcInst               => "isTcInst"
   | .inTcInstTerm           => "inTcInstTerm"
   | .inErasedTcInst         => "inErasedTcInst"
+  | .isProof                => "isProof"
   | .inProofTerm            => "inProofTerm"
   | .inErasedProof          => "inErasedProof"
   | .inEqType               => "inEqType"
@@ -79,9 +80,16 @@ def Congr.Rel.format : Congr.Rel → Format
 def Congr.toMessageData (cgr : Congr) : MetaM MessageData :=
   return (← ppExpr cgr.lhs) ++ " " ++ cgr.rel.format ++ " " ++ (← ppExpr cgr.rhs)
 
-def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) (conditionSubgoals : Bool)
+def Rewrite.Violation.toMessageData : Rewrite.Violation → MessageData
+  | rhsMVarInclusion missing => m!"rhsMVarInclusion: {missing.toList.map (Expr.mvar ·)}"
+  | lhsSingleMVar            => "lhsSingleMVar"
+  | covering missing         => m!"covering: {missing.toList.map (Expr.mvar ·)}"
+  | tcMVarInclusion          => "tcMVarInclusion"
+
+def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) (subgoals : Bool)
     (headerAnnotation : String := "") : TacticM Unit := do
-  let mut header := m!"{rw.src.description}({rw.validDirs conditionSubgoals |>.format}){headerAnnotation}"
+  let violation := (← rw.violation? subgoals).map (m!"(❌{·.toMessageData})") |>.getD m!""
+  let mut header := m!"{rw.src.description}({rw.dir.format}){violation}{headerAnnotation}"
   if let some stx := stx? then header := m!"{header}: {stx}"
   withTraceNode cls (fun _ => return header) do
     traceM cls fun _ => rw.toCongr.toMessageData

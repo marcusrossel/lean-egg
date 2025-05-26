@@ -12,7 +12,7 @@ set_option egg.builtins false
 info: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
-    [egg.rewrites] #0(⇔): h₁
+    [egg.rewrites] #0(⇒): h₁
       [egg.rewrites] 0 = 0
       [egg.rewrites] LHS MVars
           []
@@ -23,8 +23,20 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Derived (0)
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Pruned (1)
-    [egg.rewrites] #1(⇔) by #0
+  [egg.rewrites] Pruned (3)
+    [egg.rewrites] #0(⇐) by #0
+      [egg.rewrites] 0 = 0
+      [egg.rewrites] LHS MVars
+          []
+      [egg.rewrites] RHS MVars
+          []
+    [egg.rewrites] #1(⇒) by #0
+      [egg.rewrites] 0 = 0
+      [egg.rewrites] LHS MVars
+          []
+      [egg.rewrites] RHS MVars
+          []
+    [egg.rewrites] #1(⇐) by #0
       [egg.rewrites] 0 = 0
       [egg.rewrites] LHS MVars
           []
@@ -40,7 +52,7 @@ example (h₁ h₂ : 0 = 0) : 0 = 0 := by
 info: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
-    [egg.rewrites] #0(⇔): Nat.add_comm
+    [egg.rewrites] #0(⇒): Nat.add_comm
       [egg.rewrites] ?n + ?m = ?m + ?n
       [egg.rewrites] LHS MVars
           [?m: [unconditionallyVisible], ?n: [unconditionallyVisible]]
@@ -51,9 +63,21 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Derived (0)
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Pruned (1)
-    [egg.rewrites] #1(⇔) by #0
+  [egg.rewrites] Pruned (3)
+    [egg.rewrites] #0(⇐) by #0
+      [egg.rewrites] ?m + ?n = ?n + ?m
+      [egg.rewrites] LHS MVars
+          [?m: [unconditionallyVisible], ?n: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars
+          [?m: [unconditionallyVisible], ?n: [unconditionallyVisible]]
+    [egg.rewrites] #1(⇒) by #0
       [egg.rewrites] ?a + ?b = ?b + ?a
+      [egg.rewrites] LHS MVars
+          [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars
+          [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
+    [egg.rewrites] #1(⇐) by #0
+      [egg.rewrites] ?b + ?a = ?a + ?b
       [egg.rewrites] LHS MVars
           [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]

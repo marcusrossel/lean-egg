@@ -42,13 +42,13 @@ private def StructInfos.rws (infos : StructInfos) (cfg : Config.Normalization) :
       let (mvars, _) ← forallMetaTelescope (ctor.type.instantiateLevelParams ctor.levelParams ls)
       let appCtor := mkAppN (.const ctor.name ls) mvars
       let some field := (getStructureFields (← getEnv) structName)[projIdx]?
-        | panic! "Internal error in 'Egg.StructInfos.rws'"
+        | throwError "Internal error in 'Egg.StructInfos.rws'"
       let lhs ← mkProjection appCtor field
       let rhs := mvars[ctor.numParams + projIdx]!
       let eq ← mkForallFVars mvars (← mkEq lhs rhs)
       let proof ← mkLambdaFVars mvars (← mkEqRefl lhs)
-      let some rw ← Rewrite.from? proof eq (.structProj rws.size) cfg
-        | panic! "Internal error in 'Egg.StructInfos.rws'"
+      let some rw ← Rewrite.from? .forward proof eq (.structProj rws.size) cfg
+        | throwError "Internal error in 'Egg.StructInfos.rws'"
       rws := rws.push rw
   return rws
 

@@ -30,12 +30,12 @@ private def TcProj.reductionRewrites
       let uNorm ← normalize u cfg
       let eq ← mkEq proj uNorm
       let proof ← mkEqRefl proj
-      let some rw ← Rewrite.from? proof eq (.tcProj src.src src.loc src.pos rws.size) cfg (normalize := false)
+      let some rs ← Rewrites.from? proof eq (.tcProj src.src src.loc src.pos rws.size) cfg (normalize := false)
         | throwError "egg: internal error in 'TcProj.reductionRewrite?'"
       -- TODO: This is a bandaid. How do we handle unboundedd mvars in the types of tc instance
       --       conditions in general?
-      let rw := rw.eraseConditions
-      rws := rws.push rw
+      let rs := rs.map (·.eraseConditions)
+      rws := rws ++ rs
       -- TODO: If normalization for rewrites is turned off, this entails that we might generate
       --       fewer type class projection rewrites 😬
       proj := uNorm

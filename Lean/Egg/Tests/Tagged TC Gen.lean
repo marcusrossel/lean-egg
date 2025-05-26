@@ -19,21 +19,31 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (0)
   [egg.rewrites] Tagged (1)
-    [egg.rewrites] □r(⇔)
+    [egg.rewrites] □r(⇒)
       [egg.rewrites] z = z
       [egg.rewrites] LHS MVars
           [?α: [inErasedTcInst, unconditionallyVisible],
-           ?c: [isTcInst, unconditionallyVisible],
+           ?c: [isTcInst],
            ?u.84: [inErasedTcInst, unconditionallyVisible]]
       [egg.rewrites] RHS MVars
           [?α: [inErasedTcInst, unconditionallyVisible],
-           ?c: [isTcInst, unconditionallyVisible],
+           ?c: [isTcInst],
            ?u.84: [inErasedTcInst, unconditionallyVisible]]
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Pruned (0)
+  [egg.rewrites] Pruned (1)
+    [egg.rewrites] □r(⇐) by □r
+      [egg.rewrites] z = z
+      [egg.rewrites] LHS MVars
+          [?α: [inErasedTcInst, unconditionallyVisible],
+           ?c: [isTcInst],
+           ?u.84: [inErasedTcInst, unconditionallyVisible]]
+      [egg.rewrites] RHS MVars
+          [?α: [inErasedTcInst, unconditionallyVisible],
+           ?c: [isTcInst],
+           ?u.84: [inErasedTcInst, unconditionallyVisible]]
 -/
 #guard_msgs in
 set_option trace.egg.rewrites true in

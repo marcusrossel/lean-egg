@@ -37,10 +37,6 @@ def mkMP (proof : Expr) : Rel → MetaM Expr
   | eq  => mkAppM ``Eq.mp #[proof]
   | iff => mkAppM ``Iff.mp #[proof]
 
-def mkMPR (proof : Expr) : Rel → MetaM Expr
-  | eq  => mkAppM ``Eq.mpr #[proof]
-  | iff => mkAppM ``Iff.mpr #[proof]
-
 end Rel
 
 def expr (cgr : Congr) : MetaM Expr := do

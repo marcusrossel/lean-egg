@@ -8,7 +8,7 @@ open scoped Egg
 info: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
-    [egg.rewrites] #0(⇔): _h
+    [egg.rewrites] #0(⇒): _h
       [egg.rewrites] f ?b = f ?a
       [egg.rewrites] Conditions
         [egg.rewrites] ?a = ?b
@@ -21,7 +21,14 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Derived (0)
   [egg.rewrites] Structure Projections (0)
   [egg.rewrites] Definitional
-  [egg.rewrites] Pruned (0)
+  [egg.rewrites] Pruned (1)
+    [egg.rewrites] #0(⇐) by #0
+      [egg.rewrites] f ?a = f ?b
+      [egg.rewrites] Conditions
+        [egg.rewrites] ?a = ?b
+      [egg.rewrites] LHS MVars
+          [?a: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars [?b: [unconditionallyVisible]]
 -/
 #guard_msgs(info) in
 set_option trace.egg.rewrites true in

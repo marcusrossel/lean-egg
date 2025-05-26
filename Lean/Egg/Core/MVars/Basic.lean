@@ -42,18 +42,15 @@ inductive Property where
   | isTcInst
   | inTcInstTerm
   | inErasedTcInst
+  | isProof
   | inProofTerm
   | inErasedProof
   | inEqType
   deriving BEq, Hashable
 
 def Property.isVisible : Property → Bool
-  | .unconditionallyVisible | .inErasedTcInst | .inErasedProof => true
-  | _                                                          => false
-
-def Property.inTarget : Property → Bool
-  | .unconditionallyVisible | .inProofTerm | .isTcInst | .inTcInstTerm | .inEqType => true
-  | _                                                                              => false
+  | unconditionallyVisible | inErasedTcInst | inErasedProof => true
+  | _                                                       => false
 
 abbrev Properties := HashSet Property
 
@@ -61,9 +58,6 @@ namespace Properties
 
 def isVisible (ps : Properties) : Bool :=
   ps.any (·.isVisible)
-
-def inTarget (ps : Properties) : Bool :=
-  ps.any (·.inTarget)
 
 def insertIf (ps : Properties) (condition : Bool) (p : Property) : Properties :=
   if condition then ps.insert p else ps
@@ -89,14 +83,6 @@ def visibleLevel (mvars : MVars) : LMVarIdSet :=
 def tcInsts (mvars : MVars) : MVarIdSet :=
   mvars.expr.fold (init := ∅) fun result m ps =>
     if ps.contains .isTcInst then result.insert m else result
-
-def nestedTcInsts (mvars : MVars) : MVarIdSet :=
-  mvars.expr.fold (init := ∅) fun result m ps =>
-    if ps.contains .isTcInst && ps.contains .inTcInstTerm then result.insert m else result
-
-def inTarget (mvars : MVars) : MVarIdSet :=
-  mvars.expr.fold (init := ∅) fun result m ps =>
-    if ps.inTarget then result.insert m else result
 
 def insertExpr (mvars : MVars) (m : MVarId) (ps : Properties) : MVars :=
   { mvars with expr := mvars.expr.alter m (ps.union <| ·.getD ∅) }

@@ -4,15 +4,18 @@ open Lean Meta
 
 namespace Egg
 
-structure Prerewrite extends Congr where
-  qvars : Array Expr
+-- Note: We don't create `Prerewrite`s directly, but use `Prerewrite.from?` instead.
+structure Prerewrite extends Congr where private mk ::
+  qvars : MVarIdSet
   proof : Expr
+  deriving Inhabited
 
 def Prerewrite.from? (proof type : Expr) (cfg : Config.Normalization) (normalize : Bool) :
     MetaM (Option Prerewrite) := do
   let type ← if normalize then Egg.normalize type cfg else pure type
-  let (qvars, _, prop) ← withReducible do forallMetaTelescopeReducing type
-  let proof := mkAppN proof qvars
+  let (args, _, prop) ← withReducible do forallMetaTelescopeReducing type
+  let proof := mkAppN proof args
+  let qvars : MVarIdSet := args.foldl (·.insert ·.mvarId!) ∅
   if let some cgr ← Congr.from? prop then
     return some { cgr with proof, qvars }
   -- Note: We need this to reduce abbrevs which don't unfold to `∀ ...`, but rather just `_ ~ _`.
@@ -30,5 +33,5 @@ def Prerewrite.forDir (pre : Prerewrite) : Direction → MetaM Prerewrite
   | .backward => return { pre with
     lhs   := pre.rhs,
     rhs   := pre.lhs,
-    proof := ← mkEqSymm pre.proof
+    proof := ← pre.rel.mkSymm pre.proof
   }

@@ -23,8 +23,9 @@ def builtins (cfg : Config.Normalization) : MetaM Rewrites := do
     let lvlMVars ← List.replicateM info.numLevelParams mkFreshLevelMVar
     let val := info.instantiateValueLevelParams! lvlMVars
     let type := info.instantiateTypeLevelParams lvlMVars
-    let rw? ← Rewrite.from? val type (.builtin idx) cfg
-    rws := rws.push rw?.get!
+    let some rs ← Rewrites.from? val type (.builtin idx) cfg
+      | throwError "egg failed to create rewrites for builtin '{thm}'"
+    rws := rws ++ rs
   return rws
 
 end Rewrites
