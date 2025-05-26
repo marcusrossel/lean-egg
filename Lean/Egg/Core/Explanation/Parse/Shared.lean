@@ -65,8 +65,9 @@ syntax "⁅←⁆" : nested_split_extension
 syntax "💥→[" num,* "]" : explosion_extension
 syntax "💥←[" num,* "]" : explosion_extension
 
+syntax basic_fwd_rw_src                             : fwd_rw_src
 syntax basic_fwd_rw_src "<" num "⊢>"                : fwd_rw_src
-syntax basic_fwd_rw_src (noWs tc_extension)*        : fwd_rw_src
+syntax basic_fwd_rw_src (noWs tc_extension)+        : fwd_rw_src
 syntax basic_fwd_rw_src noWs explosion_extension    : fwd_rw_src
 syntax basic_fwd_rw_src noWs nested_split_extension : fwd_rw_src
 syntax basic_fwd_rw_src noWs "↓"                    : fwd_rw_src
@@ -113,7 +114,7 @@ syntax "≡/"                                         : fwd_rw_src
 syntax str                                          : fwd_rw_src
 -- syntax "≡%"                                      : fwd_rw_src
 
-syntax ("?" noWs num "=" num)* : weak_vars
+syntax ("∪" noWs num "=" num)* : weak_vars
 
 syntax fwd_rw_src (noWs "-rev")? weak_vars : rw_src
 syntax &"="                                : rw_src
@@ -207,6 +208,8 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
   | `(fwd_rw_src|≡^)     => .natLit .pow
   | `(fwd_rw_src|≡/)     => .natLit .div
   | `(fwd_rw_src|"≡%")   => .natLit .mod
+  | `(fwd_rw_src|$src:basic_fwd_rw_src) =>
+    parseBasicFwdRwSrc src
   | `(fwd_rw_src|$src:basic_fwd_rw_src<$idx⊢>) =>
     .goalTypeSpec (parseBasicFwdRwSrc src) idx.getNat
   | `(fwd_rw_src|$src:basic_fwd_rw_src$tcExts:tc_extension*) =>
@@ -221,7 +224,7 @@ private def parseFwdRwSrc : (TSyntax `fwd_rw_src) → Source
   | _ => unreachable!
 
 def parseRwSrc : (TSyntax `rw_src) → Rewrite.Descriptor
-  | `(rw_src|$fwdSrc:fwd_rw_src$[-rev%$rev]? $[?$weakVars = $weakClasses]*) => {
+  | `(rw_src|$fwdSrc:fwd_rw_src$[-rev%$rev]?$[∪$weakVars=$weakClasses]*) => {
       src      := parseFwdRwSrc fwdSrc
       dir      := if rev.isSome then .backward else .forward
       weakVars := weakVars.zip weakClasses |>.map fun (v, c) => (v.getNat, c.getNat)

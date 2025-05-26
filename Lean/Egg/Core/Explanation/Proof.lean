@@ -135,19 +135,18 @@ where
         --       id.
         unless ← isDefEq lhs rw.lhs do failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs current next idx
         unless ← isDefEq rhs rw.rhs do failIsDefEq "RHS" rw.src rhs rw.rhs rw.mvars.rhs current next idx
-        let conds := rw.conds.filter (!·.isProven)
-        for cond in conds do
-          let cond ← cond.instantiateMVars
+        for cond in rw.conds do
+          let some cond ← cond.instantiateMVars | continue
           match cond.kind with
           | .proof =>
             if let some p ← proveCondition cond.type then
-              unless ← isDefEq cond.expr p do
+              unless ← isDefEq (.mvar cond.mvar) p do
                 fail m!"proof of condition '{cond.type}' of rewrite {rw.src.description} was invalid" idx
             else if !conditionSubgoals then
               fail m!"condition '{cond.type}' of rewrite {rw.src.description} could not be proven" idx
           | .tcInst =>
             if let some p ← synthInstance? cond.type then
-              unless ← isDefEq cond.expr p do
+              unless ← isDefEq (.mvar cond.mvar) p do
                 fail m!"synthesized type class for condition '{cond.type}' of rewrite {rw.src.description} was invalid" idx
             else if !conditionSubgoals then
               fail m!"type class condition '{cond.type}' of rewrite {rw.src.description} could not be synthesized" idx

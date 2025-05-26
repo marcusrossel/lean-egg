@@ -53,11 +53,14 @@ def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config.Normalization) 
   -- One direction suffices.
   return some { cgr with qvars := ∅, proof, conds := #[], mvars := ⟨{}, {}⟩, src, dir := .forward }
 
+-- TODO: Do we need something like `covering` for levels?
 inductive Violation where
   | rhsMVarInclusion (missing : MVarIdSet)
+  | rhsUVarInclusion (missing : LMVarIdSet)
   | lhsSingleMVar
   | covering (missing : MVarIdSet)
   | tcMVarInclusion
+  | tcUVarInclusion
 
 -- Note: To check `covering`, it suffices to check all qvars. The reason being that all vars are
 --       either in the theorem body, the qvars, or the types of the former. The variables in the
@@ -73,31 +76,45 @@ inductive Violation where
 --       `visible`, as this does not suffice when `subgoals = true`.
 --       Also note that taking the type mvar closure over the type class instances is ok, as we have
 --       `tcMVarInclusion` anyway.
---
--- TODO: Handle levels.
 def violation? (rw : Rewrite) (subgoals : Bool) : MetaM (Option Violation) := do
   -- Checks for `lhsSingleMVar`.
   if ← rw.lhs.isAmbientMVar <&&> ((return subgoals) <||> rw.conds.allM (·.type.isAmbientMVar)) then
     return some .lhsSingleMVar
   -- Checks for `rhsMVarInclusion`.
-  let visible :=
-    if subgoals then
-      rw.mvars.lhs.visibleExpr
-    else
-      rw.conds.foldl (init := rw.mvars.lhs.visibleExpr) fun vis cond =>
-        if cond.kind.isProof then vis.union cond.mvars.visibleExpr else vis
+  let mut visible := rw.mvars.lhs.visibleExpr
+  unless subgoals do visible := visible.union (← condVisible .proof)
   let missing := rw.mvars.rhs.visibleExpr.subtract visible
   unless missing.isEmpty do return some (.rhsMVarInclusion missing)
+  -- Checks for `rhsUVarInclusion`.
+  let mut visibleLvls := rw.mvars.lhs.visibleLevel
+  unless subgoals do visibleLvls := visibleLvls.union (← condVisibleLvls .proof)
+  let missing := rw.mvars.rhs.visibleLevel.subtract visibleLvls
+  unless missing.isEmpty do return some (.rhsUVarInclusion missing)
   -- Checks for `tcMVarInclusion`.
-  let tcVisible : MVarIdSet := rw.conds.foldl (init := ∅) fun vis cond =>
-    if cond.kind.isTcInst then vis.union cond.mvars.visibleExpr else vis
-  unless tcVisible.subset visible do return some .tcMVarInclusion
+  unless (← condVisible .tcInst).subset visible do return some .tcMVarInclusion
+  -- Checks for `tcUVarInclusion`.
+  unless (← condVisibleLvls .tcInst).subset visibleLvls do return some .tcUVarInclusion
   -- Checks for `covering`.
   let mut cov ← rw.qvars.filterM fun m => Meta.isTCInstance (.mvar m) <||> Meta.isProof (.mvar m)
   cov ← MVarIdSet.typeMVarClosure (cov.union visible)
   let missing := rw.qvars.subtract cov
   unless missing.isEmpty do return some (.covering missing)
   return none
+where
+  condVisible (kind : Condition.Kind) : MetaM MVarIdSet := do
+    let mut vis := ∅
+    for cond in rw.conds do
+      if cond.kind == kind then
+        let mvars ← MVars.collect cond.type
+        vis := vis.union mvars.visibleExpr
+    return vis
+  condVisibleLvls (kind : Condition.Kind) : MetaM LMVarIdSet := do
+    let mut vis := ∅
+    for cond in rw.conds do
+      if cond.kind == kind then
+        let mvars ← MVars.collect cond.type
+        vis := vis.union mvars.visibleLevel
+    return vis
 
 def isValid (rw : Rewrite) (subgoals : Bool) : MetaM Bool :=
   return (← rw.violation? subgoals).isNone
@@ -117,14 +134,11 @@ def freshWithSubst (rw : Rewrite) (src : Source := rw.src) : MetaM (Rewrite × M
   let (mRhs, subst)  ← rw.mvars.rhs.fresh (init := subst)
   let (conds, subst) ← freshConds (init := subst)
   -- TODO: Refresh the qvars.
-  -- Note: The `conds` already have `subst` applied. So If you have more substitution targets in the
-  --       future, you might need to consider that.
   let rw' := { rw with
-    src
+    src, conds
     lhs   := subst.apply rw.lhs
     rhs   := subst.apply rw.rhs
     proof := subst.apply rw.proof
-    conds := conds
     mvars := { lhs := mLhs, rhs := mRhs }
   }
   return (rw', subst)
@@ -133,14 +147,8 @@ where
     let mut subst := init
     let mut conds := #[]
     for cond in rw.conds do
-      let (_, s) ← (← MVars.collect cond.expr).fresh (init := subst)
-      let (mvars, s) ← cond.mvars.fresh (init := s)
-      conds := conds.push {
-        kind := cond.kind,
-        expr := s.apply cond.expr,
-        type := s.apply cond.type,
-        mvars
-      }
+      let (fresh, s) ← cond.fresh subst
+      conds := conds.push fresh
       subst := s
     return (conds, subst)
 
@@ -151,13 +159,13 @@ where
 def fresh (rw : Rewrite) (src : Source := rw.src) : MetaM Rewrite :=
   Prod.fst <$> rw.freshWithSubst src
 
-def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
+nonrec def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
   return { rw with
-    lhs       := ← Lean.instantiateMVars rw.lhs
-    rhs       := ← Lean.instantiateMVars rw.rhs
+    lhs       := ← instantiateMVars rw.lhs
+    rhs       := ← instantiateMVars rw.rhs
     qvars     := ← rw.qvars.filterM fun m => return !(← m.isAssigned)
-    proof     := ← Lean.instantiateMVars rw.proof
-    conds     := ← rw.conds.mapM (·.instantiateMVars)
+    proof     := ← instantiateMVars rw.proof
+    conds     := ← rw.conds.filterMapM (·.instantiateMVars)
     mvars.lhs := ← rw.mvars.lhs.removeAssigned
     mvars.rhs := ← rw.mvars.rhs.removeAssigned
   }
@@ -175,8 +183,7 @@ def eraseConditions (rw : Rewrite) : Rewrite :=
   { rw with conds := #[] }
 
 def tcConditionMVars (rw : Rewrite) : MVarIdSet :=
-  rw.conds.foldl (init := ∅) fun cs c =>
-    if c.kind.isTcInst && !c.isProven then cs.insert c.expr.mvarId! else cs
+  rw.conds.foldl (init := ∅) fun cs c => if c.kind.isTcInst then cs.insert c.mvar else cs
 
 end Rewrite
 

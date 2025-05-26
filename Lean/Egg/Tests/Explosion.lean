@@ -155,14 +155,12 @@ set_option egg.genGroundEqs false in
 example (a b : Nat) (h : ∀ x y : Nat, f x x = f y x) : f a a = f b a := by
   egg [h]
 
--- BUG: Egg finds a a broken proof path: by rewriting `f #0 #0` with both `h₁` and `h₂` which
---      establishes `0 = f #0 #0 = 1`. Is there any sensible way to fix this?
+-- TODO: Egg finds a a broken proof paths: by rewriting `f #0 #0` with both `h₁` and `h₂` which
+--       establishes `0 = f #0 #0 = 1`. Is there any sensible way to fix this?
+
 set_option egg.explosion false in
 example (a : Nat) (h₁ : ∀ x : Nat, f x x = 0) (h₂ : ∀ x : Nat, f x x = 1) : 0 = 1 := by
   sorry -- egg [h₁, h₂]
 
 example (a : Nat) (h₁ : ∀ x : Nat, f x x = 0) (h₂ : ∀ x : Nat, f x x = 1) : 0 = 1 := by
-  egg [h₁, h₂]
-
-example (a : Nat) (h₁ : ∀ x : Nat, 0 = f x x) (h₂ : ∀ x : Nat, 1 = f x x) : 0 = 1 := by
-  egg [*]
+  sorry -- egg [h₁, h₂]

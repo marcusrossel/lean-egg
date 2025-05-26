@@ -1,3 +1,4 @@
+import Egg.Core.MVars.Subst
 import Egg.Core.MVars.Collect
 open Lean
 
@@ -13,6 +14,7 @@ namespace Condition
 inductive Kind where
   | proof
   | tcInst
+  deriving BEq
 
 def Kind.isProof : Kind → Bool
   | proof  => true
@@ -22,6 +24,7 @@ def Kind.isTcInst : Kind → Bool
   | proof  => false
   | tcInst => true
 
+-- TODO: Remove this when tc spec is removed.
 def Kind.forType? (ty : Expr) : MetaM (Option Kind) := do
   -- Since type classes can also be propositions, we do the type class check first.
   if (← Meta.isClass? ty).isSome then
@@ -33,16 +36,12 @@ def Kind.forType? (ty : Expr) : MetaM (Option Kind) := do
 
 structure _root_.Egg.Rewrite.Condition where
   kind  : Kind
-  -- TODO: Change (and rename) `expr` to be an `MVarId`, as it should never be anything else.
-  expr  : Expr
+  mvar  : MVarId
   type  : Expr
-  -- These are the mvars of `type`.
-  mvars : MVars
 
 def from? (mvar : MVarId) (lhs : MVars) : MetaM <| Option Condition := do
   let some kind ← kind? | return none
-  let type ← Meta.inferType (.mvar mvar)
-  return some { kind, expr := (.mvar mvar), type, mvars := ← MVars.collect type }
+  return some { kind, mvar, type := ← Meta.inferType (.mvar mvar) }
 where
   -- If the mvar appears in the LHS, then it's a condition only if it's a nested instance or proof.
   -- If it does not appear in the LHS, it's a condition immediately if it's an instance or proof.
@@ -58,15 +57,16 @@ where
       return some .proof
     return none
 
--- Conditions can become proven during type class specialization. We still need to keep these
--- conditions in order to use their `expr` during proof reconstruction. Proven conditions are not
--- encoded and thus transparent to the backend.
-def isProven (cond : Condition) : Bool :=
-  !cond.expr.isMVar
+-- If a condition's mvar is assigned, then the condition is redundant, and we return `none`.
+nonrec def instantiateMVars (cond : Condition) : MetaM (Option Condition) := do
+  if ← cond.mvar.isAssigned
+  then return none
+  else return some { cond with type := ← instantiateMVars cond.type }
 
-nonrec def instantiateMVars (cond : Condition) : MetaM Condition := do
-  return { cond with
-    expr  := ← instantiateMVars cond.expr
-    type  := ← instantiateMVars cond.type
-    mvars := ← cond.mvars.removeAssigned
+def fresh (cond : Condition) (init : MVars.Subst) : MetaM (Condition × MVars.Subst) := do
+  let (_, subst) ← (← MVars.collect <| .mvar cond.mvar).fresh init
+  let fresh := { cond with
+    mvar := subst.expr[cond.mvar]!
+    type := subst.apply cond.type
   }
+  return (fresh, subst)

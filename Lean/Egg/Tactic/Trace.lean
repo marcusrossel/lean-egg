@@ -82,9 +82,11 @@ def Congr.toMessageData (cgr : Congr) : MetaM MessageData :=
 
 def Rewrite.Violation.toMessageData : Rewrite.Violation → MessageData
   | rhsMVarInclusion missing => m!"rhsMVarInclusion: {missing.toList.map (Expr.mvar ·)}"
+  | rhsUVarInclusion missing => m!"rhsUVarInclusion: {missing.toList.map (Level.mvar ·)}"
   | lhsSingleMVar            => "lhsSingleMVar"
   | covering missing         => m!"covering: {missing.toList.map (Expr.mvar ·)}"
   | tcMVarInclusion          => "tcMVarInclusion"
+  | tcUVarInclusion          => "tcUVarInclusion"
 
 def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) (subgoals : Bool)
     (headerAnnotation : String := "") : TacticM Unit := do
@@ -95,12 +97,8 @@ def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) (subgoals :
     traceM cls fun _ => rw.toCongr.toMessageData
     if !rw.conds.isEmpty then
       withTraceNode cls (fun _ => return "Conditions") (collapsed := false) do
-        for cond in rw.conds.filter (!·.isProven) do
+        for cond in rw.conds do
           traceM cls fun _ => return m!"{cond.type}"
-        if !(rw.conds.filter (·.isProven)).isEmpty then
-          withTraceNode cls (fun _ => return "Proven") (collapsed := true) do
-            for cond in rw.conds.filter (·.isProven) do
-              traceM cls fun _ => return m!"{cond.type}"
     traceM cls fun _ => return m!"LHS MVars\n{← rw.mvars.lhs.toMessageData}"
     traceM cls fun _ => return m!"RHS MVars\n{← rw.mvars.rhs.toMessageData}"
 

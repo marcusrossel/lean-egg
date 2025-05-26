@@ -9,11 +9,11 @@ namespace Egg.Rewrites
 
 def dup? (tgts : Rewrites) (rw : Rewrite) : MetaM (Option Source) := do
   let absRw ← abstractMVars (← mkEq rw.lhs rw.rhs)
-  let conds  ← rw.conds.mapM (AbstractMVarsResult.expr <$> abstractMVars ·.expr)
+  let conds ← rw.conds.mapM fun cond => AbstractMVarsResult.expr <$> abstractMVars (.mvar cond.mvar)
   for t in tgts do
     let absT ← abstractMVars (← mkEq t.lhs t.rhs)
     if absRw.expr != absT.expr then continue
-    let tConds ← t.conds.mapM (AbstractMVarsResult.expr <$> abstractMVars ·.expr)
+    let tConds ← t.conds.mapM fun cond => AbstractMVarsResult.expr <$> abstractMVars (.mvar cond.mvar)
     if conds != tConds then continue
     return t.src
   return none

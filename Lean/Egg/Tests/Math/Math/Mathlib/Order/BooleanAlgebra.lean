@@ -44,7 +44,10 @@ egg_basket bool extends gbool, dlattice, lattice, ilattice, slattice
 
 variable [GeneralizedBooleanAlgebra α] {x y z : α}
 
+-- TODO: Looks like some (weak) mvars are not being (assigned) refreshed correctly.
+
 example (s : x ⊓ y ⊔ z = x) (i : x ⊓ y ⊓ z = ⊥) : x \ y = z := by
+  set_option trace.egg true in
   egg bool [sup_inf_sdiff x y, inf_inf_sdiff x y, i, s]
 
 /- Previous -/ attribute [egg bool] sdiff_unique

@@ -18,9 +18,7 @@ structure Encoded where
   dirs  : Directions
   conds : Array Expression
 
-def Condition.encode? (c : Rewrite.Condition) (cfg : Config.Encoding) :
-    MetaM (Option Expression) := do
-  if c.isProven then return none
+nonrec def Condition.encode (c : Rewrite.Condition) (cfg : Config.Encoding) : MetaM Expression := do
   let type ← encode c.type cfg
   match c.kind with
   | .proof  => return s!"(proof {type})"
@@ -32,7 +30,7 @@ def encode (rw : Rewrite) (cfg : Config.Encoding) : MetaM Encoded :=
     lhs   := ← Egg.encode rw.lhs cfg
     rhs   := ← Egg.encode rw.rhs cfg
     dirs  := .forward -- TODO: Remove this field
-    conds := ← rw.conds.filterMapM (Condition.encode? · cfg)
+    conds := ← rw.conds.mapM (Condition.encode · cfg)
   }
 
 end Rewrite
