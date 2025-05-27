@@ -1,6 +1,6 @@
 import Egg.Core.MVars.Subst
 import Egg.Core.MVars.Collect
-open Lean
+open Lean Meta
 
 namespace Egg.Rewrite
 
@@ -39,9 +39,20 @@ structure _root_.Egg.Rewrite.Condition where
   mvar  : MVarId
   type  : Expr
 
-def from? (mvar : MVarId) (lhs : MVars) : MetaM <| Option Condition := do
-  let some kind ← kind? | return none
-  return some { kind, mvar, type := ← Meta.inferType (.mvar mvar) }
+inductive Result where
+  | none
+  | synthesized
+  | some (cond : Condition)
+
+def from? (mvar : MVarId) (lhs : MVars) : MetaM Result := do
+  let some kind ← kind? | return .none
+  -- Note: It seems `inferType` does not instantiate mvars.
+  let type ← instantiateMVars (← inferType <| .mvar mvar)
+  -- This is a small optimization. If a type class can already be synthesized, we do it immediately
+  -- and don't generate a condition to be synthesized during eqsat.
+  if ← trySynthesizeTcInst type kind
+  then return .synthesized
+  else return .some { kind, mvar, type }
 where
   -- If the mvar appears in the LHS, then it's a condition only if it's a nested instance or proof.
   -- If it does not appear in the LHS, it's a condition immediately if it's an instance or proof.
@@ -51,11 +62,19 @@ where
         return some .tcInst
       else if ps.contains .isProof && ps.contains .inProofTerm then
         return some .proof
-    else if ← Meta.isTCInstance (.mvar mvar) then
+    else if ← isTCInstance (.mvar mvar) then
       return some .tcInst
-    else if ← Meta.isProof (.mvar mvar) then
+    else if ← isProof (.mvar mvar) then
       return some .proof
     return none
+  trySynthesizeTcInst (type : Expr) : Kind → MetaM Bool
+  | .proof  => return false
+  | .tcInst => do
+    if type.hasMVar then return false
+    let some inst ← synthInstance? type | return false
+    unless ← isDefEq (.mvar mvar) inst do
+      throwError "Internal error in 'Egg.Rewrite.Condition.from?.synthesizeTcInst?'"
+    return true
 
 -- If a condition's mvar is assigned, then the condition is redundant, and we return `none`.
 nonrec def instantiateMVars (cond : Condition) : MetaM (Option Condition) := do

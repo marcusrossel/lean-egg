@@ -61,8 +61,7 @@ private def specialize (rw : Rewrite) (goal : Congr) (subgoals : Bool) :
   for goalTarget in goalTargets do
     for rwTarget in rwTargets do
       let some spec ← specializeForTargets rw goalTarget rwTarget subgoals idx | continue
-      let spec' ← spec.pruneSynthesizableConditions
-      result := result.push spec'
+      result := result.push spec
       idx := idx + 1
   return result
 
