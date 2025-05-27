@@ -18,6 +18,7 @@ namespace Rewrite
 
 structure Descriptor where
   src      : Source
+  srcDir   : Direction
   dir      : Direction
   weakVars : Array (Nat × Nat)
   deriving Inhabited

@@ -79,7 +79,7 @@ where
         lhs := current, rhs := next, proof := ← mkReflStep idx current next rwInfo.src,
         rw := .defeq rwInfo.src, dir := rwInfo.dir
       }
-    if let some rw := rws.find? rwInfo.src then
+    if let some rw := rws.find? rwInfo.src rwInfo.srcDir then
       -- TODO: Can there be conditional rfl proofs?
       if ← isRflProof rw.proof then
         return {

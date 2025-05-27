@@ -218,7 +218,5 @@ def from? (proof type : Expr) (src : Source) (cfg : Config.Normalization) (norma
   let some pre ← Prerewrite.from? proof type cfg normalize | return none
   return #[← pre.complete src .forward, ← pre.complete src .backward]
 
--- TODO: This is unnecessarilly inefficient during proof reconstruction. At some point we may want
---       to redefine `Rewrites` using a better suited data structure like `HashMap Source Rewrite`.
-def find? (rws : Rewrites) (src : Source) : Option Rewrite :=
-  Array.find? (·.src == src) rws
+nonrec def find? (rws : Rewrites) (src : Source) (dir : Direction) : Option Rewrite :=
+  rws.find? fun rw => rw.src == src && rw.dir == dir

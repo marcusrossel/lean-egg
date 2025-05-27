@@ -112,7 +112,7 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
         if !self.weak_vars.is_empty() && !self.cfg.allow_unsat_conditions {
             let mut r = rule.as_str().to_string();
             for var in &self.weak_vars {
-                let assignment = format!("{}={:?}", var.to_string().replace("?", "∪"), subst[*var]);
+                let assignment = format!("{}={:?}", var.to_string().replace("?", ","), subst[*var]);
                 r.push_str(&assignment);
             }
             rule = Symbol::from(r);

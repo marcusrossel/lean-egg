@@ -5,11 +5,6 @@ open Lean
 
 namespace Egg.Rewrite
 
-def name (rw : Rewrite) : String :=
-  match rw.dir with
-  | .forward  => rw.src.description
-  | .backward => s!"{rw.src.description}-rev"
-
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 structure Encoded where
   name  : String
@@ -25,7 +20,7 @@ nonrec def Condition.encode (c : Rewrite.Condition) (cfg : Config.Encoding) : Me
 
 def encode (rw : Rewrite) (cfg : Config.Encoding) : MetaM Encoded :=
   return {
-    name  := rw.name
+    name  := s!"{rw.dir.description}{rw.src.description}"
     lhs   := ← Egg.encode rw.lhs cfg
     rhs   := ← Egg.encode rw.rhs cfg
     conds := ← rw.conds.mapM (Condition.encode · cfg)
