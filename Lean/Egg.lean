@@ -29,7 +29,7 @@ import Egg.Core.Encode.Basic
 import Egg.Core.Encode.Rewrites
 import Egg.Core.Encode.EncodeM
 import Egg.Core.Encode.Guides
-import Egg.Core.Directions
+import Egg.Core.Direction
 import Egg.Core.Congr
 import Egg.Core.MVars.Collect
 import Egg.Core.MVars.Basic

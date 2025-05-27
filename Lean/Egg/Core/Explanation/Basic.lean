@@ -1,5 +1,5 @@
 import Egg.Core.Source
-import Egg.Core.Directions
+import Egg.Core.Direction
 
 open Lean
 

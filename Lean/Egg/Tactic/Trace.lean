@@ -67,12 +67,6 @@ nonrec def MVars.toMessageData (mvars : MVars) : MetaM MessageData := do
   for (mvar, ps) in mvars.lvl  do data := data.concat m!"{Level.mvar mvar}: {ps.toMessageData}"
   return data
 
-def Directions.format : Directions → Format
-  | .none     => "∅"
-  | .forward  => "⇒"
-  | .backward => "⇐"
-  | .both     => "⇔"
-
 def Congr.Rel.format : Congr.Rel → Format
   | .eq  => "="
   | .iff => "↔"
@@ -115,7 +109,7 @@ def Rewrites.tracePruned
     rw.trace (stx? := none) cls conditionSubgoals (headerAnnotation := s!" by {reason.description}")
 
 def Rewrite.Encoded.trace (rw : Rewrite.Encoded) (cls : Name) : TacticM Unit := do
-  let header := m!"{rw.name}({rw.dirs.format})"
+  let header := m!"{rw.name}"
   withTraceNode cls (fun _ => return header) do
     Lean.trace cls fun _ => m!"LHS: {rw.lhs}"
     Lean.trace cls fun _ => m!"RHS: {rw.rhs}"

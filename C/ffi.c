@@ -27,7 +27,6 @@ typedef struct rewrite {
     const char* name;
     const char* lhs;
     const char* rhs;
-    uint8_t     dirs;
     str_array   conds;
 } rewrite;
 
@@ -36,16 +35,13 @@ structure Rewrite.Encoded where
   name  : String
   lhs   : String
   rhs   : String
-  dirs  : Directions
   conds : Array String
 */
 rewrite rewrite_from_lean_obj(lean_obj_arg rw) {
-    unsigned scalar_base_offset = lean_ctor_num_objs(rw) * sizeof(void*);
     return (rewrite) {
         .name  = lean_string_cstr(lean_ctor_get(rw, 0)),
         .lhs   = lean_string_cstr(lean_ctor_get(rw, 1)),
         .rhs   = lean_string_cstr(lean_ctor_get(rw, 2)),
-        .dirs  = lean_ctor_get_uint8(rw, scalar_base_offset + 0),
         .conds = str_array_from_lean_obj(lean_ctor_get(rw, 3))
     };
 }

@@ -1,4 +1,4 @@
-import Egg.Core.Directions
+import Egg.Core.Direction
 import Egg.Core.Congr
 open Lean Meta
 

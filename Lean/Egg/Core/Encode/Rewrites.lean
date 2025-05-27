@@ -15,7 +15,6 @@ structure Encoded where
   name  : String
   lhs   : Expression
   rhs   : Expression
-  dirs  : Directions
   conds : Array Expression
 
 nonrec def Condition.encode (c : Rewrite.Condition) (cfg : Config.Encoding) : MetaM Expression := do
@@ -29,7 +28,6 @@ def encode (rw : Rewrite) (cfg : Config.Encoding) : MetaM Encoded :=
     name  := rw.name
     lhs   := ← Egg.encode rw.lhs cfg
     rhs   := ← Egg.encode rw.rhs cfg
-    dirs  := .forward -- TODO: Remove this field
     conds := ← rw.conds.mapM (Condition.encode · cfg)
   }
 

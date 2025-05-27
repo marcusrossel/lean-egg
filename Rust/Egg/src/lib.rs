@@ -52,32 +52,11 @@ impl CStringArray {
     }
 }
 
-#[derive(PartialEq)]
-pub enum RewriteDirections {
-    None,
-    Forward,
-    Backward,
-    Both
-}
-
-impl RewriteDirections {
-    fn from_c(x: u8) -> Self {
-        match x {
-            0 => Self::None,
-            1 => Self::Forward,
-            2 => Self::Backward,
-            3 => Self::Both,
-            _ => panic!(),
-        }
-    }
-}
-
 #[repr(C)]
 pub struct CRewrite {
     name:  *const c_char,
     lhs:   *const c_char,
     rhs:   *const c_char,
-    dirs:  u8,
     conds: CStringArray
 }
 
@@ -127,31 +106,14 @@ impl CRewritesArray {
             let mut weak_vars: Vec<Var> = prop_vars.into_iter().collect();
             weak_vars.sort();
 
-            let rw_dirs = RewriteDirections::from_c(rw.dirs);
-            if rw_dirs == RewriteDirections::Forward || rw_dirs == RewriteDirections::Both {
-                res.push(RewriteTemplate { 
-                    name:       name_str.to_string(), 
-                    lhs:        lhs.clone(), 
-                    rhs:        rhs.clone(), 
-                    prop_conds: prop_conds.clone(),
-                    tc_conds:   tc_conds.clone(),
-                    weak_vars:  weak_vars.clone()
-                })
-            }
-
-            if rw_dirs == RewriteDirections::Backward || rw_dirs == RewriteDirections::Both {
-                // It is important that we use the "-rev" suffix for reverse rules here, as this is also
-                // what's used for adding the reverse rule when using egg's `rewrite!(_; _ <=> _)` macro.
-                // If we choose another naming scheme, egg may complain about duplicate rules when 
-                // `rw.dir == RewriteDirection::Both`. This is the case, for example, for the rewrite
-                // `?a + ?b = ?b + ?a`.
-                res.push(RewriteTemplate { 
-                    name: format!("{name_str}-rev"), 
-                    lhs: rhs, 
-                    rhs: lhs, 
-                    prop_conds, tc_conds, weak_vars
-                })
-            }
+            res.push(RewriteTemplate { 
+                name:       name_str.to_string(), 
+                lhs:        lhs.clone(), 
+                rhs:        rhs.clone(), 
+                prop_conds: prop_conds.clone(),
+                tc_conds:   tc_conds.clone(),
+                weak_vars:  weak_vars.clone()
+            });
         }
         Ok(res)
     }
