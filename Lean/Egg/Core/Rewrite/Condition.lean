@@ -76,12 +76,6 @@ where
       throwError "Internal error in 'Egg.Rewrite.Condition.from?.synthesizeTcInst?'"
     return true
 
--- If a condition's mvar is assigned, then the condition is redundant, and we return `none`.
-nonrec def instantiateMVars (cond : Condition) : MetaM (Option Condition) := do
-  if ← cond.mvar.isAssigned
-  then return none
-  else return some { cond with type := ← instantiateMVars cond.type }
-
 def fresh (cond : Condition) (init : MVars.Subst) : MetaM (Condition × MVars.Subst) := do
   let (_, subst) ← (← MVars.collect <| .mvar cond.mvar).fresh init
   let fresh := { cond with

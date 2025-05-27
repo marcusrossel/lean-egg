@@ -136,20 +136,22 @@ where
         unless ← isDefEq lhs rw.lhs do failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs current next idx
         unless ← isDefEq rhs rw.rhs do failIsDefEq "RHS" rw.src rhs rw.rhs rw.mvars.rhs current next idx
         for cond in rw.conds do
-          let some cond ← cond.instantiateMVars | continue
-          match cond.kind with
+          if ← cond.mvar.isAssigned then continue
+          let ⟨condKind, condMVar, condType⟩ := cond
+          let condType ← instantiateMVars condType
+          match condKind with
           | .proof =>
-            if let some p ← proveCondition cond.type then
-              unless ← isDefEq (.mvar cond.mvar) p do
-                fail m!"proof of condition '{cond.type}' of rewrite {rw.src.description} was invalid" idx
+            if let some p ← proveCondition condType then
+              unless ← isDefEq (.mvar condMVar) p do
+                fail m!"proof of condition '{condType}' of rewrite {rw.src.description} was invalid" idx
             else if !conditionSubgoals then
-              fail m!"condition '{cond.type}' of rewrite {rw.src.description} could not be proven" idx
+              fail m!"condition '{condType}' of rewrite {rw.src.description} could not be proven" idx
           | .tcInst =>
-            if let some p ← synthInstance? cond.type then
-              unless ← isDefEq (.mvar cond.mvar) p do
-                fail m!"synthesized type class for condition '{cond.type}' of rewrite {rw.src.description} was invalid" idx
+            if let some p ← synthInstance? condType then
+              unless ← isDefEq (.mvar condMVar) p do
+                fail m!"synthesized type class for condition '{condType}' of rewrite {rw.src.description} was invalid" idx
             else if !conditionSubgoals then
-              fail m!"type class condition '{cond.type}' of rewrite {rw.src.description} could not be synthesized" idx
+              fail m!"type class condition '{condType}' of rewrite {rw.src.description} could not be synthesized" idx
         let proof ← rw.eqProof
         return (
           ← mkCHole (forLhs := true) lhs proof,
