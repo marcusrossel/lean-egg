@@ -65,4 +65,4 @@ theorem freshmans_dream₃ : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3
 
 -- NOTE: The explanation is too long.
 -- theorem freshmans_dream₃' : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
--- egg comm_ring [CharTwoRing.char_two]
+--   egg comm_ring [CharTwoRing.char_two]

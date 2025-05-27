@@ -52,6 +52,10 @@ def Expr.isAmbientMVar (e : Expr) : MetaM Bool := do
   let .mvar m := e | return false
   return !(← m.isAssignable)
 
+def Expr.isNonAmbientMVar (e : Expr) : MetaM Bool := do
+  let .mvar m := e | return false
+  m.isAssignable
+
 /-
 This terminates because the types of mvars aren't simply mvars again:
 ```

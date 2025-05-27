@@ -43,8 +43,8 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
     all_goals try omega
     · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
     · exact factorial_mul_factorial_dvd_factorial h
-    · rw [←cast_one, ←cast_add, ←cast_sub h, cast_ne_zero]; omega
     · rw [←cast_one, ←cast_add, cast_ne_zero]; omega
+    · rw [←cast_one, ←cast_add, ←cast_sub h, cast_ne_zero]; omega
     · rw [cast_ne_zero, ne_eq]; exact hr
     · rw [←cast_one, ←cast_sub (by omega : n ≥ r), ←cast_add, cast_ne_zero]; omega
     · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)

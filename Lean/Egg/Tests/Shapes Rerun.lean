@@ -9,15 +9,15 @@ error: egg failed to build proof step 0: unification failure for LHS of rewrite 
 
   id Nat.add
 vs
-  ?m.419 ?m.416
+  ?m.426 ?m.423
 in
   id Nat.add
 and
   ()
 
 • Types: ⏎
-  ?m.419: Unit → Unit
-  ?m.416: Unit
+  ?m.426: Unit → Unit
+  ?m.423: Unit
 
 • Read Only Or Synthetic Opaque MVars: []
 -/

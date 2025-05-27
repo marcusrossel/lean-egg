@@ -35,11 +35,7 @@ example : ⁅x, m - n⁆ = ⁅x, m⁆ - ⁅x, n⁆ := by
 example : ⁅-x, m⁆ - -⁅x, m⁆ = 0 := by
   egg [sub_eq_zero, neg_lie]
 
--- TODO: The two cases below are failing because type specialization does not seem to be kicking in
---       right now for `sub_eq_zero`. If you specify `sub_eq_zero (G := M)`, then it works.
-
 example : ⁅-x, m⁆ = -⁅x, m⁆ := by
-  set_option trace.egg true in
   egg [neg_add_cancel, zero_lie, sub_eq_zero, sub_neg_eq_add, add_lie]
 
 example : ⁅x, -m⁆ = -⁅x, m⁆ := by

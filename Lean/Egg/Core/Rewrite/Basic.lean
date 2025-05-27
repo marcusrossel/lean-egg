@@ -3,7 +3,7 @@ import Egg.Core.Rewrite.Condition
 import Egg.Core.MVars.Subst
 import Egg.Core.MVars.Collect
 import Egg.Core.Source
-open Lean Meta
+open Lean Meta Std
 
 namespace Egg
 
@@ -15,21 +15,22 @@ structure Rewrite extends Prerewrite where private mk ::
   dir   : Direction
   deriving Inhabited
 
+-- Note: It suffices to iterate over the qvars and the body mvars, as any mvars not appearing in
+--       either of these must be the *type* of some mvar which does appear. But types can never turn
+--       into conditions, so we don't need to consider them.
+private def collectConditions (qvars : MVarIdSet) (mLhs mRhs : MVars) :
+    MetaM (Array Rewrite.Condition) := do
+  let mut mvars := qvars
+  mvars := mLhs.expr.fold (init := mvars) fun acc m _ => acc.insert m
+  mvars := mRhs.expr.fold (init := mvars) fun acc m _ => acc.insert m
+  mvars.toArray.filterMapM (Rewrite.Condition.from? · mLhs)
+
 def Prerewrite.complete (pre : Prerewrite) (src : Source) (dir : Direction) : MetaM Rewrite := do
   let pre ← pre.forDir dir
   let mLhs  ← MVars.collect pre.lhs
   let mRhs  ← MVars.collect pre.rhs
-  let conds ← collectConds pre.qvars mLhs mRhs
+  let conds ← collectConditions pre.qvars mLhs mRhs
   return { pre with conds, mvars := ⟨mLhs, mRhs⟩, src, dir }
-where
-  -- Note: It suffices to iterate over the qvars and the body mvars, as any mvars not appearing in
-  --       either of these must be the *type* of some mvar which does appear. But types can never
-  --       turn into conditions, so we don't need to consider them.
-  collectConds (qvars : MVarIdSet) (mLhs mRhs : MVars) : MetaM (Array Rewrite.Condition) := do
-    let mut mvars := qvars
-    mvars := mLhs.expr.fold (init := mvars) fun acc m _ => acc.insert m
-    mvars := mRhs.expr.fold (init := mvars) fun acc m _ => acc.insert m
-    mvars.toArray.filterMapM (Rewrite.Condition.from? · mLhs)
 
 namespace Rewrite
 
@@ -78,7 +79,7 @@ inductive Violation where
 --       `tcMVarInclusion` anyway.
 def violation? (rw : Rewrite) (subgoals : Bool) : MetaM (Option Violation) := do
   -- Checks for `lhsSingleMVar`.
-  if ← rw.lhs.isAmbientMVar <&&> ((return subgoals) <||> rw.conds.allM (·.type.isAmbientMVar)) then
+  if ← rw.lhs.isNonAmbientMVar <&&> ((return subgoals) <||> rw.conds.allM (·.type.isNonAmbientMVar)) then
     return some .lhsSingleMVar
   -- Checks for `rhsMVarInclusion`.
   let mut visible := rw.mvars.lhs.visibleExpr
@@ -130,12 +131,12 @@ def eqProof (rw : Rewrite) : MetaM Expr := do
   | .iff => mkPropExt rw.proof
 
 def freshWithSubst (rw : Rewrite) (src : Source := rw.src) : MetaM (Rewrite × MVars.Subst) := do
-  let (mLhs, subst)  ← rw.mvars.lhs.fresh
+  let (qvars, subst) ← freshQVars
+  let (mLhs, subst)  ← rw.mvars.lhs.fresh (init := subst)
   let (mRhs, subst)  ← rw.mvars.rhs.fresh (init := subst)
   let (conds, subst) ← freshConds (init := subst)
-  -- TODO: Refresh the qvars.
   let rw' := { rw with
-    src, conds
+    qvars, conds, src
     lhs   := subst.apply rw.lhs
     rhs   := subst.apply rw.rhs
     proof := subst.apply rw.proof
@@ -143,6 +144,14 @@ def freshWithSubst (rw : Rewrite) (src : Source := rw.src) : MetaM (Rewrite × M
   }
   return (rw', subst)
 where
+  freshQVars : MetaM (MVarIdSet × MVars.Subst) := do
+    let mut subst : HashMap MVarId MVarId := ∅
+    let mut fresh : MVarIdSet := ∅
+    for qvar in rw.qvars do
+      let m := (← mkFreshExprMVar none).mvarId!
+      fresh := fresh.insert m
+      subst := subst.insert qvar m
+    return (fresh, { expr := subst, lvl := ∅ })
   freshConds (init : MVars.Subst) : MetaM (Array Condition × MVars.Subst) := do
     let mut subst := init
     let mut conds := #[]
@@ -159,6 +168,7 @@ where
 def fresh (rw : Rewrite) (src : Source := rw.src) : MetaM Rewrite :=
   Prod.fst <$> rw.freshWithSubst src
 
+-- TODO: This needs to recompute the set of conditions.
 nonrec def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
   return { rw with
     lhs       := ← instantiateMVars rw.lhs
@@ -170,6 +180,7 @@ nonrec def instantiateMVars (rw : Rewrite) : MetaM Rewrite :=
     mvars.rhs := ← rw.mvars.rhs.removeAssigned
   }
 
+-- TODO: This should be part of `instantiateMVars`.
 def pruneSynthesizableConditions (rw : Rewrite) : MetaM Rewrite := do
   let mut conds := #[]
   for cond in rw.conds do

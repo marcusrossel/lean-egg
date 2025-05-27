@@ -133,13 +133,13 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (2)
-    [egg.rewrites] #0💥→[3](⇒)(❌covering: [?x, ?y])
+    [egg.rewrites] #0💥→[3](⇒)
       [egg.rewrites] f ?m.243 ?m.243 = f a ?m.243
       [egg.rewrites] LHS MVars
           [?m.243: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
           [?m.243: [unconditionallyVisible]]
-    [egg.rewrites] #0💥→[4](⇒)(❌covering: [?x, ?y])
+    [egg.rewrites] #0💥→[4](⇒)
       [egg.rewrites] f ?m.252 ?m.252 = f b ?m.252
       [egg.rewrites] LHS MVars
           [?m.252: [unconditionallyVisible]]

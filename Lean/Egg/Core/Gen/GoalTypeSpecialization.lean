@@ -43,28 +43,15 @@ private def Congr.unificationTargets (cgr : Congr) : MetaM (List Expr) := do
     return [cgrType]
 
 private def specializeForTargets
-    (rw : Rewrite) (rwDirs : Directions) (goalUnif rwUnif : Expr) (subgoals : Bool) (idx : Nat) :
+    (rw : Rewrite) (goalUnif rwUnif : Expr) (subgoals : Bool) (idx : Nat) :
     MetaM (Option Rewrite) := do
   let mut (spec, subst) ← rw.freshWithSubst (src := .goalTypeSpec rw.src idx)
   unless ← isDefEq goalUnif (subst.apply rwUnif) do return none
   spec ← spec.instantiateMVars
-  -- We set the specialization's directions to not include those already covered by `rw`. If that
-  -- means that the specialization does not have any direction, then we discard it.
-  panic! "To be implemented"
-  /-
-  let newDirs := (spec.validDirs subgoals).without rwDirs
-  if newDirs.isNone then return none
-  return spec.fixDirs newDirs (disallowLoneMVar := true)
-  -/
+  if ← spec.isValid subgoals then return spec else return none
 
 private def specialize (rw : Rewrite) (goal : Congr) (subgoals : Bool) :
     MetaM (Array Rewrite) := do
-  -- If the given rewrite is already valid in both directions, then we don't generate any
-  -- specializations for it.
-  panic! "To be implemented"
-  /-
-  let rwDirs := rw.validDirs subgoals
-  if rwDirs.isBoth then return #[]
   -- Computes the unification targets.
   let goalTargets ← goal.unificationTargets
   let rwTargets   ← rw.unificationTargets
@@ -73,17 +60,17 @@ private def specialize (rw : Rewrite) (goal : Congr) (subgoals : Bool) :
   let mut idx := 0
   for goalTarget in goalTargets do
     for rwTarget in rwTargets do
-      let some spec ← specializeForTargets rw rwDirs goalTarget rwTarget subgoals idx | continue
+      let some spec ← specializeForTargets rw goalTarget rwTarget subgoals idx | continue
       let spec' ← spec.pruneSynthesizableConditions
       result := result.push spec'
       idx := idx + 1
   return result
-  -/
 
 def genGoalTypeSpecializations (targets : Rewrites) (goal : Congr) (subgoals : Bool) :
     MetaM Rewrites := do
   let mut result := #[]
   for rw in targets do
+    if ← rw.isValid subgoals then continue
     let specs ← specialize rw goal subgoals
     result := result ++ specs
   return result
