@@ -44,14 +44,10 @@ egg_basket bool extends gbool, dlattice, lattice, ilattice, slattice
 
 variable [GeneralizedBooleanAlgebra α] {x y z : α}
 
--- TODO: Looks like some (weak) mvars are not being (assigned) refreshed correctly.
---
--- After a while we get:
---   Lean server printed an error: PANIC at Lean.MetavarContext.getLevelDepth
---   Lean.MetavarContext:874:14: unknown metavariable
--- Which sound like we're constructing an mvar/uvar from an incorrect index.
+-- TODO: Assign the weak mvars during proof reconstruction.
 
 example (s : x ⊓ y ⊔ z = x) (i : x ⊓ y ⊓ z = ⊥) : x \ y = z := by
+  set_option trace.egg true in
   egg bool [sup_inf_sdiff x y, inf_inf_sdiff x y, i, s]
 
 /- Previous -/ attribute [egg bool] sdiff_unique
