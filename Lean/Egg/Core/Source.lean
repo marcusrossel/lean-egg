@@ -129,7 +129,7 @@ def description : Source → String
   | guide idx derived       => s!"↣{idx}{if derived then "!" else ""}"
   | explicit idx none       => s!"#{idx}"
   | explicit idx (some eqn) => s!"#{idx}/{eqn}"
-  | star id                 => s!"*{id.uniqueIdx!}"
+  | star id                 => s!"∗{id.uniqueIdx!}"
   | .ground src             => s!"{src.description}↓"
   | reifiedEq               => "="
   | factAnd                 => "∧"

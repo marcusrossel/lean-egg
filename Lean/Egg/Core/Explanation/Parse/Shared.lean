@@ -38,7 +38,7 @@ syntax "▸"     : tc_proj_loc
 syntax num "?" : tc_proj_loc
 
 syntax "#" noWs num (noWs "/" noWs num)? : basic_rw_src
-syntax "*" noWs num                      : basic_rw_src
+syntax "∗" noWs num                      : basic_rw_src
 syntax "⊢"                               : basic_rw_src
 syntax "▰" noWs num                      : basic_rw_src
 -- Note: We don't run rewrite generation after deriving guides, so a derived guide source can never
@@ -160,7 +160,7 @@ private def parseTcProjLocation : (TSyntax `tc_proj_loc) → Source.TcProjLocati
 private def parseBasicRwSrc : (TSyntax `basic_rw_src) → Source
   | `(basic_rw_src|#$idx$[/$eqn?]?)  => .explicit idx.getNat (eqn?.map TSyntax.getNat)
   | `(basic_rw_src|□$name$[/$eqn?]?) => .tagged name.getId (eqn?.map TSyntax.getNat)
-  | `(basic_rw_src|*$idx)            => .star (.fromUniqueIdx idx.getNat)
+  | `(basic_rw_src|∗$idx)            => .star (.fromUniqueIdx idx.getNat)
   | `(basic_rw_src|⊢)                => .goal
   | `(basic_rw_src|▰$idx)            => .intro idx.getNat
   | `(basic_rw_src|↣$idx)            => .guide idx.getNat (derived := false)
