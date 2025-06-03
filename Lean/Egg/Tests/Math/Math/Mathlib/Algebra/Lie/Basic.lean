@@ -44,11 +44,16 @@ example : LieModule R L L where
   smul_lie := by egg lie []
   lie_smul := by egg lie
 
+-- NOTE: This example relies on `egg.derivedGuides`, because it needs the term `⁅-x, m⁆ = -⁅x, m⁆`
+--       in the e-graph in order to apply `sub_eq_zero`. Note that even though the LHS `⁅-x, m⁆` and
+--       RHS `-⁅x, m⁆` of the goal are automatically added to the e-graph, this does not mean that
+--       `eq`-node is created for them, as they do not live in the same e-class (a priori).
 example : ⁅-x, m⁆ = -⁅x, m⁆ := by
   egg lie
 
 /- Previous -/ attribute [egg lie] neg_lie
 
+-- NOTE: This example relies on `egg.derivedGuides`, for the reason explained in the note above.
 example : ⁅x, -m⁆ = -⁅x, m⁆ := by
   egg lie
 

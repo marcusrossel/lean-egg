@@ -57,8 +57,22 @@ theorem test [Ring α] (a b : α) : a + b = b + a := by
 theorem just_nested [Ring α] (a : α) : (a + zero) * one = a := by
   egg ring
 
--- TODO: This stopped working when we changed goal tc spec to only generate rewrites which have
---       different directions from their source.
+-- TODO: The problem here is that subtraction is `Ring.neg`, whereas the relevant theorem
+--       `AddCommGroup.neg_add` is about `AddCommGroup.neg`. That is, we need a theorem like `t`.
+theorem t : @Ring.neg β i = @AddCommGroup.neg β i.toAddCommGroup := rfl
+--       We currently do not get this, as type class projection reductions are only generated when
+--       there are no mvars in the chain of applications. But perhaps we can still reduce in that
+--       case:
+variable (α) (i : Ring α) in #reduce @Ring.neg α i
+--       Then things work:
+example [Ring α] (a : α) : add a (Ring.neg a) = zero := by
+  egg [AddCommGroup.neg_add, t]
+--       Alternatively, we could perform goal type specialization eagerly (not only for unlocking
+--       new rewrite directions). Or perhaps we could perform goal type specialization only for the
+--       purpose of enabling more type class projection reductions, but mark the unnecessarily
+--       generated goal type specializations and prune them at the end.
+
+-- TODO: See the example above.
 theorem combine_classes [Ring α] (a b c : α) (h : b + c = one) : (a + (b + -b)) * (b + c) = a := by
   sorry -- egg ring [h]
 

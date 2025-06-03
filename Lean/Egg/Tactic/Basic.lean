@@ -62,6 +62,7 @@ where
       let res ← withNewMCtxDepth (allowLevelAssignments := true) do
         let rws ← Premises.gen goal prems guides cfg
         let guides ← do if cfg.derivedGuides then pure (guides ++ (← genDerivedGuides goal.toCongr rws)) else pure guides
+        withTraceNode `egg.guides (fun _ => return "Guides") do guides.trace `egg.guides
         runEqSat goal rws guides cfg
       match res with
       | some (proof, proofTime, result) =>

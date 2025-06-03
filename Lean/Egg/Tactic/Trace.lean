@@ -7,6 +7,7 @@ open Lean Meta Elab Tactic Std Format
 initialize registerTraceClass `egg
 initialize registerTraceClass `egg.config            (inherited := true)
 initialize registerTraceClass `egg.rewrites          (inherited := true)
+initialize registerTraceClass `egg.guides            (inherited := true)
 initialize registerTraceClass `egg.ambient           (inherited := true)
 initialize registerTraceClass `egg.encoded           (inherited := true)
 initialize registerTraceClass `egg.explanation       (inherited := true)
@@ -72,7 +73,7 @@ def Congr.Rel.format : Congr.Rel → Format
   | .iff => "↔"
 
 def Congr.toMessageData (cgr : Congr) : MetaM MessageData :=
-  return (← ppExpr cgr.lhs) ++ " " ++ cgr.rel.format ++ " " ++ (← ppExpr cgr.rhs)
+  return cgr.lhs ++ " " ++ cgr.rel.format ++ " " ++ cgr.rhs
 
 def Rewrite.Violation.toMessageData : Rewrite.Violation → MessageData
   | rhsMVarInclusion missing => m!"rhsMVarInclusion: {missing.toList.map (Expr.mvar ·)}"
@@ -145,6 +146,12 @@ nonrec def Config.DefEq.trace (cfg : Config.DefEq) (cls : Name) : TacticM Unit :
     if cfg.etaExpand then Lean.trace cls fun _ => "η-Expansion"
     if cfg.natLit    then Lean.trace cls fun _ => "Natural Number Literals"
     if cfg.levels    then Lean.trace cls fun _ => "Universe Levels"
+
+nonrec def Guide.trace (guide : Guide) (cls : Name) : TacticM Unit := do
+  trace cls fun _ => m!"{guide.src.description}: " ++ guide.expr
+
+def Guides.trace (guides : Guides) (cls : Name) : TacticM Unit := do
+  for guide in guides do guide.trace cls
 
 nonrec def Request.trace (req : Request) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Goal") do
