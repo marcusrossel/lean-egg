@@ -1,8 +1,7 @@
 import Egg
 
--- This used to get stuck before eqsat because `Premises.gen.genTcRws` would only reassign
--- `projTodo` when `genTcSpecRws` was active, so setting that option to false would lead to an
--- infinite loop.
+-- This used to get stuck before eqsat because of a bug causing non-termination in the loop
+-- generating derived rewrites.
 
 variable
   {n : Nat} {p : Nat → Prop} [inst : DecidablePred p]

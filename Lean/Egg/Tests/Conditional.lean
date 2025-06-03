@@ -47,22 +47,15 @@ example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂, h₁]
 
--- BUG: Having conditions with unbound variables is problematic during proof reconstruction.
---      In this case, this results from `h`. But modus ponens suffers from the same problem.
+-- TODO: Assign weak mvars.
 example (h : ∀ p : Prop, p → 1 = id 1) : 1 = id 1 := by
   sorry -- egg [h]
 
 class Fix (α : Type) where
   fix : ∀ (f : α → α) (a : α), f a = a
 
--- TODO: Why doesn't the goal-type specialized rewrite suffice here?
--- Note: `Fix.fix` used to be invalid as a rewrite as it contained an "unbounded condition" as `α`
---       is not specified in `f a` or `a`, but is required for `Fix α`. Currently, this proof only
---       succeeds because of type class specialization for conditions. That is, the `Fix α`
---       condition is specialized before eqsat. In the future, this should also work with
---       `egg.genTcSpecRws false`, as type class instance conditions should be satisfied by synthesis.
 example [inst : Fix Nat] (f : Nat → Nat) (a : Nat) : f a = a := by
-  sorry -- egg [Fix.fix]
+  egg [Fix.fix]
 
 -- This test checks that rewriting of facts is handled correctly.
 example {p q r : Prop} (h₁ : p) (h₂ : p ↔ q) (h₃ : q → (p ↔ r)) : p ↔ r := by

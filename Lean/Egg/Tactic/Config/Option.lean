@@ -48,8 +48,6 @@ register_egg_options
   genStructProjRws
   genGoalTypeSpec
   genTcProjRws
-  genTcSpecRws
-  genGoalTcSpec
   natLit
   eta
   etaExpand

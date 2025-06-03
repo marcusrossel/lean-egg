@@ -38,9 +38,7 @@ import Egg.Core.Gen.StructProjs
 import Egg.Core.Gen.GoalTypeSpecialization
 import Egg.Core.Gen.Explosion
 import Egg.Core.Gen.Builtins
-import Egg.Core.Gen.GoalTcSpecs
 import Egg.Core.Gen.TcProjs
-import Egg.Core.Gen.TcSpecs
 import Egg.Core.Gen.Guides
 import Egg.Core.Direction
 import Egg.Core.Normalize

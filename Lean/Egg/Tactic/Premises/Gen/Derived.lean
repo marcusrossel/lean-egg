@@ -1,6 +1,4 @@
 import Egg.Core.Gen.TcProjs
-import Egg.Core.Gen.TcSpecs
-import Egg.Core.Gen.GoalTcSpecs
 import Egg.Core.Gen.GoalTypeSpecialization
 import Egg.Core.Gen.Explosion
 import Lean
@@ -11,13 +9,11 @@ namespace Egg.Premises.DerivedM
 
 private inductive DerivationCategory where
   | tcProj
-  | tcSpec
-  | goalTcSpec
   | goalTypeSpec
   | explosion
 
 private def DerivationCategory.all : Array DerivationCategory :=
-  #[tcProj, tcSpec, goalTcSpec, goalTypeSpec, explosion]
+  #[tcProj, goalTypeSpec, explosion]
 
 -- We maintain this theorem to ensure that we don't forget to add elements to
 -- `DerivationCategory.all`.
@@ -26,8 +22,6 @@ theorem DerivationCategory.all_complete (c : DerivationCategory) : c ∈ all := 
 
 private def DerivationCategory.isEnabled (cfg : Config.Gen): DerivationCategory → Bool
   | tcProj       => cfg.genTcProjRws
-  | tcSpec       => cfg.genTcSpecRws
-  | goalTcSpec   => cfg.genGoalTcSpec
   | goalTypeSpec => cfg.genGoalTypeSpec
   | explosion    => cfg.explosion
 
@@ -36,22 +30,16 @@ private def DerivationCategory.isEnabled (cfg : Config.Gen): DerivationCategory 
 -- been considered yet.
 private structure State.Progress where
   tcProj       : Nat
-  tcSpec       : Nat
-  goalTcSpec   : Nat
   goalTypeSpec : Nat
   explosion    : Nat
 
 private def State.Progress.get (p : Progress) : DerivationCategory → Nat
   | .tcProj       => p.tcProj
-  | .tcSpec       => p.tcSpec
-  | .goalTcSpec   => p.goalTcSpec
   | .goalTypeSpec => p.goalTypeSpec
   | .explosion    => p.explosion
 
 private def State.Progress.set (p : Progress) : DerivationCategory → Nat → Progress
   | .tcProj,       n => { p with tcProj       := n }
-  | .tcSpec,       n => { p with tcSpec       := n }
-  | .goalTcSpec,   n => { p with goalTcSpec   := n }
   | .goalTypeSpec, n => { p with goalTypeSpec := n }
   | .explosion,    n => { p with explosion    := n }
 
@@ -63,7 +51,7 @@ private structure State where
 private instance : EmptyCollection State where
   emptyCollection := {
     derived     := #[]
-    progress    := ⟨0, 0, 0, 0, 0⟩
+    progress    := ⟨0, 0, 0⟩
     tcProjCover := ∅
   }
 
@@ -126,10 +114,6 @@ where
       genExplosions (← todo .explosion)
     generate cfg .goalTypeSpec do
       genGoalTypeSpecializations (← todo .goalTypeSpec) goal cfg.conditionSubgoals
-    generate cfg .goalTcSpec do
-      genGoalTcSpecializations (← todo .goalTcSpec) cfg.toNormalization cfg.conditionSubgoals goal
-    generate cfg .tcSpec do
-      genTcSpecializations (← todo .tcSpec) cfg.toNormalization cfg.conditionSubgoals
     generate cfg .tcProj do
       let targets := (← todo .tcProj).tcProjTargets
       let (rws, cover) ← genTcProjReductions targets (← tcProjCover) cfg

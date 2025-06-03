@@ -14,9 +14,6 @@ declare_syntax_cat lean_rw_src
 declare_syntax_cat defeq_rw_src
 declare_syntax_cat tc_proj_loc
 declare_syntax_cat tc_proj
-declare_syntax_cat tc_spec_src
-declare_syntax_cat tc_spec
-declare_syntax_cat tc_extension
 declare_syntax_cat explosion_extension
 declare_syntax_cat fwd_rw_src
 declare_syntax_cat rw_src
@@ -48,27 +45,18 @@ syntax "□" noWs ident (noWs "/" noWs num)? : basic_rw_src
 
 syntax "[" tc_proj_loc num "," num "]" : tc_proj
 
-syntax "→"          : tc_spec_src
-syntax "←"          : tc_spec_src
-syntax "?"          : tc_spec_src
-syntax "⊢" noWs num : tc_spec_src
-syntax "<" tc_spec_src ">" : tc_spec
-
-syntax tc_proj : tc_extension
-syntax tc_spec : tc_extension
-
 -- TODO: For some reason separating out the `←` and `→` into their own syntax category caused
 --       problems.
 
 syntax "💥→[" num,* "]" : explosion_extension
 syntax "💥←[" num,* "]" : explosion_extension
 
-syntax basic_rw_src                             : lean_rw_src
-syntax basic_rw_src "<" num "⊢>"                : lean_rw_src
-syntax basic_rw_src (noWs tc_extension)+        : lean_rw_src
-syntax basic_rw_src noWs explosion_extension    : lean_rw_src
-syntax basic_rw_src noWs "↓"                    : lean_rw_src
-syntax "▵" noWs num                             : lean_rw_src
+syntax basic_rw_src                          : lean_rw_src
+syntax basic_rw_src "<" num "⊢>"             : lean_rw_src
+syntax basic_rw_src (noWs tc_proj)+          : lean_rw_src
+syntax basic_rw_src noWs explosion_extension : lean_rw_src
+syntax basic_rw_src noWs "↓"                 : lean_rw_src
+syntax "▵" noWs num                          : lean_rw_src
 
 syntax "↦bvar"  : defeq_rw_src
 syntax "↦app"   : defeq_rw_src
@@ -138,13 +126,6 @@ def parseRwDir : (TSyntax `rw_dir) → Direction
   | `(rw_dir|<=) => .backward
   | _                => unreachable!
 
-private def parseTcSpecSrc : (TSyntax `tc_spec_src) → Source.TcSpec
-  | `(tc_spec_src|→)     => .dir .forward
-  | `(tc_spec_src|←)     => .dir .backward
-  | `(tc_spec_src|?)     => .cond
-  | `(tc_spec_src|⊢$idx) => .goalType idx.getNat
-  | _                    => unreachable!
-
 private def parseTcProjLocation : (TSyntax `tc_proj_loc) → Source.TcProjLocation
   | `(tc_proj_loc|▪)        => .root
   | `(tc_proj_loc|◂)        => .left
@@ -162,24 +143,25 @@ private def parseBasicRwSrc : (TSyntax `basic_rw_src) → Source
   | `(basic_rw_src|◯$idx)            => .builtin idx.getNat
   | _                                => unreachable!
 
-private def parseTcExtension (src : Source) : (TSyntax `tc_extension) → Source
-  | `(tc_extension|[$loc$pos,$dep]) => .tcProj src (parseTcProjLocation loc) pos.getNat dep.getNat
-  | `(tc_extension|<$tcSpecsrc>)    => .tcSpec src (parseTcSpecSrc tcSpecsrc)
-  | _                               => unreachable!
+private def parseTcProj (src : Source) : (TSyntax `tc_proj) → Source
+  | `(tc_proj|[$loc$pos,$dep]) => .tcProj src (parseTcProjLocation loc) pos.getNat dep.getNat
+  | _                          => unreachable!
 
 private def parseLeanRwSrc : (TSyntax `lean_rw_src) → Source
-  | `(lean_rw_src|▵$idx)  => .structProj idx.getNat
+  | `(lean_rw_src|▵$idx) =>
+    .structProj idx.getNat
   | `(lean_rw_src|$src:basic_rw_src) =>
     parseBasicRwSrc src
   | `(lean_rw_src|$src:basic_rw_src<$idx⊢>) =>
     .goalTypeSpec (parseBasicRwSrc src) idx.getNat
-  | `(lean_rw_src|$src:basic_rw_src$tcExts:tc_extension*) =>
-    tcExts.foldl (init := parseBasicRwSrc src) parseTcExtension
+  | `(lean_rw_src|$src:basic_rw_src$tcProjs:tc_proj*) =>
+    tcProjs.foldl (init := parseBasicRwSrc src) parseTcProj
   | `(lean_rw_src|$src:basic_rw_src💥→[$idxs:num,*]) =>
     .explosion (parseBasicRwSrc src) .forward (idxs.getElems.map (·.getNat)).toList
   | `(lean_rw_src|$src:basic_rw_src💥←[$idxs:num,*]) =>
     .explosion (parseBasicRwSrc src) .backward (idxs.getElems.map (·.getNat)).toList
-  | `(lean_rw_src|$src:basic_rw_src↓) => .ground (parseBasicRwSrc src)
+  | `(lean_rw_src|$src:basic_rw_src↓) =>
+    .ground (parseBasicRwSrc src)
   | _ => unreachable!
 
 private def parseDefeqRwSrc : (TSyntax `defeq_rw_src) → Source

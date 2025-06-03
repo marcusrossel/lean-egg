@@ -15,8 +15,6 @@ structure Modifier where
   genStructProjRws    : Option Bool            := none
   genGoalTypeSpec     : Option Bool            := none
   genTcProjRws        : Option Bool            := none
-  genTcSpecRws        : Option Bool            := none
-  genGoalTcSpec       : Option Bool            := none
   natLit              : Option Bool            := none
   eta                 : Option Bool            := none
   etaExpand           : Option Bool            := none
@@ -51,8 +49,6 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   genStructProjRws    := mod.genStructProjRws.getD cfg.genStructProjRws
   genGoalTypeSpec     := mod.genGoalTypeSpec.getD cfg.genGoalTypeSpec
   genTcProjRws        := mod.genTcProjRws.getD cfg.genTcProjRws
-  genTcSpecRws        := mod.genTcSpecRws.getD cfg.genTcSpecRws
-  genGoalTcSpec       := mod.genGoalTcSpec.getD cfg.genGoalTcSpec
   natLit              := mod.natLit.getD cfg.natLit
   eta                 := mod.eta.getD cfg.eta
   etaExpand           := mod.etaExpand.getD cfg.etaExpand

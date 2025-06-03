@@ -24,12 +24,6 @@ inductive Source.Level where
   | imaxSucc
   deriving Inhabited, BEq, Hashable
 
-inductive Source.TcSpec where
-  | dir (dir : Direction)
-  | cond
-  | goalType (idx : Nat)
-  deriving Inhabited, BEq, Hashable
-
 inductive Source.TcProjLocation where
   | root
   | left
@@ -64,7 +58,6 @@ inductive Source where
   | structProj (idx : Nat)
   | goalTypeSpec (src : Source) (idx : Nat)
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos) (depth : Nat)
-  | tcSpec (src : Source) (spec : Source.TcSpec)
   | explosion (src : Source) (dir : Direction) (loc : List Nat)
   | natLit (src : Source.NatLit)
   | subst (src : Source.SubstShift)
@@ -94,11 +87,6 @@ def Level.description : Level → String
   | maxComm  => "≡max↔"
   | imaxZero => "≡imax0"
   | imaxSucc => "≡imaxS"
-
-def TcSpec.description : TcSpec → String
-  | dir d        => d.description
-  | cond         => "?"
-  | goalType idx => s!"⊢{idx}"
 
 def TcProjLocation.description : TcProjLocation → String
   | root     => "▪"
@@ -135,7 +123,6 @@ def description : Source → String
   | structProj idx          => s!"▵{idx}"
   | goalTypeSpec src idx    => s!"{src.description}<{idx}⊢>"
   | tcProj src loc pos dep  => s!"{src.description}[{loc.description}{pos.asNat},{dep}]"
-  | tcSpec src spec         => s!"{src.description}<{spec.description}>"
   | explosion src dir loc   => s!"{src.description}💥{dir.description}{(toString loc).replace " " ""}"
   | natLit src              => src.description
   | subst src               => s!"↦{src.description}"
@@ -155,10 +142,10 @@ def isDefEq : Source → Bool
   | natLit _ | eta _ | beta | level _ | subst _ | shift _ => true
   | _                                                     => false
 
+-- TODO: This is probably incomplete.
 def containsTcProj : Source → Bool
-  | tcProj ..     => true
-  | tcSpec src .. => src.containsTcProj
-  | _             => false
+  | tcProj .. => true
+  | _         => false
 
 def isNatLitConversion : Source → Bool
   | natLit .zero | natLit .toSucc | natLit .ofSucc => true
