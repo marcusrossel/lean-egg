@@ -2,7 +2,7 @@ import Egg
 
 variable (h : ∀ (p : Nat → Nat) (x : Nat), p x = p (x + 0))
 
-set_option egg.genTcProjRws false in
+set_option egg.tcProjs false in
 example (f : Nat → Nat → Nat) : (f 1) x = (f 1) (x + 0) := by
   egg [h]
 

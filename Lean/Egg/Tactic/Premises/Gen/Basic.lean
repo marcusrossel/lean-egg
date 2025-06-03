@@ -25,7 +25,7 @@ def gen (goal : Goal) (ps : TSyntax `egg_premises) (guides : Guides) (cfg : Conf
     return all
 where
   genBasic : GenM Premises := do
-    let basic ← Premises.elab cfg cfg.genGroundEqs ps
+    let basic ← Premises.elab cfg cfg.groundEqs ps
     for stx in basic.rws.stxs do
       let `($name:ident) := stx | continue
       for basket in cfg.baskets do

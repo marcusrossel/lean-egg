@@ -75,20 +75,20 @@ private abbrev Premise.Mk  (α) := Expr → Expr → Source → TacticM (Array �
 private abbrev Premise.Mk?     := Premise.Mk
 
 private def Premise.Mk.rewrites
-    (genGroundEqs : Bool) (stx : Syntax) (cfg : Config.Normalization) : Premise.Mk Rewrite :=
+    (groundEqs : Bool) (stx : Syntax) (cfg : Config.Normalization) : Premise.Mk Rewrite :=
   fun proof type src => do
     let mut some rws ← Rewrites.from? proof type src cfg
       | throwErrorAt stx "egg requires premises to be (proofs of) propositions or (non-propositional) definitions"
-    if genGroundEqs then
+    if groundEqs then
       if let some eq ← Rewrite.mkGroundEq? proof type (.ground src) cfg then
       rws := rws.push eq
     return rws
 
 private def Premise.Mk?.rewrites
-    (genGroundEqs : Bool) (cfg : Config.Normalization) : Premise.Mk? Rewrite :=
+    (groundEqs : Bool) (cfg : Config.Normalization) : Premise.Mk? Rewrite :=
   fun proof type src => do
     let mut rws := (← Rewrites.from? proof type src cfg).getD #[]
-    if genGroundEqs then
+    if groundEqs then
       if let some eq ← Rewrite.mkGroundEq? proof type (.ground src) cfg then rws := rws.push eq
     return rws
 
@@ -130,11 +130,11 @@ structure Premises where
   rws : WithSyntax Rewrites := ∅
 
 def Premises.elab
-    (cfg : Config.Normalization) (genGroundEqs : Bool) : (TSyntax `egg_premises) → TacticM Premises
+    (cfg : Config.Normalization) (groundEqs : Bool) : (TSyntax `egg_premises) → TacticM Premises
   | `(egg_premises|) => return {}
   | `(egg_premises|[$rws,*]) =>
-    let mk  := (Premise.Mk.rewrites genGroundEqs · cfg)
-    let mk? := Premise.Mk?.rewrites genGroundEqs cfg
+    let mk  := (Premise.Mk.rewrites groundEqs · cfg)
+    let mk? := Premise.Mk?.rewrites groundEqs cfg
     return { rws := ← go rws mk mk? .explicit .star }
   | _ => throwUnsupportedSyntax
 where
@@ -162,6 +162,6 @@ def Premises.elabTagged (prems : Array Name) (cfg : Config.Normalization) : Tact
 where
   taggedRw (prem : Name) : TacticM Rewrites := do
     let ident := mkIdent prem
-    let mk := Premise.Mk.rewrites (genGroundEqs := false) ident cfg
+    let mk := Premise.Mk.rewrites (groundEqs := false) ident cfg
     let rws ← Premises.explicit ident prem mk .tagged
     return rws.elems

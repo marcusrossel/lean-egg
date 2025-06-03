@@ -12,7 +12,7 @@ info: [egg.encoded] Encoded
 -/
 #guard_msgs in
 set_option trace.egg.encoded true in
-set_option egg.genTcProjRws false in
+set_option egg.tcProjs false in
 set_option egg.builtins false in
 example : true = true := by
   egg
@@ -31,7 +31,7 @@ info: [egg.encoded] Encoded
 -/
 -- #guard_msgs in
 set_option trace.egg.encoded true in
-set_option egg.genTcProjRws false in
+set_option egg.tcProjs false in
 set_option egg.builtins false in
 example (h : ∀ x y : Nat, x + y = y + x) : 0 + 1 = 1 + 0 := by
   -- TODO: How should shapes interact with erased terms?

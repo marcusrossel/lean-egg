@@ -12,7 +12,7 @@ def genIntros (fvars : Array FVarId) (cfg : Config) : TacticM Rewrites := do
     let type   ← fvar.getType
     let src   := .intro idx
     rws := rws ++ (← Rewrites.from? proof type src cfg).getD #[]
-    if cfg.genGroundEqs then
+    if cfg.groundEqs then
       if let some eq ← Rewrite.mkGroundEq? proof type (.ground src) cfg then
         rws := rws.push eq
   return rws

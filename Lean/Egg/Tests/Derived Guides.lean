@@ -3,7 +3,7 @@ open scoped Egg
 
 set_option egg.derivedGuides true
 set_option egg.builtins false
-set_option egg.genTcProjRws false
+set_option egg.tcProjs false
 
 -- TODO: Add tracing for guides and guard messages:
 

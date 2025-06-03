@@ -45,9 +45,9 @@ register_egg_options
   etaReduceRws
   natReduceRws
   builtins
-  genStructProjRws
-  genGoalTypeSpec
-  genTcProjRws
+  structProjs
+  goalTypeSpec
+  tcProjs
   natLit
   eta
   etaExpand
@@ -55,7 +55,7 @@ register_egg_options
   levels
   explosion
   derivedGuides
-  genGroundEqs
+  groundEqs
   blockInvalidMatches
   shiftCapturedBVars "Note: Setting this to `true` also enables `egg.blockInvalidMatches`."
   unionSemantics

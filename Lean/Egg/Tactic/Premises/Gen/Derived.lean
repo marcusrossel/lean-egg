@@ -21,8 +21,8 @@ theorem DerivationCategory.all_complete (c : DerivationCategory) : c ∈ all := 
   cases c <;> simp [all]
 
 private def DerivationCategory.isEnabled (cfg : Config.Gen): DerivationCategory → Bool
-  | tcProj       => cfg.genTcProjRws
-  | goalTypeSpec => cfg.genGoalTypeSpec
+  | tcProj       => cfg.tcProjs
+  | goalTypeSpec => cfg.goalTypeSpec
   | explosion    => cfg.explosion
 
 -- Each index in this structure indicates to which point in `State.derived` a given derivation
@@ -103,7 +103,7 @@ partial def genDerived (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : 
   return all[rws.size:]
 where
   addInitialTcProjs : DerivedM Unit := do
-    unless cfg.genTcProjRws do return
+    unless cfg.tcProjs do return
     let targets := rws.tcProjTargets ++ goal.tcProjTargets .goal ++ guides.tcProjTargets
     let (rws, cover) ← genTcProjReductions targets (covered := ∅) cfg
     add .tcProj rws

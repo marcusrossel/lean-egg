@@ -12,9 +12,9 @@ structure Modifier where
   etaReduceRws        : Option Bool            := none
   natReduceRws        : Option Bool            := none
   builtins            : Option Bool            := none
-  genStructProjRws    : Option Bool            := none
-  genGoalTypeSpec     : Option Bool            := none
-  genTcProjRws        : Option Bool            := none
+  structProjs         : Option Bool            := none
+  goalTypeSpec        : Option Bool            := none
+  tcProjs             : Option Bool            := none
   natLit              : Option Bool            := none
   eta                 : Option Bool            := none
   etaExpand           : Option Bool            := none
@@ -22,7 +22,7 @@ structure Modifier where
   levels              : Option Bool            := none
   explosion           : Option Bool            := none
   derivedGuides       : Option Bool            := none
-  genGroundEqs        : Option Bool            := none
+  groundEqs           : Option Bool            := none
   blockInvalidMatches : Option Bool            := none
   shiftCapturedBVars  : Option Bool            := none
   unionSemantics      : Option Bool            := none
@@ -46,9 +46,9 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   etaReduceRws        := mod.etaReduceRws.getD cfg.etaReduceRws
   natReduceRws        := mod.natReduceRws.getD cfg.natReduceRws
   builtins            := mod.builtins.getD cfg.builtins
-  genStructProjRws    := mod.genStructProjRws.getD cfg.genStructProjRws
-  genGoalTypeSpec     := mod.genGoalTypeSpec.getD cfg.genGoalTypeSpec
-  genTcProjRws        := mod.genTcProjRws.getD cfg.genTcProjRws
+  structProjs         := mod.structProjs.getD cfg.structProjs
+  goalTypeSpec        := mod.goalTypeSpec.getD cfg.goalTypeSpec
+  tcProjs             := mod.tcProjs.getD cfg.tcProjs
   natLit              := mod.natLit.getD cfg.natLit
   eta                 := mod.eta.getD cfg.eta
   etaExpand           := mod.etaExpand.getD cfg.etaExpand
@@ -56,7 +56,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   levels              := mod.levels.getD cfg.levels
   explosion           := mod.explosion.getD cfg.explosion
   derivedGuides       := mod.derivedGuides.getD cfg.derivedGuides
-  genGroundEqs        := mod.genGroundEqs.getD cfg.genGroundEqs
+  groundEqs           := mod.groundEqs.getD cfg.groundEqs
   blockInvalidMatches := mod.blockInvalidMatches.getD cfg.blockInvalidMatches
   shiftCapturedBVars  := mod.shiftCapturedBVars.getD cfg.shiftCapturedBVars
   unionSemantics      := mod.unionSemantics.getD cfg.unionSemantics

@@ -4,8 +4,8 @@ import Mathlib.Order.BooleanAlgebra
 -- TODO: I think having the better heuristic for generated rewrites is really important here.
 
 set_option egg.timeLimit 5
-set_option egg.genTcProjRws false -- TODO: Things still work if we keep this, but it seems not to be necessary.
-set_option egg.genGroundEqs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
+set_option egg.tcProjs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
+set_option egg.groundEqs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
 
 -- SemilatticeSup
 attribute [egg slattice] /- le_sup_left le_sup_right le_sup_of_le_left le_sup_of_le_right

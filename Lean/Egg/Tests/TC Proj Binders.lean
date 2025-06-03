@@ -71,6 +71,6 @@ info: [egg.rewrites] Rewrites
 set_option trace.egg.rewrites true in
 egg_no_defeq in
 set_option egg.builtins false in
-set_option egg.genGroundEqs false in
+set_option egg.groundEqs false in
 example (x : Nat) (h : ∀ (_ : x * y = z), z = z) : x = x := by
   egg [h]

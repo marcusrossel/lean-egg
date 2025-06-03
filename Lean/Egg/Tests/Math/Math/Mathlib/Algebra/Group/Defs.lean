@@ -1,7 +1,7 @@
 import Mathlib
 import Egg
 
-set_option egg.genTcProjRws false -- TODO: Things still work if we keep this, but it seems not to be necessary.
+set_option egg.tcProjs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
 
 -- NOTE: We're only covering the multiplicative (not the additive) versions of structures.
 

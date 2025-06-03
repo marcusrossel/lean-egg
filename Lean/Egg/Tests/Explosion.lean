@@ -2,7 +2,7 @@ import Egg
 open scoped Egg
 
 egg_no_defeq
-set_option egg.genTcProjRws false
+set_option egg.tcProjs false
 set_option egg.builtins false
 
 set_option egg.explosion true
@@ -80,7 +80,7 @@ info: [egg.rewrites] Rewrites
 -/
 #guard_msgs in
 set_option trace.egg.rewrites true in
-set_option egg.genGroundEqs false in
+set_option egg.groundEqs false in
 example (h : ∀ x y : Nat, f x y = f y x) : f 1 2 = f 2 1 := by
   egg [h]
 
@@ -109,7 +109,7 @@ info: [egg.rewrites] Rewrites
 -/
 #guard_msgs in
 set_option trace.egg.rewrites true in
-set_option egg.genGroundEqs false in
+set_option egg.groundEqs false in
 example (a b : Nat) (h : ∀ x y : Nat, f x y = f y x) : f a b = f b a := by
   egg [h]
 
@@ -151,7 +151,7 @@ info: [egg.rewrites] Rewrites
 -/
 #guard_msgs in
 set_option trace.egg.rewrites true in
-set_option egg.genGroundEqs false in
+set_option egg.groundEqs false in
 example (a b : Nat) (h : ∀ x y : Nat, f x x = f y x) : f a a = f b a := by
   egg [h]
 
