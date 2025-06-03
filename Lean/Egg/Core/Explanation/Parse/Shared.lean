@@ -17,7 +17,6 @@ declare_syntax_cat tc_proj
 declare_syntax_cat tc_spec_src
 declare_syntax_cat tc_spec
 declare_syntax_cat tc_extension
-declare_syntax_cat nested_split_extension
 declare_syntax_cat explosion_extension
 declare_syntax_cat fwd_rw_src
 declare_syntax_cat rw_src
@@ -61,9 +60,6 @@ syntax tc_spec : tc_extension
 -- TODO: For some reason separating out the `←` and `→` into their own syntax category caused
 --       problems.
 
-syntax "⁅→⁆" : nested_split_extension
-syntax "⁅←⁆" : nested_split_extension
-
 syntax "💥→[" num,* "]" : explosion_extension
 syntax "💥←[" num,* "]" : explosion_extension
 
@@ -71,7 +67,6 @@ syntax basic_rw_src                             : lean_rw_src
 syntax basic_rw_src "<" num "⊢>"                : lean_rw_src
 syntax basic_rw_src (noWs tc_extension)+        : lean_rw_src
 syntax basic_rw_src noWs explosion_extension    : lean_rw_src
-syntax basic_rw_src noWs nested_split_extension : lean_rw_src
 syntax basic_rw_src noWs "↓"                    : lean_rw_src
 syntax "▵" noWs num                             : lean_rw_src
 
@@ -184,9 +179,7 @@ private def parseLeanRwSrc : (TSyntax `lean_rw_src) → Source
     .explosion (parseBasicRwSrc src) .forward (idxs.getElems.map (·.getNat)).toList
   | `(lean_rw_src|$src:basic_rw_src💥←[$idxs:num,*]) =>
     .explosion (parseBasicRwSrc src) .backward (idxs.getElems.map (·.getNat)).toList
-  | `(lean_rw_src|$src:basic_rw_src⁅→⁆) => .nestedSplit (parseBasicRwSrc src) .forward
-  | `(lean_rw_src|$src:basic_rw_src⁅←⁆) => .nestedSplit (parseBasicRwSrc src) .backward
-  | `(lean_rw_src|$src:basic_rw_src↓)   => .ground (parseBasicRwSrc src)
+  | `(lean_rw_src|$src:basic_rw_src↓) => .ground (parseBasicRwSrc src)
   | _ => unreachable!
 
 private def parseDefeqRwSrc : (TSyntax `defeq_rw_src) → Source

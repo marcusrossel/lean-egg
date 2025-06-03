@@ -17,7 +17,6 @@ structure Modifier where
   genTcProjRws        : Option Bool            := none
   genTcSpecRws        : Option Bool            := none
   genGoalTcSpec       : Option Bool            := none
-  genNestedSplits     : Option Bool            := none
   natLit              : Option Bool            := none
   eta                 : Option Bool            := none
   etaExpand           : Option Bool            := none
@@ -54,7 +53,6 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   genTcProjRws        := mod.genTcProjRws.getD cfg.genTcProjRws
   genTcSpecRws        := mod.genTcSpecRws.getD cfg.genTcSpecRws
   genGoalTcSpec       := mod.genGoalTcSpec.getD cfg.genGoalTcSpec
-  genNestedSplits     := mod.genNestedSplits.getD cfg.genNestedSplits
   natLit              := mod.natLit.getD cfg.natLit
   eta                 := mod.eta.getD cfg.eta
   etaExpand           := mod.etaExpand.getD cfg.etaExpand

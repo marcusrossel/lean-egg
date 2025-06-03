@@ -3,7 +3,6 @@ import Egg.Core.Gen.TcSpecs
 import Egg.Core.Gen.GoalTcSpecs
 import Egg.Core.Gen.GoalTypeSpecialization
 import Egg.Core.Gen.Explosion
-import Egg.Core.Gen.NestedSplits
 import Lean
 
 open Lean Std Meta Elab Tactic
@@ -15,11 +14,10 @@ private inductive DerivationCategory where
   | tcSpec
   | goalTcSpec
   | goalTypeSpec
-  | splits
   | explosion
 
 private def DerivationCategory.all : Array DerivationCategory :=
-  #[tcProj, tcSpec, goalTcSpec, goalTypeSpec, splits, explosion]
+  #[tcProj, tcSpec, goalTcSpec, goalTypeSpec, explosion]
 
 -- We maintain this theorem to ensure that we don't forget to add elements to
 -- `DerivationCategory.all`.
@@ -31,7 +29,6 @@ private def DerivationCategory.isEnabled (cfg : Config.Gen): DerivationCategory 
   | tcSpec       => cfg.genTcSpecRws
   | goalTcSpec   => cfg.genGoalTcSpec
   | goalTypeSpec => cfg.genGoalTypeSpec
-  | splits       => cfg.genNestedSplits
   | explosion    => cfg.explosion
 
 -- Each index in this structure indicates to which point in `State.derived` a given derivation
@@ -42,7 +39,6 @@ private structure State.Progress where
   tcSpec       : Nat
   goalTcSpec   : Nat
   goalTypeSpec : Nat
-  splits       : Nat
   explosion    : Nat
 
 private def State.Progress.get (p : Progress) : DerivationCategory → Nat
@@ -50,7 +46,6 @@ private def State.Progress.get (p : Progress) : DerivationCategory → Nat
   | .tcSpec       => p.tcSpec
   | .goalTcSpec   => p.goalTcSpec
   | .goalTypeSpec => p.goalTypeSpec
-  | .splits       => p.splits
   | .explosion    => p.explosion
 
 private def State.Progress.set (p : Progress) : DerivationCategory → Nat → Progress
@@ -58,7 +53,6 @@ private def State.Progress.set (p : Progress) : DerivationCategory → Nat → P
   | .tcSpec,       n => { p with tcSpec       := n }
   | .goalTcSpec,   n => { p with goalTcSpec   := n }
   | .goalTypeSpec, n => { p with goalTypeSpec := n }
-  | .splits,       n => { p with splits       := n }
   | .explosion,    n => { p with explosion    := n }
 
 private structure State where
@@ -69,7 +63,7 @@ private structure State where
 private instance : EmptyCollection State where
   emptyCollection := {
     derived     := #[]
-    progress    := ⟨0, 0, 0, 0, 0, 0⟩
+    progress    := ⟨0, 0, 0, 0, 0⟩
     tcProjCover := ∅
   }
 
@@ -128,8 +122,6 @@ where
     setTcProjCover cover
 
   core : DerivedM Unit := do
-    generate cfg .splits do
-      genNestedSplits (← todo .splits) cfg
     generate cfg .explosion do
       genExplosions (← todo .explosion)
     generate cfg .goalTypeSpec do

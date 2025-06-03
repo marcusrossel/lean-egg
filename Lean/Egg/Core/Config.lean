@@ -26,7 +26,6 @@ structure Gen where
   genTcProjRws     := true
   genTcSpecRws     := false
   genGoalTcSpec    := false
-  genNestedSplits  := true
   explosion        := false
   derivedGuides    := true
   genGroundEqs     := true

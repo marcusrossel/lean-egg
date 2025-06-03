@@ -50,7 +50,6 @@ register_egg_options
   genTcProjRws
   genTcSpecRws
   genGoalTcSpec
-  genNestedSplits
   natLit
   eta
   etaExpand
