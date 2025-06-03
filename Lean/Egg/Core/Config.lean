@@ -19,14 +19,14 @@ structure Encoding extends Normalization where
   deriving BEq
 
 structure Gen where
-  builtins      := true
   baskets       := (#[] : Array Lean.Name)
+  builtins      := true
   structProjs   := true
-  goalTypeSpec  := true
   tcProjs       := true
-  explosion     := false
-  derivedGuides := true
+  goalTypeSpec  := true
   groundEqs     := true
+  derivedGuides := true
+  explosion     := false
   deriving BEq
 
 structure DefEq where

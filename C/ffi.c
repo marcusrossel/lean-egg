@@ -390,3 +390,16 @@ lean_obj_res explain_equiv(b_lean_obj_arg graph, uint8_t slotted, lean_obj_arg i
         return eqsat_result_to_lean(result);
     }
 }
+
+extern const char* egg_get_term(egg_egraph graph, size_t enode);
+
+lean_obj_res get_term(b_lean_obj_arg graph, uint8_t slotted, lean_obj_arg node) {
+    if (slotted != 0) {
+        exit(1);
+    } else {
+        egg_egraph graph_c = to_egg_egraph(graph);
+        size_t node_c = nat_from_lean_obj(node);
+        const char* term = egg_get_term(graph_c, node_c);
+        return lean_mk_string(term);
+    }
+}

@@ -6,7 +6,6 @@ open scoped Egg
 --       To fix this, the tc-proj generator should generate fvars for the given bvars, perform the
 --       reduction, and then over any remaining bvar-fvars.
 -- #guard_msgs in
-set_option trace.egg true in
 set_option egg.builtins false in
 example (h : (fun (α) [Mul α] (x y : α) => x * y) = a) : true = true := by
   sorry -- egg [h]

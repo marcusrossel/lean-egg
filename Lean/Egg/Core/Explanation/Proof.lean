@@ -128,6 +128,7 @@ where
         )
       | .inl rw =>
         let (rw, subst) ← rw.freshWithSubst
+
         -- TODO: The rewrite descriptor contains the weak vars.
         --       Get each one, map it under `subst`, fetch a term for it from the e-graph and unify
         --       that term with the mvar. You'll need an ffi function for fetching a term with a

@@ -251,6 +251,11 @@ pub unsafe extern "C" fn egg_query_equiv(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn egg_get_term(egraph: *mut LeanEGraph, enode: usize) -> *const c_char {
+    string_to_c_str(egraph.as_mut().unwrap().id_to_expr(Id::from(enode)).to_string())
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn egg_free_egraph(egraph: *mut LeanEGraph) {
     if !egraph.is_null() { drop(Box::from_raw(egraph)); }
 }
