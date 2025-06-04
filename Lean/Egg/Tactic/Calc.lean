@@ -62,11 +62,11 @@ def parseRawSteps : (TSyntax ``egg_calc_steps) → TacticM RawSteps
       $tail]*) => return { head := ← parseRawStep head, tail := ← tail.mapM parseRawStep }
   | _ => throwUnsupportedSyntax
 
-syntax &"egg " ident* &" calc " egg_premises egg_calc_steps : tactic
+syntax &"egg " egg_baskets &" calc " egg_premises egg_calc_steps : tactic
 
 def eval
-    (baskets : Array Ident) (prems : TSyntax `egg_premises) (steps : TSyntax ``egg_calc_steps) :
-    TacticM Unit := do
+    (baskets : TSyntax `Egg.egg_baskets) (prems : TSyntax `egg_premises)
+    (steps : TSyntax ``egg_calc_steps) : TacticM Unit := do
   withMainContext do
     let rawSteps ← parseRawSteps steps
     let some goal ← Congr.from? (← getMainTarget)
@@ -88,7 +88,7 @@ def eval
 where
   stepToEgg (step : Step) : TacticM (TSyntax `tactic) := do
     let allPrems ← appendPremises step.prems prems
-    `(tactic| egg $[$baskets]* $step.mod:egg_cfg_mod $allPrems $[$step.guides]?)
+    `(tactic| egg $baskets $step.mod:egg_cfg_mod $allPrems $[$step.guides]?)
   dedupSubgoals (subgoals : List MVarId) : MetaM (List MVarId) := do
     let mut result := []
     for subgoal in subgoals do
@@ -136,5 +136,5 @@ where
       lastRhs := rhs
     return result
 
-elab "egg " baskets:ident* " calc " prems:egg_premises steps:egg_calc_steps : tactic =>
+elab "egg " baskets:egg_baskets " calc " prems:egg_premises steps:egg_calc_steps : tactic =>
   eval baskets prems steps

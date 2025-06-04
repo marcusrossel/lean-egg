@@ -7,10 +7,10 @@ attribute [egg add_assoc] Nat.add_assoc
 attribute [egg zero_add]  Nat.zero_add
 
 example : 0 + a + b + c = c + b + a := by
-  egg add
+  egg +add
 
 example (h : a = b) : 0 + a + b + c = c + a + a := by
-  egg add [h]
+  egg +add [h]
 
 example (h : a = b) : 0 + a + b + c = c + a + a := by
-  egg add_comm add_assoc zero_add [h]
+  egg +add_comm +add_assoc +zero_add [h]

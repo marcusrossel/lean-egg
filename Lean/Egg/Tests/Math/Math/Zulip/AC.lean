@@ -6,4 +6,4 @@ import Egg
 attribute [egg ac] add_assoc add_comm
 
 example {x y z a : ℝ} (h : x + y + z = 0) : z + (a + x) + y = a := by
-  egg ac [h, zero_add]
+  egg +ac [h, zero_add]

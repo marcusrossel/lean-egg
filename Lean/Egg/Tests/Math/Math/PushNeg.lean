@@ -15,17 +15,17 @@ attribute [egg neg] not_exists
 --       Andrés Idea: During proof reconstruction, if defeq with `Eq` fails, try replacing it with
 --       `Iff`.
 example : ¬¬(p = p) := by
-  egg neg
+  egg +neg
 
 example : (¬¬p) ↔ p := by
-  egg neg
+  egg +neg
 
 example : (¬p ∧ ¬q) → ¬(p ∨ q) := by
-  egg neg
+  egg +neg
 
 -- NOTE: This relies on the builtin theorem for modus ponens, and hence assignment of weak vars.
 example : ¬(p ∧ q) → (p → ¬q) := by
-  egg neg
+  egg +neg
 
 example (r : α → Prop) : (∀ x, ¬ r x) → ¬(∃ x, r x) := by
-  egg neg
+  egg +neg

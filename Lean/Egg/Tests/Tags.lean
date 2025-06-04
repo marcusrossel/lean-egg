@@ -1,9 +1,5 @@
 import Egg
 
-macro "#basket" key:ident : command => `(
-  #eval show Lean.Meta.MetaM _ from Egg.extension.getBasket $(Lean.quote key.getId)
-)
-
 instance [One α] : OfNat α 1 where ofNat := One.one
 
 class Inv (α) where inv : α → α
@@ -28,24 +24,21 @@ attribute [egg group] Group.mul_inv_self
 #guard_msgs in
 example : a⁻¹ * (a * b) = b := by egg
 
-/--
-info: #[`Group.mul_assoc, `Group.one_mul, `Group.mul_one, `Group.inv_mul_self, `Group.mul_inv_self]
--/
-#guard_msgs in #basket group
+/-- info: Group.inv_mul_self, Group.mul_assoc, Group.mul_inv_self, Group.mul_one, Group.one_mul -/
+#guard_msgs in #egg_basket group
 
 @[egg group]
-theorem inv_mul_cancel_left : a⁻¹ * (a * b) = b := by egg group
+theorem inv_mul_cancel_left : a⁻¹ * (a * b) = b := by egg +group
 
 /--
-info: #[`Group.mul_assoc, `Group.one_mul, `Group.mul_one, `Group.inv_mul_self, `Group.mul_inv_self, `inv_mul_cancel_left]
+info: inv_mul_cancel_left, Group.inv_mul_self, Group.mul_assoc, Group.mul_inv_self, Group.mul_one, Group.one_mul
 -/
-#guard_msgs in #basket group
+#guard_msgs in #egg_basket group
 
 @[egg group]
-theorem mul_inv_cancel_left : a * (a⁻¹ * b) = b := by egg group
+theorem mul_inv_cancel_left : a * (a⁻¹ * b) = b := by egg +group
 
 /--
-info: #[`Group.mul_assoc, `Group.one_mul, `Group.mul_one, `Group.inv_mul_self, `Group.mul_inv_self, `inv_mul_cancel_left,
-  `mul_inv_cancel_left]
+info: inv_mul_cancel_left, mul_inv_cancel_left, Group.inv_mul_self, Group.mul_assoc, Group.mul_inv_self, Group.mul_one, Group.one_mul
 -/
-#guard_msgs in #basket group
+#guard_msgs in #egg_basket group

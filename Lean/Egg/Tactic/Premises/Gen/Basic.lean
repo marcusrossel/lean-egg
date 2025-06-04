@@ -2,7 +2,7 @@ import Egg.Core.Gen.Builtins
 import Egg.Core.Gen.Tagged
 import Egg.Core.Gen.StructProjs
 import Egg.Tactic.Goal
-import Egg.Tactic.Tags
+import Egg.Tactic.Baskets
 import Egg.Tactic.Premises.Parse
 import Egg.Tactic.Premises.Gen.GenM
 import Egg.Tactic.Premises.Gen.Intros

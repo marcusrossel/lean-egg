@@ -33,49 +33,49 @@ variable [AddCommGroup N] [Module R N] [LieRingModule L N] [LieModule R L N]
 variable (t : R) (x y z : L) (m n : M)
 
 example : -⁅y, x⁆ = ⁅x, y⁆ := by
-  egg lie using ⁅x + y, x⁆ + ⁅x + y, y⁆
+  egg +lie using ⁅x + y, x⁆ + ⁅x + y, y⁆
 
 /- Previous -/ attribute [egg lie] lie_skew
 
 -- lieAlgebraSelfModule
 example : LieModule R L L where
-  smul_lie := by egg lie []
-  lie_smul := by egg lie
+  smul_lie := by egg +lie
+  lie_smul := by egg +lie
 
 -- NOTE: This example relies on `egg.derivedGuides`, because it needs the term `⁅-x, m⁆ = -⁅x, m⁆`
 --       in the e-graph in order to apply `sub_eq_zero`. Note that even though the LHS `⁅-x, m⁆` and
 --       RHS `-⁅x, m⁆` of the goal are automatically added to the e-graph, this does not mean that
 --       `eq`-node is created for them, as they do not live in the same e-class (a priori).
 example : ⁅-x, m⁆ = -⁅x, m⁆ := by
-  egg lie
+  egg +lie
 
 /- Previous -/ attribute [egg lie] neg_lie
 
 -- NOTE: This example relies on `egg.derivedGuides`, for the reason explained in the note above.
 example : ⁅x, -m⁆ = -⁅x, m⁆ := by
-  egg lie
+  egg +lie
 
 /- Previous -/ attribute [egg lie] lie_neg
 
 example : ⁅x - y, m⁆ = ⁅x, m⁆ - ⁅y, m⁆ := by
-  egg lie
+  egg +lie
 
 /- Previous -/ attribute [egg lie] sub_lie
 
 example : ⁅x, m - n⁆ = ⁅x, m⁆ - ⁅x, n⁆ := by
-  egg lie
+  egg +lie
 
 /- Previous -/ attribute [egg lie] lie_sub
 
 attribute [egg lie] nsmul_lie lie_nsmul zsmul_lie lie_zsmul
 
 example : ⁅⁅x, y⁆, m⁆ = ⁅x, ⁅y, m⁆⁆ - ⁅y, ⁅x, m⁆⁆ := by
-  egg lie
+  egg +lie
 
 /- Previous -/ attribute [egg lie] lie_lie
 
 example : ⁅x, ⁅y, z⁆⁆ + ⁅y, ⁅z, x⁆⁆ + ⁅z, ⁅x, y⁆⁆ = 0 := by
-  egg lie
+  egg +lie
 
 /- Previous -/ attribute [egg lie] lie_jacobi
 

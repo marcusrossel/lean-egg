@@ -25,7 +25,7 @@ variable {M : Type*} [Monoid M] {a b c : M}
 -- NOTE: We can't use `mul_one` to rewrite from `b` to `b * 1` as that requires the LHS to be just a
 --       lone mvar. Thus, we have to specify the guide term `b * 1`.
 example (hba : b * a = 1) (hac : a * c = 1) : b = c := by
-  egg monoid [*] using b * 1
+  egg +monoid [*] using b * 1
 
 /- Previous -/ attribute [egg monoid] left_inv_eq_right_inv
 
@@ -47,17 +47,17 @@ variable [DivInvMonoid G]
 attribute [egg div_inv_monoid] div_eq_mul_inv
 
 example (x : G) : x⁻¹ = 1 / x := by
-  egg div_inv_monoid
+  egg +div_inv_monoid
 
 /- Previous -/ attribute [egg div_inv_monoid] inv_eq_one_div
 
 example (a b c : G) : a * b / c = a * (b / c) := by
-  egg div_inv_monoid
+  egg +div_inv_monoid
 
 /- Previous -/ attribute [egg div_inv_monoid] mul_div_assoc
 
 example (a : G) : 1 / a = a⁻¹ := by
-  egg div_inv_monoid
+  egg +div_inv_monoid
 
 /- Previous -/ attribute [egg div_inv_monoid] one_div
 
@@ -79,44 +79,44 @@ private theorem inv_eq_of_mul (h : a * b = 1) : a⁻¹ = b :=
 /- Previous -/ attribute [egg group] inv_eq_of_mul
 
 example (a : G) : a * a⁻¹ = 1 := by
-  egg group using a⁻¹ * a
+  egg +group using a⁻¹ * a
 
 /- Previous -/ attribute [egg group] mul_inv_cancel
 
 -- theorem div_self'
 example (a : G) : a / a = 1 := by
-  egg group
+  egg +group
 
 /- Previous -/ attribute [egg group] div_self'
 
 example (a b : G) : a⁻¹ * (a * b) = b := by
-  egg group
+  egg +group
 
 /- Previous -/ attribute [egg group] inv_mul_cancel_left
 
 example (a b : G) : a * (a⁻¹ * b) = b := by
-  egg group
+  egg +group
 
 /- Previous -/ attribute [egg group] mul_inv_cancel_left
 
 example (a b : G) : a * b * b⁻¹ = a := by
-  egg group
+  egg +group
 
 /- Previous -/ attribute [egg group] mul_inv_cancel_right
 
 -- theorem mul_div_cancel_right
 example (a b : G) : a * b / b = a := by
-  egg group
+  egg +group
 
 /- Previous -/ attribute [egg group] mul_div_cancel_right
 
 example (a b : G) : a * b⁻¹ * b = a := by
-  egg group
+  egg +group
 
 /- Previous -/ attribute [egg group] inv_mul_cancel_right
 
 example (a b : G) : a / b * b = a := by
-  egg group
+  egg +group
 
 /- Previous -/ attribute [egg group] div_mul_cancel
 
@@ -144,22 +144,22 @@ section CommGroup
 variable [CommGroup G]
 
 example (a b : G) : a⁻¹ * b * a = b := by
-  egg comm_group
+  egg +comm_group
 
 /- Previous -/ attribute [egg comm_group] inv_mul_cancel_comm
 
 example (a b : G) : a * b * a⁻¹ = b := by
-  egg comm_group
+  egg +comm_group
 
 /- Previous -/ attribute [egg comm_group] mul_inv_cancel_comm
 
 example (a b : G) : a⁻¹ * (b * a) = b := by
-  egg comm_group
+  egg +comm_group
 
 /- Previous -/ attribute [egg comm_group] inv_mul_cancel_comm_assoc
 
 example (a b : G) : a * (b * a⁻¹) = b := by
-  egg comm_group
+  egg +comm_group
 
 /- Previous -/ attribute [egg comm_group] mul_inv_cancel_comm_assoc
 

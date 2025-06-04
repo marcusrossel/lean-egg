@@ -40,9 +40,11 @@ private def resultToProof
 
 open Config.Modifier (egg_cfg_mod)
 
+syntax egg_baskets := ("+" noWs ident)*
+
 protected partial def eval
     (mod : TSyntax ``egg_cfg_mod) (prems : TSyntax `egg_premises)
-    (guides : Option (TSyntax `egg_guides)) (baskets : Array Name := #[])
+    (guides : Option (TSyntax `egg_guides)) (baskets : TSyntax `Egg.egg_baskets)
     (calcifyTk? : Option Syntax := none) : TacticM Unit := do
   let save ← saveState
   try core catch err => restoreState save; throw err
@@ -51,7 +53,8 @@ where
     let startTime ← IO.monoMsNow
     let goal ← getMainGoal
     let mod  ← Config.Modifier.parse mod
-    let cfg := { (← Config.fromOptions).modify mod with baskets }
+    let `(egg_baskets|$[+$baskets]*) := baskets | unreachable!
+    let cfg := { (← Config.fromOptions).modify mod with baskets := baskets.map (·.getId) }
     cfg.trace `egg.config
     let goal ← Goal.gen goal
     goal.id.withContext do
@@ -102,19 +105,17 @@ where
       unless cfg.reporting do return msg
       return msg ++ formatReport cfg.flattenReports report
 
-syntax &"egg " ident* egg_cfg_mod egg_premises (egg_guides)? : tactic
-elab_rules : tactic
-  | `(tactic| egg $[$baskets]* $mod:egg_cfg_mod $prems $[$guides]?) =>
-    Egg.eval mod prems guides (baskets := baskets.map (·.getId))
+elab "egg " baskets:egg_baskets mod:egg_cfg_mod prems:egg_premises guides:(egg_guides)? : tactic =>
+  Egg.eval mod prems guides baskets
 
 -- WORKAROUND: This fixes `Tests/EndOfInput *`.
-macro "egg " baskets:ident* mod:egg_cfg_mod : tactic =>
-  `(tactic| egg $[$baskets]* $mod:egg_cfg_mod)
+macro "egg " baskets:egg_baskets mod:egg_cfg_mod : tactic =>
+  `(tactic| egg $baskets $mod:egg_cfg_mod)
 
 -- The syntax `egg?` calls calcify after running egg.
-elab tk:"egg? " baskets:ident* mod:egg_cfg_mod prems:egg_premises guides:(egg_guides)? : tactic =>
-  Egg.eval mod prems guides (baskets := baskets.map (·.getId)) (calcifyTk? := tk)
+elab tk:"egg? " baskets:egg_baskets mod:egg_cfg_mod prems:egg_premises guides:(egg_guides)? : tactic =>
+  Egg.eval mod prems guides baskets (calcifyTk? := tk)
 
 -- WORKAROUND: This fixes a problem analogous to `Tests/EndOfInput *` for `egg?`.
-macro "egg? " baskets:ident* mod:egg_cfg_mod : tactic =>
-  `(tactic| egg? $[$baskets]* $mod:egg_cfg_mod)
+macro "egg? " baskets:egg_baskets mod:egg_cfg_mod : tactic =>
+  `(tactic| egg? $baskets $mod:egg_cfg_mod)

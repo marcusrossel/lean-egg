@@ -24,8 +24,8 @@ class CharTwoRing (α) extends CommRing α where
   char_two (a : α) : a + a = 0
 
 open CommRing CharTwoRing Egg.Guides Egg.Config.Modifier in
-macro "char_two_ring" baskets:ident* mod:egg_cfg_mod guides:(egg_guides)? : tactic => `(tactic|
-  egg $[$baskets]* $mod:egg_cfg_mod [comm_add, comm_mul, add_assoc, mul_assoc, sub_canon, neg_add,
+macro "char_two_ring" mod:egg_cfg_mod guides:(egg_guides)? : tactic => `(tactic|
+  egg $mod:egg_cfg_mod [comm_add, comm_mul, add_assoc, mul_assoc, sub_canon, neg_add,
   div_canon, zero_add, zero_mul, one_mul, distrib, pow_zero, pow_succ, char_two,
   Nat.succ_eq_add_one] $[$guides]?
 )

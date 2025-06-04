@@ -50,4 +50,4 @@ set_option trace.egg.rewrites true in
 egg_no_defeq in
 set_option egg.builtins false in
 example : Nat.zero = Nat.zero := by
-  egg basket
+  egg +basket

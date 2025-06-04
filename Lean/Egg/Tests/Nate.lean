@@ -16,7 +16,7 @@ def take : (n : Nat) → Vect α (k + n) → Vect α n
   | 0,     _        => nil
   | n + 1, cons h r => cons h (take n r)
 
-def cast (xs : Vect α n) (h : n = m := by egg nat) : Vect α m :=
+def cast (xs : Vect α n) (h : n = m := by egg +nat) : Vect α m :=
   h ▸ xs
 
 def slide (sz sp : Nat) (xs : Vect α <| sz + n * (sp + 1)) : Vect (Vect α sz) (n + 1) :=

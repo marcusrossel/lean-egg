@@ -7,7 +7,7 @@ import Egg.Tactic.Premises.Parse
 import Egg.Tactic.Config.Option
 import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Config.NoDefEq
-import Egg.Tactic.Tags
+import Egg.Tactic.Baskets
 import Egg.Tactic.Calcify
 import Egg.Tactic.Basic
 import Egg.Tactic.Trace

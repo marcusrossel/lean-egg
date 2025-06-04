@@ -52,10 +52,10 @@ infixl:70 (priority := high) " * " => mul
 prefix:75 (priority := high) "-"   => Ring.neg
 
 theorem test [Ring α] (a b : α) : a + b = b + a := by
-  egg ring
+  egg +ring
 
 theorem just_nested [Ring α] (a : α) : (a + zero) * one = a := by
-  egg ring
+  egg +ring
 
 -- TODO: The problem here is that subtraction is `Ring.neg`, whereas the relevant theorem
 --       `AddCommGroup.neg_add` is about `AddCommGroup.neg`. That is, we need a theorem like `t`.
@@ -121,12 +121,12 @@ infixl:70 (priority := high) " * " => mul
 prefix:75 (priority := high) "-"   => neg
 
 theorem test [Ring α] (a b : α) : a + b = b + a := by
-  egg ring'
+  egg +ring'
 
 theorem just_nested [Ring α] (a : α) : (a + zero) * one = a := by
-  egg ring'
+  egg +ring'
 
 theorem combine_classes [Ring α] (a b c : α) (h : b + c = one) : (a + (b + -b)) * (b + c) = a := by
-  egg ring' [h]
+  egg +ring' [h]
 
 end Flat
