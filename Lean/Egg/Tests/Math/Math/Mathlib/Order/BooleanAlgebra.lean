@@ -40,7 +40,6 @@ egg_basket bool extends gbool, dlattice, lattice, ilattice, slattice
 
 variable [GeneralizedBooleanAlgebra α] {x y z : α}
 
--- TODO: The problematic mvar is actually a level mvar. Add a notion of weak level mvars.
 example (s : x ⊓ y ⊔ z = x) (i : x ⊓ y ⊓ z = ⊥) : x \ y = z := by
   egg bool [sup_inf_sdiff x y, inf_inf_sdiff x y, i, s]
 

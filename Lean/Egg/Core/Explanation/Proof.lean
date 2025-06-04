@@ -5,7 +5,7 @@ import Egg.Core.Explanation.Expr
 import Egg.Core.Rewrite.Basic
 import Egg.Core.Request.Equiv
 import Egg.Core.Request.Term
-open Lean Meta
+open Lean Meta Std
 
 namespace Egg.Proof
 
@@ -30,6 +30,23 @@ structure Step where
   dir   : Direction
   -- TODO: conds : Array Proof
   deriving Inhabited
+
+structure WeakVars where
+  expr : HashMap MVarId Nat
+  lvl  : HashMap LMVarId Nat
+
+def WeakVars.from! (raw : Array (Nat × Nat)) (subst : MVars.Subst) : MetaM WeakVars := do
+  let mut expr := ∅
+  let mut lvl := ∅
+  for (idx, node) in raw do
+    if let some mvar := subst.expr[MVarId.fromUniqueIdx idx]? then
+      expr := expr.insert mvar node
+    else if let some lmvar :=  subst.lvl[LMVarId.fromUniqueIdx idx]? then
+      lvl := lvl.insert lmvar node
+    else
+      let s := subst.expr.toList.map fun (m₁, m₂) => (m₁.name, m₂.name)
+      throwError m!"'WeakVars.from!': (L)MVar with index {idx} does not appear in substitution {s}"
+  return { expr, lvl }
 
 inductive CongrStep where
   | rule (rw : Rewrite) (weakVars : Array (Nat × Nat))
@@ -133,11 +150,6 @@ where
         )
       | .rule rw weakVars =>
         let (rw, subst) ← rw.freshWithSubst
-        let weakVars ← weakVars.mapM fun (m, node) => do
-          let mvarId := MVarId.fromUniqueIdx m
-          let some freshM := subst.expr[mvarId]?
-            | fail m!"weak mvar {mvarId.name} does not appear in substitution {subst.expr.toList.map fun (m₁, m₂) => (m₁.name, m₂.name)}"
-          return (freshM, node)
         unless ← isDefEq lhs rw.lhs do failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs current next idx
         unless ← isDefEq rhs rw.rhs do failIsDefEq "RHS" rw.src rhs rw.rhs rw.mvars.rhs current next idx
         for cond in rw.conds do
@@ -146,7 +158,7 @@ where
           let condType ← instantiateMVars condType
           match condKind with
           | .proof =>
-            if let some p ← proveCondition condType weakVars then
+            if let some p ← proveCondition condType (← Proof.WeakVars.from! weakVars subst) then
               unless ← isDefEq (.mvar condMVar) p do
                 fail m!"proof of condition '{condType}' of rewrite {rw.src.description} was invalid" idx
             else if !conditionSubgoals then
@@ -190,19 +202,24 @@ where
       types := types ++ s!"  {← ppExpr (.mvar mvar)}: {← ppExpr <| ← mvar.getType}\n"
     fail m!"unification failure for {side} of rewrite {src.description}:\n\n  {expr}\nvs\n  {rwExpr}\nin\n  {current}\nand\n  {next}\n\n• Types: {types}\n• Read Only Or Synthetic Opaque MVars: {readOnlyOrSynthOpaque}" idx
 
-  proveCondition (cond : Expr) (weakVars : Array (MVarId × Nat)) : MetaM (Option Expr) := do
+  proveCondition (cond : Expr) (weakVars : Proof.WeakVars) : MetaM (Option Expr) := do
     if !conditionSubgoals then
       -- Assign unassigned weak mvars.
-      let { result := lingeringMVars, .. } := cond.collectMVars {}
-      for mvar in lingeringMVars do
+      let lingering ← MVars.collect cond
+      -- TODO: We're only using `MVars.collect` because there doesn't seem to be a collection
+      --       function for level mvars. But that means we're also considering mvars appearing in
+      --       the type of `cond` here.
+      for mvar in lingering.expr.keys do
         -- Skips ambient mvars.
         unless ← mvar.isAssignable do continue
         -- TODO: We have cases where conditions contain non-weak unassigned mvars, but it doesn't
         --       cause a problem.
-        let some (_, enode) := weakVars.find? fun (m, _) => m == mvar | continue
+        let some enode := weakVars.expr[mvar]? | continue
         let term ← egraph.get { enode }
         unless ← isDefEq (.mvar mvar) term do
           fail m!"failed to assign term '{term}' to weak mvar {Expr.mvar mvar}"
+      -- TODO: Do we need to fetch and assign level mvars? Or is this covered by assigning the
+      --       expression mvars above?
     let cond ← instantiateMVars cond
     trace[egg.explanation] m!"Prove condition '{cond}'"
     let some prf ← mkSubproof cond (.const ``True []) | return none
