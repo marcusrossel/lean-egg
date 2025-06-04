@@ -17,8 +17,7 @@ attribute [egg mul_one] MulOneClass.one_mul MulOneClass.mul_one MulOneClass.ext
 
 -- NOTE: Skipped power definitions around lines 330-550.
 
-egg_basket monoid extends semigroup, mul_one
-attribute [egg monoid] Monoid.npow_zero Monoid.npow_succ npow_eq_pow
+egg_basket monoid extends semigroup, mul_one with Monoid.npow_zero, Monoid.npow_succ, npow_eq_pow
 
 section Monoid
 variable {M : Type*} [Monoid M] {a b c : M}
@@ -38,8 +37,7 @@ egg_basket comm_monoid extends monoid, comm_semigroup
 
 -- NOTE: Skipped cancel and involutive definitions around lines 660-760.
 
-egg_basket div_inv_monoid extends monoid
-attribute [egg div_inv_monoid] DivInvMonoid.div_eq_mul_inv
+egg_basket div_inv_monoid extends monoid with DivInvMonoid.div_eq_mul_inv
 
 -- NOTE: Skipped power axioms and theorems around lines 830-940.
 
@@ -67,8 +65,7 @@ end DivInvMonoid
 
 -- NOTE: Skipped power theorems, `InvOneClass`, and `DivisionMonoid` around lines 960-1050.
 
-egg_basket group extends div_inv_monoid
-attribute [egg group] Group.inv_mul_cancel
+egg_basket group extends div_inv_monoid with Group.inv_mul_cancel
 
 section Group
 variable [Group G] {a b : G}

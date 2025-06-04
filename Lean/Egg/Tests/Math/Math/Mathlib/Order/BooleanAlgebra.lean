@@ -89,6 +89,7 @@ example : x ⊓ y ⊓ z ⊔ y \ z = x ⊓ y ⊔ y \ z := by
 
 /- Previous -/ attribute [egg bool] sup_inf_inf_sdiff
 
+set_option egg.explLengthLimit 270 in
 example : x \ (y \ z) = x \ y ⊔ x ⊓ y ⊓ z := by
   rw [sup_comm, inf_comm, ← inf_assoc, sup_inf_inf_sdiff]
   apply sdiff_unique

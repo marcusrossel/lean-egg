@@ -51,8 +51,14 @@ initialize
       | _                                    => throwError "'egg' attribute expectes a basket name"
   }
 
-elab "egg_basket " dst:ident " extends " srcs:ident,+ : command => do
+syntax egg_basket_thms := " with " ident,+
+
+elab "egg_basket " dst:ident " extends " srcs:ident,+ thms?:(egg_basket_thms)? : command => do
   for src in srcs.getElems do
     let src ← Elab.Command.liftCoreM <| extension.getBasket src.getId (stx? := src)
     for entry in src do
       extension.add (dst.getId, entry)
+  let some thms := thms? | return
+  let `(egg_basket_thms| with $thms,*) := thms | return
+  for thm in thms.getElems do
+    extension.add (dst.getId, thm.getId)

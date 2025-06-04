@@ -11,19 +11,18 @@ attribute [egg lie_external] neg_eq_iff_add_eq_zero zero_add add_zero smul_neg s
 attribute [egg lie_ring] LieRing.add_lie LieRing.lie_add LieRing.lie_self LieRing.leibniz_lie
 
  -- TODO: extends CommRing and Module
-egg_basket lie_alg extends lie_ring
-attribute [egg lie_alg] LieAlgebra.lie_smul
+egg_basket lie_alg extends lie_ring with LieAlgebra.lie_smul
 
-egg_basket lie_ring_mod extends lie_ring, lie_alg
-attribute [egg lie_ring_mod] LieRingModule.add_lie LieRingModule.lie_add LieRingModule.leibniz_lie
+egg_basket lie_ring_mod extends lie_ring, lie_alg with
+  LieRingModule.add_lie, LieRingModule.lie_add, LieRingModule.leibniz_lie
 
-egg_basket lie_mod extends lie_ring, lie_alg, lie_ring_mod
-attribute [egg lie_mod] LieModule.smul_lie LieModule.lie_smul
+egg_basket lie_mod extends lie_ring, lie_alg, lie_ring_mod with
+  LieModule.smul_lie, LieModule.lie_smul
 
 attribute [egg lie_tower] leibniz_lie lie_swap_lie
 
-egg_basket lie extends lie_ring_mod, lie_tower, lie_external
-attribute [egg lie] add_lie lie_add smul_lie lie_smul lie_zero zero_lie lie_self
+egg_basket lie extends lie_ring_mod, lie_tower, lie_external with
+  add_lie, lie_add, smul_lie, lie_smul, lie_zero, zero_lie, lie_self
 
 section BasicProperties
 
