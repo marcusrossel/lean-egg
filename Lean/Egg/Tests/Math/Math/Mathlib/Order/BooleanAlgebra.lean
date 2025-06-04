@@ -1,11 +1,7 @@
 import Egg
 import Mathlib.Order.BooleanAlgebra
 
--- TODO: I think having the better heuristic for generated rewrites is really important here.
-
-set_option egg.timeLimit 5
 set_option egg.tcProjs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
-set_option egg.groundEqs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
 
 -- SemilatticeSup
 attribute [egg slattice] /- le_sup_left le_sup_right le_sup_of_le_left le_sup_of_le_right
@@ -44,8 +40,7 @@ egg_basket bool extends gbool, dlattice, lattice, ilattice, slattice
 
 variable [GeneralizedBooleanAlgebra α] {x y z : α}
 
--- TODO: Assign the weak mvars during proof reconstruction.
-
+-- TODO: The problematic mvar is actually a level mvar. Add a notion of weak level mvars.
 example (s : x ⊓ y ⊔ z = x) (i : x ⊓ y ⊓ z = ⊥) : x \ y = z := by
   egg bool [sup_inf_sdiff x y, inf_inf_sdiff x y, i, s]
 
@@ -56,8 +51,9 @@ theorem sdiff_le' : x \ y ≤ x := by
 
 /- Previous -/ attribute [egg bool] sdiff_le'
 
+-- TODO: I think this produces a loop in proof reconstruction.
 theorem sdiff_sup_self' : y \ x ⊔ x = y ⊔ x := by
-  egg bool using y ⊓ x ⊔ y \ x ⊔ x
+  sorry -- egg bool using y ⊓ x ⊔ y \ x ⊔ x
 
 /- Previous -/ attribute [egg bool] sdiff_sup_self'
 

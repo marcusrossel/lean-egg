@@ -9,7 +9,7 @@ theorem imp_mp {p q : Prop} (imp : p → q) (h : p) : q :=
   imp h
 
 private def builtinTheorems := #[
-  -- TODO: Add this once you figure out how to handle unbound condition mvars: ``imp_mp,
+  ``imp_mp,
   ``Nat.succ_eq_add_one,
   ``ge_iff_le,
   ``gt_iff_lt

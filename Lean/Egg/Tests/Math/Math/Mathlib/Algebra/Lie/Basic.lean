@@ -2,7 +2,6 @@ import Mathlib.Algebra.Lie.Basic
 import Egg
 
 set_option egg.tcProjs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
-set_option egg.groundEqs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
 
 attribute [egg lie_external] neg_eq_iff_add_eq_zero zero_add add_zero smul_neg sub_eq_zero neg_neg
                              sub_neg_eq_add neg_add_cancel sub_eq_add_neg add_sub_cancel_right

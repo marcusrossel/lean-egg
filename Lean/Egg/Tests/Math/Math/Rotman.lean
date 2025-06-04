@@ -12,9 +12,6 @@ attribute [egg real] add_comm sub_add_cancel sub_add_eq_add_sub mul_one mul_comm
                      div_mul_eq_div_mul_one_div left_distrib
 
 set_option egg.conditionSubgoals true
-set_option maxHeartbeats 3000000
-
--- From Rotman
 
 notation:100 r "﹗" => Real.Gamma (r + 1)
 

@@ -24,16 +24,6 @@ def Kind.isTcInst : Kind → Bool
   | proof  => false
   | tcInst => true
 
--- TODO: Remove this when tc spec is removed.
-def Kind.forType? (ty : Expr) : MetaM (Option Kind) := do
-  -- Since type classes can also be propositions, we do the type class check first.
-  if (← Meta.isClass? ty).isSome then
-    return some .tcInst
-  else if ← Meta.isProp ty then
-    return some .proof
-  else
-    return none
-
 structure _root_.Egg.Rewrite.Condition where
   kind  : Kind
   mvar  : MVarId

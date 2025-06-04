@@ -4,6 +4,7 @@ import Egg.Core.Explanation.Parse.Basic
 import Egg.Core.Explanation.Expr
 import Egg.Core.Rewrite.Basic
 import Egg.Core.Request.Equiv
+import Egg.Core.Request.Term
 open Lean Meta
 
 namespace Egg.Proof
@@ -29,6 +30,10 @@ structure Step where
   dir   : Direction
   -- TODO: conds : Array Proof
   deriving Inhabited
+
+inductive CongrStep where
+  | rule (rw : Rewrite) (weakVars : Array (Nat × Nat))
+  | reifiedEq (dir : Direction)
 
 end Proof
 
@@ -86,12 +91,12 @@ where
           lhs := current, rhs := next, proof := ← mkReflStep idx current next rwInfo.src,
           rw := .rw rw (isRefl := true), dir := rwInfo.dir
         }
-      let prf ← mkCongrStep idx current next rwInfo.pos?.get! <| .inl (← rw.forDir rwInfo.dir)
+      let prf ← mkCongrStep idx current next rwInfo.pos?.get! <| .rule (← rw.forDir rwInfo.dir) rwInfo.weakVars
       return {
         lhs := current, rhs := next, proof := prf, rw := .rw rw (isRefl := false), dir := rwInfo.dir
       }
     else if rwInfo.src.isReifiedEq then
-      let prf ← mkCongrStep idx current next rwInfo.pos?.get! <| .inr rwInfo.dir
+      let prf ← mkCongrStep idx current next rwInfo.pos?.get! (.reifiedEq rwInfo.dir)
       return { lhs := current, rhs := next, proof := prf, rw := .reifiedEq, dir := rwInfo.dir }
     else
       fail s!"unknown rewrite {rwInfo.src.description}" idx
@@ -107,33 +112,32 @@ where
     unless next.isTrue do fail m!"invalid RHS of ∧-step from\n\n  '{current}'\nto\n  '{next}'" idx
     mkAppM ``true_and #[.const ``True []]
 
-  mkCongrStep (idx : Nat) (current next : Expr) (pos : SubExpr.Pos) (rw? : Sum Rewrite Direction) :
+  mkCongrStep (idx : Nat) (current next : Expr) (pos : SubExpr.Pos) (step : Proof.CongrStep) :
       MetaM Expr := do
     let mvc := (← getMCtx).mvarCounter
-    let (lhs, rhs) ← placeCHoles idx current next pos rw?
+    let (lhs, rhs) ← placeCHoles idx current next pos step
     try (← mkCongrOf 0 mvc lhs rhs).eq
     catch err => fail m!"'mkCongrOf' failed with\n  {err.toMessageData}" idx
 
-  placeCHoles (idx : Nat) (current next : Expr) (pos : SubExpr.Pos) (rw? : Sum Rewrite Direction) :
+  placeCHoles (idx : Nat) (current next : Expr) (pos : SubExpr.Pos) (step : Proof.CongrStep) :
       MetaM (Expr × Expr) := do
     replaceSubexprs (root₁ := current) (root₂ := next) (p := pos) fun lhs rhs => do
       -- It's necessary that we create the fresh rewrite (that is, create the fresh mvars) in *this*
       -- local context as otherwise the mvars can't unify with variables under binders.
-      match rw? with
-      | .inr reifiedEqDir =>
-        let proof ← proveReifiedEq idx lhs rhs reifiedEqDir
+      match step with
+      | .reifiedEq dir =>
+        let proof ← proveReifiedEq idx lhs rhs dir
         return (
           ← mkCHole (forLhs := true) lhs proof,
           ← mkCHole (forLhs := false) rhs proof
         )
-      | .inl rw =>
+      | .rule rw weakVars =>
         let (rw, subst) ← rw.freshWithSubst
-
-        -- TODO: The rewrite descriptor contains the weak vars.
-        --       Get each one, map it under `subst`, fetch a term for it from the e-graph and unify
-        --       that term with the mvar. You'll need an ffi function for fetching a term with a
-        --       given class id. Note that you probably want to intepret the e-class id as an e-node
-        --       id.
+        let weakVars ← weakVars.mapM fun (m, node) => do
+          let mvarId := MVarId.fromUniqueIdx m
+          let some freshM := subst.expr[mvarId]?
+            | fail m!"weak mvar {mvarId.name} does not appear in substitution {subst.expr.toList.map fun (m₁, m₂) => (m₁.name, m₂.name)}"
+          return (freshM, node)
         unless ← isDefEq lhs rw.lhs do failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs current next idx
         unless ← isDefEq rhs rw.rhs do failIsDefEq "RHS" rw.src rhs rw.rhs rw.mvars.rhs current next idx
         for cond in rw.conds do
@@ -142,7 +146,7 @@ where
           let condType ← instantiateMVars condType
           match condKind with
           | .proof =>
-            if let some p ← proveCondition condType then
+            if let some p ← proveCondition condType weakVars then
               unless ← isDefEq (.mvar condMVar) p do
                 fail m!"proof of condition '{condType}' of rewrite {rw.src.description} was invalid" idx
             else if !conditionSubgoals then
@@ -186,9 +190,21 @@ where
       types := types ++ s!"  {← ppExpr (.mvar mvar)}: {← ppExpr <| ← mvar.getType}\n"
     fail m!"unification failure for {side} of rewrite {src.description}:\n\n  {expr}\nvs\n  {rwExpr}\nin\n  {current}\nand\n  {next}\n\n• Types: {types}\n• Read Only Or Synthetic Opaque MVars: {readOnlyOrSynthOpaque}" idx
 
-  proveCondition (cond : Expr) : MetaM (Option Expr) := do
+  proveCondition (cond : Expr) (weakVars : Array (MVarId × Nat)) : MetaM (Option Expr) := do
+    if !conditionSubgoals then
+      -- Assign unassigned weak mvars.
+      let { result := lingeringMVars, .. } := cond.collectMVars {}
+      for mvar in lingeringMVars do
+        -- Skips ambient mvars.
+        unless ← mvar.isAssignable do continue
+        -- TODO: We have cases where conditions contain non-weak unassigned mvars, but it doesn't
+        --       cause a problem.
+        let some (_, enode) := weakVars.find? fun (m, _) => m == mvar | continue
+        let term ← egraph.get { enode }
+        unless ← isDefEq (.mvar mvar) term do
+          fail m!"failed to assign term '{term}' to weak mvar {Expr.mvar mvar}"
+    let cond ← instantiateMVars cond
     trace[egg.explanation] m!"Prove condition '{cond}'"
-    -- TODO: What should we do if `cond` still contains mvars?
     let some prf ← mkSubproof cond (.const ``True []) | return none
     mkOfEqTrue prf
 

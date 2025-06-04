@@ -47,9 +47,9 @@ example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
 example {x : Nat} (h₁ : x = y) (h₂ : x = y → 1 = 2) : 1 = 2 := by
   egg [h₁, h₂, h₁]
 
--- TODO: Assign weak mvars.
+-- NOTE: This requires recovery of weak vars.
 example (h : ∀ p : Prop, p → 1 = id 1) : 1 = id 1 := by
-  sorry -- egg [h]
+  egg [h]
 
 class Fix (α : Type) where
   fix : ∀ (f : α → α) (a : α), f a = a

@@ -106,9 +106,6 @@ def MVarId.assignIfDefeq' (g : MVarId) (e : Expr) : MetaM Unit := do
 
 -- Note: The `_uniq` prefix comes from the `NameGenerator`.
 
--- Note that loose fvars' names are pretty printed using the `_fvar` prefix, but the underlying name
--- still uses the `_uniq` prefix:
--- https://github.com/leanprover/lean4-nightly/blob/d569ed4e5f796bbabbe17302a7c5a7060a4c7de7/src/Lean/PrettyPrinter/Delaborator/Builtins.lean#L33
 def FVarId.uniqueIdx! : FVarId → Nat
   | { name := .num (.str .anonymous "_uniq") idx } => idx
   | _ => panic! "tried to access unique index of non-unique fvar-id"
