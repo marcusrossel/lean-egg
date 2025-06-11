@@ -7,11 +7,21 @@ attribute [egg cast] cast_zero cast_one cast_two cast_three cast_four cast_succ 
                      cast_add_one cast_add cast_sub cast_mul cast_div cast_pow cast_dvd_cast cast_id
                      cast_ite
 
-attribute [egg real] add_comm sub_add_cancel sub_add_eq_add_sub mul_one mul_comm mul_assoc
-                     mul_div_mul_left _root_.div_mul_div_comm _root_.add_div
-                     div_mul_eq_div_mul_one_div left_distrib
+attribute [egg real]
+/- +     -/ add_comm add_assoc add_zero
+/- -     -/ sub_zero zero_sub
+/- *     -/ mul_comm mul_assoc mul_zero mul_one
+/- /     -/ div_one zero_div
+/- + /   -/ add_div
+/- * /   -/ mul_div_mul_left mul_div_mul_right mul_div_mul_comm div_mul_div_cancel
+            _root_.div_mul_div_comm div_mul_eq_div_mul_one_div
+/- + -   -/ sub_sub sub_add add_sub add_comm_sub sub_add_cancel sub_add_eq_add_sub
+/- + * / -/ left_distrib right_distrib add_div_eq_mul_add_div
 
+-- TODO: I think pruning of (tc proj) rewrites is not working properly.
+set_option maxHeartbeats 300000
 set_option egg.conditionSubgoals true
+set_option egg.timeLimit 5
 
 notation:100 r "﹗" => Real.Gamma (r + 1)
 
@@ -28,7 +38,6 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
       _ = (n !) / ((r - 1)! * (n - r + 1)!) + (n !) / (r ! * (n - r)!) := by egg [choose_succ_left, ih, ho] <;> omega
       _ = _ := cast_inj (R := Real) |>.mp ?_
 
-    -- TODO: I think pruning of (tc proj) rewrites is not working properly.
     egg +cast +real calc [Real.Gamma_nat_eq_factorial, Real.Gamma_add_one]
       _ = n﹗ / ((r - 1)﹗ * (n - r + 1)﹗) + n﹗ / (r﹗ * (n - r)﹗)
       _ = n﹗ / ((r - 1)﹗ * (n - r)﹗) * (1 / (n - r + 1) + 1 / r)
@@ -37,13 +46,19 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
       _ = (n + 1)﹗ / (r﹗ * (n + 1 - r)﹗)
       _ = _
 
-    all_goals try omega
     · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
     · exact factorial_mul_factorial_dvd_factorial h
-    · rw [←cast_one, ←cast_add, cast_ne_zero]; omega
-    · rw [cast_ne_zero]; omega
+    · omega
+    · norm_cast
+    · norm_cast; omega
+    · rw (occs := [1]) [←cast_one]; rw [←cast_sub (by omega : 1 ≤ r), ←cast_sub (by omega : r ≤ n), Real.Gamma_nat_eq_factorial, Real.Gamma_nat_eq_factorial, ←cast_mul, ←cast_mul, cast_ne_zero]; exact mul_ne_zero (mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)) hr
+    · norm_cast
     · rw [←cast_one, ←cast_sub (by omega : r ≤ n), ←cast_add, cast_ne_zero]; omega
-    · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
-    · exact factorial_mul_factorial_dvd_factorial <| by omega
+    · norm_cast; omega
+    · omega
     · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
     · exact ho ▸ factorial_mul_factorial_dvd_factorial (sub_le_of_le_add h)
+    · rw [←cast_sub (by omega : r ≤ n), Real.Gamma_nat_eq_factorial, Real.Gamma_nat_eq_factorial, ←cast_mul, cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
+    · omega
+    · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
+    · exact factorial_mul_factorial_dvd_factorial <| by omega

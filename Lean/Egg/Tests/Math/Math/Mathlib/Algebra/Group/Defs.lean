@@ -72,9 +72,13 @@ variable [Group G] {a b : G}
 
 attribute [egg group] inv_mul_cancel
 
--- TODO:
-private theorem inv_eq_of_mul (h : a * b = 1) : a⁻¹ = b :=
-  sorry -- left_inv_eq_right_inv (inv_mul_cancel a) h
+-- TODO: Make this theorem private (as it is in its source file).
+--       Adding private theorems to egg baskets becomes problematic when using the basket in other
+--       files. In that case elaboration fails, and we get:
+--       "egg requires premises to be (proofs of) propositions or (non-propositional) definitions"
+--       Add support for local egg theorems.
+theorem inv_eq_of_mul (h : a * b = 1) : a⁻¹ = b :=
+  left_inv_eq_right_inv (inv_mul_cancel a) h
 
 /- Previous -/ attribute [egg group] inv_eq_of_mul
 
