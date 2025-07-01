@@ -5,7 +5,7 @@ open scoped Egg
 -- valid direction of rewrites.
 
 /--
-info: [egg.rewrites] Rewrites
+trace: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇒): _h
@@ -28,9 +28,10 @@ info: [egg.rewrites] Rewrites
         [egg.rewrites] ?a = ?b
       [egg.rewrites] LHS MVars
           [?a: [unconditionallyVisible]]
-      [egg.rewrites] RHS MVars [?b: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars
+          [?b: [unconditionallyVisible]]
 -/
-#guard_msgs(info) in
+#guard_msgs in
 set_option trace.egg.rewrites true in
 set_option egg.builtins false in
 set_option egg.groundEqs false in

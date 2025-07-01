@@ -15,20 +15,20 @@ open C
 theorem r [c : C α] : z (self := c) = z := rfl
 
 /--
-info: [egg.rewrites] Rewrites
+trace: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (0)
   [egg.rewrites] Tagged (1)
     [egg.rewrites] □r(⇒)
       [egg.rewrites] z = z
       [egg.rewrites] LHS MVars
-          [?α: [inErasedTcInst, unconditionallyVisible],
-           ?c: [isTcInst],
-           ?u.84: [inErasedTcInst, unconditionallyVisible]]
+          [?c: [isTcInst],
+           ?α: [inErasedTcInst, unconditionallyVisible],
+           ?u.137: [inErasedTcInst, unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?α: [inErasedTcInst, unconditionallyVisible],
-           ?c: [isTcInst],
-           ?u.84: [inErasedTcInst, unconditionallyVisible]]
+          [?c: [isTcInst],
+           ?α: [inErasedTcInst, unconditionallyVisible],
+           ?u.137: [inErasedTcInst, unconditionallyVisible]]
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
   [egg.rewrites] Structure Projections (0)
@@ -37,13 +37,13 @@ info: [egg.rewrites] Rewrites
     [egg.rewrites] □r(⇐) by □r
       [egg.rewrites] z = z
       [egg.rewrites] LHS MVars
-          [?α: [inErasedTcInst, unconditionallyVisible],
-           ?c: [isTcInst],
-           ?u.84: [inErasedTcInst, unconditionallyVisible]]
+          [?c: [isTcInst],
+           ?α: [inErasedTcInst, unconditionallyVisible],
+           ?u.137: [inErasedTcInst, unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?α: [inErasedTcInst, unconditionallyVisible],
-           ?c: [isTcInst],
-           ?u.84: [inErasedTcInst, unconditionallyVisible]]
+          [?c: [isTcInst],
+           ?α: [inErasedTcInst, unconditionallyVisible],
+           ?u.137: [inErasedTcInst, unconditionallyVisible]]
 -/
 #guard_msgs in
 set_option trace.egg.rewrites true in

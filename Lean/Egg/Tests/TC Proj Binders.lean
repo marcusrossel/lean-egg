@@ -17,7 +17,7 @@ example (h : ∀ {α} [Add α] (a : α), a + a = a) : 1 + 1 = 1 := by
 
 -- This test ensures that projection reductions are produced for terms appearing in binder domains.
 /--
-info: [egg.rewrites] Rewrites
+trace: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇒): h
@@ -64,9 +64,10 @@ info: [egg.rewrites] Rewrites
         [egg.rewrites] x * y = z
       [egg.rewrites] LHS MVars
           []
-      [egg.rewrites] RHS MVars []
+      [egg.rewrites] RHS MVars
+          []
 -/
-#guard_msgs(info) in
+#guard_msgs(trace) in
 set_option trace.egg.rewrites true in
 egg_no_defeq in
 set_option egg.builtins false in

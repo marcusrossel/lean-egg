@@ -11,7 +11,7 @@ variable (f : Nat → Nat → Nat)
 
 -- This should not generate exploded rewrites.
 /--
-info: [egg.rewrites] Rewrites
+trace: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (0)
   [egg.rewrites] Tagged (0)
@@ -28,7 +28,7 @@ example : true = true := by
 
 -- This should not generate exploded rewrites.
 /--
-info: [egg.rewrites] Rewrites
+trace: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (2)
     [egg.rewrites] #0(⇒): h
@@ -57,7 +57,7 @@ example (h : true = false) : true = false := by
 
 -- This should not generate exploded rewrites.
 /--
-info: [egg.rewrites] Rewrites
+trace: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇒): h
@@ -76,7 +76,8 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] f ?y ?x = f ?x ?y
       [egg.rewrites] LHS MVars
           [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
-      [egg.rewrites] RHS MVars [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars
+          [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
 -/
 #guard_msgs in
 set_option trace.egg.rewrites true in
@@ -86,7 +87,7 @@ example (h : ∀ x y : Nat, f x y = f y x) : f 1 2 = f 2 1 := by
 
 -- This should not generate exploded rewrites.
 /--
-info: [egg.rewrites] Rewrites
+trace: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇒): h
@@ -105,7 +106,8 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] f ?y ?x = f ?x ?y
       [egg.rewrites] LHS MVars
           [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
-      [egg.rewrites] RHS MVars [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars
+          [?y: [unconditionallyVisible], ?x: [unconditionallyVisible]]
 -/
 #guard_msgs in
 set_option trace.egg.rewrites true in
@@ -115,7 +117,7 @@ example (a b : Nat) (h : ∀ x y : Nat, f x y = f y x) : f a b = f b a := by
 
 -- This should generate two explosions of `h` - one for `a` and one for `b`.
 /--
-info: [egg.rewrites] Rewrites
+trace: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (2)
     [egg.rewrites] #0(⇒)(❌rhsMVarInclusion: [?y]): h

@@ -8,7 +8,7 @@ set_option egg.groundEqs false
 set_option trace.egg.rewrites true
 
 /--
-info: [egg.rewrites] Rewrites
+trace: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (1)
     [egg.rewrites] #0(⇒)(❌lhsSingleMVar): h
@@ -27,14 +27,15 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] ?x = ?x
       [egg.rewrites] LHS MVars
           [?x: [unconditionallyVisible]]
-      [egg.rewrites] RHS MVars [?x: [unconditionallyVisible]]
+      [egg.rewrites] RHS MVars
+          [?x: [unconditionallyVisible]]
 -/
-#guard_msgs(info) in
+#guard_msgs(trace) in
 example (h : ∀ x : Nat, x = x) : true = true := by
   egg [h]
 
 /--
-info: [egg.rewrites] Rewrites
+trace: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (2)
     [egg.rewrites] #0(⇒): h
@@ -56,12 +57,12 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
 -/
-#guard_msgs(info) in
+#guard_msgs(trace) in
 example (f : {α : Type} → α → α) (h : ∀ α (x : α), f x = x) : true = true := by
   egg [h]
 
 /--
-info: [egg.rewrites] Rewrites
+trace: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (2)
     [egg.rewrites] #0(⇒): h
@@ -69,7 +70,7 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] Conditions
         [egg.rewrites] Add α
       [egg.rewrites] LHS MVars
-          [?x: [unconditionallyVisible], ?inst✝: [inTcInstTerm, isTcInst]]
+          [?inst✝: [inTcInstTerm, isTcInst], ?x: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
           [?x: [unconditionallyVisible]]
     [egg.rewrites] #0(⇐): h
@@ -79,7 +80,7 @@ info: [egg.rewrites] Rewrites
       [egg.rewrites] LHS MVars
           [?x: [unconditionallyVisible]]
       [egg.rewrites] RHS MVars
-          [?x: [unconditionallyVisible], ?inst✝: [inTcInstTerm, isTcInst]]
+          [?inst✝: [inTcInstTerm, isTcInst], ?x: [unconditionallyVisible]]
   [egg.rewrites] Tagged (0)
   [egg.rewrites] Builtin (0)
   [egg.rewrites] Derived (0)
@@ -87,12 +88,12 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
 -/
-#guard_msgs(info) in
+#guard_msgs(trace) in
 example (h : ∀ [Add α] (x : α), x + x = x) : true = true := by
   egg [h]
 
 /--
-info: [egg.rewrites] Rewrites
+trace: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (2)
     [egg.rewrites] #0(⇒): h
@@ -114,6 +115,6 @@ info: [egg.rewrites] Rewrites
   [egg.rewrites] Definitional
   [egg.rewrites] Pruned (0)
 -/
-#guard_msgs(info) in
+#guard_msgs(trace) in
 example (f : (n : Nat) → (0 < n + 1) → Nat) (h : ∀ n, f n (Nat.zero_lt_succ n) = n) : 0 = 0 := by
   egg [h]

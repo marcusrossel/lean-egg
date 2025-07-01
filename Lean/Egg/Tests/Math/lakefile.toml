@@ -6,7 +6,7 @@ defaultTargets = ["Math"]
 [[require]]
 name  = "mathlib"
 scope = "leanprover-community"
-rev   = "v4.20.0"
+rev   = "v4.21.0"
 
 [[require]]
 name = "egg"

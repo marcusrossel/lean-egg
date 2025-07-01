@@ -2,11 +2,6 @@ import Egg
 
 instance [One α] : OfNat α 1 where ofNat := One.one
 
-class Inv (α : Type u) where
-  inv : α → α
-
-postfix:max "⁻¹" => Inv.inv
-
 class Group (α) extends One α, Inv α, Mul α where
   mul_assoc     (a b c : α) : (a * b) * c = a * (b * c)
   one_mul       (a : α)     : 1 * a = a
