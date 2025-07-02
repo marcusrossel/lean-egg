@@ -46,8 +46,16 @@ example : LieModule R L L where
 --       in the e-graph in order to apply `sub_eq_zero`. Note that even though the LHS `⁅-x, m⁆` and
 --       RHS `-⁅x, m⁆` of the goal are automatically added to the e-graph, this does not mean that
 --       `eq`-node is created for them, as they do not live in the same e-class (a priori).
+set_option egg.timeLimit 10 in
 example : ⁅-x, m⁆ = -⁅x, m⁆ := by
   egg +lie
+
+example : ⁅x, y⁆ = -⁅y, x⁆ := by
+  have h1 : 0 = ⁅x, y⁆ + ⁅y, x⁆ := by egg +lie calc
+    _ = ⁅x + y, x + y⁆
+    _ = ⁅x, x⁆ + ⁅x, y⁆ + ⁅y, x⁆ + ⁅y, y⁆
+    _ = ⁅x, y⁆ + ⁅y, x⁆
+  egg +lie [h1]
 
 /- Previous -/ attribute [egg lie] neg_lie
 
