@@ -2,6 +2,7 @@ import Mathlib.Algebra.Lie.Basic
 import Egg
 
 set_option egg.tcProjs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
+set_option egg.timeLimit 10
 
 attribute [egg lie_external] neg_eq_iff_add_eq_zero zero_add add_zero smul_neg sub_eq_zero neg_neg
                              sub_neg_eq_add neg_add_cancel sub_eq_add_neg add_sub_cancel_right
@@ -62,17 +63,57 @@ example : LieModule R L L where
 --       in the e-graph in order to apply `sub_eq_zero`. Note that even though the LHS `⁅-x, m⁆` and
 --       RHS `-⁅x, m⁆` of the goal are automatically added to the e-graph, this does not mean that
 --       `eq`-node is created for them, as they do not live in the same e-class (a priori).
-set_option egg.timeLimit 10 in
+-- NOTE: This example relies on `egg.goalTypeSpec`, because the encoding of `sub_eq_zero` erases the
+--       type `?G` in the RHS equality, which makes the backward direction unapplicable by default.
 example : ⁅-x, m⁆ = -⁅x, m⁆ := by
   egg +lie
 
-
 /- Previous -/ attribute [egg lie] neg_lie
 
--- NOTE: This example relies on `egg.derivedGuides`, for the reason explained in the note above.
 example : ⁅x, -m⁆ = -⁅x, m⁆ := by
   egg +lie
 
+/--
+error: `grind` failed
+case grind
+R : Type u
+L : Type v
+M : Type w
+N : Type w₁
+inst : CommRing R
+inst_1 : LieRing L
+inst_2 : LieAlgebra R L
+inst_3 : AddCommGroup M
+inst_4 : Module R M
+inst_5 : LieRingModule L M
+inst_6 : LieModule R L M
+inst_7 : AddCommGroup N
+inst_8 : Module R N
+inst_9 : LieRingModule L N
+inst_10 : LieModule R L N
+t : R
+x y z : L
+m n : M
+h : ¬⁅x, -m⁆ = -⁅x, m⁆
+⊢ False
+[grind] Goal diagnostics
+  [facts] Asserted facts
+    [prop] LieModule R L M
+    [prop] LieModule R L N
+    [prop] ¬⁅x, -m⁆ = -⁅x, m⁆
+  [eqc] True propositions
+    [prop] LieModule R L M
+    [prop] LieModule R L N
+  [eqc] False propositions
+    [prop] ⁅x, -m⁆ = -⁅x, m⁆
+  [ematch] E-matching patterns
+    [thm] neg_add_cancel: [@HAdd.hAdd #2 _ _ _ (@Neg.neg _ _ #0) #0]
+    [thm] lie_zero: [@Bracket.bracket #5 #4 _ #0 (@OfNat.ofNat _ `[0] _)]
+    [thm] sub_eq_zero: [@HSub.hSub #3 _ _ _ #1 #0]
+    [thm] sub_neg_eq_add: [@HSub.hSub #3 _ _ _ #1 (@Neg.neg _ _ #0)]
+    [thm] lie_add: [@Bracket.bracket #7 #6 _ #2 (@HAdd.hAdd _ _ _ _ #1 #0)]
+-/
+#guard_msgs in
 set_option grind.warning false in
 example : ⁅x, -m⁆ = -⁅x, m⁆ := by
   grind [neg_add_cancel, lie_zero, ← sub_eq_zero, sub_neg_eq_add, ← lie_add]

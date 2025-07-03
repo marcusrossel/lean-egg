@@ -54,6 +54,7 @@ example (h : ∀ p : Prop, p → 1 = id 1) : 1 = id 1 := by
 class Fix (α : Type) where
   fix : ∀ (f : α → α) (a : α), f a = a
 
+-- NOTE: This example relies of `egg.goalTypeSpec`.
 example [inst : Fix Nat] (f : Nat → Nat) (a : Nat) : f a = a := by
   egg [Fix.fix]
 
