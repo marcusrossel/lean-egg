@@ -35,6 +35,22 @@ variable (t : R) (x y z : L) (m n : M)
 example : -⁅y, x⁆ = ⁅x, y⁆ := by
   egg +lie using ⁅x + y, x⁆ + ⁅x + y, y⁆
 
+set_option grind.warning false in
+example : ⁅x, y⁆ = -⁅y, x⁆ := by
+  have h1 : 0 = ⁅x, y⁆ + ⁅y, x⁆ := by calc
+    _ = ⁅x + y, x + y⁆ := by grind [add_lie, lie_add, smul_lie, lie_smul, lie_zero, zero_lie, lie_self, add_zero, zero_add]
+    _ = ⁅x, x⁆ + ⁅x, y⁆ + ⁅y, x⁆ + ⁅y, y⁆ := by grind [add_lie, lie_add, smul_lie, lie_smul, lie_zero, zero_lie, lie_self, add_zero, zero_add]
+    _ = ⁅x, y⁆ + ⁅y, x⁆ := by grind [add_lie, lie_add, smul_lie, lie_smul, lie_zero, zero_lie, lie_self, add_zero, zero_add]
+  try grind  [sub_eq_zero, sub_neg_eq_add]
+  egg [sub_eq_zero, sub_neg_eq_add, h1]
+
+example : ⁅x, y⁆ = -⁅y, x⁆ := by
+  have h1 : 0 = ⁅x, y⁆ + ⁅y, x⁆ := by egg +lie calc
+    _ = ⁅x + y, x + y⁆
+    _ = ⁅x, x⁆ + ⁅x, y⁆ + ⁅y, x⁆ + ⁅y, y⁆
+    _ = ⁅x, y⁆ + ⁅y, x⁆
+  egg +lie [h1]
+
 /- Previous -/ attribute [egg lie] lie_skew
 
 -- lieAlgebraSelfModule
@@ -50,18 +66,16 @@ set_option egg.timeLimit 10 in
 example : ⁅-x, m⁆ = -⁅x, m⁆ := by
   egg +lie
 
-example : ⁅x, y⁆ = -⁅y, x⁆ := by
-  have h1 : 0 = ⁅x, y⁆ + ⁅y, x⁆ := by egg +lie calc
-    _ = ⁅x + y, x + y⁆
-    _ = ⁅x, x⁆ + ⁅x, y⁆ + ⁅y, x⁆ + ⁅y, y⁆
-    _ = ⁅x, y⁆ + ⁅y, x⁆
-  egg +lie [h1]
 
 /- Previous -/ attribute [egg lie] neg_lie
 
 -- NOTE: This example relies on `egg.derivedGuides`, for the reason explained in the note above.
 example : ⁅x, -m⁆ = -⁅x, m⁆ := by
   egg +lie
+
+set_option grind.warning false in
+example : ⁅x, -m⁆ = -⁅x, m⁆ := by
+  grind [neg_add_cancel, lie_zero, ← sub_eq_zero, sub_neg_eq_add, ← lie_add]
 
 /- Previous -/ attribute [egg lie] lie_neg
 
