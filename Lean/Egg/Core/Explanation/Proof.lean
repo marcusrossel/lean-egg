@@ -132,18 +132,24 @@ where
   mkCongrStep (idx : Nat) (current next : Expr) (pos : SubExpr.Pos) (step : Proof.CongrStep) :
       MetaM Expr := do
     let mvc := (← getMCtx).mvarCounter
-    let (lhs, rhs) ← placeCHoles idx current next pos step
-    try (← mkCongrOf 0 mvc lhs rhs).eq
-    catch err => fail m!"'mkCongrOf' failed with\n  {err.toMessageData}" idx
+    let (lhs, rhs) ← placeCHoles idx current next .eq pos step
+    try
+      (← mkCongrOf 0 mvc lhs rhs).eq
+    catch _ =>
+      let (lhs, rhs) ← placeCHoles idx current next .iff pos step
+      try
+        (← mkCongrOf 0 mvc lhs rhs).eq
+      catch err =>
+        fail m!"'mkCongrOf' failed with:\n\n{err.toMessageData}" idx
 
-  placeCHoles (idx : Nat) (current next : Expr) (pos : SubExpr.Pos) (step : Proof.CongrStep) :
+  placeCHoles (idx : Nat) (current next : Expr) (rel : Congr.Rel) (pos : SubExpr.Pos) (step : Proof.CongrStep) :
       MetaM (Expr × Expr) := do
     replaceSubexprs (root₁ := current) (root₂ := next) (p := pos) fun lhs rhs => do
       -- It's necessary that we create the fresh rewrite (that is, create the fresh mvars) in *this*
       -- local context as otherwise the mvars can't unify with variables under binders.
       match step with
       | .reifiedEq dir =>
-        let proof ← proveReifiedEq idx lhs rhs dir
+        let proof ← proveReifiedEq idx lhs rhs rel dir
         return (
           ← mkCHole (forLhs := true) lhs proof,
           ← mkCHole (forLhs := false) rhs proof
@@ -175,7 +181,7 @@ where
           ← mkCHole (forLhs := false) rhs proof
         )
 
-  proveReifiedEq (idx : Nat) (current next : Expr) (dir : Direction) : MetaM Expr := do
+  proveReifiedEq (idx : Nat) (current next : Expr) (rel : Congr.Rel) (dir : Direction) : MetaM Expr := do
     let (current, next) := match dir with
       | .forward  => (current, next)
       | .backward => (next, current)
@@ -186,8 +192,8 @@ where
     unless ← isDefEq lhs rhs do
       fail m!"invalid LHS (not defeq) of reified equality step from\n\n  '{current}'\nto\n  '{next}'" idx
     match dir with
-      | .forward  => mkEqTrue (← mkEqRefl lhs)
-      | .backward => mkEqSymm <| ← mkEqTrue (← mkEqRefl lhs)
+      | .forward  => mkEqTrue (← rel.mkRefl lhs)
+      | .backward => mkEqSymm <| ← mkEqTrue (← rel.mkRefl lhs)
 
   failIsDefEq
       {α} (side : String) (src : Source) (expr rwExpr : Expr) (rwMVars : MVars)

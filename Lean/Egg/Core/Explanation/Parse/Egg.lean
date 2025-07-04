@@ -32,17 +32,20 @@ private def Expression.toExpr : Expression → MetaM Expr
   | lam ty body     => return .lam .anonymous (← toExpr ty) (← toExpr body) .default
   | .forall ty body => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
   | lit l           => return .lit l
-  | eq lhs rhs      => do mkEq (← toExpr lhs) (← toExpr rhs)
+  | eq lhs rhs      => do mkEquiv (← toExpr lhs) (← toExpr rhs)
   | proof prop      => do mkFreshExprMVar (← toExpr prop)
   | inst cls        => do mkFreshExprMVar (← toExpr cls)
   | subst idx to e  => return applySubst idx (← toExpr to) (← toExpr e)
   | shift off cut e => return applyShift off cut (← toExpr e)
   | unknown         => mkFreshExprMVar none
 where
-  mkEq (lhs rhs : Expr) : MetaM Expr := do
-    -- This doesn't work immediately, because `lhs` and `rhs` can contains bvars:
-    -- mkEq (← toExpr lhs) (← toExpr rhs)
-    return .app (.app (.app (.const ``Eq [← mkFreshLevelMVar]) (← mkFreshExprMVar none)) lhs) rhs
+  mkEquiv (lhs rhs : Expr) : MetaM Expr := do
+    -- We assume that `lhs` and `rhs` have the same type.
+    if ← (return !lhs.hasLooseBVars) <&&> (return (← inferType lhs).isProp) then
+      return mkApp2 (.const ``Iff []) lhs rhs
+    else
+      -- We can't just use `mkEq` because `lhs` and `rhs` might contains bvars.
+      return mkApp3 (.const ``Eq [← mkFreshLevelMVar]) (← mkFreshExprMVar none) lhs rhs
 
   applySubst (idx : Nat) (to : Expr) : Expr → Expr
     | .bvar i          => if i = idx then to else .bvar i

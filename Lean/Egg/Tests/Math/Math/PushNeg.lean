@@ -10,10 +10,11 @@ attribute [egg neg] not_and_or
 attribute [egg neg] not_forall
 attribute [egg neg] not_exists
 
--- TODO: Changing this `=` to a `↔` exposes the problem of instantiating erased equivalences with
---       `Eq`, instead of distinguishing between `Eq` and `Iff`.
---       Andrés Idea: During proof reconstruction, if defeq with `Eq` fails, try replacing it with
---       `Iff`.
+-- NOTE: The following example relies on backtracking for choosing between `=` and `↔` when
+--       constructing proofs of reified equivalences.
+example : ¬¬(p ↔ p) := by
+  egg +neg
+
 example : ¬¬(p = p) := by
   egg +neg
 
