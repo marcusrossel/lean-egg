@@ -1,5 +1,6 @@
 import Egg
-import Mathlib.Order.BooleanAlgebra
+import Mathlib.Order.BooleanAlgebra.Defs
+import Mathlib.Order.BooleanAlgebra.Basic
 
 set_option egg.tcProjs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
 
@@ -39,25 +40,41 @@ attribute [egg gbool] sup_inf_sdiff inf_inf_sdiff
 egg_basket bool extends gbool, dlattice, lattice, ilattice, slattice
 
 variable [GeneralizedBooleanAlgebra α] {x y z : α}
-
 example (s : x ⊓ y ⊔ z = x) (i : x ⊓ y ⊓ z = ⊥) : x \ y = z := by
   egg +bool [sup_inf_sdiff x y, inf_inf_sdiff x y, i, s]
 
 /- Previous -/ attribute [egg bool] sdiff_unique
 
 theorem sdiff_le' : x \ y ≤ x := by
-  egg +bool [le_sup_right] using x ⊓ y ⊔ x \ y
+  --calc
+  --  x \ y ≤ x ⊓ y ⊔ x \ y := le_sup_right
+  --  _ = x := by egg +bool
+ egg +bool [le_sup_right] using x ⊓ y ⊔ x \ y
 
 /- Previous -/ attribute [egg bool] sdiff_le'
 
 -- TODO: I think this produces a loop in proof reconstruction.
 theorem sdiff_sup_self' : y \ x ⊔ x = y ⊔ x := by
-  sorry -- egg +bool using y ⊓ x ⊔ y \ x ⊔ x
+  egg +bool calc
+    y \ x ⊔ x = y \ x ⊔ (x ⊔ x ⊓ y)
+    _ = y ⊓ x ⊔ y \ x ⊔ x
+    _ = y ⊔ x
 
 /- Previous -/ attribute [egg bool] sdiff_sup_self'
 
+attribute [egg bool] inf_sdiff_right
+
 example : x \ y ⊓ y \ x = ⊥ := by
-  egg +bool [inf_of_le_right (α := α) sdiff_le']
+  egg +bool calc
+      _ = x \ y ⊓ y \ x
+      _ = x ⊓ x \ y ⊓ y \ x
+      _ = x ⊓ y ⊓ x \ y ⊔ x ⊓ y \ x ⊓ x \ y
+      _ = x ⊓ (y ⊓ x ⊔ y \ x) ⊓ x \ y
+      _ = x ⊓ y ⊓ x \ y
+      _ = _
+
+example : x \ y ⊓ y \ x = ⊥ := by
+  egg +bool
 
 /- Previous -/ attribute [egg bool] sdiff_inf_sdiff
 
