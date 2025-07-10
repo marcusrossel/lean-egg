@@ -2,42 +2,29 @@ import Egg
 import Mathlib.Order.BooleanAlgebra.Defs
 import Mathlib.Order.BooleanAlgebra.Basic
 
-set_option egg.tcProjs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
-
 -- SemilatticeSup
-attribute [egg slattice] /- le_sup_left le_sup_right le_sup_of_le_left le_sup_of_le_right
-                         lt_sup_of_lt_left lt_sup_of_lt_right sup_le sup_le_iff sup_eq_left
-                         sup_eq_right left_eq_sup right_eq_sup left_lt_sup right_lt_sup
-                         left_or_right_lt_sup le_iff_exists_sup sup_le_sup sup_le_sup_left
-                         sup_le_sup_right -/ sup_idem sup_comm sup_assoc sup_left_right_swap
-                         sup_left_idem sup_right_idem sup_left_comm sup_right_comm sup_sup_sup_comm
-                         sup_sup_distrib_left sup_sup_distrib_right sup_congr_left sup_congr_right
-                         /- sup_eq_sup_iff_left sup_eq_sup_iff_right Ne.lt_sup_or_lt_sup -/
+attribute [egg slattice_sup] sup_idem sup_comm sup_assoc sup_left_right_swap sup_left_idem
+                             sup_right_idem sup_left_comm sup_right_comm sup_sup_sup_comm
+                             sup_sup_distrib_left sup_sup_distrib_right sup_congr_left
+                             sup_congr_right
 
 -- SemilatticeInf
-attribute [egg ilattice] /- inf_le_left inf_le_right le_inf inf_le_of_left_le inf_le_of_right_le
-                         inf_lt_of_left_lt inf_lt_of_right_lt le_inf_iff inf_eq_left le_of_inf_eq -/
-                         inf_of_le_left /- inf_eq_right -/ inf_of_le_right /- left_eq_inf
-                         right_eq_inf inf_lt_left inf_lt_right inf_lt_left_or_right
-                         inf_le_inf inf_le_inf_right inf_le_inf_left -/ inf_idem inf_comm inf_assoc
-                         inf_left_right_swap inf_left_idem inf_right_idem inf_left_comm
-                         inf_right_comm inf_inf_inf_comm inf_inf_distrib_left inf_inf_distrib_right
-                         inf_congr_left inf_congr_right /- inf_eq_inf_iff_left inf_eq_inf_iff_right
-                         Ne.inf_lt_or_inf_lt -/
+attribute [egg slattice_inf] inf_of_le_left inf_of_le_right inf_idem inf_comm inf_assoc
+                             inf_left_right_swap inf_left_idem inf_right_idem inf_left_comm
+                             inf_right_comm inf_inf_inf_comm inf_inf_distrib_left
+                             inf_inf_distrib_right inf_congr_left inf_congr_right
 
 -- Lattice
-attribute [egg lattice] /- inf_le_sup sup_le_inf inf_eq_sup sup_eq_inf inf_lt_sup
-                        inf_eq_and_sup_eq_iff sup_inf_le le_inf_sup -/ inf_sup_self sup_inf_self
-                        /- sup_eq_iff_inf_eq -/
+egg_basket lattice extends slattice_sup, slattice_inf with
+  inf_sup_self, sup_inf_self
 
 -- DistribLattice
-attribute [egg dlattice] /- le_sup_inf -/ sup_inf_left sup_inf_right inf_sup_left inf_sup_right
-                         /- le_of_inf_le_sup_le -/ eq_of_inf_eq_sup_eq
+egg_basket distrib_lattice extends lattice with
+  sup_inf_left, sup_inf_right, inf_sup_left, inf_sup_right, eq_of_inf_eq_sup_eq
 
--- Axioms of GeneralizedBooleanAlgebra
-attribute [egg gbool] sup_inf_sdiff inf_inf_sdiff
-
-egg_basket bool extends gbool, dlattice, lattice, ilattice, slattice
+-- GeneralizedBooleanAlgebra
+egg_basket bool extends distrib_lattice with
+  sup_inf_sdiff, inf_inf_sdiff
 
 variable [GeneralizedBooleanAlgebra α] {x y z : α}
 example (s : x ⊓ y ⊔ z = x) (i : x ⊓ y ⊓ z = ⊥) : x \ y = z := by
@@ -79,7 +66,7 @@ example : x \ y ⊓ y \ x = ⊥ := by
 /- Previous -/ attribute [egg bool] sdiff_inf_sdiff
 
 example : x ⊓ y \ x = ⊥ := by
-  egg +bool using (x ⊓ y ⊔ x \ y)
+  egg +bool using x ⊓ y ⊔ x \ y
 
 /- Previous -/ attribute [egg bool] inf_sdiff_self_right
 
@@ -120,7 +107,7 @@ example : x \ (y \ z) = x \ y ⊔ x ⊓ z := by
 /- Previous -/ attribute [egg bool] sdiff_sdiff_right'
 
 example : z \ (x \ y ⊔ y \ x) = z ⊓ (z \ x ⊔ y) ⊓ (z \ y ⊔ x) := by
-  egg +bool using (z \ x ⊔ z ⊓ x ⊓ y) ⊓ (z \ y ⊔ z ⊓ y ⊓ x)
+  egg +bool using z \ x ⊔ z ⊓ x ⊓ y
 
 /- Previous -/ attribute [egg bool] sdiff_sdiff_sup_sdiff
 

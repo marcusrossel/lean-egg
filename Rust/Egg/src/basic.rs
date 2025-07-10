@@ -95,7 +95,9 @@ fn mk_initial_egraph(
     let true_fact = format!("(fact {})", true_expr).parse().unwrap();
     egraph.add_expr(&true_fact); 
 
+    
     // Marks `p ∧ q` as a fact for any given facts `p` and `q`.
+    // NOTE: We could also add this as a regular theorem sent from Lean.
     let and_true_expr = "(app (app (const \"And\") (const \"True\")) (const \"True\"))".parse().unwrap();
     egraph.union_instantiations(&true_expr, &and_true_expr, &Subst::with_capacity(0), "∧");
 
