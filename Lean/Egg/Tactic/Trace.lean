@@ -97,17 +97,17 @@ def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) (subgoals :
     traceM cls fun _ => return m!"LHS MVars\n{← rw.mvars.lhs.toMessageData}"
     traceM cls fun _ => return m!"RHS MVars\n{← rw.mvars.rhs.toMessageData}"
 
-def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cls : Name) (conditionSubgoals : Bool) :
+def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cls : Name) (subgoals : Bool) :
     TacticM Unit := do
   for rw in rws, idx in [:rws.size] do
     let stx? := stx[idx]? >>= fun s => if s.getAtomVal == "*" then none else s
-    rw.trace stx? cls conditionSubgoals
+    rw.trace stx? cls subgoals
 
 def Rewrites.tracePruned
-    (rws : Rewrites) (reasons : Array Source) (cls : Name) (conditionSubgoals : Bool) :
+    (rws : Rewrites) (reasons : Array Source) (cls : Name) (subgoals : Bool) :
     TacticM Unit := do
   for rw in rws, reason in reasons do
-    rw.trace (stx? := none) cls conditionSubgoals (headerAnnotation := s!" by {reason.description}")
+    rw.trace (stx? := none) cls subgoals (headerAnnotation := s!" by {reason.description}")
 
 def Rewrite.Encoded.trace (rw : Rewrite.Encoded) (cls : Name) : TacticM Unit := do
   let header := m!"{rw.name}"

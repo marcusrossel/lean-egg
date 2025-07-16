@@ -75,7 +75,7 @@ mutual
 
 private partial def Explanation.proof
     (expl : Explanation) (rws : Rewrites) (egraph : EGraph) (cfg : Config.Encoding)
-    (conditionSubgoals : Bool) (fuel? : Option Nat := none) : MetaM Proof := do
+    (subgoals : Bool) (fuel? : Option Nat := none) : MetaM Proof := do
   let mut current := expl.start
   let mut steps : Array Proof.Step := #[]
   for step in expl.steps, idx in [:expl.steps.size] do
@@ -167,13 +167,13 @@ where
             if let some p ← proveCondition condType (← Proof.WeakVars.from! weakVars subst) then
               unless ← isDefEq (.mvar condMVar) p do
                 fail m!"proof of condition '{condType}' of rewrite {rw.src.description} was invalid" idx
-            else if !conditionSubgoals then
+            else if !subgoals then
               fail m!"condition '{condType}' of rewrite {rw.src.description} could not be proven" idx
           | .tcInst =>
             if let some p ← synthInstance? condType then
               unless ← isDefEq (.mvar condMVar) p do
                 fail m!"synthesized type class for condition '{condType}' of rewrite {rw.src.description} was invalid" idx
-            else if !conditionSubgoals then
+            else if !subgoals then
               fail m!"type class condition '{condType}' of rewrite {rw.src.description} could not be synthesized" idx
         let proof ← rw.eqProof
         return (
@@ -209,7 +209,7 @@ where
     fail m!"unification failure for {side} of rewrite {src.description}:\n\n  {expr}\nvs\n  {rwExpr}\nin\n  {current}\nand\n  {next}\n\n• Types: {types}\n• Read Only Or Synthetic Opaque MVars: {readOnlyOrSynthOpaque}" idx
 
   proveCondition (cond : Expr) (weakVars : Proof.WeakVars) : MetaM (Option Expr) := do
-    if !conditionSubgoals then
+    if !subgoals then
       -- Assign unassigned weak mvars.
       let lingering ← MVars.collect cond
       -- TODO: We're only using `MVars.collect` because there doesn't seem to be a collection
@@ -238,7 +238,7 @@ where
     withTraceNode `egg.explanation (fun _ => return m!"Nested Explanation for '{lhs}' = '{rhs}'") do
       trace[egg.explanation] rawExpl.str
     let expl ← rawExpl.parse
-    expl.prove { lhs, rhs, rel := .eq } rws egraph cfg conditionSubgoals <| fuel?.map (· - 1)
+    expl.prove { lhs, rhs, rel := .eq } rws egraph cfg subgoals <| fuel?.map (· - 1)
 
   synthLingeringTcErasureMVars (e : Expr) : MetaM Unit := do
     let mvars := (← instantiateMVars e).collectMVars {} |>.result
@@ -255,8 +255,8 @@ where
 
 partial def Explanation.prove'
     (expl : Explanation) (cgr : Congr) (rws : Rewrites) (egraph : EGraph) (cfg : Config.Encoding)
-    (conditionSubgoals : Bool) (fuel? : Option Nat := none) : MetaM (Expr × Proof) := do
-  let proof ← expl.proof rws egraph cfg conditionSubgoals fuel?
+    (subgoals : Bool) (fuel? : Option Nat := none) : MetaM (Expr × Proof) := do
+  let proof ← expl.proof rws egraph cfg subgoals fuel?
   match expl.kind with
   | .sameEClass => return (← proof.prove cgr, proof)
   | .eqTrue =>
@@ -266,7 +266,7 @@ partial def Explanation.prove'
 
 partial def Explanation.prove
     (expl : Explanation) (cgr : Congr) (rws : Rewrites) (egraph : EGraph) (cfg : Config.Encoding)
-    (conditionSubgoals : Bool) (fuel? : Option Nat := none) : MetaM Expr :=
-  Prod.fst <$> expl.prove' cgr rws egraph cfg conditionSubgoals fuel?
+    (subgoals : Bool) (fuel? : Option Nat := none) : MetaM Expr :=
+  Prod.fst <$> expl.prove' cgr rws egraph cfg subgoals fuel?
 
 end

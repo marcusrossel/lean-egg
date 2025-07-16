@@ -1,6 +1,6 @@
 import Egg
 
-set_option egg.conditionSubgoals true
+set_option egg.subgoals true
 
 #guard_msgs in
 example (a : Nat) (h : True → a = b) : a = b := by

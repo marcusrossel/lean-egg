@@ -19,7 +19,7 @@ attribute [egg real]
 
 -- TODO: I think pruning of (tc proj) rewrites is not working properly.
 set_option maxHeartbeats 300000
-set_option egg.conditionSubgoals true
+set_option egg.subgoals true
 set_option egg.timeLimit 10
 
 notation:100 r "﹗" => Real.Gamma (r + 1)

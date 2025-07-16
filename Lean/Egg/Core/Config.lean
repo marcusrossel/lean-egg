@@ -63,9 +63,9 @@ structure Debug where
   deriving BEq
 
 structure _root_.Egg.Config extends Encoding, DefEq, Gen, Backend, Debug where
-  retryWithShapes   := false
-  explLengthLimit   := 200
-  conditionSubgoals := false
+  retryWithShapes := false
+  explLengthLimit := 200
+  subgoals        := false
 
 -- TODO: Why aren't these coercions automatic?
 

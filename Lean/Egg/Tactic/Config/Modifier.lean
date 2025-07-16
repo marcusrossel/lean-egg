@@ -26,7 +26,7 @@ structure Modifier where
   blockInvalidMatches : Option Bool            := none
   shiftCapturedBVars  : Option Bool            := none
   unionSemantics      : Option Bool            := none
-  conditionSubgoals   : Option Bool            := none
+  subgoals   : Option Bool            := none
   optimizeExpl        : Option Bool            := none
   timeLimit           : Option Nat             := none
   nodeLimit           : Option Nat             := none
@@ -60,7 +60,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   blockInvalidMatches := mod.blockInvalidMatches.getD cfg.blockInvalidMatches
   shiftCapturedBVars  := mod.shiftCapturedBVars.getD cfg.shiftCapturedBVars
   unionSemantics      := mod.unionSemantics.getD cfg.unionSemantics
-  conditionSubgoals   := mod.conditionSubgoals.getD cfg.conditionSubgoals
+  subgoals   := mod.subgoals.getD cfg.subgoals
   optimizeExpl        := mod.optimizeExpl.getD cfg.optimizeExpl
   timeLimit           := mod.timeLimit.getD cfg.timeLimit
   nodeLimit           := mod.nodeLimit.getD cfg.nodeLimit

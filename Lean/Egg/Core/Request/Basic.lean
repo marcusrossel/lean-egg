@@ -41,7 +41,7 @@ instance : Coe Config Request.Config where
     blockInvalidMatches  := cfg.blockInvalidMatches
     shiftCapturedBVars   := cfg.shiftCapturedBVars
     unionSemantics       := cfg.unionSemantics
-    allowUnsatConditions := cfg.conditionSubgoals
+    allowUnsatConditions := cfg.subgoals
   }
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
@@ -58,7 +58,7 @@ def encoding (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) : 
   return {
     lhs     := ← encode goal.lhs cfg
     rhs     := ← encode goal.rhs cfg
-    rws     := ← rws.encode cfg cfg.conditionSubgoals
+    rws     := ← rws.encode cfg cfg.subgoals
     guides  := ← guides.encode cfg
     vizPath := cfg.vizPath.getD ""
     cfg

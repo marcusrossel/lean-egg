@@ -1,6 +1,6 @@
 import Egg
 
-set_option egg.conditionSubgoals true
+set_option egg.subgoals true
 
 example : 0 = 0 := by
   egg

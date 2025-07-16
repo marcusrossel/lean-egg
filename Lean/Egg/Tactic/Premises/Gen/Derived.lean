@@ -113,7 +113,7 @@ where
     generate cfg .explosion do
       genExplosions (← todo .explosion)
     generate cfg .goalTypeSpec do
-      genGoalTypeSpecializations (← todo .goalTypeSpec) goal cfg.conditionSubgoals
+      genGoalTypeSpecializations (← todo .goalTypeSpec) goal cfg.subgoals
     generate cfg .tcProj do
       let targets := (← todo .tcProj).tcProjTargets
       let (rws, cover) ← genTcProjReductions targets (← tcProjCover) cfg

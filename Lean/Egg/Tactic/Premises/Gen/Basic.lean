@@ -21,7 +21,7 @@ def gen (goal : Goal) (ps : TSyntax `egg_premises) (guides : Guides) (cfg : Conf
     let cls := `egg.rewrites
     cfg.toDefEq.trace cls
     withTraceNode cls (fun _ => return m!"Pruned ({pruned.rws.size})") do
-      pruned.rws.tracePruned pruned.reasons cls cfg.conditionSubgoals
+      pruned.rws.tracePruned pruned.reasons cls cfg.subgoals
     return all
 where
   genBasic : GenM Premises := do
@@ -33,9 +33,9 @@ where
           logWarningAt name m!"This theorem already appears in the egg basket '{basket}'"
     return basic
   core : GenM Unit := open GenM in do
-    generate  .intros     cfg.conditionSubgoals do genIntros goal.intros.unzip.fst cfg
-    generate' .basic      cfg.conditionSubgoals do genBasic
-    generate  .tagged     cfg.conditionSubgoals do genTagged cfg
-    generate  .builtins   cfg.conditionSubgoals do genBuiltins cfg
-    generate  .derived    cfg.conditionSubgoals do genDerived goal.toCongr (← allExceptGeneratedGroundEqs) guides cfg
-    generate  .structProj cfg.conditionSubgoals do genStructProjRws goal.toCongr (← all) guides cfg
+    generate  .intros     cfg.subgoals do genIntros goal.intros.unzip.fst cfg
+    generate' .basic      cfg.subgoals do genBasic
+    generate  .tagged     cfg.subgoals do genTagged cfg
+    generate  .builtins   cfg.subgoals do genBuiltins cfg
+    generate  .derived    cfg.subgoals do genDerived goal.toCongr (← allExceptGeneratedGroundEqs) guides cfg
+    generate  .structProj cfg.subgoals do genStructProjRws goal.toCongr (← all) guides cfg
