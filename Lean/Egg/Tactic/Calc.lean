@@ -36,11 +36,14 @@ structure Step.Elab extends Step where
   rhs : Expr
   stx : Syntax
 
-def Step.Raw.equiv? (s : Step.Raw) : Option (Term × Term) := do
+def Step.Raw.equiv? (s : Step.Raw) : Option (Term × Congr.Rel × Term) := do
   match s.goal with
-  | `($lhs = $rhs) => (lhs, rhs)
-  | `($lhs ↔ $rhs) => (lhs, rhs)
+  | `($lhs = $rhs) => (lhs, Congr.Rel.eq, rhs)
+  | `($lhs ↔ $rhs) => (lhs, Congr.Rel.iff, rhs)
   | _              => none
+
+def Step.Raw.lhs (s : Step.Raw) : Term :=
+  if let some (lhs, _, _) := s.equiv? then lhs else s.goal
 
 def parseRawStep : (TSyntax ``egg_calc_step) → TacticM Step.Raw
   | `(egg_calc_step| $goal $[with $mod $prems]? $[$guides]?) => do
@@ -69,9 +72,9 @@ def eval
     (steps : TSyntax ``egg_calc_steps) : TacticM Unit := do
   withMainContext do
     let rawSteps ← parseRawSteps steps
-    let some goal ← Congr.from? (← getMainTarget)
-      | throwError "'egg calc' expects a proof goal of the form '_ = _' or '_ ↔ _'"
-    let headStep? ← processHead rawSteps.head goal.lhs
+    let mut goalType ← getMainTarget
+    let goal ← getGoal goalType rawSteps
+    let headStep? ← processHead rawSteps.head goal
     let steps ← elabSteps goal <| headStep?.elim rawSteps.tail (#[·] ++ rawSteps.tail)
     let mut subgoals := []
     let mut proof ← mkEqRefl goal.lhs
@@ -86,6 +89,27 @@ def eval
     (← getMainGoal).assignIfDefeq' proof
     appendGoals (← dedupSubgoals subgoals)
 where
+  getGoal (goalType : Expr) (rawSteps : RawSteps) : TacticM Congr := do
+    if goalType.isMVar then
+      inferGoal rawSteps
+    else if let some goal ← Congr.from? goalType then
+      return goal
+    else
+      throwError "'egg calc' expects a proof goal of the form '_ = _' or '_ ↔ _'"
+  -- Tries to infer the goal type by elaborating the first and last terms in the given list of
+  -- steps. We try to ensure that elaboration of these terms succeeds by trying them in both orders
+  -- if necessary (which might produce the type information necessary to elaborate the other term).
+  inferGoal (rawSteps : RawSteps) : TacticM Congr := do
+    let lhs := rawSteps.head.lhs
+    let some (_, rel, rhs) := rawSteps.tail.back? >>= (·.equiv?)
+      | throwError "'egg calc' failed to infer goal type"
+    if let some lhs ← optional (elabTerm lhs none) then
+      if let some rhs ← optional (elabTerm rhs (← inferType lhs)) then
+        return { rel, lhs, rhs }
+    if let some rhs ← optional (elabTerm rhs none) then
+      if let some lhs ← optional (elabTerm lhs (← inferType rhs)) then
+      return { rel, lhs, rhs }
+    throwError "'egg calc' failed to infer goal type"
   stepToEgg (step : Step) : TacticM (TSyntax `tactic) := do
     let allPrems ← appendPremises step.prems prems
     `(tactic| egg $baskets $step.mod:egg_cfg_mod $allPrems $[$step.guides]?)
@@ -96,28 +120,32 @@ where
       let dup ← result.findM? fun m => isDefEq (.mvar subgoal) (.mvar m)
       if dup.isNone then result := subgoal :: result
     return result
-  processHead (step : Step.Raw) (goalLhs : Expr) : TacticM (Option Step.Raw) := do
-    if step.equiv?.isSome then
+  processHead (step : Step.Raw) (goal : Congr) : TacticM (Option Step.Raw) := do
+    if let some (lhs, _, _) := step.equiv? then
+      assertDefeqLhs goal lhs
       return step
     else if step.goal.isWildcard then
       return none
     else
-      let headLhs ← elabTerm step.goal none
-      unless ← isDefEq goalLhs headLhs do
-        throwErrorAt step.goal "first step of 'egg calc' block does not match RHS of the proof goal"
+      assertDefeqLhs goal step.goal
       return none
+  assertDefeqLhs (goal : Congr) (term : Term) : TacticM Unit := do
+    let head ← elabTerm term (← goal.type)
+    unless ← isDefEq goal.lhs head do
+      throwErrorAt term "first term of 'egg calc' block does not match LHS of the proof goal"
   elabSteps (goal : Congr) (steps : Array Step.Raw) : TacticM <| Array Step.Elab := do
+    let goalType ← goal.type
     let mut lastRhs := goal.lhs
     let mut result := #[]
     for step in steps, idx in [:steps.size] do
       let isLast := idx = steps.size - 1
-      let some (lhs, rhs) := step.equiv?
+      let some (lhs, _, rhs) := step.equiv?
         | throwErrorAt step.goal "'egg calc' expects steps to be of the form '_ = _' or '_ ↔ _'"
       let lhs ← do
         if lhs.isWildcard then
           pure lastRhs
         else
-          let l ← elabTerm lhs none
+          let l ← elabTerm lhs goalType
           unless ← isDefEq l lastRhs do
             throwErrorAt lhs "LHS is not definitionally equal to RHS of the previous step"
           pure l
@@ -126,12 +154,12 @@ where
           if rhs.isWildcard then
             pure goal.rhs
           else
-            let r ← elabTerm rhs none
+            let r ← elabTerm rhs goalType
             unless ← isDefEq r goal.rhs do
-              throwErrorAt rhs "final step of 'egg calc' block does not match RHS of the proof goal"
+              throwErrorAt rhs "final term of 'egg calc' block does not match RHS of the proof goal"
             pure r
         else
-          elabTerm rhs none
+          elabTerm rhs goalType
       result := result.push { step with lhs, rhs, stx := step.goal }
       lastRhs := rhs
     return result

@@ -36,7 +36,7 @@ theorem sdiff_le' : x \ y ≤ x := by
   --calc
   --  x \ y ≤ x ⊓ y ⊔ x \ y := le_sup_right
   --  _ = x := by egg +bool
- egg +bool [le_sup_right] using x ⊓ y ⊔ x \ y
+  egg +bool [le_sup_right] using x ⊓ y ⊔ x \ y
 
 /- Previous -/ attribute [egg bool] sdiff_le'
 
