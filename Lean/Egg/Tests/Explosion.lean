@@ -164,5 +164,6 @@ set_option egg.explosion false in
 example (a : Nat) (h₁ : ∀ x : Nat, f x x = 0) (h₂ : ∀ x : Nat, f x x = 1) : 0 = 1 := by
   sorry -- egg [h₁, h₂]
 
+set_option egg.explosion true in
 example (a : Nat) (h₁ : ∀ x : Nat, f x x = 0) (h₂ : ∀ x : Nat, f x x = 1) : 0 = 1 := by
-  sorry -- egg [h₁, h₂]
+  egg [h₁, h₂]
