@@ -52,14 +52,16 @@ fn contains_lit_or_zero(expr: &[ENodeOrVar<LeanExpr>], idx: usize) -> Result {
                         _                  => Result::Other
                     }
                 },
-                e => {
+                LeanExpr::App(_) | LeanExpr::Lam(_) | LeanExpr::Forall(_) | LeanExpr::Proof(_) | 
+                LeanExpr::Inst(_) | LeanExpr::Eq(_) | LeanExpr::Fun(_) | LeanExpr::Shaped(_) => {
                     let mut result = Result::Other;
                     for child in e.children().iter() {
                         let child_idx = usize::from(*child);
                         result.merge(&contains_lit_or_zero(expr, child_idx));
                     }
                     result
-                }
+                },
+                _ => Result::Other
             }
         }
     }
