@@ -38,12 +38,13 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
       _ = _ := cast_inj (R := Real) |>.mp ?_
 
     egg +cast +real calc [Real.Gamma_nat_eq_factorial, Real.Gamma_add_one]
+      ↑(n ! / ((r - 1)! * (n - r + 1)!) + n ! / (r ! * (n - r)!))
       _ = n﹗ / ((r - 1)﹗ * (n - r + 1)﹗) + n﹗ / (r﹗ * (n - r)﹗)
       _ = n﹗ / ((r - 1)﹗ * (n - r)﹗) * (1 / (n - r + 1) + 1 / r)
       _ = n﹗ / ((r - 1)﹗ * (n - r)﹗) * ((r + (n - r + 1)) / (r * (n - r + 1)))
       _ = n﹗ / ((r - 1)﹗ * (n - r)﹗) * ((n + 1) / (r * (n - r + 1)))
       _ = (n + 1)﹗ / (r﹗ * (n + 1 - r)﹗)
-      _ = _
+      _ = ↑((n + 1)! / (r ! * (n + 1 - r)!))
 
     all_goals try first | (norm_cast; done) | (norm_cast; omega)
     · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)

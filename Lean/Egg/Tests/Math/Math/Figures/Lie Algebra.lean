@@ -33,11 +33,10 @@ variable [AddCommGroup N] [Module R N] [LieRingModule L N] [LieModule R L N]
 variable (t : R) (x y z : L) (m n : M)
 
 theorem L1' : ⁅x, y⁆ = -⁅y, x⁆ := by
-  have h := by
-    egg +lie calc
-      0 = ⁅x + y, x + y⁆
-      _ = ⁅x, x⁆ + ⁅x, y⁆ + ⁅y, x⁆ + ⁅y, y⁆
-      _ = ⁅x, y⁆ + ⁅y, x⁆
+  have h := by egg +lie calc
+    0 = ⁅x + y, x + y⁆
+    _ = ⁅x, x⁆ + ⁅x, y⁆ + ⁅y, x⁆ + ⁅y, y⁆
+    _ = ⁅x, y⁆ + ⁅y, x⁆
   egg +lie [h]
 
 example /- L1' -/ : ⁅x, y⁆ = -⁅y, x⁆ := by

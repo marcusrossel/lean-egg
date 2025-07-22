@@ -72,7 +72,7 @@ def eval
     (steps : TSyntax ``egg_calc_steps) : TacticM Unit := do
   withMainContext do
     let rawSteps ← parseRawSteps steps
-    let mut goalType ← getMainTarget
+    let goalType ← getMainTarget
     let goal ← getGoal goalType rawSteps
     let headStep? ← processHead rawSteps.head goal
     let steps ← elabSteps goal <| headStep?.elim rawSteps.tail (#[·] ++ rawSteps.tail)

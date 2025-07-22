@@ -124,9 +124,11 @@ fn mk_rewrites(
     if cfg.eta_expand { rws.push(eta_expansion_rw()) }
     if cfg.beta       { rws.push(beta_reduction_rw()) }
     if cfg.levels     { rws.append(&mut level_rws()) }
-    // TODO: Only add these rws if one of the following is active: beta, eta, eta-expansion, 
-    //       bvar index correction. Anything else?
-    rws.append(&mut subst_rws());
+    // We only enable substitution rewrites if beta-reduction is active, because beta-reduction is
+    // the only source of substitution nodes.
+    if cfg.beta { rws.append(&mut subst_rws()) }
+    // We always need to include rewrites for handling bvar shifts, as shift nodes can be introduced
+    // by every rewrite's applied when correcting bvar indices.
     rws.append(&mut shift_rws());
     
     Ok((eqs, rws))
