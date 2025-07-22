@@ -37,7 +37,7 @@ pub struct RewriteTemplate {
     pub rhs:        Pattern<LeanExpr>,
     pub prop_conds: Vec<Pattern<LeanExpr>>,
     pub tc_conds:   Vec<Pattern<LeanExpr>>,
-    pub weak_vars:  Vec<Var>,
+    pub weak_vars:  Vec<Var>
 }
 
 pub struct GroundEq {

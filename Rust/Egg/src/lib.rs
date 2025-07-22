@@ -10,6 +10,7 @@ use basic::*;
 use result::*;
 use rewrite::*;
 
+mod activation;
 mod analysis;
 mod basic;
 mod beta;
