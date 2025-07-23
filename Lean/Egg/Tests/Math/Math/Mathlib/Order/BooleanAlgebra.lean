@@ -2,6 +2,8 @@ import Egg
 import Mathlib.Order.BooleanAlgebra.Defs
 import Mathlib.Order.BooleanAlgebra.Basic
 
+set_option egg.explLengthLimit 250
+
 -- SemilatticeSup
 attribute [egg slattice_sup] sup_idem sup_comm sup_assoc sup_left_right_swap sup_left_idem
                              sup_right_idem sup_left_comm sup_right_comm sup_sup_sup_comm
@@ -33,32 +35,23 @@ example (s : x ⊓ y ⊔ z = x) (i : x ⊓ y ⊓ z = ⊥) : x \ y = z := by
 /- Previous -/ attribute [egg bool] sdiff_unique
 
 theorem sdiff_le' : x \ y ≤ x := by
-  --calc
-  --  x \ y ≤ x ⊓ y ⊔ x \ y := le_sup_right
-  --  _ = x := by egg +bool
   egg +bool [le_sup_right] using x ⊓ y ⊔ x \ y
 
 /- Previous -/ attribute [egg bool] sdiff_le'
 
--- TODO: I think this produces a loop in proof reconstruction.
 theorem sdiff_sup_self' : y \ x ⊔ x = y ⊔ x := by
   egg +bool calc
-    y \ x ⊔ x = y \ x ⊔ (x ⊔ x ⊓ y)
+    _ = y \ x ⊔ (x ⊔ x ⊓ y)
     _ = y ⊓ x ⊔ y \ x ⊔ x
     _ = y ⊔ x
+
+-- TODO: I think this might produce a loop in proof reconstruction.
+example : y \ x ⊔ x = y ⊔ x := by
+  sorry -- egg +bool using y \ x ⊔ (x ⊔ x ⊓ y)
 
 /- Previous -/ attribute [egg bool] sdiff_sup_self'
 
 attribute [egg bool] inf_sdiff_right
-
-example : x \ y ⊓ y \ x = ⊥ := by
-  egg +bool calc
-      _ = x \ y ⊓ y \ x
-      _ = x ⊓ x \ y ⊓ y \ x
-      _ = x ⊓ y ⊓ x \ y ⊔ x ⊓ y \ x ⊓ x \ y
-      _ = x ⊓ (y ⊓ x ⊔ y \ x) ⊓ x \ y
-      _ = x ⊓ y ⊓ x \ y
-      _ = _
 
 example : x \ y ⊓ y \ x = ⊥ := by
   egg +bool

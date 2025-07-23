@@ -22,23 +22,26 @@ private inductive Expression where
   | unknown
   deriving Inhabited
 
-private def Expression.toExpr : Expression → MetaM Expr
-  | bvar idx        => return .bvar idx
-  | fvar id         => return .fvar id
-  | mvar id         => return .mvar id
-  | sort lvl        => return .sort lvl
-  | const name lvls => return .const name lvls
-  | app fn arg      => return .app (← toExpr fn) (← toExpr arg)
-  | lam ty body     => return .lam .anonymous (← toExpr ty) (← toExpr body) .default
-  | .forall ty body => return .forallE .anonymous (← toExpr ty) (← toExpr body) .default
-  | lit l           => return .lit l
-  | eq lhs rhs      => do mkEquiv (← toExpr lhs) (← toExpr rhs)
-  | proof prop      => do mkFreshExprMVar (← toExpr prop)
-  | inst cls        => do mkFreshExprMVar (← toExpr cls)
-  | subst idx to e  => return applySubst idx (← toExpr to) (← toExpr e)
-  | shift off cut e => return applyShift off cut (← toExpr e)
-  | unknown         => mkFreshExprMVar none
+-- If `synthesize` is true, we try to fill type class instance holes immediately by synthesis.
+private def Expression.toExpr (e : Expression) (synthesize := false) : MetaM Expr := do
+  go e
 where
+  go : Expression → MetaM Expr
+    | bvar idx        => return .bvar idx
+    | fvar id         => return .fvar id
+    | mvar id         => return .mvar id
+    | sort lvl        => return .sort lvl
+    | const name lvls => return .const name lvls
+    | app fn arg      => return .app (← go fn) (← go arg)
+    | lam ty body     => return .lam .anonymous (← go ty) (← go body) .default
+    | .forall ty body => return .forallE .anonymous (← go ty) (← go body) .default
+    | lit l           => return .lit l
+    | eq lhs rhs      => do mkEquiv (← go lhs) (← go rhs)
+    | proof prop      => do mkFreshExprMVar (← go prop)
+    | inst cls        => do mkFreshExprMVar (← go cls)
+    | subst idx to e  => return applySubst idx (← go to) (← go e)
+    | shift off cut e => return applyShift off cut (← go e)
+    | unknown         => mkFreshExprMVar none
   mkEquiv (lhs rhs : Expr) : MetaM Expr := do
     -- We assume that `lhs` and `rhs` have the same type.
     if ← (return !lhs.hasLooseBVars) <&&> (return (← inferType lhs).isProp) then
@@ -46,7 +49,10 @@ where
     else
       -- We can't just use `mkEq` because `lhs` and `rhs` might contains bvars.
       return mkApp3 (.const ``Eq [← mkFreshLevelMVar]) (← mkFreshExprMVar none) lhs rhs
-
+  mkInst (cls : Expr) : MetaM Expr := do
+    if synthesize then
+      if let some i ← Meta.synthInstance? cls then return i
+    mkFreshExprMVar cls
   applySubst (idx : Nat) (to : Expr) : Expr → Expr
     | .bvar i          => if i = idx then to else .bvar i
     | .app fn arg      => .app (applySubst idx to fn) (applySubst idx to arg)

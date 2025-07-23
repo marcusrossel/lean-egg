@@ -8,13 +8,13 @@ open Lean
 
 namespace Egg
 
-def parse (s : String) : MetaM Expr := do
+def parse (s : String) (eagerSynth := false) : MetaM Expr := do
   match Parser.runParserCategory (← getEnv) `egg_expr s with
   | .ok stx    =>
     let a := Explanation.parseExpr ⟨ stx ⟩
     match a with
       | .error _ => throwError "not ok"
-      | .ok (c, _) => c.toExpr
+      | .ok (c, _) => c.toExpr (synthesize := eagerSynth)
   | .error _ => throwError "meh"
 
 structure Request.Term where

@@ -64,7 +64,7 @@ def MVars.Properties.toMessageData (ps : MVars.Properties) : MessageData :=
 
 nonrec def MVars.toMessageData (mvars : MVars) : MetaM MessageData := do
   let mut data := []
-  for (mvar, ps) in mvars.expr do data := data.concat m!"{← ppExpr <| .mvar mvar}: {ps.toMessageData}"
+  for (mvar, ps) in mvars.expr do data := data.concat m!"{Expr.mvar mvar}: {ps.toMessageData}"
   for (mvar, ps) in mvars.lvl  do data := data.concat m!"{Level.mvar mvar}: {ps.toMessageData}"
   return data
 
