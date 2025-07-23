@@ -68,7 +68,7 @@ def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config.Normalization) 
 inductive Violation where
   | rhsMVarInclusion (missing : MVarIdSet)
   | rhsUVarInclusion (missing : LMVarIdSet)
-  | lhsSingleMVar
+  | lhsSingleMVar (mvar : MVarId)
   | covering (missing : MVarIdSet)
   | tcMVarInclusion (missing : MVarIdSet)
   | tcUVarInclusion
@@ -87,31 +87,34 @@ inductive Violation where
 --       `visible`, as this does not suffice when `subgoals = true`.
 --       Also note that taking the type mvar closure over the type class instances is ok, as we have
 --       `tcMVarInclusion` anyway.
-def violation? (rw : Rewrite) (subgoals : Bool) : MetaM (Option Violation) := do
+def violations (rw : Rewrite) (subgoals : Bool) : MetaM (List Violation) := do
+  let mut violations : List Violation := []
   -- Checks for `lhsSingleMVar`.
-  if ← rw.lhs.isNonAmbientMVar <&&> ((return subgoals) <||> rw.conds.allM (·.type.isNonAmbientMVar)) then
-    return some .lhsSingleMVar
+  let containsNonMVarProofConditions ← (return subgoals) <||> rw.conds.anyM fun cond =>
+    (return cond.kind.isProof) <&&> cond.type.isNonAmbientMVar
+  if ← rw.lhs.isNonAmbientMVar <&&> (return !containsNonMVarProofConditions) then
+    violations := (.lhsSingleMVar rw.lhs.mvarId!) :: violations
   -- Checks for `rhsMVarInclusion`.
   let mut visible := rw.mvars.lhs.visibleExpr
   unless subgoals do visible := visible.union (← condVisible .proof)
   let missing := rw.mvars.rhs.visibleExpr.subtract visible
-  unless missing.isEmpty do return some (.rhsMVarInclusion missing)
+  unless missing.isEmpty do violations := (.rhsMVarInclusion missing) :: violations
   -- Checks for `rhsUVarInclusion`.
   let mut visibleLvls := rw.mvars.lhs.visibleLevel
   unless subgoals do visibleLvls := visibleLvls.union (← condVisibleLvls .proof)
   let missing := rw.mvars.rhs.visibleLevel.subtract visibleLvls
-  unless missing.isEmpty do return some (.rhsUVarInclusion missing)
+  unless missing.isEmpty do violations := (.rhsUVarInclusion missing) :: violations
   -- Checks for `tcMVarInclusion`.
   let missing := (← condVisible .tcInst).subtract visible
-  unless missing.isEmpty do return some (.tcMVarInclusion missing)
+  unless missing.isEmpty do violations := (.tcMVarInclusion missing) :: violations
   -- Checks for `tcUVarInclusion`.
-  unless (← condVisibleLvls .tcInst).subset visibleLvls do return some .tcUVarInclusion
+  unless (← condVisibleLvls .tcInst).subset visibleLvls do violations := .tcUVarInclusion :: violations
   -- Checks for `covering`.
   let mut cov ← rw.qvars.filterM fun m => Meta.isTCInstance (.mvar m) <||> Meta.isProof (.mvar m)
   cov ← MVarIdSet.typeMVarClosure (cov.union visible)
   let missing := rw.qvars.subtract cov
-  unless missing.isEmpty do return some (.covering missing)
-  return none
+  unless missing.isEmpty do violations := (.covering missing) :: violations
+  return violations
 where
   condVisible (kind : Condition.Kind) : MetaM MVarIdSet := do
     let mut vis := ∅
@@ -129,7 +132,7 @@ where
     return vis
 
 def isValid (rw : Rewrite) (subgoals : Bool) : MetaM Bool :=
-  return (← rw.violation? subgoals).isNone
+  return (← rw.violations subgoals).isEmpty
 
 -- TODO: Flip the mvars and dir as well.
 def forDir (rw : Rewrite) : Direction → MetaM Rewrite

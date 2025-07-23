@@ -111,7 +111,7 @@ where
 
   core : DerivedM Unit := do
     generate cfg .explosion do
-      genExplosions (← todo .explosion)
+      genExplosions (← todo .explosion) cfg.subgoals
     generate cfg .goalTypeSpec do
       genGoalTypeSpecializations (← todo .goalTypeSpec) goal cfg.subgoals
     generate cfg .tcProj do

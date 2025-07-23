@@ -120,7 +120,7 @@ example (a b : Nat) (h : ∀ x y : Nat, f x y = f y x) : f a b = f b a := by
 trace: [egg.rewrites] Rewrites
   [egg.rewrites] Intros (0)
   [egg.rewrites] Basic (2)
-    [egg.rewrites] #0(⇒)(❌rhsMVarInclusion: [?y]): h
+    [egg.rewrites] #0(⇒)❌[covering: [?y], rhsMVarInclusion: [?y]]: h
       [egg.rewrites] f ?x ?x = f ?y ?x
       [egg.rewrites] LHS MVars
           [?x: [unconditionallyVisible]]

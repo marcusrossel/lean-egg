@@ -78,15 +78,16 @@ def Congr.toMessageData (cgr : Congr) : MetaM MessageData :=
 def Rewrite.Violation.toMessageData : Rewrite.Violation → MessageData
   | rhsMVarInclusion missing => m!"rhsMVarInclusion: {missing.toList.map (Expr.mvar ·)}"
   | rhsUVarInclusion missing => m!"rhsUVarInclusion: {missing.toList.map (Level.mvar ·)}"
-  | lhsSingleMVar            => "lhsSingleMVar"
+  | lhsSingleMVar _          => "lhsSingleMVar"
   | covering missing         => m!"covering: {missing.toList.map (Expr.mvar ·)}"
   | tcMVarInclusion missing  => m!"tcMVarInclusion: {missing.toList.map (Expr.mvar ·)}"
   | tcUVarInclusion          => "tcUVarInclusion"
 
 def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) (subgoals : Bool)
     (headerAnnotation : String := "") : TacticM Unit := do
-  let violation := (← rw.violation? subgoals).map (m!"(❌{·.toMessageData})") |>.getD m!""
-  let mut header := m!"{rw.src.description}({rw.dir.format}){violation}{headerAnnotation}"
+  let violations := (← rw.violations subgoals).map (·.toMessageData)
+  let violations := if violations.isEmpty then MessageData.nil else m!"❌{violations}"
+  let mut header := m!"{rw.src.description}({rw.dir.format}){violations}{headerAnnotation}"
   if let some stx := stx? then header := m!"{header}: {stx}"
   withTraceNode cls (fun _ => return header) do
     traceM cls fun _ => rw.toCongr.toMessageData

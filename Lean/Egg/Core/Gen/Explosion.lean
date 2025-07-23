@@ -23,12 +23,15 @@ private partial def exprReferencesMVar (e : Expr) (m : MVarId) : MetaM Bool := d
     | _ => pure ()
     exprReferencesMVar (← inferType e) m
 
-private partial def genExplosionsForRw (rw : Rewrite) : MetaM Rewrites := do
-  let missing := rw.mvars.rhs.visibleExpr.subtract rw.mvars.lhs.visibleExpr
+private partial def genExplosionsForRw (rw : Rewrite) (subgoals : Bool) : MetaM Rewrites := do
+  let mut missing := rw.mvars.rhs.visibleExpr.subtract rw.mvars.lhs.visibleExpr
+  for violation in ← rw.violations subgoals do
+    let .lhsSingleMVar m := violation | continue
+    missing := missing.insert m
   return (← genDir .forward missing)
 where
   genDir (dir : Direction) (missing : MVarIdSet) : MetaM Rewrites := do
-    unless !missing.isEmpty do return #[]
+    if missing.isEmpty then return #[]
     let ordered ← missing.toList.qsortM fun m₁ m₂ => return !(← exprReferencesMVar (.mvar m₁) m₂)
     core rw dir ordered []
   core (rw : Rewrite) (dir : Direction) (missing : List MVarId) (loc : List Nat) :
@@ -42,8 +45,7 @@ where
       let m := subst.expr[m]!
       let some (fvar, idx) ← findLocalDeclWithTypeMinIdx? (← m.getType) minIdx | break
       minIdx := idx + 1
-      -- TODO: It does not suffice to assign mvars and update the rw with `instantiateMVars`.
-      --       Assignment changes what might be a condition or not.
+      -- TODO: Only have this succeed when type correct.
       unless ← isDefEq (.mvar m) (.fvar fvar) do throwError "egg: internal error in explosion gen"
       let fresh ← fresh.instantiateMVars
       let miss := miss.filterMap fun i =>
@@ -52,5 +54,5 @@ where
       explosions := explosions ++ (← core fresh dir miss <| loc ++ [minIdx])
     return explosions
 
-def genExplosions (targets : Rewrites) : MetaM Rewrites := do
-  targets.foldlM (init := #[]) fun acc rw => return acc ++ (← genExplosionsForRw rw)
+def genExplosions (targets : Rewrites) (subgoals : Bool) : MetaM Rewrites := do
+  targets.foldlM (init := #[]) fun acc rw => return acc ++ (← genExplosionsForRw rw subgoals)

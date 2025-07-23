@@ -8,17 +8,17 @@ namespace Egg.Rewrites
 theorem imp_mp {p q : Prop} (imp : p → q) (h : p) : q :=
   imp h
 
-private def builtinTheorems := #[
-  ``imp_mp,
-  ``Nat.succ_eq_add_one,
-  ``ge_iff_le,
-  ``gt_iff_lt
-]
+-- We exclude `imp_mp` when subgoals are enabled, as this theorem proves everything in that case.
+private def builtinTheorems (subgoals : Bool) : Array Name := Id.run do
+  let mut thms := #[``Nat.succ_eq_add_one, ``ge_iff_le, ``gt_iff_lt]
+  unless subgoals do thms := thms.push ``imp_mp
+  return thms
 
-def builtins (cfg : Config.Normalization) : MetaM Rewrites := do
+def builtins (cfg : Config.Normalization) (subgoals : Bool) : MetaM Rewrites := do
   let mut rws := #[]
   let env ← getEnv
-  for thm in builtinTheorems, idx in [:builtinTheorems.size] do
+  let thms := builtinTheorems subgoals
+  for thm in thms, idx in [:thms.size] do
     let info := env.find? thm |>.get!
     let lvlMVars ← List.replicateM info.numLevelParams mkFreshLevelMVar
     let val := info.instantiateValueLevelParams! lvlMVars
@@ -31,4 +31,4 @@ def builtins (cfg : Config.Normalization) : MetaM Rewrites := do
 end Rewrites
 
 def genBuiltins (cfg : Config) : MetaM Rewrites := do
-  if cfg.builtins then Rewrites.builtins cfg else return #[]
+  if cfg.builtins then Rewrites.builtins cfg cfg.subgoals else return #[]
