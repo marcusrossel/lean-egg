@@ -1,5 +1,3 @@
-use std::io::Empty;
-
 use egg::*;
 use crate::lean_expr::*;
 
@@ -10,47 +8,54 @@ pub fn activates_nat_lit(expr: &PatternAst<LeanExpr>) -> bool {
 
 pub fn activates_lvl(expr: &PatternAst<LeanExpr>) -> bool {
     let root_idx = expr.as_ref().len() - 1;
-    contains_max_or_imax(expr.as_ref(), root_idx).is_success()
+    contains_max_or_imax(expr.as_ref(), root_idx)
 }
 
-enum Result<S> {
+pub fn activates_lambda(expr: &PatternAst<LeanExpr>) -> bool {
+    let root_idx = expr.as_ref().len() - 1;
+    contains_lambda(expr.as_ref(), root_idx)
+}
+
+pub fn activates_forall(expr: &PatternAst<LeanExpr>) -> bool {
+    let root_idx = expr.as_ref().len() - 1;
+    contains_forall(expr.as_ref(), root_idx)
+}
+
+enum NatLitResult {
     Success,
     Other,
-    Subterm(S)
+    StrNatZero,
+    RawNat,
 }
 
-impl<S> Result<S> {
+impl NatLitResult {
     fn is_success(&self) -> bool {
         match self {
-            Result::Success => true,
-            _               => false
+            NatLitResult::Success => true,
+            _                     => false
         }
     }
 }
-enum NatLitSubterm {
-    StrNatZero,
-    RawNat
-}
 
-fn contains_lit_or_zero(expr: &[ENodeOrVar<LeanExpr>], idx: usize) -> Result<NatLitSubterm> {
+fn contains_lit_or_zero(expr: &[ENodeOrVar<LeanExpr>], idx: usize) -> NatLitResult {
     match &expr[idx] {
-        ENodeOrVar::Var(_) => { Result::Other },
+        ENodeOrVar::Var(_) => { NatLitResult::Other },
         ENodeOrVar::ENode(e) => {
             match e {
-                LeanExpr::Nat(_)                        => Result::Subterm(NatLitSubterm::RawNat),
-                LeanExpr::Str(str) if str == "Nat.zero" => Result::Subterm(NatLitSubterm::StrNatZero),
+                LeanExpr::Nat(_)                        => NatLitResult::RawNat,
+                LeanExpr::Str(str) if str == "Nat.zero" => NatLitResult::StrNatZero,
                 LeanExpr::Lit(l) => {
                     let child_idx = usize::from(*l);
                     match contains_lit_or_zero(expr, child_idx) {
-                        Result::Subterm(NatLitSubterm::RawNat) => Result::Success,
-                        _                                      => Result::Other
+                        NatLitResult::RawNat => NatLitResult::Success,
+                        _                    => NatLitResult::Other
                     }
                 },
                 LeanExpr::Const(ids) if ids.len() == 1 => {
                     let child_idx = usize::from(*ids.first().unwrap());
                     match contains_lit_or_zero(expr, child_idx) {
-                        Result::Subterm(NatLitSubterm::StrNatZero) => Result::Success,
-                        _                                          => Result::Other
+                        NatLitResult::StrNatZero => NatLitResult::Success,
+                        _                        => NatLitResult::Other
                     }
                 },
                 LeanExpr::App(_) | LeanExpr::Lam(_) | LeanExpr::Forall(_) | LeanExpr::Proof(_) | 
@@ -58,36 +63,73 @@ fn contains_lit_or_zero(expr: &[ENodeOrVar<LeanExpr>], idx: usize) -> Result<Nat
                     for child in e.children().iter() {
                         let child_idx = usize::from(*child);
                         if contains_lit_or_zero(expr, child_idx).is_success() { 
-                            return Result::Success 
+                            return NatLitResult::Success 
                         }
                     }
-                    Result::Other
+                    NatLitResult::Other
                 },
-                _ => Result::Other
+                _ => NatLitResult::Other
             }
         }
     }
 }
 
-fn contains_max_or_imax(expr: &[ENodeOrVar<LeanExpr>], idx: usize) -> Result<Empty> {
+fn contains_max_or_imax(expr: &[ENodeOrVar<LeanExpr>], idx: usize) -> bool {
     match &expr[idx] {
-        ENodeOrVar::Var(_) => { Result::Other },
+        ENodeOrVar::Var(_) => { false },
         ENodeOrVar::ENode(e) => {
             match e {
-                LeanExpr::Max(_) | LeanExpr::IMax(_) => 
-                    Result::Success,
+                LeanExpr::Max(_) | LeanExpr::IMax(_) => true,
                 LeanExpr::Succ(_) | LeanExpr::Sort(_) | LeanExpr::Const(_) |
                 LeanExpr::App(_) | LeanExpr::Lam(_) | LeanExpr::Forall(_) | LeanExpr::Proof(_) | 
                 LeanExpr::Inst(_) | LeanExpr::Eq(_) | LeanExpr::Fun(_) | LeanExpr::Shaped(_) => {
                     for child in e.children().iter() {
                         let child_idx = usize::from(*child);
-                        if contains_max_or_imax(expr, child_idx).is_success() {
-                            return Result::Success
-                        }
+                        if contains_max_or_imax(expr, child_idx) { return true }
                     }
-                    Result::Other
+                    false
                 },
-                _ => Result::Other
+                _ => false
+            }
+        }
+    }
+}
+
+fn contains_lambda(expr: &[ENodeOrVar<LeanExpr>], idx: usize) -> bool {
+    match &expr[idx] {
+        ENodeOrVar::Var(_) => { false },
+        ENodeOrVar::ENode(e) => {
+            match e {
+                LeanExpr::Lam(_) => true,
+                LeanExpr::App(_) | LeanExpr::Forall(_) | LeanExpr::Proof(_) | LeanExpr::Inst(_) | 
+                LeanExpr::Eq(_) | LeanExpr::Fun(_) | LeanExpr::Shaped(_) => {
+                    for child in e.children().iter() {
+                        let child_idx = usize::from(*child);
+                        if contains_lambda(expr, child_idx) { return true }
+                    }
+                    false
+                },
+                _ => false
+            }
+        }
+    }
+}
+
+fn contains_forall(expr: &[ENodeOrVar<LeanExpr>], idx: usize) -> bool {
+    match &expr[idx] {
+        ENodeOrVar::Var(_) => { false },
+        ENodeOrVar::ENode(e) => {
+            match e {
+                LeanExpr::Forall(_) => true,
+                LeanExpr::App(_) | LeanExpr::Lam(_) | LeanExpr::Proof(_) | LeanExpr::Inst(_) | 
+                LeanExpr::Eq(_) | LeanExpr::Fun(_) | LeanExpr::Shaped(_) => {
+                    for child in e.children().iter() {
+                        let child_idx = usize::from(*child);
+                        if contains_forall(expr, child_idx) { return true }
+                    }
+                    false
+                },
+                _ => false
             }
         }
     }

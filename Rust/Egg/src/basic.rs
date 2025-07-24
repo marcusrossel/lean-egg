@@ -111,7 +111,15 @@ fn mk_initial_egraph(
 
 struct Activations {
     nat_lit: bool,
-    level: bool
+    level: bool,
+    lambda: bool,
+    forall: bool
+}
+
+impl Activations {
+    fn binders(&self) -> bool {
+        self.lambda || self.forall
+    }
 }
 
 fn get_activations(init: &Initialized, rw_templates: &Vec<RewriteTemplate>) -> Activations {
@@ -128,7 +136,9 @@ fn get_activations(init: &Initialized, rw_templates: &Vec<RewriteTemplate>) -> A
     }
     Activations { 
         nat_lit: exprs.iter().any(activates_nat_lit),
-        level: exprs.iter().any(activates_lvl)
+        level: exprs.iter().any(activates_lvl),
+        lambda: exprs.iter().any(activates_lambda),
+        forall: exprs.iter().any(activates_forall),
     }
 }
  
@@ -141,23 +151,32 @@ fn mk_rewrites(
     ];
 
     for template in rw_templates { 
-        match template.to_rewrite(cfg.to_rw_config(env))? {
+        // When `is_active.binders() == false`, the rewrite config does not enable checking of 
+        // invalid matches and bvar index correction.
+        match template.to_rewrite(cfg.to_rw_config(is_active.binders(), env))? {
             Either::Left(rw)  => rws.push(rw),
             Either::Right(eq) => eqs.push(eq)
         }
     }
 
-    if cfg.nat_lit && is_active.nat_lit { rws.append(&mut nat_lit_rws(cfg.shapes)) }
-    if cfg.eta                          { rws.push(eta_reduction_rw()) }
-    if cfg.eta_expand                   { rws.push(eta_expansion_rw()) }
-    if cfg.beta                         { rws.push(beta_reduction_rw()) }
-    if cfg.levels && is_active.level    { rws.append(&mut level_rws()) }
-    // We only enable substitution rewrites if beta-reduction is active, because beta-reduction is
-    // the only source of substitution nodes.
-    if cfg.beta { rws.append(&mut subst_rws()) }
-    // We always need to include rewrites for handling bvar shifts, as shift nodes can be introduced
-    // by every rewrite's applied when correcting bvar indices.
-    rws.append(&mut shift_rws());
+    if is_active.lambda {
+        if cfg.eta        { rws.push(eta_reduction_rw()) }
+        if cfg.eta_expand { rws.push(eta_expansion_rw()) }
+        if cfg.beta       { 
+            rws.push(beta_reduction_rw());
+            // We only enable substitution rewrites if beta-reduction is active, because 
+            // beta-reduction is the only source of substitution nodes. 
+            rws.append(&mut subst_rws())
+        }
+    }
+
+    // When no binders are present, we don't need to include rewrite rules for shift nodes as these
+    // nodes only originate from beta- and eta-reduction or bvar index correction -- which are all
+    // disabled when no binders are present.
+    if is_active.binders() { rws.append(&mut shift_rws()) }
+
+    if is_active.nat_lit && cfg.nat_lit { rws.append(&mut nat_lit_rws(cfg.shapes)) }
+    if is_active.level && cfg.levels    { rws.append(&mut level_rws()) }
     
     Ok((eqs, rws))
 }

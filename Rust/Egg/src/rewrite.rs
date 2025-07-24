@@ -21,10 +21,10 @@ pub struct RewriteConfig {
 
 impl Config {
 
-    pub fn to_rw_config(&self, env: *const c_void) -> RewriteConfig {
+    pub fn to_rw_config(&self, binders_are_active: bool, env: *const c_void) -> RewriteConfig {
         RewriteConfig {
-            block_invalid_matches: self.block_invalid_matches,
-            shift_captured_bvars: self.shift_captured_bvars,
+            block_invalid_matches: self.block_invalid_matches && binders_are_active,
+            shift_captured_bvars: self.shift_captured_bvars && binders_are_active,
             allow_unsat_conditions: self.allow_unsat_conditions,
             env
         }
