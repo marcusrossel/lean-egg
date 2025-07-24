@@ -12,7 +12,6 @@ Even stranger, if you flip the LHS and RHS of the goal, it suddenly works. The p
 in that case is the same just backwards. So a hacky fix would be to always obtain explanations from
 egg in both directions and if one fails try the other.
 -/
-set_option egg.retryWithShapes false in
 example (f i : Nat → Nat → Nat) (h₁ : f y = g) (h₂ : g y = i y (nat_lit 0)) :
     (f ·) y y = (i ·) y (nat_lit 0) := by
   sorry -- egg [h₁, h₂]

@@ -10,7 +10,7 @@ attribute [egg lie_external] neg_eq_iff_add_eq_zero zero_add add_zero smul_neg s
 -- TODO: extends AddCommGroup
 attribute [egg lie_ring] LieRing.add_lie LieRing.lie_add LieRing.lie_self LieRing.leibniz_lie
 
- -- TODO: extends CommRing and Module
+-- TODO: extends CommRing and Module
 egg_basket lie_alg extends lie_ring with LieAlgebra.lie_smul
 
 egg_basket lie_ring_mod extends lie_ring, lie_alg with

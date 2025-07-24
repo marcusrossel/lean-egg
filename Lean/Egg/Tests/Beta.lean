@@ -14,7 +14,6 @@ example : (fun x => (fun y => y) x) 0 = 0 := by
 example : (fun x => (fun _ => x) x) 0 = 0 := by
   egg
 
--- TODO: This breaks when using slotted e-graphs with small-step substitution.
 example : (fun x => (fun _ => x) 0) 1 = 1 := by
   egg
 

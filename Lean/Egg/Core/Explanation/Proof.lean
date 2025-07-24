@@ -28,7 +28,6 @@ structure Step where
   proof : Expr
   rw    : Step.Rewrite
   dir   : Direction
-  -- TODO: conds : Array Proof
   deriving Inhabited
 
 structure WeakVars where

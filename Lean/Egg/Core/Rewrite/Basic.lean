@@ -134,10 +134,14 @@ where
 def isValid (rw : Rewrite) (subgoals : Bool) : MetaM Bool :=
   return (← rw.violations subgoals).isEmpty
 
--- TODO: Flip the mvars and dir as well.
 def forDir (rw : Rewrite) : Direction → MetaM Rewrite
   | .forward  => return rw
-  | .backward => return { rw with lhs := rw.rhs, rhs := rw.lhs, proof := ← rw.rel.mkSymm rw.proof }
+  | .backward => return { rw with
+      lhs := rw.rhs, rhs := rw.lhs,
+      proof := ← rw.rel.mkSymm rw.proof,
+      mvars.lhs :=  rw.mvars.rhs, mvars.rhs :=  rw.mvars.lhs,
+      dir := rw.dir.opposite
+    }
 
 def eqProof (rw : Rewrite) : MetaM Expr := do
   match rw.rel with

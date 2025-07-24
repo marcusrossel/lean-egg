@@ -92,8 +92,6 @@ end DerivedM
 
 open DerivedM
 
--- TODO: We need to be careful about making sure that we don't loop infinitely.
---       For example, tc proj and explosion might easily loop.
 partial def genDerived (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) :
     TacticM Rewrites := do
   let all ← DerivedM.run do
@@ -108,7 +106,6 @@ where
     let (rws, cover) ← genTcProjReductions targets (covered := ∅) cfg
     add .tcProj rws
     setTcProjCover cover
-
   core : DerivedM Unit := do
     generate cfg .explosion do
       genExplosions (← todo .explosion) cfg.subgoals

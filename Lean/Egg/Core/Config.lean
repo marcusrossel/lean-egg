@@ -13,7 +13,7 @@ def Normalization.noReduce : Normalization where
 
 structure Encoding extends Normalization where
   -- TODO: Currently, this option implicitly disables defeq rewrites as they can not handle shapes, yet.
-  shapes  := false
+  shapes := false
   deriving BEq
 
 -- TODO: The slotted backend is currently not supported.
@@ -65,16 +65,11 @@ structure _root_.Egg.Config extends Encoding, DefEq, Gen, Backend, Debug where
   explLengthLimit := 200
   subgoals        := false
 
--- TODO: Why aren't these coercions automatic?
-
 instance : Coe Encoding Normalization where
   coe := Encoding.toNormalization
 
 instance : Coe Config Encoding where
   coe := toEncoding
-
-instance : Coe Config DefEq where
-  coe := toDefEq
 
 instance : Coe Config Gen where
   coe := toGen

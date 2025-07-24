@@ -39,7 +39,7 @@ initialize extension : Extension ← registerSimpleScopedEnvExtension {
 
 namespace Extension
 
--- TODO: The `stx?` argument is a workaround for (seemingly) not having `try catch` in
+-- NOTE: The `stx?` argument is a workaround for (seemingly) not having `try catch` in
 --       `CommandElabM`, which we would need in the elaborator for the `egg_basket` command.
 def getBasket (ext : Extension) (key : Basket.Key) (stx? : Option Syntax := none) :
     CoreM Basket.Info := do

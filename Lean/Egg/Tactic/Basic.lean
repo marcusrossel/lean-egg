@@ -27,8 +27,7 @@ private def resultToProof
     catch err =>
       -- If proof reconstruction fails but we haven't tried using shapes yet, retry with shapes
       -- (assuming the corresponding option is enabled).
-      -- TODO: Using slotted e-graphs doesn't support shaped yet.
-      if cfg.shapes || !retryWithShapes || cfg.slotted then
+      if cfg.shapes || !retryWithShapes then
         throw err
       else
         return .retryWithShapes

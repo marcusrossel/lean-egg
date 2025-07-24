@@ -6,6 +6,8 @@ open Lean Std Meta
 
 namespace Egg
 
+-- TODO: When overhauling this, consider the TODO in "TC Proj Binders.lean" and "TC Diamonds.lean"
+
 abbrev TcProj := Expr
 
 private def TcProj.mk (const : Name) (args : Array Expr) (lvls : List Level) : TcProj :=

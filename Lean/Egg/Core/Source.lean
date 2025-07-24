@@ -117,7 +117,7 @@ def description : Source → String
   | explicit idx none       => s!"#{idx}"
   | explicit idx (some eqn) => s!"#{idx}/{eqn}"
   | star id                 => s!"∗{id.uniqueIdx!}"
-  | .ground src             => s!"{src.description}↓"
+  | ground src              => s!"{src.description}↓"
   | reifiedEq               => "="
   | factAnd                 => "∧"
   | structProj idx          => s!"▵{idx}"
@@ -142,10 +142,10 @@ def isDefEq : Source → Bool
   | natLit _ | eta _ | beta | level _ | subst _ | shift _ => true
   | _                                                     => false
 
--- TODO: This is probably incomplete.
 def containsTcProj : Source → Bool
-  | tcProj .. => true
-  | _         => false
+  | tcProj ..                                          => true
+  | ground src | goalTypeSpec src _ | explosion src .. => containsTcProj src
+  | _                                                  => false
 
 def isNatLitConversion : Source → Bool
   | natLit .zero | natLit .toSucc | natLit .ofSucc => true

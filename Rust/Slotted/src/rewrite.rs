@@ -65,8 +65,6 @@ pub fn templates_to_rewrites(
                     // Disallows rewriting on primitive e-nodes.
                     if analysis.is_primitive { continue }
 
-                    // TODO: Handle conditions.
-                
                     graph.union_instantiations(&template.lhs, &template.rhs, &subst, Some(template.name.clone()));
                 }
             }),
