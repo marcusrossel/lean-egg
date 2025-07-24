@@ -1,7 +1,6 @@
 import Mathlib.Algebra.Lie.Basic
 import Egg
 
-set_option grind.warning false
 set_option egg.tcProjs false -- TODO: Things still work if we keep this, but it seems not to be necessary.
 set_option egg.timeLimit 10
 
@@ -37,22 +36,6 @@ variable (t : R) (x y z : L) (m n : M)
 example : -⁅y, x⁆ = ⁅x, y⁆ := by
   egg +lie using ⁅x + y, x⁆ + ⁅x + y, y⁆
 
-example : ⁅x, y⁆ = -⁅y, x⁆ := by
-  have h1 : 0 = ⁅x, y⁆ + ⁅y, x⁆ := by calc
-    _ = ⁅x + y, x + y⁆ := by                    grind [add_lie, lie_add, smul_lie, lie_smul, lie_zero, zero_lie, lie_self, add_zero, zero_add]
-    _ = ⁅x, x⁆ + ⁅x, y⁆ + ⁅y, x⁆ + ⁅y, y⁆ := by grind [add_lie, lie_add, smul_lie, lie_smul, lie_zero, zero_lie, lie_self, add_zero, zero_add]
-    _ = ⁅x, y⁆ + ⁅y, x⁆ := by                   grind [add_lie, lie_add, smul_lie, lie_smul, lie_zero, zero_lie, lie_self, add_zero, zero_add]
-  try grind  [sub_eq_zero, sub_neg_eq_add]
-  egg [sub_eq_zero, sub_neg_eq_add, h1]
-
-example : ⁅x, y⁆ = -⁅y, x⁆ := by
-  have h : 0 = ⁅x, y⁆ + ⁅y, x⁆ := by
-    egg +lie calc
-      _ = ⁅x + y, x + y⁆
-      _ = ⁅x, x⁆ + ⁅x, y⁆ + ⁅y, x⁆ + ⁅y, y⁆
-      _ = ⁅x, y⁆ + ⁅y, x⁆
-  egg +lie [h]
-
 /- Previous -/ attribute [egg lie] lie_skew
 
 -- lieAlgebraSelfModule
@@ -76,50 +59,6 @@ example : ⁅x, -m⁆ = -⁅x, m⁆ := by
 
 /- Previous -/ attribute [egg lie] lie_neg
 
-/--
-error: `grind` failed
-case grind
-R : Type u
-L : Type v
-M : Type w
-N : Type w₁
-inst : CommRing R
-inst_1 : LieRing L
-inst_2 : LieAlgebra R L
-inst_3 : AddCommGroup M
-inst_4 : Module R M
-inst_5 : LieRingModule L M
-inst_6 : LieModule R L M
-inst_7 : AddCommGroup N
-inst_8 : Module R N
-inst_9 : LieRingModule L N
-inst_10 : LieModule R L N
-t : R
-x y z : L
-m n : M
-h : ¬⁅x, -m⁆ = -⁅x, m⁆
-⊢ False
-[grind] Goal diagnostics
-  [facts] Asserted facts
-    [prop] LieModule R L M
-    [prop] LieModule R L N
-    [prop] ¬⁅x, -m⁆ = -⁅x, m⁆
-  [eqc] True propositions
-    [prop] LieModule R L M
-    [prop] LieModule R L N
-  [eqc] False propositions
-    [prop] ⁅x, -m⁆ = -⁅x, m⁆
-  [ematch] E-matching patterns
-    [thm] neg_add_cancel: [@HAdd.hAdd #2 _ _ _ (@Neg.neg _ _ #0) #0]
-    [thm] lie_zero: [@Bracket.bracket #5 #4 _ #0 (@OfNat.ofNat _ `[0] _)]
-    [thm] sub_eq_zero: [@HSub.hSub #3 _ _ _ #1 #0]
-    [thm] sub_neg_eq_add: [@HSub.hSub #3 _ _ _ #1 (@Neg.neg _ _ #0)]
-    [thm] lie_add: [@Bracket.bracket #7 #6 _ #2 (@HAdd.hAdd _ _ _ _ #1 #0)]
--/
-#guard_msgs in
-example : ⁅x, -m⁆ = -⁅x, m⁆ := by
-  grind [neg_add_cancel, lie_zero, ← sub_eq_zero, sub_neg_eq_add, ← lie_add]
-
 example : ⁅x - y, m⁆ = ⁅x, m⁆ - ⁅y, m⁆ := by
   egg +lie
 
@@ -142,15 +81,18 @@ example : ⁅x, ⁅y, z⁆⁆ + ⁅y, ⁅z, x⁆⁆ + ⁅z, ⁅x, y⁆⁆ = 0 :=
 
 /- Previous -/ attribute [egg lie] lie_jacobi
 
--- TODO: LinearMap.instLieRingModule
+-- TODO: `abel` proves equations over additive commutative monoids and groups. So we should probably
+--       create an additive group basket and use it here.
 example : LieRingModule L (M →ₗ[R] N) where
-  bracket x f :=
-    { toFun := fun m => ⁅x, f m⁆ - f ⁅x, m⁆
-      map_add' := fun m n => by
-        simp only [lie_add, LinearMap.map_add]
-        abel
-      map_smul' := fun t m => by
-        simp only [smul_sub, LinearMap.map_smul, lie_smul, RingHom.id_apply] }
+  bracket x f := {
+    toFun m := ⁅x, f m⁆ - f ⁅x, m⁆
+    map_add' m n := by
+      calc ⁅x, f (m + n)⁆ - f ⁅x, m + n⁆
+        _ = ⁅x, f m⁆ + ⁅x, f n⁆ - (f ⁅x, m⁆ + f ⁅x, n⁆) := by egg +lie [LinearMap.map_add]
+        _ = ⁅x, f m⁆ - f ⁅x, m⁆ + (⁅x, f n⁆ - f ⁅x, n⁆) := by abel
+    map_smul' _ _ := by
+      simp only [smul_sub, LinearMap.map_smul, lie_smul, RingHom.id_apply]
+  }
   add_lie x y f := by
     ext n
     simp only [add_lie, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.add_apply, LinearMap.map_add]
@@ -174,7 +116,10 @@ example : LieModule R L (M →ₗ[R] N) where
     simp only [smul_sub, smul_lie, LinearMap.smul_apply, LinearMap.map_smul]
   lie_smul t x f := by
     ext n
-    simp only [smul_sub, LinearMap.smul_apply, LieHom.lie_apply, lie_smul]
+    set_option trace.egg true in
+    set_option pp.explicit true in
+    egg +lie [*, smul_sub, LinearMap.smul_apply, LieHom.lie_apply, lie_smul, LieAlgebra.lie_smul] -- TODO: You now do eager synth of instance mvars when decoding type classes during eqsat, but is that sufficient?
+    -- simp only [smul_sub, LinearMap.smul_apply, LieHom.lie_apply, lie_smul]
 
 attribute [egg lie] Module.Dual.lie_apply sum_lie lie_sum sum_lie_sum
 

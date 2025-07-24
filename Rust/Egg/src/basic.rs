@@ -110,7 +110,8 @@ fn mk_initial_egraph(
 }
 
 struct Activations {
-    nat_lit: bool
+    nat_lit: bool,
+    level: bool
 }
 
 fn get_activations(init: &Initialized, rw_templates: &Vec<RewriteTemplate>) -> Activations {
@@ -126,7 +127,8 @@ fn get_activations(init: &Initialized, rw_templates: &Vec<RewriteTemplate>) -> A
         for prop_cond in &template.prop_conds { exprs.push(prop_cond.ast.clone()) }
     }
     Activations { 
-        nat_lit: exprs.iter().any(activates_nat_lit)
+        nat_lit: exprs.iter().any(activates_nat_lit),
+        level: exprs.iter().any(activates_lvl)
     }
 }
  
@@ -146,10 +148,10 @@ fn mk_rewrites(
     }
 
     if cfg.nat_lit && is_active.nat_lit { rws.append(&mut nat_lit_rws(cfg.shapes)) }
-    if cfg.eta        { rws.push(eta_reduction_rw()) }
-    if cfg.eta_expand { rws.push(eta_expansion_rw()) }
-    if cfg.beta       { rws.push(beta_reduction_rw()) }
-    if cfg.levels     { rws.append(&mut level_rws()) }
+    if cfg.eta                          { rws.push(eta_reduction_rw()) }
+    if cfg.eta_expand                   { rws.push(eta_expansion_rw()) }
+    if cfg.beta                         { rws.push(beta_reduction_rw()) }
+    if cfg.levels && is_active.level    { rws.append(&mut level_rws()) }
     // We only enable substitution rewrites if beta-reduction is active, because beta-reduction is
     // the only source of substitution nodes.
     if cfg.beta { rws.append(&mut subst_rws()) }
