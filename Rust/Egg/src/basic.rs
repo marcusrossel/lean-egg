@@ -33,11 +33,12 @@ pub struct Config {
 }
 
 pub struct ExplainedCongr {
-    pub kind:     ExplanationKind,
-    pub expl:     String,
-    pub egraph:   LeanEGraph,
-    pub report:   Report,
-    pub rw_stats: String   
+    pub kind:        ExplanationKind,
+    pub expl:        String,
+    pub egraph:      LeanEGraph,
+    pub report:      Report,
+    pub rw_stats:    String,
+    pub activations: Activations   
 }
 
 pub fn explain_congr(
@@ -47,7 +48,7 @@ pub fn explain_congr(
     let init = mk_initial_egraph(init, goal, guides, &cfg)?;
     let activations = get_activations(&init, &rw_templates);
     let Initialized { mut egraph, init_id, init_expr, goal_id, goal_expr, guide_exprs: _ } = init;
-    let (eqs, rws) = mk_rewrites(rw_templates, &cfg, activations, env)?;
+    let (eqs, rws) = mk_rewrites(rw_templates, &cfg, &activations, env)?;
 
     // Adds ground equalities to the e-graph.
     for eq in eqs { 
@@ -58,7 +59,7 @@ pub fn explain_congr(
     let report = runner.report();
     let rw_stats = collect_rw_stats(&runner);
     let (kind, expl) = mk_explanation(&mut runner.egraph, init_expr, goal_expr, init_id, goal_id);
-    Ok(ExplainedCongr { kind, expl, egraph: runner.egraph, report, rw_stats })
+    Ok(ExplainedCongr { kind, expl, egraph: runner.egraph, report, rw_stats, activations })
 }
 
 struct Initialized {
@@ -107,19 +108,6 @@ fn mk_initial_egraph(
     Ok(Initialized { egraph, init_id, init_expr, goal_id, goal_expr, guide_exprs })
 }
 
-struct Activations {
-    nat_lit: bool,
-    level: bool,
-    lambda: bool,
-    forall: bool
-}
-
-impl Activations {
-    fn binders(&self) -> bool {
-        self.lambda || self.forall
-    }
-}
-
 fn get_activations(init: &Initialized, rw_templates: &Vec<RewriteTemplate>) -> Activations {
     let mut exprs: Vec<PatternAst<LeanExpr>> = vec![];
     exprs.push(init.init_expr.clone().into_iter().map(ENodeOrVar::ENode).collect());
@@ -132,16 +120,13 @@ fn get_activations(init: &Initialized, rw_templates: &Vec<RewriteTemplate>) -> A
         exprs.push(template.rhs.ast.clone()); 
         for prop_cond in &template.prop_conds { exprs.push(prop_cond.ast.clone()) }
     }
-    Activations { 
-        nat_lit: exprs.iter().any(activates_nat_lit),
-        level: exprs.iter().any(activates_lvl),
-        lambda: exprs.iter().any(activates_lambda),
-        forall: exprs.iter().any(activates_forall),
-    }
+    let mut activations: Activations = Default::default();
+    for expr in exprs { activations.merge(&Activations::of(&expr)) }
+    activations
 }
  
 fn mk_rewrites(
-    rw_templates: Vec<RewriteTemplate>, cfg: &Config, is_active: Activations, env: *const c_void
+    rw_templates: Vec<RewriteTemplate>, cfg: &Config, is_active: &Activations, env: *const c_void
 ) -> Result<(Vec<GroundEq>, Vec<LeanRewrite>), Error> {
     let mut eqs = vec![];
     let mut rws = vec![

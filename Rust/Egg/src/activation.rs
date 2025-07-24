@@ -1,24 +1,42 @@
 use egg::*;
 use crate::lean_expr::*;
 
-pub fn activates_nat_lit(expr: &PatternAst<LeanExpr>) -> bool {
-    let root_idx = expr.as_ref().len() - 1;
-    contains_lit_or_zero(expr.as_ref(), root_idx).is_success()
+#[derive(Default)]
+pub struct Activations {
+    pub nat_lit: bool,
+    pub level: bool,
+    pub lambda: bool,
+    pub forall: bool
 }
 
-pub fn activates_lvl(expr: &PatternAst<LeanExpr>) -> bool {
-    let root_idx = expr.as_ref().len() - 1;
-    contains_max_or_imax(expr.as_ref(), root_idx)
-}
+impl Activations {
+    
+    pub fn binders(&self) -> bool {
+        self.lambda || self.forall
+    }
 
-pub fn activates_lambda(expr: &PatternAst<LeanExpr>) -> bool {
-    let root_idx = expr.as_ref().len() - 1;
-    contains_lambda(expr.as_ref(), root_idx)
-}
+    pub fn merge(&mut self, act: &Activations) {
+        self.nat_lit = self.nat_lit || act.nat_lit;
+        self.level   = self.level   || act.level;
+        self.lambda  = self.lambda  || act.lambda;
+        self.forall  = self.forall  || act.forall;
+    }
 
-pub fn activates_forall(expr: &PatternAst<LeanExpr>) -> bool {
-    let root_idx = expr.as_ref().len() - 1;
-    contains_forall(expr.as_ref(), root_idx)
+    // TODO: Collect all this info in a single traversal.
+    pub fn of(expr: &PatternAst<LeanExpr>) -> Activations {
+        let root_idx = expr.as_ref().len() - 1;
+        Activations {
+            nat_lit: contains_lit_or_zero(expr.as_ref(), root_idx).is_success(),
+            level: contains_max_or_imax(expr.as_ref(), root_idx),
+            lambda: contains_lambda(expr.as_ref(), root_idx),
+            forall: contains_forall(expr.as_ref(), root_idx)
+        }
+    }
+
+    pub fn report(&self) -> String {
+        format!("nat-lit: {}\nlevel: {}\nlambda: {}\nforall: {}", 
+                self.nat_lit, self.level, self.lambda, self.forall)
+    }
 }
 
 enum NatLitResult {

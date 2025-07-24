@@ -78,13 +78,14 @@ def Result.StopReason.description : StopReason → String
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 structure Result.Report where
-  iterations: Nat
-  stopReason: StopReason
-  reasonMsg:  String
-  nodeCount:  Nat
-  classCount: Nat
-  time:       Float
-  rwStats:    String
+  iterations  : Nat
+  stopReason  : StopReason
+  reasonMsg   : String
+  nodeCount   : Nat
+  classCount  : Nat
+  time        : Float
+  rwStats     : String
+  activations : String
   deriving Inhabited
 
 -- IMPORTANT: The C interface to egg depends on the order of these constructors.
@@ -95,7 +96,7 @@ private inductive Explanation.Kind.Raw where
   deriving Inhabited
 
 private def Explanation.Kind.Raw.toKind? : Raw → Option Explanation.Kind
-  | none       => Option.none
+  | none       => .none
   | sameEClass => some .sameEClass
   | eqTrue     => some .eqTrue
 

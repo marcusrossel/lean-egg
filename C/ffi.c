@@ -128,34 +128,37 @@ lean_config config_from_lean_obj(lean_obj_arg cfg) {
 
 /*
 structure Report where
-  iterations: Nat
-  stopReason: StopReason
-  reasonMsg:  String
-  nodeCount:  Nat
-  classCount: Nat
-  time:       Float
-  rwStats:    String
+  iterations  : Nat
+  stopReason  : StopReason
+  reasonMsg   : String
+  nodeCount   : Nat
+  classCount  : Nat
+  time        : Float
+  rwStats     : String
+  activations : String
 */
 
 typedef struct report {
-    size_t      iterations;
+    size_t  iterations;
     uint8_t reason;
-    char*       reason_msg;
-    size_t      node_count;
-    size_t      class_count;
-    double      time;
-    char*       rw_stats;
+    char*   reason_msg;
+    size_t  node_count;
+    size_t  class_count;
+    double  time;
+    char*   rw_stats;
+    char*   activations;
 } report;
 
 lean_obj_res report_to_lean(report rep) {
-    lean_object* r = lean_alloc_ctor(0, 5, sizeof(double) + sizeof(uint8_t));
-    size_t obj_offset = 5 * sizeof(void*);
+    lean_object* r = lean_alloc_ctor(0, 6, sizeof(double) + sizeof(uint8_t));
+    size_t obj_offset = 6 * sizeof(void*);
 
     lean_ctor_set(r, 0, lean_box(rep.iterations));
     lean_ctor_set(r, 1, lean_mk_string(rep.reason_msg));
     lean_ctor_set(r, 2, lean_box(rep.node_count));
     lean_ctor_set(r, 3, lean_box(rep.class_count));
     lean_ctor_set(r, 4, lean_mk_string(rep.rw_stats));
+    lean_ctor_set(r, 5, lean_mk_string(rep.activations));
     lean_ctor_set_float(r, obj_offset, rep.time);
     lean_ctor_set_uint8(r, obj_offset + sizeof(double), rep.reason);
 

@@ -6,6 +6,7 @@ use util::sub_expr;
 use std::{collections::HashSet, ffi::{c_char, c_void, CStr, CString}};
 use libc::c_double;
 use std::str::FromStr;
+use activation::*;
 use basic::*;
 use result::*;
 use rewrite::*;
@@ -140,11 +141,12 @@ pub struct CReport {
     egraph_classes:  usize,
     total_time:      c_double,
     rw_stats:        *const c_char,
+    activations:     *const c_char
 }
 
 impl CReport {
 
-    fn from_report(r: Report, rw_stats: String) -> CReport {
+    fn from_report(r: Report, rw_stats: String, activations: Activations) -> CReport {
         let (stop_reason, msg) = u8_from_stop_reason(r.stop_reason);
         CReport {
             iterations:      r.iterations,
@@ -154,6 +156,7 @@ impl CReport {
             egraph_classes:  r.egraph_classes,
             total_time:      r.total_time,
             rw_stats:        string_to_c_str(rw_stats),
+            activations:     string_to_c_str(activations.report())
         }
     }
 
@@ -166,6 +169,7 @@ impl CReport {
             egraph_classes:  0,
             total_time:      0.0,
             rw_stats:        string_to_c_str("".to_string()),
+            activations:     string_to_c_str("".to_string())
         }
     }
 }
@@ -215,13 +219,13 @@ pub extern "C" fn egg_explain_congr(
             report: CReport::from_other_stop_reason(res_err.to_string()) 
         }
     }
-    let ExplainedCongr { kind, expl, egraph, report, rw_stats } = res.unwrap();
+    let ExplainedCongr { kind, expl, egraph, report, rw_stats, activations } = res.unwrap();
 
     EqsatResult {
         kind: kind.to_c(),
         expl: string_to_c_str(expl),
         graph: Some(Box::new(egraph)),
-        report: CReport::from_report(report, rw_stats) 
+        report: CReport::from_report(report, rw_stats, activations) 
     }
 }
 
