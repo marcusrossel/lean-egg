@@ -28,8 +28,6 @@ pub struct Config {
     beta:                       bool,
     levels:                     bool,
     shapes:                     bool,
-    pub block_invalid_matches:  bool,
-    pub shift_captured_bvars:   bool,
     union_semantics:            bool,
     pub allow_unsat_conditions: bool
 }

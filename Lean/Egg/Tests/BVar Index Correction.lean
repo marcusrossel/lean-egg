@@ -1,6 +1,5 @@
 import Egg
 
-set_option egg.shiftCapturedBVars true in
 example (h : ∀ x y : Nat, x = y ↔ y = x) : (∀ x y : Nat, x = y) ↔ (∀ a b : Nat, b = a + 0) := by
   egg [h, Nat.add_zero]
 
@@ -13,16 +12,6 @@ set_option egg.beta false
 theorem thm₁ : ∀ x y : Nat, (x, y).fst = (fun _ => x) (nat_lit 1) :=
   fun _ _ => rfl
 
--- In this example egg finds a proof, but we're not performing proof reconstruction (which would be
--- impossible) as a result of setting `exitPoint := some .beforeProof`.
-set_option egg.shiftCapturedBVars false in
-example : False := by
-  have h : (fun x => (x, 5).fst) = (fun _ : Nat => (fun x => x) 1) := by
-    egg (config := { exitPoint := some .beforeProof }) [thm₁]
-  have : (fun x => x) 0 = (fun y => 1) 0 := by rw [h]
-  contradiction
-
-set_option egg.shiftCapturedBVars true in
 /-- error: egg failed to prove the goal (reached time limit) -/
 #guard_msgs in
 example : (fun x => (x, 5).fst) = (fun _ : Nat => (fun x => x) 1) := by

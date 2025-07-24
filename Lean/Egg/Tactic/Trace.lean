@@ -130,8 +130,6 @@ nonrec def Config.trace (cfg : Config) (cls : Name) : TacticM Unit := do
     trace cls fun _ => m!"{toEmoji cfg.natLit} Enable Definitional Natural Number Literal Rewrites"
     trace cls fun _ => m!"{toEmoji cfg.beta} Enable β-Reduction"
     trace cls fun _ => m!"{toEmoji cfg.eta} Enable η-Reduction"
-    trace cls fun _ => m!"{toEmoji cfg.blockInvalidMatches} Block Invalid Matches"
-    trace cls fun _ => m!"{toEmoji cfg.shiftCapturedBVars} Correct BVar Indices"
     trace cls fun _ => m!"{toEmoji cfg.optimizeExpl} Optimize Explanation Length"
     withTraceNode cls (fun _ => return "Encoding") (collapsed := false) do
       trace cls fun _ => m!"{toEmoji cfg.betaReduceRws} β-Reduce Rewrites"

@@ -37,17 +37,13 @@ structure DefEq where
   levels    := true
 
 structure Backend where
-  blockInvalidMatches := true
-  shiftCapturedBVars  := true -- This option implies `blockInvalidMatches`.
-  unionSemantics      := true
-  -- TODO: For slotted e-graphs, this option can be used to inspect the tree explanation by setting
-  --       this option to `false`.
-  optimizeExpl        := true
-  timeLimit           := 3
-  nodeLimit           := 1000000000000000000
-  iterLimit           := 1000000000000000000
-  reporting           := false
-  flattenReports      := false
+  unionSemantics := true
+  optimizeExpl   := true
+  timeLimit      := 3
+  nodeLimit      := 1000000000000000000
+  iterLimit      := 1000000000000000000
+  reporting      := false
+  flattenReports := false
   deriving BEq
 
 inductive Debug.ExitPoint

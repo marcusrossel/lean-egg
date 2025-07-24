@@ -56,8 +56,6 @@ register_egg_options
   explosion
   derivedGuides
   groundEqs
-  blockInvalidMatches
-  shiftCapturedBVars "Note: Setting this to `true` also enables `egg.blockInvalidMatches`."
   unionSemantics
   subgoals
   optimizeExpl

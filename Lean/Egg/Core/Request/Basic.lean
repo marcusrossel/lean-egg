@@ -20,8 +20,6 @@ protected structure Config where
   beta                 : Bool
   levels               : Bool
   shapes               : Bool
-  blockInvalidMatches  : Bool
-  shiftCapturedBVars   : Bool
   unionSemantics       : Bool
   allowUnsatConditions : Bool
 
@@ -38,8 +36,6 @@ instance : Coe Config Request.Config where
     beta                 := cfg.beta
     levels               := cfg.levels
     shapes               := cfg.shapes
-    blockInvalidMatches  := cfg.blockInvalidMatches
-    shiftCapturedBVars   := cfg.shiftCapturedBVars
     unionSemantics       := cfg.unionSemantics
     allowUnsatConditions := cfg.subgoals
   }

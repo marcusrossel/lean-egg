@@ -79,8 +79,6 @@ typedef struct config {
     _Bool  beta;
     _Bool  levels;
     _Bool  shapes;
-    _Bool  block_invalid_matches;
-    _Bool  shift_captured_bvars;
     _Bool  union_semantics;
     _Bool  allow_unsat_conditions;
 } config;
@@ -103,8 +101,6 @@ structure Config where
   beta                 : Bool
   levels               : Bool
   shapes               : Bool
-  blockInvalidMatches  : Bool
-  shiftCapturedBVars   : Bool
   unionSemantics       : Bool
   allowUnsatConditions : Bool
 */
@@ -124,10 +120,8 @@ lean_config config_from_lean_obj(lean_obj_arg cfg) {
             .beta                   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 5),  
             .levels                 = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6),  
             .shapes                 = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7), 
-            .block_invalid_matches  = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 8), 
-            .shift_captured_bvars   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 9),  
-            .union_semantics        = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 10),
-            .allow_unsat_conditions = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 11),  
+            .union_semantics        = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 8),
+            .allow_unsat_conditions = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 9),  
         }
     };
 }

@@ -13,8 +13,7 @@ use crate::is_synthable;
 use crate::util::*;
 
 pub struct RewriteConfig {
-    block_invalid_matches: bool, 
-    shift_captured_bvars: bool, 
+    binders_are_active: bool,
     allow_unsat_conditions: bool,
     env: *const c_void
 }
@@ -23,8 +22,7 @@ impl Config {
 
     pub fn to_rw_config(&self, binders_are_active: bool, env: *const c_void) -> RewriteConfig {
         RewriteConfig {
-            block_invalid_matches: self.block_invalid_matches && binders_are_active,
-            shift_captured_bvars: self.shift_captured_bvars && binders_are_active,
+            binders_are_active,
             allow_unsat_conditions: self.allow_unsat_conditions,
             env
         }
@@ -95,7 +93,7 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
         if is_primitive_pattern_subst(&self.lhs, graph, subst) { return vec![] }
         
         let mut var_depths: Option<HashMap<Var, u64>> = None;
-        if self.cfg.block_invalid_matches || self.cfg.shift_captured_bvars { 
+        if self.cfg.binders_are_active { 
             match match_is_valid(subst, &self.lhs.ast, graph) {
                 MatchValidity::Invalid   => return vec![],
                 MatchValidity::Valid(vd) => var_depths = Some(vd)
@@ -120,7 +118,7 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
 
         // A substitution needs no shifting if it does not map any variables to e-classes containing 
         // loose bvars. This is the case exactly when `var_depths` is empty.
-        if self.cfg.shift_captured_bvars && !var_depths.clone().unwrap().is_empty() {
+        if self.cfg.binders_are_active && !var_depths.clone().unwrap().is_empty() {
             let shifted_rhs = correct_bvar_indices(&self.rhs, var_depths.unwrap(), graph);
             let (from, did_union) = graph.union_instantiations(&self.lhs.ast, &shifted_rhs, subst, rule);
             if did_union { vec![from] } else { vec![] }
