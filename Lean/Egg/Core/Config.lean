@@ -12,11 +12,13 @@ def Normalization.noReduce : Normalization where
   natReduceRws  := false
 
 structure Encoding extends Normalization where
-  -- TODO: Currently, this option implicitly disables `retryWithShapes` as slotted cannot handle shapes, yet.
-  slotted := false
   -- TODO: Currently, this option implicitly disables defeq rewrites as they can not handle shapes, yet.
   shapes  := false
   deriving BEq
+
+-- TODO: The slotted backend is currently not supported.
+def Encoding.slotted (_ : Encoding) : Bool :=
+  false
 
 structure Gen where
   baskets       := (#[] : Array Lean.Name)

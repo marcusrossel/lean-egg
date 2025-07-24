@@ -38,7 +38,6 @@ structure Modifier where
   vizPath         : Option String          := none
 
 def modify (cfg : Config) (mod : Modifier) : Config where
-  slotted         := mod.slotted.getD cfg.slotted
   shapes          := mod.shapes.getD cfg.shapes
   betaReduceRws   := mod.betaReduceRws.getD cfg.betaReduceRws
   etaReduceRws    := mod.etaReduceRws.getD cfg.etaReduceRws
