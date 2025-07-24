@@ -8,12 +8,12 @@ initialize registerTraceClass `egg
 initialize registerTraceClass `egg.config            (inherited := true)
 initialize registerTraceClass `egg.rewrites          (inherited := true)
 initialize registerTraceClass `egg.guides            (inherited := true)
-initialize registerTraceClass `egg.ambient           (inherited := true)
 initialize registerTraceClass `egg.encoded           (inherited := true)
 initialize registerTraceClass `egg.explanation       (inherited := true)
 initialize registerTraceClass `egg.explanation.steps (inherited := true)
 initialize registerTraceClass `egg.proof             (inherited := true)
 initialize registerTraceClass `egg.proof.term        (inherited := false)
+initialize registerTraceClass `egg.activations       (inherited := true)
 
 namespace Egg
 
@@ -47,7 +47,6 @@ nonrec def formatReport
     "nodes:      " ++ (format rep.nodeCount)  ++ "\n" ++
     "classes:    " ++ (format rep.classCount) ++ "\n" ++
     (if let some e := expl? then "expl steps: " ++ format e.steps.size ++ s!"\nbinder rws: {e.involvesBinderRewrites}\n" else "") ++
-    "\nactivations:\n" ++ rep.activations ++ "\n" ++
     (if rep.rwStats.isEmpty then "" else s!"\nrw stats:\n{rep.rwStats}")
 
 def MVars.Property.toString : MVars.Property → String

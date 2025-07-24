@@ -1,5 +1,4 @@
 import Egg
-import Lean
 
 variable (h : ∀ x : Prop, (x ∧ x) = True)
 

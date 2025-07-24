@@ -125,6 +125,7 @@ def run
     MetaM Result := do
   let raw ← runRaw req
   withTraceNode `egg.explanation (fun _ => return "Explanation") do trace[egg.explanation] raw.expl
+  withTraceNode `egg.activations (fun _ => return "Activations") do trace[egg.activations] raw.report.activations
   let some kind := raw.kind.toKind? | throwError ← onFail raw.report (.backend raw.expl)
   let explLength := raw.expl.lineCount
   unless explLength <= explLengthLimit do throwError ← onFail raw.report (.explLength explLength)
