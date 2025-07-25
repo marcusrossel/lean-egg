@@ -27,7 +27,7 @@ private def deriveGuides (rw : Rewrite) : MetaM ExprSet := do
   let mut result := ∅
   result := result.union (← closedSubexprs rw.lhs)
   result := result.union (← closedSubexprs rw.rhs)
-  for cond in rw.conds do result := result.union (← closedSubexprs cond.type)
+  for cond in rw.conds.active do result := result.union (← closedSubexprs cond.type)
   return result
 
 def genDerivedGuides (goal : Congr) (rws : Rewrites) : MetaM Guides := do

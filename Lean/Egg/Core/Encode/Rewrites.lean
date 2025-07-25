@@ -23,7 +23,7 @@ def encode (rw : Rewrite) (cfg : Config.Encoding) : MetaM Encoded :=
     name  := s!"{rw.dir.description}{rw.src.description}"
     lhs   := ← Egg.encode rw.lhs cfg
     rhs   := ← Egg.encode rw.rhs cfg
-    conds := ← rw.conds.mapM (Condition.encode · cfg)
+    conds := ← rw.conds.active.mapM (Condition.encode · cfg)
   }
 
 end Rewrite

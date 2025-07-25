@@ -76,12 +76,13 @@ def Congr.toMessageData (cgr : Congr) : MetaM MessageData :=
   return cgr.lhs ++ " " ++ cgr.rel.format ++ " " ++ cgr.rhs
 
 def Rewrite.Violation.toMessageData : Rewrite.Violation → MessageData
-  | rhsMVarInclusion missing => m!"rhsMVarInclusion: {missing.toList.map (Expr.mvar ·)}"
-  | rhsUVarInclusion missing => m!"rhsUVarInclusion: {missing.toList.map (Level.mvar ·)}"
+  | rhsMVarInclusion missing => m!"rhsMVarInclusion: {missing.toList.map Expr.mvar}"
+  | rhsUVarInclusion missing => m!"rhsUVarInclusion: {missing.toList.map Level.mvar}"
   | lhsSingleMVar _          => "lhsSingleMVar"
-  | covering missing         => m!"covering: {missing.toList.map (Expr.mvar ·)}"
-  | tcMVarInclusion missing  => m!"tcMVarInclusion: {missing.toList.map (Expr.mvar ·)}"
+  | covering missing         => m!"covering: {missing.toList.map Expr.mvar}"
+  | tcMVarInclusion missing  => m!"tcMVarInclusion: {missing.toList.map Expr.mvar}"
   | tcUVarInclusion          => "tcUVarInclusion"
+  | unsynthesizable ms       => m!"unsynthesizable: {ms.toList.map Expr.mvar}"
 
 def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) (subgoals : Bool)
     (headerAnnotation : String := "") : TacticM Unit := do
@@ -91,9 +92,9 @@ def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) (subgoals :
   if let some stx := stx? then header := m!"{header}: {stx}"
   withTraceNode cls (fun _ => return header) do
     traceM cls fun _ => rw.toCongr.toMessageData
-    if !rw.conds.isEmpty then
+    unless rw.conds.active.isEmpty do
       withTraceNode cls (fun _ => return "Conditions") (collapsed := false) do
-        for cond in rw.conds do
+        for cond in rw.conds.active do
           traceM cls fun _ => return m!"{cond.type}"
     traceM cls fun _ => return m!"LHS MVars\n{← rw.mvars.lhs.toMessageData}"
     traceM cls fun _ => return m!"RHS MVars\n{← rw.mvars.rhs.toMessageData}"
@@ -122,29 +123,48 @@ def Rewrite.Encoded.trace (rw : Rewrite.Encoded) (cls : Name) : TacticM Unit := 
         for cond in rw.conds do
           Lean.trace cls fun _ => cond
 
-nonrec def Config.trace (cfg : Config) (cls : Name) : TacticM Unit := do
-  let toEmoji (b : Bool) := if b then "✅" else "❌"
-  withTraceNode cls (fun _ => return "Configuration") do
-    trace cls fun _ => m!"{toEmoji cfg.tcProjs} Generate Type Class Projection Rewrites"
-    trace cls fun _ => m!"{toEmoji cfg.goalTypeSpec} Generate Goal Type Specialization Rewrites"
-    trace cls fun _ => m!"{toEmoji cfg.natLit} Enable Definitional Natural Number Literal Rewrites"
-    trace cls fun _ => m!"{toEmoji cfg.beta} Enable β-Reduction"
-    trace cls fun _ => m!"{toEmoji cfg.eta} Enable η-Reduction"
-    trace cls fun _ => m!"{toEmoji cfg.optimizeExpl} Optimize Explanation Length"
-    withTraceNode cls (fun _ => return "Encoding") (collapsed := false) do
-      trace cls fun _ => m!"{toEmoji cfg.betaReduceRws} β-Reduce Rewrites"
-      trace cls fun _ => m!"{toEmoji cfg.etaReduceRws} η-Reduces Rewrites"
-    withTraceNode cls (fun _ => return "Debug") (collapsed := false) do
-      trace cls fun _ => m!"Exit Point: {cfg.exitPoint.format}"
-      trace cls fun _ => m!"E-Graph Visualization Export Path: {cfg.vizPath.getD "None"}"
+def _root_.Bool.toEmoji : Bool → String
+  | true  => "✅"
+  | false => "❌"
 
-nonrec def Config.DefEq.trace (cfg : Config.DefEq) (cls : Name) : TacticM Unit := do
-  withTraceNode cls (fun _ => return "Definitional") do
-    if cfg.beta      then Lean.trace cls fun _ => "β-Reduction"
-    if cfg.eta       then Lean.trace cls fun _ => "η-Reduction"
-    if cfg.etaExpand then Lean.trace cls fun _ => "η-Expansion"
-    if cfg.natLit    then Lean.trace cls fun _ => "Natural Number Literals"
-    if cfg.levels    then Lean.trace cls fun _ => "Universe Levels"
+nonrec def Config.Encoding.trace (cfg : Config.Encoding) (cls : Name) (collapsed := true) : TacticM Unit := do
+  withTraceNode cls (fun _ => return "Encoding") (collapsed := collapsed) do
+    trace cls fun _ => m!"{cfg.shapes.toEmoji} Shapes"
+    trace cls fun _ => m!"{cfg.betaReduceRws.toEmoji} β-Reduce Rewrites"
+    trace cls fun _ => m!"{cfg.etaReduceRws.toEmoji} η-Reduces Rewrites"
+
+nonrec def Config.DefEq.trace (cfg : Config.DefEq) (cls : Name) (collapsed := true) : TacticM Unit := do
+  withTraceNode cls (fun _ => return "Definitional") (collapsed := collapsed) do
+    trace cls fun _ => m!"{cfg.beta.toEmoji} β-Reduction"
+    trace cls fun _ => m!"{cfg.eta.toEmoji} η-Reduction"
+    trace cls fun _ => m!"{cfg.etaExpand.toEmoji} η-Expansion"
+    trace cls fun _ => m!"{cfg.natLit.toEmoji} Natural Number Literals"
+    trace cls fun _ => m!"{cfg.levels.toEmoji} Universe Levels"
+
+nonrec def Config.Gen.trace (cfg : Config.Gen) (cls : Name) (collapsed := true) : TacticM Unit := do
+  withTraceNode cls (fun _ => return "Generation") (collapsed := collapsed) do
+    trace cls fun _ => m!"{cfg.builtins.toEmoji} Builtins"
+    trace cls fun _ => m!"{cfg.structProjs.toEmoji} Structure Projections"
+    trace cls fun _ => m!"{cfg.tcProjs.toEmoji} Type Class Projections"
+    trace cls fun _ => m!"{cfg.goalTypeSpec.toEmoji} Goal Type Specializations"
+    trace cls fun _ => m!"{cfg.groundEqs.toEmoji} Ground Equations"
+    trace cls fun _ => m!"{cfg.derivedGuides.toEmoji} Derived Guides"
+    trace cls fun _ => m!"{cfg.explosion.toEmoji} Explosion"
+
+nonrec def Config.Backend.trace (cfg : Config.Backend) (cls : Name) (collapsed := true) : TacticM Unit := do
+  withTraceNode cls (fun _ => return "Generation") (collapsed := collapsed) do
+    trace cls fun _ => m!"{cfg.unionSemantics.toEmoji} Union Semantics"
+    trace cls fun _ => m!"{cfg.optimizeExpl.toEmoji} Optimize Explanation Length"
+    trace cls fun _ => m!"Time Limit: {cfg.timeLimit}"
+    trace cls fun _ => m!"E-Node Limit: {cfg.nodeLimit}"
+    trace cls fun _ => m!"Iteration Limit: {cfg.iterLimit}"
+
+nonrec def Config.trace (cfg : Config) (cls : Name) : TacticM Unit := do
+  withTraceNode cls (fun _ => return "Configuration") do
+    Encoding.trace cfg cls (collapsed := false)
+    DefEq.trace cfg.toDefEq cls (collapsed := false)
+    Gen.trace cfg.toGen cls (collapsed := false)
+    Backend.trace cfg.toBackend cls (collapsed := false)
 
 nonrec def Guide.trace (guide : Guide) (cls : Name) : TacticM Unit := do
   trace cls fun _ => m!"{guide.src.description}: " ++ guide.expr

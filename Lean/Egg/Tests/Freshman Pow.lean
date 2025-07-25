@@ -1,7 +1,5 @@
 import Egg
 
-instance [One α] : OfNat α 1 where ofNat := One.one
-
 class CommRing (α) extends Zero α, One α, Add α, Sub α, Mul α, Div α, Pow α Nat, Inv α, Neg α where
   comm_add  (a b : α)   : a + b = b + a
   comm_mul  (a b : α)   : a * b = b * a

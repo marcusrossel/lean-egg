@@ -109,7 +109,7 @@ def Rewrites.tcProjTargets (rws : Rewrites) : Array TcProjTarget := Id.run do
   let mut sources : Array TcProjTarget := #[]
   for rw in rws do
     sources := sources ++ rw.toCongr.tcProjTargets rw.src
-    for cond in rw.conds, idx in [:rw.conds.size] do
+    for cond in rw.conds.active, idx in [:rw.conds.active.size] do
       sources := sources.push { expr := cond.type, src := rw.src, loc := .cond idx }
   return sources
 

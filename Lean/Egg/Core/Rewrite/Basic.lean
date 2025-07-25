@@ -7,39 +7,46 @@ open Lean Meta Std
 
 namespace Egg
 
+structure Rewrite.Conditions where
+  active          : Array Rewrite.Condition
+  synthesized     : MVarIdSet
+  unsynthesizable : MVarIdSet
+  deriving Inhabited
+
+instance : EmptyCollection Rewrite.Conditions where
+  emptyCollection := { active := #[], synthesized := ∅, unsynthesizable := ∅ }
+
 -- Note: We don't create `Rewrite`s directly, but use `Rewrite.from?` instead.
 structure Rewrite extends Prerewrite where private mk ::
-  conds : Array Rewrite.Condition
+  conds : Rewrite.Conditions
   mvars : Rewrite.MVars
   src   : Source
   dir   : Direction
   deriving Inhabited
 
-private structure ConditionsResult where
-  conds       : Array Rewrite.Condition
-  synthesized : MVarIdSet
-
 -- Note: It suffices to iterate over the qvars and the body mvars, as any mvars not appearing in
 --       either of these must be the *type* of some mvar which does appear. But types can never turn
 --       into conditions, so we don't need to consider them.
-private def collectConditions (qvars : MVarIdSet) (mLhs mRhs : MVars) : MetaM ConditionsResult := do
+private def collectConditions (qvars : MVarIdSet) (mLhs mRhs : MVars) : MetaM Rewrite.Conditions := do
   let mut mvars := qvars
   mvars := mLhs.expr.fold (init := mvars) fun acc m _ => acc.insert m
   mvars := mRhs.expr.fold (init := mvars) fun acc m _ => acc.insert m
-  let mut conds := #[]
+  let mut active := #[]
   let mut synthesized := ∅
+  let mut unsynthesizable := ∅
   for mvar in mvars do
     match ← Rewrite.Condition.from? mvar mLhs with
-    | .none        => continue
-    | .synthesized => synthesized := synthesized.insert mvar
-    | .some cond   => conds := conds.push cond
-  return { conds, synthesized }
+    | .none            => continue
+    | .synthesized     => synthesized     := synthesized.insert mvar
+    | .unsynthesizable => unsynthesizable := unsynthesizable.insert mvar
+    | .some cond       => active          := active.push cond
+  return { active, synthesized, unsynthesizable }
 
 def Prerewrite.complete (pre : Prerewrite) (src : Source) (dir : Direction) : MetaM Rewrite := do
   let pre  ← pre.forDir dir
   let mLhs ← MVars.collect pre.lhs
   let mRhs ← MVars.collect pre.rhs
-  let { conds, synthesized } ← collectConditions pre.qvars mLhs mRhs
+  let conds ← collectConditions pre.qvars mLhs mRhs
   return { pre with conds, mvars := ⟨mLhs, mRhs⟩, src, dir }
 
 namespace Rewrite
@@ -62,7 +69,7 @@ def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config.Normalization) 
   let cgr : Congr := { rel := .eq, lhs := type, rhs := .const ``True [] }
   let proof ← mkEqTrue proof
   -- One direction suffices.
-  return some { cgr with qvars := ∅, proof, conds := #[], mvars := ⟨{}, {}⟩, src, dir := .forward }
+  return some { cgr with qvars := ∅, proof, conds := ∅, mvars := ⟨{}, {}⟩, src, dir := .forward }
 
 -- TODO: Do we need something like `covering` for levels?
 inductive Violation where
@@ -72,6 +79,7 @@ inductive Violation where
   | covering (missing : MVarIdSet)
   | tcMVarInclusion (missing : MVarIdSet)
   | tcUVarInclusion
+  | unsynthesizable (conds : MVarIdSet)
 
 -- Note: To check `covering`, it suffices to check all qvars. The reason being that all vars are
 --       either in the theorem body, the qvars, or the types of the former. The variables in the
@@ -89,8 +97,11 @@ inductive Violation where
 --       `tcMVarInclusion` anyway.
 def violations (rw : Rewrite) (subgoals : Bool) : MetaM (List Violation) := do
   let mut violations : List Violation := []
+  -- Checks that there are no unsynthesizable conditions.
+  unless rw.conds.unsynthesizable.isEmpty do
+    violations := (.unsynthesizable rw.conds.unsynthesizable) :: violations
   -- Checks for `lhsSingleMVar`.
-  let containsNonMVarProofConditions ← (return subgoals) <||> rw.conds.anyM fun cond =>
+  let containsNonMVarProofConditions ← (return subgoals) <||> rw.conds.active.anyM fun cond =>
     (return cond.kind.isProof) <&&> cond.type.isNonAmbientMVar
   if ← rw.lhs.isNonAmbientMVar <&&> (return !containsNonMVarProofConditions) then
     violations := (.lhsSingleMVar rw.lhs.mvarId!) :: violations
@@ -118,14 +129,14 @@ def violations (rw : Rewrite) (subgoals : Bool) : MetaM (List Violation) := do
 where
   condVisible (kind : Condition.Kind) : MetaM MVarIdSet := do
     let mut vis := ∅
-    for cond in rw.conds do
+    for cond in rw.conds.active do
       if cond.kind == kind then
         let mvars ← MVars.collect cond.type
         vis := vis.union mvars.visibleExpr
     return vis
   condVisibleLvls (kind : Condition.Kind) : MetaM LMVarIdSet := do
     let mut vis := ∅
-    for cond in rw.conds do
+    for cond in rw.conds.active do
       if cond.kind == kind then
         let mvars ← MVars.collect cond.type
         vis := vis.union mvars.visibleLevel
@@ -170,14 +181,15 @@ where
       fresh := fresh.insert m
       subst := subst.insert qvar m
     return (fresh, { expr := subst, lvl := ∅ })
-  freshConds (init : MVars.Subst) : MetaM (Array Condition × MVars.Subst) := do
+  freshConds (init : MVars.Subst) : MetaM (Conditions × MVars.Subst) := do
     let mut subst := init
-    let mut conds := #[]
-    for cond in rw.conds do
+    let mut active := #[]
+    -- Note: Synthesized and unsynthesizable conditions can't have mvars, so we don't refresh them.
+    for cond in rw.conds.active do
       let (fresh, s) ← cond.fresh subst
-      conds := conds.push fresh
+      active := active.push fresh
       subst := s
-    return (conds, subst)
+    return ({ rw.conds with active }, subst)
 
 -- Returns the same rewrite but with all (expression and level) mvars replaced by fresh mvars. This
 -- is used during proof reconstruction, as rewrites may be used multiple times but instantiated
@@ -193,8 +205,8 @@ nonrec def instantiateMVars (rw : Rewrite) : MetaM Rewrite := do
   let mut qvars ← rw.qvars.filterM fun m => return !(← m.isAssigned)
   let mut mLhs  ← rw.mvars.lhs.removeAssigned
   let mut mRhs  ← rw.mvars.rhs.removeAssigned
-  let { conds, synthesized } ← collectConditions qvars mLhs mRhs
-  for s in synthesized do
+  let conds ← collectConditions qvars mLhs mRhs
+  for s in conds.synthesized.union conds.unsynthesizable do
     qvars := qvars.erase s
     mLhs  := { mLhs with expr := mLhs.expr.erase s }
     mRhs  := { mLhs with expr := mRhs.expr.erase s }
@@ -206,11 +218,9 @@ nonrec def instantiateMVars (rw : Rewrite) : MetaM Rewrite := do
     mvars := ⟨mLhs, mRhs⟩
   }
 
+-- TODO: Remove this after the overhaul of type class projection generation.
 def eraseConditions (rw : Rewrite) : Rewrite :=
-  { rw with conds := #[] }
-
-def tcConditionMVars (rw : Rewrite) : MVarIdSet :=
-  rw.conds.foldl (init := ∅) fun cs c => if c.kind.isTcInst then cs.insert c.mvar else cs
+  { rw with conds := ∅ }
 
 end Rewrite
 

@@ -45,11 +45,7 @@ syntax "□" noWs ident (noWs "/" noWs num)? : basic_rw_src
 
 syntax "[" tc_proj_loc num "," num "]" : tc_proj
 
--- TODO: For some reason separating out the `←` and `→` into their own syntax category caused
---       problems.
-
-syntax "💥→[" num,* "]" : explosion_extension
-syntax "💥←[" num,* "]" : explosion_extension
+syntax "💥[" num,* "]" : explosion_extension
 
 syntax basic_rw_src                          : lean_rw_src
 syntax basic_rw_src "<" num "⊢>"             : lean_rw_src
@@ -156,10 +152,8 @@ private def parseLeanRwSrc : (TSyntax `lean_rw_src) → Source
     .goalTypeSpec (parseBasicRwSrc src) idx.getNat
   | `(lean_rw_src|$src:basic_rw_src$tcProjs:tc_proj*) =>
     tcProjs.foldl (init := parseBasicRwSrc src) parseTcProj
-  | `(lean_rw_src|$src:basic_rw_src💥→[$idxs:num,*]) =>
-    .explosion (parseBasicRwSrc src) .forward (idxs.getElems.map (·.getNat)).toList
-  | `(lean_rw_src|$src:basic_rw_src💥←[$idxs:num,*]) =>
-    .explosion (parseBasicRwSrc src) .backward (idxs.getElems.map (·.getNat)).toList
+  | `(lean_rw_src|$src:basic_rw_src💥[$idxs:num,*]) =>
+    .explosion (parseBasicRwSrc src) (idxs.getElems.map (·.getNat)).toList
   | `(lean_rw_src|$src:basic_rw_src↓) =>
     .ground (parseBasicRwSrc src)
   | _ => unreachable!

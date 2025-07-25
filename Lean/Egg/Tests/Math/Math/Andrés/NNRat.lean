@@ -71,22 +71,6 @@ class SemigroupWithZero (S₀ : Type u) extends Semigroup S₀, MulZeroClass S�
 
 class NonUnitalSemiring (α : Type u) extends NonUnitalNonAssocSemiring α, SemigroupWithZero α
 
-class One (α : Type u) where
-  one : α
-
-instance (priority := 300) One.toOfNat1 {α} [One α] : OfNat α (nat_lit 1) where
-  ofNat := ‹One α›.1
-instance (priority := 200) One.ofOfNat1 {α} [OfNat α (nat_lit 1)] : One α where
-  one := 1
-
-/-- Class of types that have an inversion operation. -/
-class Inv (α : Type u) where
-  /-- Invert an element of α. -/
-  inv : α → α
-
-@[inherit_doc]
-postfix:max "⁻¹" => Inv.inv
-
 /-- Typeclass for expressing that a type `M` with multiplication and a one satisfies
 `1 * a = a` and `a * 1 = a` for all `a : M`. -/
 class MulOneClass (M : Type u) extends One M, Mul M where

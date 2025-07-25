@@ -157,7 +157,7 @@ where
         let (rw, subst) ← rw.freshWithSubst
         unless ← isDefEq lhs rw.lhs do failIsDefEq "LHS" rw.src lhs rw.lhs rw.mvars.lhs current next idx
         unless ← isDefEq rhs rw.rhs do failIsDefEq "RHS" rw.src rhs rw.rhs rw.mvars.rhs current next idx
-        for cond in rw.conds do
+        for cond in rw.conds.active do
           if ← cond.mvar.isAssigned then continue
           let ⟨condKind, condMVar, condType⟩ := cond
           let condType ← instantiateMVars condType

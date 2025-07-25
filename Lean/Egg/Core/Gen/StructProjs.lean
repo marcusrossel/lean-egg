@@ -61,7 +61,7 @@ private def Rewrite.Condition.structInfos (cond : Rewrite.Condition) (init : Str
 
 private def Rewrite.structInfos (rw : Rewrite) (init : StructInfos := ∅) : MetaM StructInfos := do
   let mut infos ← rw.toCongr.structInfos init
-  for cond in rw.conds do infos ← cond.structInfos (init := infos)
+  for cond in rw.conds.active do infos ← cond.structInfos (init := infos)
   return infos
 
 private def Rewrites.structInfos (rws : Rewrites) (init : StructInfos := ∅) : MetaM StructInfos := do

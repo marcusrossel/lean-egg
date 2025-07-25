@@ -58,7 +58,7 @@ inductive Source where
   | structProj (idx : Nat)
   | goalTypeSpec (src : Source) (idx : Nat)
   | tcProj (src : Source) (loc : Source.TcProjLocation) (pos : SubExpr.Pos) (depth : Nat)
-  | explosion (src : Source) (dir : Direction) (loc : List Nat)
+  | explosion (src : Source) (loc : List Nat)
   | natLit (src : Source.NatLit)
   | subst (src : Source.SubstShift)
   | shift (src : Source.SubstShift)
@@ -123,7 +123,7 @@ def description : Source → String
   | structProj idx          => s!"▵{idx}"
   | goalTypeSpec src idx    => s!"{src.description}<{idx}⊢>"
   | tcProj src loc pos dep  => s!"{src.description}[{loc.description}{pos.asNat},{dep}]"
-  | explosion src dir loc   => s!"{src.description}💥{dir.description}{(toString loc).replace " " ""}"
+  | explosion src loc       => s!"{src.description}💥{(toString loc).replace " " ""}"
   | natLit src              => src.description
   | subst src               => s!"↦{src.description}"
   | shift src               => s!"↑{src.description}"
