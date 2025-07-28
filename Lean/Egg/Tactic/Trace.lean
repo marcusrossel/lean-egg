@@ -5,15 +5,22 @@ import Lean
 open Lean Meta Elab Tactic Std Format
 
 initialize registerTraceClass `egg
-initialize registerTraceClass `egg.config            (inherited := true)
-initialize registerTraceClass `egg.rewrites          (inherited := true)
-initialize registerTraceClass `egg.guides            (inherited := true)
-initialize registerTraceClass `egg.encoded           (inherited := true)
-initialize registerTraceClass `egg.explanation       (inherited := true)
-initialize registerTraceClass `egg.explanation.steps (inherited := true)
-initialize registerTraceClass `egg.proof             (inherited := true)
-initialize registerTraceClass `egg.proof.term        (inherited := false)
-initialize registerTraceClass `egg.activations       (inherited := true)
+initialize registerTraceClass `egg.config              (inherited := true)
+initialize registerTraceClass `egg.rewrites            (inherited := true)
+initialize registerTraceClass `egg.rewrites.intro      (inherited := true)
+initialize registerTraceClass `egg.rewrites.explicit   (inherited := true)
+initialize registerTraceClass `egg.rewrites.structProj (inherited := true)
+initialize registerTraceClass `egg.rewrites.derived    (inherited := true)
+initialize registerTraceClass `egg.rewrites.builtin    (inherited := true)
+initialize registerTraceClass `egg.rewrites.baskets    (inherited := true)
+initialize registerTraceClass `egg.rewrites.pruned     (inherited := true)
+initialize registerTraceClass `egg.guides              (inherited := true)
+initialize registerTraceClass `egg.encoded             (inherited := true)
+initialize registerTraceClass `egg.explanation         (inherited := true)
+initialize registerTraceClass `egg.explanation.steps   (inherited := true)
+initialize registerTraceClass `egg.proof               (inherited := true)
+initialize registerTraceClass `egg.proof.term          (inherited := false)
+initialize registerTraceClass `egg.activations         (inherited := true)
 
 namespace Egg
 

@@ -83,7 +83,7 @@ theorem inv_eq_of_mul (h : a * b = 1) : a⁻¹ = b :=
 /- Previous -/ attribute [egg group] inv_eq_of_mul
 
 example (a : G) : a * a⁻¹ = 1 := by
-  egg +group using a⁻¹ * a
+  egg +group using a⁻¹⁻¹ * a⁻¹ * a
 
 /- Previous -/ attribute [egg group] mul_inv_cancel
 

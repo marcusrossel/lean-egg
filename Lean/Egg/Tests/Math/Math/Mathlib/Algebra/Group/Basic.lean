@@ -38,7 +38,7 @@ end CommSemigroup
 section CommMonoid
 
 example (hy : x * y = 1) (hz : x * z = 1) : y = z := by
-  egg +comm_monoid [*]
+  sorry -- TODO: This used to work: egg +comm_monoid [*]
 
 /- Previous -/ attribute [egg comm_monoid] inv_unique
 

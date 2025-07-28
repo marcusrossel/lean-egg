@@ -1,3 +1,4 @@
+import Egg.Tactic.Baskets
 import Egg.Tactic.Calc
 import Egg.Tactic.Premises.Gen.Intros
 import Egg.Tactic.Premises.Gen.GenM
@@ -6,8 +7,6 @@ import Egg.Tactic.Premises.Gen.Derived
 import Egg.Tactic.Premises.Parse
 import Egg.Tactic.Config.Option
 import Egg.Tactic.Config.Modifier
-import Egg.Tactic.Config.NoDefEq
-import Egg.Tactic.Baskets
 import Egg.Tactic.Calcify
 import Egg.Tactic.Basic
 import Egg.Tactic.Trace
@@ -45,6 +44,7 @@ import Egg.Core.Normalize
 import Egg.Core.Source
 import Egg.Core.Request.EGraph
 import Egg.Core.Request.Basic
+import Egg.Core.Request.Term
 import Egg.Core.Request.Equiv
 import Egg.Core.Request.Synth
 import Egg.Core.Config

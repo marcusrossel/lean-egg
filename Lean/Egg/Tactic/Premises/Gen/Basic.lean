@@ -18,10 +18,8 @@ def gen (goal : Goal) (ps : TSyntax `egg_premises) (guides : Guides) (cfg : Conf
     TacticM Rewrites := do
   withTraceNode `egg.rewrites (fun _ => return "Rewrites") do
     let { all, pruned } ← GenM.run core
-    let cls := `egg.rewrites
-    cfg.toDefEq.trace cls
-    withTraceNode cls (fun _ => return m!"Pruned ({pruned.rws.size})") do
-      pruned.rws.tracePruned pruned.reasons cls cfg.subgoals
+    withTraceNode `egg.rewrites.pruned (fun _ => return m!"Pruned ({pruned.rws.size})") do
+      pruned.rws.tracePruned pruned.reasons `egg.rewrites.pruned cfg.subgoals
     return all
 where
   genBasic : GenM Premises := do

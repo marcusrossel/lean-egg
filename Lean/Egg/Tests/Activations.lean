@@ -2,6 +2,7 @@ import Egg
 
 set_option trace.egg.activations true
 set_option egg.builtins false
+set_option linter.unusedVariables false
 
 /--
 trace: [egg.activations] Activations
@@ -44,7 +45,6 @@ trace: [egg.activations] Activations
       forall: true
 -/
 #guard_msgs in
-set_option linter.unusedVariables false in
 example (h : ∀ x : Nat, x = x) : True := by
   egg [h]
 

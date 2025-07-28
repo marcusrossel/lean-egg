@@ -10,11 +10,10 @@ declare_syntax_cat dir
 declare_syntax_cat rw_dir
 declare_syntax_cat subexpr_pos
 declare_syntax_cat basic_rw_src
+declare_syntax_cat extended_basic_rw_src
 declare_syntax_cat lean_rw_src
 declare_syntax_cat defeq_rw_src
 declare_syntax_cat tc_proj_loc
-declare_syntax_cat tc_proj
-declare_syntax_cat explosion_extension
 declare_syntax_cat fwd_rw_src
 declare_syntax_cat rw_src
 declare_syntax_cat weak_vars
@@ -28,11 +27,6 @@ syntax "(→" shape shape ")" : shape
 syntax "=>" : rw_dir
 syntax "<=" : rw_dir
 
-syntax "▪"     : tc_proj_loc
-syntax "◂"     : tc_proj_loc
-syntax "▸"     : tc_proj_loc
-syntax num "?" : tc_proj_loc
-
 syntax "#" noWs num (noWs "/" noWs num)? : basic_rw_src
 syntax "∗" noWs num                      : basic_rw_src
 syntax "⊢"                               : basic_rw_src
@@ -43,16 +37,19 @@ syntax "↣" noWs num                        : basic_rw_src
 syntax "◯" noWs num                        : basic_rw_src
 syntax "□" noWs ident (noWs "/" noWs num)? : basic_rw_src
 
-syntax "[" tc_proj_loc num "," num "]" : tc_proj
+syntax "▪"     : tc_proj_loc
+syntax "◂"     : tc_proj_loc
+syntax "▸"     : tc_proj_loc
+syntax num "?" : tc_proj_loc
 
-syntax "💥[" num,* "]" : explosion_extension
+syntax basic_rw_src                                               : extended_basic_rw_src
+syntax extended_basic_rw_src noWs "<" num "⊢>"                    : extended_basic_rw_src
+syntax extended_basic_rw_src noWs "[" tc_proj_loc num "," num "]" : extended_basic_rw_src
+syntax extended_basic_rw_src noWs "💥[" num,* "]"                  : extended_basic_rw_src
 
-syntax basic_rw_src                          : lean_rw_src
-syntax basic_rw_src "<" num "⊢>"             : lean_rw_src
-syntax basic_rw_src (noWs tc_proj)+          : lean_rw_src
-syntax basic_rw_src noWs explosion_extension : lean_rw_src
-syntax basic_rw_src noWs "↓"                 : lean_rw_src
-syntax "▵" noWs num                          : lean_rw_src
+syntax extended_basic_rw_src : lean_rw_src
+syntax basic_rw_src noWs "↓" : lean_rw_src
+syntax "▵" noWs num          : lean_rw_src
 
 syntax "↦bvar"  : defeq_rw_src
 syntax "↦app"   : defeq_rw_src
@@ -139,24 +136,22 @@ private def parseBasicRwSrc : (TSyntax `basic_rw_src) → Source
   | `(basic_rw_src|◯$idx)            => .builtin idx.getNat
   | _                                => unreachable!
 
-private def parseTcProj (src : Source) : (TSyntax `tc_proj) → Source
-  | `(tc_proj|[$loc$pos,$dep]) => .tcProj src (parseTcProjLocation loc) pos.getNat dep.getNat
-  | _                          => unreachable!
+private partial def parseExtendedBasicRwSrc : (TSyntax `extended_basic_rw_src) → Source
+  | `(extended_basic_rw_src|$src<$idx⊢>) =>
+    .goalTypeSpec (parseExtendedBasicRwSrc src) idx.getNat
+  | `(extended_basic_rw_src|$src[$loc$pos,$dep]) =>
+    .tcProj (parseExtendedBasicRwSrc src) (parseTcProjLocation loc) pos.getNat dep.getNat
+  | `(extended_basic_rw_src|$src💥[$idxs,*]) =>
+    .explosion (parseExtendedBasicRwSrc src) (idxs.getElems.map (·.getNat)).toList
+  | `(extended_basic_rw_src|$src:basic_rw_src) =>
+    parseBasicRwSrc src
+  | _ => unreachable!
 
 private def parseLeanRwSrc : (TSyntax `lean_rw_src) → Source
-  | `(lean_rw_src|▵$idx) =>
-    .structProj idx.getNat
-  | `(lean_rw_src|$src:basic_rw_src) =>
-    parseBasicRwSrc src
-  | `(lean_rw_src|$src:basic_rw_src<$idx⊢>) =>
-    .goalTypeSpec (parseBasicRwSrc src) idx.getNat
-  | `(lean_rw_src|$src:basic_rw_src$tcProjs:tc_proj*) =>
-    tcProjs.foldl (init := parseBasicRwSrc src) parseTcProj
-  | `(lean_rw_src|$src:basic_rw_src💥[$idxs:num,*]) =>
-    .explosion (parseBasicRwSrc src) (idxs.getElems.map (·.getNat)).toList
-  | `(lean_rw_src|$src:basic_rw_src↓) =>
-    .ground (parseBasicRwSrc src)
-  | _ => unreachable!
+  | `(lean_rw_src|$src:extended_basic_rw_src) => parseExtendedBasicRwSrc src
+  | `(lean_rw_src|▵$idx)                      => .structProj idx.getNat
+  | `(lean_rw_src|$src:basic_rw_src↓)         => .ground (parseBasicRwSrc src)
+  | _                                         => unreachable!
 
 private def parseDefeqRwSrc : (TSyntax `defeq_rw_src) → Source
   | `(defeq_rw_src|↦bvar)  => .subst .bvar

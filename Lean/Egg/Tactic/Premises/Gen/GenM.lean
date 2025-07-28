@@ -52,6 +52,14 @@ private def RewriteCategory.title : RewriteCategory → String
   | .derived    => "Derived"
   | .structProj => "Structure Projections"
 
+private def RewriteCategory.traceClass : RewriteCategory → Name
+  | .tagged     => `egg.rewrites.baskets
+  | .intros     => `egg.rewrites.intro
+  | .basic      => `egg.rewrites.explicit
+  | .builtins   => `egg.rewrites.builtin
+  | .derived    => `egg.rewrites.derived
+  | .structProj => `egg.rewrites.structProj
+
 private structure State where
   all        : Rewrites
   pruned     : Rewrites.Pruned
@@ -137,8 +145,8 @@ private def prune (rws : Rewrites) (stx? : Option (Array Syntax) := none) :
 def generate' (cat : RewriteCategory) (subgoals : Bool) (g : GenM Premises) : GenM Unit := do
   let { rws := ⟨new, stxs⟩ } ← g
   let mut (new, stx) ← prune new (if stxs.isEmpty then none else stxs)
-  let cls := `egg.rewrites
-  withTraceNode cls (fun _ => return m!"{cat.title} ({new.size})") do new.trace stx cls subgoals
+  withTraceNode cat.traceClass (fun _ => return m!"{cat.title} ({new.size})") do
+    new.trace stx cat.traceClass subgoals
   set cat new
   addAll new
 

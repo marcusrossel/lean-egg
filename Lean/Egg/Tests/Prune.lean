@@ -3,89 +3,61 @@ open scoped Egg
 
 -- These test check that redundant rewrites are pruned.
 
-egg_no_defeq
-set_option egg.tcProjs false
-set_option egg.groundEqs false
-set_option egg.builtins false
+set_option trace.egg.rewrites.pruned true
+set_option linter.unusedVariables false
 
 /--
-trace: [egg.rewrites] Rewrites
-  [egg.rewrites] Intros (0)
-  [egg.rewrites] Basic (1)
-    [egg.rewrites] #0(⇒): h₁
-      [egg.rewrites] 0 = 0
-      [egg.rewrites] LHS MVars
-          []
-      [egg.rewrites] RHS MVars
-          []
-  [egg.rewrites] Tagged (0)
-  [egg.rewrites] Builtin (0)
-  [egg.rewrites] Derived (0)
-  [egg.rewrites] Structure Projections (0)
-  [egg.rewrites] Definitional
-  [egg.rewrites] Pruned (3)
-    [egg.rewrites] #0(⇐) by #0
-      [egg.rewrites] 0 = 0
-      [egg.rewrites] LHS MVars
-          []
-      [egg.rewrites] RHS MVars
-          []
-    [egg.rewrites] #1(⇒) by #0
-      [egg.rewrites] 0 = 0
-      [egg.rewrites] LHS MVars
-          []
-      [egg.rewrites] RHS MVars
-          []
-    [egg.rewrites] #1(⇐) by #0
-      [egg.rewrites] 0 = 0
-      [egg.rewrites] LHS MVars
-          []
-      [egg.rewrites] RHS MVars
-          []
+trace: [egg.rewrites.pruned] Pruned (3)
+  [egg.rewrites.pruned] #0(⇐) by #0
+    [egg.rewrites.pruned] 0 = 0
+    [egg.rewrites.pruned] LHS MVars
+        []
+    [egg.rewrites.pruned] RHS MVars
+        []
+  [egg.rewrites.pruned] #1(⇒) by #0
+    [egg.rewrites.pruned] 0 = 0
+    [egg.rewrites.pruned] LHS MVars
+        []
+    [egg.rewrites.pruned] RHS MVars
+        []
+  [egg.rewrites.pruned] #1(⇐) by #0
+    [egg.rewrites.pruned] 0 = 0
+    [egg.rewrites.pruned] LHS MVars
+        []
+    [egg.rewrites.pruned] RHS MVars
+        []
 -/
 #guard_msgs in
-set_option linter.unusedVariables false in
-set_option trace.egg.rewrites true in
 example (h₁ h₂ : 0 = 0) : 0 = 0 := by
   egg [h₁, h₂]
 
 /--
-trace: [egg.rewrites] Rewrites
-  [egg.rewrites] Intros (0)
-  [egg.rewrites] Basic (1)
-    [egg.rewrites] #0(⇒): Nat.add_comm
-      [egg.rewrites] ?n + ?m = ?m + ?n
-      [egg.rewrites] LHS MVars
-          [?n: [unconditionallyVisible], ?m: [unconditionallyVisible]]
-      [egg.rewrites] RHS MVars
-          [?n: [unconditionallyVisible], ?m: [unconditionallyVisible]]
-  [egg.rewrites] Tagged (0)
-  [egg.rewrites] Builtin (0)
-  [egg.rewrites] Derived (0)
-  [egg.rewrites] Structure Projections (0)
-  [egg.rewrites] Definitional
-  [egg.rewrites] Pruned (3)
-    [egg.rewrites] #0(⇐) by #0
-      [egg.rewrites] ?m + ?n = ?n + ?m
-      [egg.rewrites] LHS MVars
-          [?n: [unconditionallyVisible], ?m: [unconditionallyVisible]]
-      [egg.rewrites] RHS MVars
-          [?n: [unconditionallyVisible], ?m: [unconditionallyVisible]]
-    [egg.rewrites] #1(⇒) by #0
-      [egg.rewrites] ?a + ?b = ?b + ?a
-      [egg.rewrites] LHS MVars
-          [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
-      [egg.rewrites] RHS MVars
-          [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
-    [egg.rewrites] #1(⇐) by #0
-      [egg.rewrites] ?b + ?a = ?a + ?b
-      [egg.rewrites] LHS MVars
-          [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
-      [egg.rewrites] RHS MVars
-          [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
+trace: [egg.rewrites.pruned] Pruned (4)
+  [egg.rewrites.pruned] #0(⇐) by #0
+    [egg.rewrites.pruned] ?m + ?n = ?n + ?m
+    [egg.rewrites.pruned] LHS MVars
+        [?m: [unconditionallyVisible], ?n: [unconditionallyVisible]]
+    [egg.rewrites.pruned] RHS MVars
+        [?m: [unconditionallyVisible], ?n: [unconditionallyVisible]]
+  [egg.rewrites.pruned] #1(⇒) by #0
+    [egg.rewrites.pruned] ?a + ?b = ?b + ?a
+    [egg.rewrites.pruned] LHS MVars
+        [?b: [unconditionallyVisible], ?a: [unconditionallyVisible]]
+    [egg.rewrites.pruned] RHS MVars
+        [?b: [unconditionallyVisible], ?a: [unconditionallyVisible]]
+  [egg.rewrites.pruned] #1(⇐) by #0
+    [egg.rewrites.pruned] ?b + ?a = ?a + ?b
+    [egg.rewrites.pruned] LHS MVars
+        [?b: [unconditionallyVisible], ?a: [unconditionallyVisible]]
+    [egg.rewrites.pruned] RHS MVars
+        [?b: [unconditionallyVisible], ?a: [unconditionallyVisible]]
+  [egg.rewrites.pruned] #1↓(⇒) by #0↓
+    [egg.rewrites.pruned] ∀ (a b : Nat), a + b = b + a = True
+    [egg.rewrites.pruned] LHS MVars
+        []
+    [egg.rewrites.pruned] RHS MVars
+        []
 -/
 #guard_msgs in
-set_option linter.unusedVariables false in
-set_option trace.egg.rewrites true in
 example (h : ∀ a b : Nat, a + b = b + a) : 0 = 0 := by
   egg [Nat.add_comm, h]
