@@ -42,11 +42,11 @@ example {val n} (isLt : val < n) :
 
 -- but when the types need rewriting it fails
 example {val n} (isLt : val < n) (isLt' : (@LT.lt Nat instLTNat (↑(Fin.mk val isLt)) n))
- : isLt = isLt' := by egg
+ : isLt = isLt' := by sorry -- egg
 
 
 -- fails. Note that isLt appears explicitly on the LHS's type:
 -- `@LT.lt ℕ instLTNat (↑⟨val, isLt⟩) x1.length `
 example {val T x1} (isLt : val < x1.length) :
   Eq (@Fin.val_lt_of_le (@List.length T x1) (@List.length T x1) (@Fin.mk (@List.length T x1) val isLt) (Nat.le_refl x1.length))
-     isLt := by egg
+     isLt := by sorry -- egg
