@@ -1,5 +1,4 @@
 import Egg
-open scoped Egg
 
 set_option linter.unusedVariables false
 

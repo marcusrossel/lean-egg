@@ -1,5 +1,4 @@
 import Egg
-open scoped Egg
 
 -- This test ensures that condition mvars are correctly taken into account when determining the
 -- valid direction of rewrites.

@@ -1,5 +1,4 @@
 import Egg
-open scoped Egg
 
 set_option egg.derivedGuides true
 set_option egg.builtins false

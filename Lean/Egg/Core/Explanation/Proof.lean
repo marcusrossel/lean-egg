@@ -61,7 +61,7 @@ private def Proof.prove (prf : Proof) (cgr : Congr) : MetaM Expr := do
     fail s!"initial expression is not defeq to LHS of proof goal:\n\n  {first.lhs}\n\nvs\n\n  {cgr.lhs}"
   let mut proof := first.proof
   for step in prf[1:] do
-    if !step.rw.isRefl then proof ← mkEqTrans proof step.proof
+    unless step.rw.isRefl do proof ← mkEqTrans proof step.proof
   unless ← isDefEq prf.back!.rhs cgr.rhs do fail "final expression is not defeq to rhs of proof goal"
   match cgr.rel with
   | .eq  => return proof
@@ -96,6 +96,8 @@ where
         rw := .factAnd, dir := rwInfo.dir
       }
     if rwInfo.src.isDefEq then
+      unless ← isDefEq current next do
+        fail s!"defeq step between non-defeq expressions:\n\n  {current}\n\nand\n\n  {next}"
       return {
         lhs := current, rhs := next, proof := ← mkReflStep idx current next rwInfo.src,
         rw := .defeq rwInfo.src, dir := rwInfo.dir

@@ -1,5 +1,4 @@
 import Egg
-open scoped Egg
 
 set_option egg.groundEqs false
 set_option trace.egg.rewrites.explicit true

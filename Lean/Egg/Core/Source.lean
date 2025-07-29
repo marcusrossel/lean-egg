@@ -139,8 +139,8 @@ instance : ToString Source where
   toString := description
 
 def isDefEq : Source → Bool
-  | natLit _ | eta _ | beta | level _ | subst _ | shift _ => true
-  | _                                                     => false
+  | natLit _ | eta _ | beta | level _ | subst _ | shift _ | structProj _ => true
+  | _                                                                    => false
 
 def containsTcProj : Source → Bool
   | tcProj ..                                          => true

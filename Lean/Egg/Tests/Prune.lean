@@ -1,5 +1,4 @@
 import Egg
-open scoped Egg
 
 -- These test check that redundant rewrites are pruned.
 
