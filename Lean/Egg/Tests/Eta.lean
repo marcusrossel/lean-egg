@@ -55,6 +55,7 @@ example (a : Nat) (h : ∀ b : Nat, b.succ.add a = 0) : (10 |> fun x => Nat.succ
 
 -- Note: This used to break when we were using direct e-class substitution instead of small-step
 --       substitution.
+-- Note: This relies on generated type class projection reductions.
 example : (fun x => x) = Add.add 0 := by
   egg [Nat.zero_add]
 

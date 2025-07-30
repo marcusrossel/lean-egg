@@ -33,4 +33,4 @@ def builtins (cfg : Config.Normalization) (subgoals : Bool) : MetaM Rewrites := 
 end Rewrites
 
 def genBuiltins (cfg : Config) : MetaM Rewrites := do
-  if cfg.builtins then Rewrites.builtins cfg cfg.subgoals else return #[]
+  Rewrites.builtins cfg cfg.subgoals

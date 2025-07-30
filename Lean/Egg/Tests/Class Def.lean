@@ -10,5 +10,6 @@ instance mulPow [Mul α] [One α] : Pow α Nat where
 example [Mul α] [One α] (a : α) : Mul.pow a 0 = (1 : α) := by
   egg [Mul.pow]
 
+-- Note: This relies on generated type class projection reductions.
 example [Mul α] [One α] (a : α) : a ^ 0 = (1 : α) := by
   egg [Mul.pow]

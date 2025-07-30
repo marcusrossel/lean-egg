@@ -101,8 +101,8 @@ structure TcProjTarget where
   loc  : Source.TcProjLocation
 
 def Congr.tcProjTargets (cgr : Congr) (src : Source) : Array TcProjTarget := #[
-  { expr := cgr.lhs, src := src, loc := .left },
-  { expr := cgr.rhs, src := src, loc := .right }
+  { expr := cgr.lhs, src, loc := .left },
+  { expr := cgr.rhs, src, loc := .right }
 ]
 
 def Rewrites.tcProjTargets (rws : Rewrites) : Array TcProjTarget := Id.run do
@@ -117,14 +117,13 @@ def Guides.tcProjTargets (guides : Guides) : Array TcProjTarget :=
   guides.map fun guide => { expr := guide.expr, src := guide.src, loc := .root }
 
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
-def genTcProjReductions
-    (targets : Array TcProjTarget) (covered : HashSet TcProj) (cfg : Config.Normalization) :
-    MetaM (Rewrites × HashSet TcProj) := do
-  let mut covered := covered
+def genTcProjReductions (targets : Array TcProjTarget) (cfg : Config.Normalization) :
+    MetaM Rewrites := do
+  let mut covered := ∅
   let mut rws := #[]
   for target in targets do
     let projs ← tcProjs target.expr target.src target.loc covered
     for (proj, src) in projs.toArray do
       covered := covered.insert proj
       rws := rws ++ (← proj.reductionRewrites src cfg)
-  return (rws, covered)
+  return rws

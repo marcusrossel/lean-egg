@@ -3,7 +3,6 @@ import Egg.Tactic.Calc
 import Egg.Tactic.Premises.Gen.Intros
 import Egg.Tactic.Premises.Gen.GenM
 import Egg.Tactic.Premises.Gen.Basic
-import Egg.Tactic.Premises.Gen.Derived
 import Egg.Tactic.Premises.Parse
 import Egg.Tactic.Config.Option
 import Egg.Tactic.Config.Modifier

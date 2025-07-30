@@ -41,62 +41,88 @@ private inductive RewriteCategory where
   | intros
   | basic
   | builtins
-  | derived
+  | goalTypeSpec
+  | explosion
+  | tcProj
   | structProj
 
-private def RewriteCategory.title : RewriteCategory → String
-  | .tagged     => "Tagged"
-  | .intros     => "Intros"
-  | .basic      => "Basic"
-  | .builtins   => "Builtin"
-  | .derived    => "Derived"
-  | .structProj => "Structure Projections"
+namespace RewriteCategory
 
-private def RewriteCategory.traceClass : RewriteCategory → Name
-  | .tagged     => `egg.rewrites.baskets
-  | .intros     => `egg.rewrites.intro
-  | .basic      => `egg.rewrites.explicit
-  | .builtins   => `egg.rewrites.builtin
-  | .derived    => `egg.rewrites.derived
-  | .structProj => `egg.rewrites.structProj
+private def title : RewriteCategory → String
+  | .tagged       => "Tagged"
+  | .intros       => "Intros"
+  | .basic        => "Basic"
+  | .builtins     => "Builtin"
+  | .goalTypeSpec => "Goal Type Specialization"
+  | .explosion    => "Explosion"
+  | .tcProj       => "Type Class Projections"
+  | .structProj   => "Structure Projections"
+
+private def traceClass : RewriteCategory → Name
+  | .tagged       => `egg.rewrites.baskets
+  | .intros       => `egg.rewrites.intro
+  | .basic        => `egg.rewrites.explicit
+  | .builtins     => `egg.rewrites.builtin
+  | .goalTypeSpec => `egg.rewrites.goalTypeSpec
+  | .explosion    => `egg.rewrites.explosion
+  | .tcProj       => `egg.rewrites.tcProj
+  | .structProj   => `egg.rewrites.structProj
+
+private def isEnabled (cfg : Config.Gen) : RewriteCategory → Bool
+  | .tagged | .intros | .basic => true
+  | .builtins                  => cfg.builtins
+  | .goalTypeSpec              => cfg.goalTypeSpec
+  | .explosion                 => cfg.explosion
+  | .tcProj                    => cfg.tcProjs
+  | .structProj                => cfg.structProjs
+
+end RewriteCategory
 
 private structure State where
-  all        : Rewrites
-  pruned     : Rewrites.Pruned
-  tagged     : Rewrites
-  intros     : Rewrites
-  basic      : Rewrites
-  builtins   : Rewrites
-  derived    : Rewrites
-  structProj : Rewrites
+  all          : Rewrites
+  pruned       : Rewrites.Pruned
+  tagged       : Rewrites
+  intros       : Rewrites
+  basic        : Rewrites
+  builtins     : Rewrites
+  goalTypeSpec : Rewrites
+  explosion    : Rewrites
+  tcProj       : Rewrites
+  structProj   : Rewrites
 
 private instance : EmptyCollection State where
   emptyCollection := {
-    all        := #[]
-    pruned     := {}
-    tagged     := #[]
-    intros     := #[]
-    basic      := #[]
-    builtins   := #[]
-    derived    := #[]
-    structProj := #[]
+    all          := #[]
+    pruned       := {}
+    tagged       := #[]
+    intros       := #[]
+    basic        := #[]
+    builtins     := #[]
+    goalTypeSpec := #[]
+    explosion    := #[]
+    tcProj       := #[]
+    structProj   := #[]
   }
 
 private def State.get (s : State) : RewriteCategory → Rewrites
-  | .tagged     => s.tagged
-  | .intros     => s.basic
-  | .basic      => s.basic
-  | .builtins   => s.builtins
-  | .derived    => s.derived
-  | .structProj => s.structProj
+  | .tagged       => s.tagged
+  | .intros       => s.basic
+  | .basic        => s.basic
+  | .builtins     => s.builtins
+  | .goalTypeSpec => s.goalTypeSpec
+  | .explosion    => s.explosion
+  | .tcProj       => s.tcProj
+  | .structProj   => s.structProj
 
 private def State.set (s : State) : RewriteCategory → Rewrites → State
-  | .tagged,     rws => { s with tagged     := rws }
-  | .intros,     rws => { s with intros     := rws }
-  | .basic,      rws => { s with basic      := rws }
-  | .builtins,   rws => { s with builtins   := rws }
-  | .derived,    rws => { s with derived    := rws }
-  | .structProj, rws => { s with structProj := rws }
+  | .tagged,       rws => { s with tagged       := rws }
+  | .intros,       rws => { s with intros       := rws }
+  | .basic,        rws => { s with basic        := rws }
+  | .builtins,     rws => { s with builtins     := rws }
+  | .goalTypeSpec, rws => { s with goalTypeSpec := rws }
+  | .explosion,    rws => { s with explosion    := rws }
+  | .tcProj,       rws => { s with tcProj       := rws }
+  | .structProj,   rws => { s with structProj   := rws }
 
 abbrev _root_.Egg.Premises.GenM := StateT State TacticM
 
@@ -142,13 +168,14 @@ private def prune (rws : Rewrites) (stx? : Option (Array Syntax) := none) :
   addPruned pruned
   return (keep, keepStx)
 
-def generate' (cat : RewriteCategory) (subgoals : Bool) (g : GenM Premises) : GenM Unit := do
+def generate' (cat : RewriteCategory) (cfg : Config) (g : GenM Premises) : GenM Unit := do
+  unless cat.isEnabled cfg do return
   let { rws := ⟨new, stxs⟩ } ← g
   let mut (new, stx) ← prune new (if stxs.isEmpty then none else stxs)
   withTraceNode cat.traceClass (fun _ => return m!"{cat.title} ({new.size})") do
-    new.trace stx cat.traceClass subgoals
+    new.trace stx cat.traceClass cfg.subgoals
   set cat new
   addAll new
 
-def generate (cat : RewriteCategory) (subgoals : Bool) (g : GenM Rewrites) : GenM Unit := do
-  generate' cat subgoals do return { rws.elems := ← g, rws.stxs := #[] }
+def generate (cat : RewriteCategory) (cfg : Config) (g : GenM Rewrites) : GenM Unit := do
+  generate' cat cfg do return { rws.elems := ← g, rws.stxs := #[] }
