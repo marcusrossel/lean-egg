@@ -36,13 +36,20 @@ section TcProjs
 
 private abbrev TcProjs := ExprMap SourcePrefix
 
+private inductive Symbol where
+  | const  (n : Name)
+  | natLit (n : Nat)
+  deriving BEq, Hashable
+
+private abbrev Symbols := HashSet Symbol
+
 private structure State where
-  projs : TcProjs     := ∅
-  args  : Array Expr  := #[]
-  pos   : SubExpr.Pos := .root
-  src   : Source
-  loc   : Source.TcProjLocation
-  deriving Inhabited
+  projs   : TcProjs     := ∅
+  args    : Array Expr  := #[]
+  pos     : SubExpr.Pos := .root
+  src     : Source
+  loc     : Source.TcProjLocation
+  symbols : Symbols := ∅
 
 /- TODO: Use a monad for this.
 
@@ -71,21 +78,23 @@ private def underBindingBody (m : CollectionM α) : CollectionM α := do
   withContext (fun _ => #[]) (·.pushBindingBody) m
 -/
 
-private partial def TcProjs.from (targets : Array TcProjTarget) : MetaM TcProjs := do
+private partial def TcProjs.from (targets : Array TcProjTarget) : MetaM (TcProjs × Symbols) := do
   -- Note: These initial values are dummy values which are properly set before first use.
   let mut state := { src := .goal, loc := .root }
   for { expr, src, loc } in targets do
     state ← go expr { state with src, loc }
-  return state.projs
+  return (state.projs, state.symbols)
 where
   go : Expr → State → MetaM State
     | .const c lvls                   => visitConst c lvls
     | .app fn arg                     => (visitFn fn arg) >=> (visitArg arg)
     | .lam _ d b _ | .forallE _ d b _ => (visitBindingDomain d) >=> (visitBindingBody b)
     | .mdata .. | .proj .. | .letE .. => fun _ => throwError "egg: internal error: 'Egg.tcProjs.go' received non-normalized expression"
+    | .lit (.natVal v)                => visitNatLit v
     | _                               => pure
 
   visitConst (const : Name) (lvls : List Level) (s : State) : MetaM State := do
+    let s := { s with symbols := s.symbols.insert (.const const) }
     let some info ← getProjectionFnInfo? const | return s
     unless info.fromClass && s.args.size > info.numParams do return s
     let args := s.args[:info.numParams + 1].toArray
@@ -109,6 +118,9 @@ where
   visitArg (arg : Expr) (s : State) : MetaM State := do
     let s' ← go arg { s with args := #[], pos := s.pos.pushAppArg }
     return { s' with args := s.args, pos := s.pos }
+
+  visitNatLit (val : Nat) (s : State) : MetaM State := do
+    return { s with symbols := s.symbols.insert (.natLit val) }
 
 end TcProjs
 
@@ -149,7 +161,6 @@ be retained. Thus, the `HAdd` to `Add` equality is still provable.
 -/
 
 -- TODO: Consider the TODOs in "TC Proj Binders.lean" and "TC Diamonds.lean"
--- TODO: Fuze the reductions `HAdd => Add` and `Add => Nat.add` when `Add` doesn't appear.
 
 private abbrev Reductions    := ExprMap Expr
 private abbrev ReductionInfo := ExprMap Source
@@ -203,7 +214,8 @@ private partial def activations (reds : Reductions) (isActive : Expr → Bool) :
 
 -- Fuzes reductions which are only linked by terms with `ActivationReason.internal`.
 private def Activations.fuze (act : Activations) : Reductions := Id.run do
-  sorry
+  -- TODO: Implement fusion.
+  act.map fun _ (_, e) => e
 
 private structure CollectionM.State where
   reds : Reductions
@@ -224,9 +236,8 @@ private def collect (src dst : Expr) (depth : Nat) : CollectionM Unit :=
     pre
   }
 
-private def run (m : CollectionM Unit) : MetaM (Reductions × ReductionInfo) := do
-  let dummy := { src := .goal, loc := .root, pos := .root }
-  let (_, state) ← m.run { reds := ∅, info := ∅, pre := dummy }
+private def run (pre : SourcePrefix) (m : CollectionM Unit) : MetaM (Reductions × ReductionInfo) := do
+  let (_, state) ← m.run { reds := ∅, info := ∅, pre }
   return (state.reds, state.info)
 
 end CollectionM
@@ -234,7 +245,8 @@ end CollectionM
 open CollectionM in
 private partial def «from» (projs : TcProjs) (cfg : Config.Normalization) :
     MetaM (Reductions × ReductionInfo) := do
-  CollectionM.run do
+  let dummy := { src := .goal, loc := .root, pos := .root }
+  CollectionM.run dummy do
     for (proj, pre) in projs do
       setPrefix pre
       go proj (depth := 0)
@@ -254,13 +266,24 @@ end Reductions
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
 def genTcProjReductions (targets : Array TcProjTarget) (cfg : Config.Normalization) :
     MetaM Rewrites := do
-  -- TODO: Do we construct the `isActive` function during the traversal of `TcProjs.from`?
-  let projs        ← TcProjs.from targets
-  let (reds, info) ← Reductions.from projs cfg
-  let activations := reds.activations (isActive := fun _ => true)
-  let fuzed       := activations.fuze
+  let (projs, symbols) ← TcProjs.from targets
+  let (reds, info)     ← Reductions.from projs cfg
+  let activations     := reds.activations (isActive symbols)
+  let fuzed           := activations.fuze
   makeRewrites fuzed.toList info
 where
+  isActive (symbols : Symbols) (e : Expr) : Bool := Id.run do
+    return true
+    /-
+    if let .const n _ := e.getAppFn then
+      return symbols.contains (.const n)
+    else if let .lit (.natVal v) := e then
+      return symbols.contains (.natLit v)
+    else
+      panic! "egg: internal error in 'genTcProjReductions.isActive'. We assume that type class \
+              projection reductions only reduce to applications with a constant head symbol, or \
+              natural number literals"
+    -/
   makeRewrites (reds : List <| Expr × Expr) (info : ReductionInfo) : MetaM Rewrites := do
     let mut rws := #[]
     for (lhs, rhs) in reds do

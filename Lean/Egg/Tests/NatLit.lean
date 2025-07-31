@@ -33,6 +33,10 @@ example : (app 50 Nat.succ (nat_lit 0)) = (nat_lit 50) := by egg
 example (f : Nat → Nat) (h : ∀ x, f x = x.succ) : 30 = app 30 f 0 := by
   egg [h]
 
+-- TODO: If nat-lit is enabled, then all symbols contained in nat-lit rewrites should always be active.
+--       However, this means that activations determined in the backend are not respected.
+--       Should we determine activations in the frontend afterall?
+
 example : 12345 + 67890 = 80235 := by
   egg
 

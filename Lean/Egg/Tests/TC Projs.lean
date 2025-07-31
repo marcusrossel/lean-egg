@@ -30,18 +30,6 @@ example : 0 = 0 := by
 
 /--
 trace: [egg.rewrites.tcProj] Type Class Projections (4)
-  [egg.rewrites.tcProj] ⊢[▸4096,0](⇒)
-    [egg.rewrites.tcProj] HAdd.hAdd = Add.add
-    [egg.rewrites.tcProj] LHS MVars
-        []
-    [egg.rewrites.tcProj] RHS MVars
-        []
-  [egg.rewrites.tcProj] ⊢[▸4096,0](⇐)
-    [egg.rewrites.tcProj] Add.add = HAdd.hAdd
-    [egg.rewrites.tcProj] LHS MVars
-        []
-    [egg.rewrites.tcProj] RHS MVars
-        []
   [egg.rewrites.tcProj] ⊢[▸4096,1](⇒)
     [egg.rewrites.tcProj] Add.add = Nat.add
     [egg.rewrites.tcProj] LHS MVars
@@ -54,6 +42,18 @@ trace: [egg.rewrites.tcProj] Type Class Projections (4)
         []
     [egg.rewrites.tcProj] RHS MVars
         []
+  [egg.rewrites.tcProj] ⊢[▸4096,0](⇒)
+    [egg.rewrites.tcProj] HAdd.hAdd = Add.add
+    [egg.rewrites.tcProj] LHS MVars
+        []
+    [egg.rewrites.tcProj] RHS MVars
+        []
+  [egg.rewrites.tcProj] ⊢[▸4096,0](⇐)
+    [egg.rewrites.tcProj] Add.add = HAdd.hAdd
+    [egg.rewrites.tcProj] LHS MVars
+        []
+    [egg.rewrites.tcProj] RHS MVars
+        []
 -/
 #guard_msgs in
 example (a b : Nat) : a + b = a + b := by
@@ -61,18 +61,6 @@ example (a b : Nat) : a + b = a + b := by
 
 /--
 trace: [egg.rewrites.tcProj] Type Class Projections (4)
-  [egg.rewrites.tcProj] ⊢[◂4096,0](⇒)
-    [egg.rewrites.tcProj] HAdd.hAdd = Add.add
-    [egg.rewrites.tcProj] LHS MVars
-        []
-    [egg.rewrites.tcProj] RHS MVars
-        []
-  [egg.rewrites.tcProj] ⊢[◂4096,0](⇐)
-    [egg.rewrites.tcProj] Add.add = HAdd.hAdd
-    [egg.rewrites.tcProj] LHS MVars
-        []
-    [egg.rewrites.tcProj] RHS MVars
-        []
   [egg.rewrites.tcProj] ⊢[◂4096,1](⇒)
     [egg.rewrites.tcProj] Add.add = Nat.add
     [egg.rewrites.tcProj] LHS MVars
@@ -81,6 +69,18 @@ trace: [egg.rewrites.tcProj] Type Class Projections (4)
         []
   [egg.rewrites.tcProj] ⊢[◂4096,1](⇐)
     [egg.rewrites.tcProj] Nat.add = Add.add
+    [egg.rewrites.tcProj] LHS MVars
+        []
+    [egg.rewrites.tcProj] RHS MVars
+        []
+  [egg.rewrites.tcProj] ⊢[◂4096,0](⇒)
+    [egg.rewrites.tcProj] HAdd.hAdd = Add.add
+    [egg.rewrites.tcProj] LHS MVars
+        []
+    [egg.rewrites.tcProj] RHS MVars
+        []
+  [egg.rewrites.tcProj] ⊢[◂4096,0](⇐)
+    [egg.rewrites.tcProj] Add.add = HAdd.hAdd
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars
@@ -92,18 +92,6 @@ example (a b : Nat) : a + b = Nat.add a b := by
 
 /--
 trace: [egg.rewrites.tcProj] Type Class Projections (4)
-  [egg.rewrites.tcProj] ⊢[◂4096,0](⇒)
-    [egg.rewrites.tcProj] HAdd.hAdd = Add.add
-    [egg.rewrites.tcProj] LHS MVars
-        []
-    [egg.rewrites.tcProj] RHS MVars
-        []
-  [egg.rewrites.tcProj] ⊢[◂4096,0](⇐)
-    [egg.rewrites.tcProj] Add.add = HAdd.hAdd
-    [egg.rewrites.tcProj] LHS MVars
-        []
-    [egg.rewrites.tcProj] RHS MVars
-        []
   [egg.rewrites.tcProj] ⊢[◂4096,1](⇒)
     [egg.rewrites.tcProj] Add.add = Nat.add
     [egg.rewrites.tcProj] LHS MVars
@@ -112,6 +100,18 @@ trace: [egg.rewrites.tcProj] Type Class Projections (4)
         []
   [egg.rewrites.tcProj] ⊢[◂4096,1](⇐)
     [egg.rewrites.tcProj] Nat.add = Add.add
+    [egg.rewrites.tcProj] LHS MVars
+        []
+    [egg.rewrites.tcProj] RHS MVars
+        []
+  [egg.rewrites.tcProj] ⊢[◂4096,0](⇒)
+    [egg.rewrites.tcProj] HAdd.hAdd = Add.add
+    [egg.rewrites.tcProj] LHS MVars
+        []
+    [egg.rewrites.tcProj] RHS MVars
+        []
+  [egg.rewrites.tcProj] ⊢[◂4096,0](⇐)
+    [egg.rewrites.tcProj] Add.add = HAdd.hAdd
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars
