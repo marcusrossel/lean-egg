@@ -15,4 +15,10 @@ example (h : s ⊆ t) : s ∩ u ⊆ t ∩ u := by
   exact ⟨h _ xs, xu⟩
 
 example (h : s ⊆ t) : s ∩ u ⊆ t ∩ u := by
-  egg [subset_def, inter_def, inter_def, mem_setOf]
+  rw [subset_def, inter_def, inter_def]
+  rw [subset_def] at h
+  simp only [mem_setOf]
+  have : ∀ (x : ℕ), x ∈ s ∧ x ∈ u → x ∈ t ∧ x ∈ u := by
+    set_option trace.egg true in
+    egg [And.left, And.right, subset_def, inter_def, mem_setOf]
+  sorry

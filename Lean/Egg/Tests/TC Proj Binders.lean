@@ -31,13 +31,13 @@ trace: [egg.rewrites.tcProj] Type Class Projections (4)
         []
     [egg.rewrites.tcProj] RHS MVars
         []
-  [egg.rewrites.tcProj] #0[0?69632,2](⇒)
+  [egg.rewrites.tcProj] #0[0?69632,1](⇒)
     [egg.rewrites.tcProj] Mul.mul = Nat.mul
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars
         []
-  [egg.rewrites.tcProj] #0[0?69632,2](⇐)
+  [egg.rewrites.tcProj] #0[0?69632,1](⇐)
     [egg.rewrites.tcProj] Nat.mul = Mul.mul
     [egg.rewrites.tcProj] LHS MVars
         []
