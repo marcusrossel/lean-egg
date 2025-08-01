@@ -36,6 +36,7 @@ structure Modifier where
   exitPoint       : Option Debug.ExitPoint := none
   proofFuel?      : Option Nat             := none
   vizPath         : Option String          := none
+  dbgSymbolicTcProj : Option Bool            := none
 
 def modify (cfg : Config) (mod : Modifier) : Config where
   shapes          := mod.shapes.getD cfg.shapes
@@ -67,6 +68,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   proofFuel?      := match mod.proofFuel? with | some p => p | none => cfg.proofFuel?
   exitPoint       := mod.exitPoint.getD cfg.exitPoint
   vizPath         := match mod.vizPath with | some p => p | none => cfg.vizPath
+  dbgSymbolicTcProj := mod.dbgSymbolicTcProj.getD cfg.dbgSymbolicTcProj
 
 namespace Modifier
 

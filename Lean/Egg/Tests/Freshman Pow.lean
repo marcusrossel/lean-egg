@@ -41,8 +41,8 @@ set_option egg.timeLimit 10 in
 theorem freshmans_dream₃ : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
   calc (x + y) ^ 3
     _ = (x + y) * (x + y) * (x + y)                     := by char_two_ring
-    _ = (x + y) * (x * (x + y) + y * (x + y))           := by char_two_ring
-    -- _ = (x + y) * (x ^ 2 + x * y + y * x + y ^ 2)       := by char_two_ring
+    -- _ = (x + y) * (x * (x + y) + y * (x + y))           := by char_two_ring
+    _ = (x + y) * (x ^ 2 + x * y + y * x + y ^ 2)       := by char_two_ring
     _ = (x + y) * (x ^ 2 + y ^ 2)                       := by char_two_ring
     _ = x * (x ^ 2 + y ^ 2) + y * (x ^ 2 + y ^ 2)       := by char_two_ring
     _ = (x * x ^ 2) + x * y ^ 2 + y * x ^ 2 + y * y ^ 2 := by char_two_ring

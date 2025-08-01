@@ -29,6 +29,7 @@ structure Gen where
   groundEqs     := true
   derivedGuides := true
   explosion     := false
+  dbgSymbolicTcProj := true
   deriving BEq
 
 structure DefEq where

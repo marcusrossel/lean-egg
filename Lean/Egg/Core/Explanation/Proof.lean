@@ -58,7 +58,7 @@ abbrev Proof := Array Proof.Step
 private def Proof.prove (prf : Proof) (cgr : Congr) : MetaM Expr := do
   let some first := prf[0]? | return (← cgr.rel.mkRefl cgr.lhs)
   unless ← isDefEq first.lhs cgr.lhs do
-    fail s!"initial expression is not defeq to LHS of proof goal:\n\n  {first.lhs}\n\nvs\n\n  {cgr.lhs}"
+    fail m!"initial expression is not defeq to LHS of proof goal:\n\n  {first.lhs}\n\nvs\n\n  {cgr.lhs}"
   let mut proof := first.proof
   for step in prf[1:] do
     unless step.rw.isRefl do proof ← mkEqTrans proof step.proof
@@ -67,8 +67,8 @@ private def Proof.prove (prf : Proof) (cgr : Congr) : MetaM Expr := do
   | .eq  => return proof
   | .iff => mkIffOfEq proof
 where
-  fail (msg : String) : MetaM Unit := do
-    throwError s!"egg failed to build proof: {msg}"
+  fail (msg : MessageData) : MetaM Unit := do
+    throwError m!"egg failed to build proof: {msg}"
 
 mutual
 
@@ -97,7 +97,7 @@ where
       }
     if rwInfo.src.isDefEq then
       unless ← isDefEq current next do
-        fail s!"defeq step between non-defeq expressions:\n\n  {current}\n\nand\n\n  {next}"
+        fail m!"defeq step between non-defeq expressions:\n\n  {current}\n\nand\n\n  {next}" idx
       return {
         lhs := current, rhs := next, proof := ← mkReflStep idx current next rwInfo.src,
         rw := .defeq rwInfo.src, dir := rwInfo.dir
@@ -117,11 +117,11 @@ where
       let prf ← mkCongrStep idx current next rwInfo.pos?.get! (.reifiedEq rwInfo.dir)
       return { lhs := current, rhs := next, proof := prf, rw := .reifiedEq, dir := rwInfo.dir }
     else
-      fail s!"unknown rewrite {rwInfo.src.description}" idx
+      fail m!"unknown rewrite {rwInfo.src.description}" idx
 
   mkReflStep (idx : Nat) (current next : Expr) (src : Source) : MetaM Expr := do
     unless ← isDefEq current next do
-      fail s!"unification failure for proof by reflexivity with rw {src.description}" idx
+      fail m!"unification failure for proof by reflexivity with rw {src.description}" idx
     mkEqRefl next
 
   mkFactAndStep (idx : Nat) (current next : Expr) : MetaM Expr := do
@@ -202,11 +202,11 @@ where
     let expr   ← instantiateMVars expr
     let rwExpr ← instantiateMVars rwExpr
     let mut readOnlyOrSynthOpaque := []
-    let mut types := "\n"
+    let mut types := m!"\n"
     -- TODO: Improve this by showing the MVars.Properties of mvars.
     for mvar in rwMVars.expr.keys do
       if ← mvar.isReadOnlyOrSyntheticOpaque then readOnlyOrSynthOpaque := readOnlyOrSynthOpaque.concat mvar
-      types := types ++ s!"  {← ppExpr (.mvar mvar)}: {← ppExpr <| ← mvar.getType}\n"
+      types := types ++ m!"  {← ppExpr (.mvar mvar)}: {← ppExpr <| ← mvar.getType}\n"
     fail m!"unification failure for {side} of rewrite {src.description}:\n\n  {expr}\nvs\n  {rwExpr}\nin\n  {current}\nand\n  {next}\n\n• Types: {types}\n• Read Only Or Synthetic Opaque MVars: {readOnlyOrSynthOpaque}" idx
 
   proveCondition (cond : Expr) (weakVars : Proof.WeakVars) : MetaM (Option Expr) := do

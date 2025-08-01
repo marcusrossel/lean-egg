@@ -37,8 +37,8 @@ section TcProjs
 private abbrev TcProjs := ExprMap SourcePrefix
 
 private inductive Symbol where
-  | const  (n : Name)
-  | natLit (n : Nat)
+  | const (n : Name)
+  | natLit
   deriving BEq, Hashable
 
 private abbrev Symbols := HashSet Symbol
@@ -90,11 +90,12 @@ where
     | .app fn arg                     => (visitFn fn arg) >=> (visitArg arg)
     | .lam _ d b _ | .forallE _ d b _ => (visitBindingDomain d) >=> (visitBindingBody b)
     | .mdata .. | .proj .. | .letE .. => fun _ => throwError "egg: internal error: 'Egg.tcProjs.go' received non-normalized expression"
-    | .lit (.natVal v)                => visitNatLit v
+    | .lit (.natVal _)                => visitNatLit
     | _                               => pure
 
   visitConst (const : Name) (lvls : List Level) (s : State) : MetaM State := do
-    let s := { s with symbols := s.symbols.insert (.const const) }
+    -- Record the symbol name, if it is not a type class instance.
+    let s := if ← isInstance const then s else { s with symbols := s.symbols.insert (.const const) }
     let some info ← getProjectionFnInfo? const | return s
     unless info.fromClass && s.args.size > info.numParams do return s
     let args := s.args[:info.numParams + 1].toArray
@@ -119,8 +120,8 @@ where
     let s' ← go arg { s with args := #[], pos := s.pos.pushAppArg }
     return { s' with args := s.args, pos := s.pos }
 
-  visitNatLit (val : Nat) (s : State) : MetaM State := do
-    return { s with symbols := s.symbols.insert (.natLit val) }
+  visitNatLit (s : State) : MetaM State := do
+    return { s with symbols := s.symbols.insert .natLit }
 
 end TcProjs
 
@@ -130,7 +131,8 @@ only for those which we deem relevant. Relevance is based on the appearance of s
 reduction's target.
 Specifically, we expect all involved expressions to have a head-symbol (i.e. they need to be of the
 form `f`, `f a`, `f a b`, ...). If the head symbol does not appear in any other rewrite, guide, or
-the proof goal, then we deem the rewrite irrelevant.
+the proof goal, then we deem the rewrite irrelevant. Also, we exclude type class instance from the
+set of relevant symbols, as they are erased during encoding.
 
 As a practical matter, the goal of these reduction rewrites in only to connect terms which both
 already appear in other rewrites/guides/goals:
@@ -184,7 +186,7 @@ private abbrev Activations := ExprMap (ActivationReason × Expr)
 -- all terminal reductions from the set of candidates and repeat the process. This way, we
 -- iteratively "peel off" the terminal reductions from the (dependency) graph of reductions, until
 -- none are left.
-private partial def activations (reds : Reductions) (isActive : Expr → Bool) : Activations := Id.run do
+private partial def activations (reds : Reductions) (symbols : Symbols) : MetaM Activations := do
   let mut reds      := reds
   let mut active    := (∅ : Activations)
   let mut activated := (∅ : ExprSet)
@@ -196,7 +198,8 @@ private partial def activations (reds : Reductions) (isActive : Expr → Bool) :
       -- reductions also become activated (which we want). For example, If `Add => Nat.add` is
       -- activated, then `Add` is added to `activated`, an in turn (in the next iteration of the
       -- `while`-loop), `HAdd => Add` will be activated.
-      let external := isActive dst
+      let some external ← isActive dst
+        | throwError m!"egg: internal error in 'Reductions.activations'. Received:\n\n  {src}\n\n⇒\n\n  {dst}"
       let internal := dst ∈ activated
       if external || internal then
         -- If a reduction was activated both externally and internally, we want to mark it as being
@@ -209,6 +212,15 @@ private partial def activations (reds : Reductions) (isActive : Expr → Bool) :
           | some (r, dst) => (r.join reason, dst)
       reds := reds.erase src
   return active
+where
+  isActive (e : Expr) : MetaM (Option Bool) := do
+    lambdaTelescope e fun _ e =>
+      if let .const n _ := e.getAppFn then
+        return symbols.contains (.const n)
+      else if let .lit (.natVal _) := e then
+        return symbols.contains .natLit
+      else
+        return none
 
 -- Fuzes reductions which are only linked by terms with `ActivationReason.internal`.
 private def Activations.fuze (act : Activations) : Reductions := Id.run do
@@ -237,26 +249,14 @@ private partial def «from» (projs : TcProjs) (cfg : Config.Normalization) : Me
 end Reductions
 
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
-def genTcProjReductions (targets : Array TcProjTarget) (cfg : Config.Normalization) :
-    MetaM Rewrites := do
+def genTcProjReductions (targets : Array TcProjTarget) (cfg : Config) : MetaM Rewrites := do
   let (projs, symbols) ← TcProjs.from targets
-  let (reds, info)     ← Reductions.from projs cfg
-  let activations     := reds.activations (isActive symbols)
-  let fuzed           := activations.fuze
+  let (reds, info) ← Reductions.from projs cfg
+  unless cfg.dbgSymbolicTcProj do return ← makeRewrites reds.toList info
+  let activations ← reds.activations (symbols ∪ backendSymbols)
+  let fuzed := activations.fuze
   makeRewrites fuzed.toList info
 where
-  isActive (symbols : Symbols) (e : Expr) : Bool := Id.run do
-    return true
-    /-
-    if let .const n _ := e.getAppFn then
-      return symbols.contains (.const n)
-    else if let .lit (.natVal v) := e then
-      return symbols.contains (.natLit v)
-    else
-      panic! "egg: internal error in 'genTcProjReductions.isActive'. We assume that type class \
-              projection reductions only reduce to applications with a constant head symbol, or \
-              natural number literals"
-    -/
   makeRewrites (reds : List <| Expr × Expr) (info : ReductionInfo) : MetaM Rewrites := do
     let mut rws := #[]
     for (lhs, rhs) in reds do
@@ -268,3 +268,11 @@ where
         | throwError "egg: internal error in 'genTcProjReductions.makeRewrites'"
       rws := rws ++ rs
     return rws
+  backendSymbols : Symbols := Id.run do
+    let mut symbols := { .const ``True, .const ``And }
+    if cfg.natLit then
+      symbols := symbols ∪ {
+        .natLit, .const ``Nat.zero, .const ``Nat.add, .const ``Nat.sub, .const ``Nat.mul,
+        .const ``Nat.pow, .const ``Nat.div, .const ``Nat.mod
+      }
+    return symbols

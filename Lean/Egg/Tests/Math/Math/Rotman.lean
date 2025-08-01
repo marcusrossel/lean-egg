@@ -17,7 +17,7 @@ attribute [egg real]
 /- + -   -/ sub_sub sub_add add_sub add_comm_sub sub_add_cancel sub_add_eq_add_sub add_sub_assoc
 /- + * / -/ left_distrib right_distrib add_div_eq_mul_add_div
 
--- TODO: I think pruning of (tc proj) rewrites is not working properly.
+-- TODO: Pruning of rewrites seems to not be working properly.
 set_option maxHeartbeats 300000
 set_option egg.subgoals true
 set_option egg.timeLimit 10

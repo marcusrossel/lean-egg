@@ -68,3 +68,4 @@ register_egg_options
   flattenReports
   retryWithShapes "When proof reconstruction fails, try running again with `egg.shapes := true`."
   explLengthLimit : Nat
+  dbgSymbolicTcProj

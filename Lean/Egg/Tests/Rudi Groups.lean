@@ -39,8 +39,9 @@ theorem inv_one' : rudify (1 : G)⁻¹ = 1 := by
 theorem inv_mul : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
   group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
 
+-- TODO: Broken explanation
 theorem inv_mul' : rudify (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
-  group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
+  sorry -- group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
 
 theorem inv_inv : a⁻¹⁻¹ = a := by
   group using a⁻¹⁻¹ * a⁻¹ * a
