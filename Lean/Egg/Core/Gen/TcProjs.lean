@@ -124,8 +124,6 @@ where
 
 end TcProjs
 
-section Reductions
-
 /-
 We do not generate reduction rewrites for *all* occurrences of type class projections, but instead
 only for those which we deem relevant. Relevance is based on the appearance of symbols in the
@@ -217,49 +215,24 @@ private def Activations.fuze (act : Activations) : Reductions := Id.run do
   -- TODO: Implement fusion.
   act.map fun _ (_, e) => e
 
-private structure CollectionM.State where
-  reds : Reductions
-  info : ReductionInfo
-  pre  : SourcePrefix
-
-private abbrev CollectionM := StateT CollectionM.State MetaM
-
-namespace CollectionM
-
-private def setPrefix (pre : SourcePrefix) : CollectionM Unit :=
-  modify fun s => { s with pre }
-
-private def collect (src dst : Expr) (depth : Nat) : CollectionM Unit :=
-  modify fun { reds, info, pre } => {
-    reds := reds.insert src dst,
-    info := info.insert src (.tcProj pre.src pre.loc pre.pos depth)
-    pre
-  }
-
-private def run (pre : SourcePrefix) (m : CollectionM Unit) : MetaM (Reductions × ReductionInfo) := do
-  let (_, state) ← m.run { reds := ∅, info := ∅, pre }
-  return (state.reds, state.info)
-
-end CollectionM
-
-open CollectionM in
-private partial def «from» (projs : TcProjs) (cfg : Config.Normalization) :
-    MetaM (Reductions × ReductionInfo) := do
-  let dummy := { src := .goal, loc := .root, pos := .root }
-  CollectionM.run dummy do
-    for (proj, pre) in projs do
-      setPrefix pre
-      go proj (depth := 0)
-where
-  go (proj : Expr) (depth : Nat) : CollectionM Unit := do
-    let some tgt ← unfoldProjInst? proj | return
-    -- TODO: Reenable if necessary.
-    -- Since we have type class instance erasure, we are not interested in type class projections
-    -- which only transform a given type class instance into another type class instance.
-    -- `if ← Meta.isTCInstance u then | return reds`
-    let tgt ← normalize tgt cfg
-    collect proj tgt depth
-    go tgt (depth + 1)
+private partial def «from» (projs : TcProjs) (cfg : Config.Normalization) : MetaM (Reductions × ReductionInfo) := do
+  let mut reds : Reductions    := ∅
+  let mut info : ReductionInfo := ∅
+  for (proj, pre) in projs do
+    let mut proj := proj
+    let mut depth := 0
+    repeat
+      let some tgt ← unfoldProjInst? proj | break
+      -- TODO: Reenable if necessary.
+      -- Since we have type class instance erasure, we are not interested in type class projections
+      -- which only transform a given type class instance into another type class instance.
+      -- `if ← Meta.isTCInstance u then | return reds`
+      let tgt ← normalize tgt cfg
+      reds := reds.insert proj tgt
+      info := info.insert proj (.tcProj pre.src pre.loc pre.pos depth)
+      depth := depth + 1
+      proj := tgt
+  return (reds, info)
 
 end Reductions
 
