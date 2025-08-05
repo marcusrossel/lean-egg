@@ -15,6 +15,7 @@ structure Modifier where
   structProjs     : Option Bool            := none
   goalTypeSpec    : Option Bool            := none
   tcProjs         : Option Bool            := none
+  tcProjFusion    : Option Bool            := none
   natLit          : Option Bool            := none
   eta             : Option Bool            := none
   etaExpand       : Option Bool            := none
@@ -36,7 +37,6 @@ structure Modifier where
   exitPoint       : Option Debug.ExitPoint := none
   proofFuel?      : Option Nat             := none
   vizPath         : Option String          := none
-  dbgSymbolicTcProj : Option Bool            := none
 
 def modify (cfg : Config) (mod : Modifier) : Config where
   shapes          := mod.shapes.getD cfg.shapes
@@ -47,6 +47,7 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   structProjs     := mod.structProjs.getD cfg.structProjs
   goalTypeSpec    := mod.goalTypeSpec.getD cfg.goalTypeSpec
   tcProjs         := mod.tcProjs.getD cfg.tcProjs
+  tcProjFusion    := mod.tcProjFusion.getD cfg.tcProjFusion
   natLit          := mod.natLit.getD cfg.natLit
   eta             := mod.eta.getD cfg.eta
   etaExpand       := mod.etaExpand.getD cfg.etaExpand
@@ -68,7 +69,6 @@ def modify (cfg : Config) (mod : Modifier) : Config where
   proofFuel?      := match mod.proofFuel? with | some p => p | none => cfg.proofFuel?
   exitPoint       := mod.exitPoint.getD cfg.exitPoint
   vizPath         := match mod.vizPath with | some p => p | none => cfg.vizPath
-  dbgSymbolicTcProj := mod.dbgSymbolicTcProj.getD cfg.dbgSymbolicTcProj
 
 namespace Modifier
 

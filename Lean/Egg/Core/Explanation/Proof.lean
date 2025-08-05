@@ -233,7 +233,9 @@ where
     mkOfEqTrue prf
 
   mkSubproof (lhs rhs : Expr) : MetaM (Option Expr) := do
-    if let some fuel := fuel? then unless fuel > 0 do fail "ran out of fuel"
+    if let some fuel := fuel? then
+      dbg_trace "fuel: {fuel}"
+      unless fuel > 0 do fail "ran out of fuel"
     let req ← Request.Equiv.encoding lhs rhs cfg
     let some rawExpl := egraph.run req | return none
     withTraceNode `egg.explanation (fun _ => return m!"Nested Explanation for '{lhs}' = '{rhs}'") do

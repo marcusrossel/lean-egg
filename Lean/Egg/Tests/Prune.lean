@@ -35,21 +35,21 @@ trace: [egg.rewrites.pruned] Pruned (4)
   [egg.rewrites.pruned] #0(⇐) by #0
     [egg.rewrites.pruned] ?m + ?n = ?n + ?m
     [egg.rewrites.pruned] LHS MVars
-        [?m: [unconditionallyVisible], ?n: [unconditionallyVisible]]
+        [?n: [unconditionallyVisible], ?m: [unconditionallyVisible]]
     [egg.rewrites.pruned] RHS MVars
-        [?m: [unconditionallyVisible], ?n: [unconditionallyVisible]]
+        [?n: [unconditionallyVisible], ?m: [unconditionallyVisible]]
   [egg.rewrites.pruned] #1(⇒) by #0
     [egg.rewrites.pruned] ?a + ?b = ?b + ?a
     [egg.rewrites.pruned] LHS MVars
-        [?b: [unconditionallyVisible], ?a: [unconditionallyVisible]]
+        [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
     [egg.rewrites.pruned] RHS MVars
-        [?b: [unconditionallyVisible], ?a: [unconditionallyVisible]]
+        [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
   [egg.rewrites.pruned] #1(⇐) by #0
     [egg.rewrites.pruned] ?b + ?a = ?a + ?b
     [egg.rewrites.pruned] LHS MVars
-        [?b: [unconditionallyVisible], ?a: [unconditionallyVisible]]
+        [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
     [egg.rewrites.pruned] RHS MVars
-        [?b: [unconditionallyVisible], ?a: [unconditionallyVisible]]
+        [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
   [egg.rewrites.pruned] #1↓(⇒) by #0↓
     [egg.rewrites.pruned] ∀ (a b : Nat), a + b = b + a = True
     [egg.rewrites.pruned] LHS MVars

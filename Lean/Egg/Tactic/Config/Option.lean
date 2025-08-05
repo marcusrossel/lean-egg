@@ -47,6 +47,7 @@ register_egg_options
   structProjs
   goalTypeSpec
   tcProjs
+  tcProjFusion
   natLit
   eta
   etaExpand
@@ -68,4 +69,3 @@ register_egg_options
   flattenReports
   retryWithShapes "When proof reconstruction fails, try running again with `egg.shapes := true`."
   explLengthLimit : Nat
-  dbgSymbolicTcProj

@@ -167,67 +167,7 @@ private abbrev ReductionInfo := ExprMap Source
 
 namespace Reductions
 
-private def terminal (reds : Reductions) : List (Expr × Expr) :=
-  reds.fold (init := []) fun acc src dst =>
-    if reds.contains dst then acc else (src, dst) :: acc
-
-private inductive ActivationReason where
-  | external
-  | internal
-
-private def ActivationReason.join : ActivationReason → ActivationReason → ActivationReason
-  | internal, internal => internal
-  | _, _               => external
-
-private abbrev Activations := ExprMap (ActivationReason × Expr)
-
--- We determine activation of reductions starting from terminal reductions. A terminal reduction is
--- activated if its destination is. After deciding activation for all terminal reduction, we remove
--- all terminal reductions from the set of candidates and repeat the process. This way, we
--- iteratively "peel off" the terminal reductions from the (dependency) graph of reductions, until
--- none are left.
-private partial def activations (reds : Reductions) (symbols : Symbols) : MetaM Activations := do
-  let mut reds      := reds
-  let mut active    := (∅ : Activations)
-  let mut activated := (∅ : ExprSet)
-  while !reds.isEmpty do
-    for (src, dst) in reds.terminal do
-      -- A destination is considered active, either if it appears in any of the "external" rewrites,
-      -- guides, or the proof goal (via `isActive`), *or* if we have already activated another
-      -- reduction which has the destination as its source. As a result, parents of activated
-      -- reductions also become activated (which we want). For example, If `Add => Nat.add` is
-      -- activated, then `Add` is added to `activated`, an in turn (in the next iteration of the
-      -- `while`-loop), `HAdd => Add` will be activated.
-      let some external ← isActive dst
-        | throwError m!"egg: internal error in 'Reductions.activations'. Received:\n\n  {src}\n\n⇒\n\n  {dst}"
-      let internal := dst ∈ activated
-      if external || internal then
-        -- If a reduction was activated both externally and internally, we want to mark it as being
-        -- activated externally, as this is stronger (internal might lead to fuzing, external not).
-        let reason := if external then .external else .internal
-        activated := activated.insert src
-        -- If the `src` has already been activated, we make sure to retain the stronger reason.
-        active := active.alter src fun
-          | none          => (reason, dst)
-          | some (r, dst) => (r.join reason, dst)
-      reds := reds.erase src
-  return active
-where
-  isActive (e : Expr) : MetaM (Option Bool) := do
-    lambdaTelescope e fun _ e =>
-      if let .const n _ := e.getAppFn then
-        return symbols.contains (.const n)
-      else if let .lit (.natVal _) := e then
-        return symbols.contains .natLit
-      else
-        return none
-
--- Fuzes reductions which are only linked by terms with `ActivationReason.internal`.
-private def Activations.fuze (act : Activations) : Reductions := Id.run do
-  -- TODO: Implement fusion.
-  act.map fun _ (_, e) => e
-
-private partial def «from» (projs : TcProjs) (cfg : Config.Normalization) : MetaM (Reductions × ReductionInfo) := do
+private def «from» (projs : TcProjs) (cfg : Config.Normalization) : MetaM (Reductions × ReductionInfo) := do
   let mut reds : Reductions    := ∅
   let mut info : ReductionInfo := ∅
   for (proj, pre) in projs do
@@ -246,16 +186,121 @@ private partial def «from» (projs : TcProjs) (cfg : Config.Normalization) : Me
       proj := tgt
   return (reds, info)
 
+private def terminal (reds : Reductions) : List (Expr × Expr) :=
+  reds.fold (init := []) fun acc src dst =>
+    if reds.contains dst then acc else (src, dst) :: acc
+
+private inductive ActivationReason where
+  | external
+  | internal
+  deriving Inhabited
+
+instance : ToString ActivationReason where
+  toString
+    | .external => "external"
+    | .internal => "internal"
+
+private def ActivationReason.join : ActivationReason → ActivationReason → ActivationReason
+  | internal, internal => internal
+  | _, _               => external
+
+private structure Activations where
+  reductions : Reductions
+  reasons    : ExprMap ActivationReason
+
+private def Activations.ofExternal (es : List Expr) : Activations where
+  reductions := ∅
+  reasons := es.foldl (init := ∅) (·.insert · .external)
+
+private def Activations.insert (acts : Activations) (src dst : Expr) (external : Bool) : Activations :=
+  let reductions := acts.reductions.insert src dst
+  -- If a reduction was activated both externally and internally, we want to mark it as being
+  -- activated externally, as this is stronger (internal might lead to fuzing, external not).
+  let reason : ActivationReason := if external then .external else .internal
+  -- If the `src` has already been activated, we make sure to retain the stronger reason.
+  let reasons := acts.reasons.alter dst fun
+    | none     => reason
+    | some rsn => rsn.join reason
+  { reductions, reasons }
+
+-- We determine activation of reductions starting from terminal reductions. A terminal reduction is
+-- activated if its destination is. After deciding activation for all terminal reduction, we remove
+-- all terminal reductions from the set of candidates and repeat the process. This way, we
+-- iteratively "peel off" the terminal reductions from the (dependency) graph of reductions, until
+-- none are left.
+private def activations (reds : Reductions) (initial : List Expr) (symbols : Symbols) :
+    MetaM Activations := do
+  -- We set the activation reasons of the `initial` expressions (i.e. those expressions which were
+  -- found by `TcProjs.from`) to `external`, as the subsequent procedure does not necessarily set
+  -- their reason otherwise.
+  let mut acts      := .ofExternal initial
+  let mut activated := (∅ : ExprSet)
+  let mut reds      := reds
+  while !reds.isEmpty do
+    for (src, dst) in reds.terminal do
+      -- A destination is considered active, either if it appears in any of the "external" rewrites,
+      -- guides, or the proof goal (via `isActive`), *or* if we have already activated another
+      -- reduction which has the destination as its source. As a result, parents of activated
+      -- reductions also become activated (which we want). For example, If `Add => Nat.add` is
+      -- activated, then `Add` is added to `activated`, an in turn (in the next iteration of the
+      -- `while`-loop), `HAdd => Add` will be activated.
+      let some external ← isActive dst
+        | throwError m!"egg: internal error in 'Reductions.activations'. Received:\n\n  {src}\n\n⇒\n\n  {dst}"
+      let internal := dst ∈ activated
+      if external || internal then
+        acts := acts.insert src dst external
+        activated := activated.insert src
+      reds := reds.erase src
+  return acts
+where
+  isActive (e : Expr) : MetaM (Option Bool) := do
+    lambdaTelescope e fun _ e =>
+      if let .const n _ := e.getAppFn then
+        return symbols.contains (.const n)
+      else if let .lit (.natVal _) := e then
+        return symbols.contains .natLit
+      else
+        return none
+
+-- Fuzes reductions which are only linked by terms with `ActivationReason.internal`.
+private def Activations.fuze (acts : Activations) : MetaM <| List (Expr × Expr) := do
+  let mut { reductions := reds, reasons } := acts
+  let mut todos := reds.keys
+  repeat
+    -- Note: We never remove anything from `reds`. For example, for a reduction `e₁ ⇒ e₂ ⇒ e₃` where
+    --       `e₂` is internal, we simply update `e₁` to `e₁ ⇒ e₃`, while retaining `e₂ ⇒ e₃`.
+    let e₁ :: todos' := todos | break
+    todos := todos'
+    let e₂ := reds[e₁]!
+    -- If the reduction is terminal (note: terminal reductions can never be internal), we don't need
+    -- to do anything and `continue`.
+    let some e₃ := reds[e₂]? | continue
+    -- If the middle element `e₂` of the reduction chain `e₁ ⇒ e₂ ⇒ e₃` is not internal (i.e. it is
+    -- external), the the reduction chain should remain unchanged and we `continue`.
+    let .internal := reasons[e₂]! | continue
+    -- If the element `e₂` is internal, contract the reduction from `e₁` to go directly to `e₃`.
+    reds := reds.insert e₁ e₃
+    -- Add `e₁` back to the queue, as it might admit more contractions.
+    todos := e₁ :: todos
+  -- At this point all reductions from `external` elements point only to other `external` elements,
+  -- and all reductions starting at `internal` elements are redundant.
+  let mut result := []
+  for (src, dst) in reds do
+    if let .external := reasons[src]! then result := (src, dst) :: result
+  return result
+
 end Reductions
 
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
 def genTcProjReductions (targets : Array TcProjTarget) (cfg : Config) : MetaM Rewrites := do
   let (projs, symbols) ← TcProjs.from targets
   let (reds, info) ← Reductions.from projs cfg
-  unless cfg.dbgSymbolicTcProj do return ← makeRewrites reds.toList info
-  let activations ← reds.activations (symbols ∪ backendSymbols)
-  let fuzed := activations.fuze
-  makeRewrites fuzed.toList info
+  let acts ← reds.activations projs.keys (symbols ∪ backendSymbols)
+  if cfg.tcProjFusion then
+    let fuzed ← acts.fuze
+    makeRewrites fuzed info
+  else
+    makeRewrites acts.reductions.toList info
 where
   makeRewrites (reds : List <| Expr × Expr) (info : ReductionInfo) : MetaM Rewrites := do
     let mut rws := #[]

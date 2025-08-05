@@ -25,11 +25,11 @@ structure Gen where
   builtins      := true
   structProjs   := true
   tcProjs       := true
+  tcProjFusion  := false
   goalTypeSpec  := true
   groundEqs     := true
   derivedGuides := true
   explosion     := false
-  dbgSymbolicTcProj := true
   deriving BEq
 
 structure DefEq where
