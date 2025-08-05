@@ -101,7 +101,7 @@ def violations (rw : Rewrite) (subgoals : Bool) : MetaM (List Violation) := do
   unless rw.conds.unsynthesizable.isEmpty do
     violations := (.unsynthesizable rw.conds.unsynthesizable) :: violations
   -- Checks for `lhsSingleMVar`.
-  let containsNonMVarProofConditions ← (return subgoals) <||> rw.conds.active.anyM fun cond =>
+  let containsNonMVarProofConditions ← (return !subgoals) <&&> rw.conds.active.anyM fun cond =>
     (return cond.kind.isProof) <&&> cond.type.isNonAmbientMVar
   if ← rw.lhs.isNonAmbientMVar <&&> (return !containsNonMVarProofConditions) then
     violations := (.lhsSingleMVar rw.lhs.mvarId!) :: violations

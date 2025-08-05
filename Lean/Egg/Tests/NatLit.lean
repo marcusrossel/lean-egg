@@ -37,7 +37,7 @@ example (f : Nat → Nat) (h : ∀ x, f x = x.succ) : 30 = app 30 f 0 := by
 --       However, this means that activations determined in the backend are not respected.
 --       Should we determine activations in the frontend afterall?
 
-example : 12345 - 67890 = 0 := by
+example : 12345 + 67890 = 80235 := by
   egg
 
 example : 12345 - 67890 = 0 := by
