@@ -33,14 +33,7 @@ theorem sdiff_le' : x \ y ≤ x := by
 /- Previous -/ attribute [egg bool] sdiff_le'
 
 theorem sdiff_sup_self' : y \ x ⊔ x = y ⊔ x := by
-  egg +bool calc
-    _ = y \ x ⊔ (x ⊔ x ⊓ y)
-    _ = y ⊓ x ⊔ y \ x ⊔ x
-    _ = y ⊔ x
-
--- TODO: This seems to loop during eqsat.
-example : y \ x ⊔ x = y ⊔ x := by
-  sorry -- egg +bool (config := { exitPoint := some .beforeEqSat, proofFuel? := some 5 }) using y \ x ⊔ (x ⊔ x ⊓ y)
+  egg +bool using y ⊓ x ⊔ y \ x ⊔ x
 
 /- Previous -/ attribute [egg bool] sdiff_sup_self'
 

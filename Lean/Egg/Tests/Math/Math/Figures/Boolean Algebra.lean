@@ -29,7 +29,7 @@ example : y \ x ⊔ x = y ⊔ x := by
     _ = y ⊓ x ⊔ y \ x ⊔ x
     _ = y ⊔ x
 
--- Note: These lemmas originate from `Mathlib.Order.BooleanAlgebra.Defs` and preceed the proof of
+-- Note: These lemmas originate from `Mathlib.Order.BooleanAlgebra.Defs` and precede the proof of
 --       the following theorem. We can prove these lemmas (and others) lemmas using `egg +bool`. We
 --       just omit those proofs here for brevity.
 attribute [egg bool] inf_sdiff_right sdiff_sup sdiff_sdiff_right sdiff_sdiff_right'
