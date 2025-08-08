@@ -88,9 +88,9 @@ def Rewrite.Violation.toMessageData : Rewrite.Violation → MessageData
   | rhsMVarInclusion missing => m!"rhsMVarInclusion: {missing.toList.map Expr.mvar}"
   | rhsUVarInclusion missing => m!"rhsUVarInclusion: {missing.toList.map Level.mvar}"
   | lhsSingleMVar _          => "lhsSingleMVar"
-  | covering missing         => m!"covering: {missing.toList.map Expr.mvar}"
+  | mVarCovering missing     => m!"mVarCovering: {missing.toList.map Expr.mvar}"
   | tcMVarInclusion missing  => m!"tcMVarInclusion: {missing.toList.map Expr.mvar}"
-  | tcUVarInclusion          => "tcUVarInclusion"
+  | tcUVarInclusion missing  => m!"tcUVarInclusion: {missing.toList.map Level.mvar}"
   | unsynthesizable ms       => m!"unsynthesizable: {ms.toList.map Expr.mvar}"
 
 def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) (subgoals : Bool)

@@ -50,12 +50,18 @@ structure _root_.Egg.Request where
   vizPath : String
   cfg     : Request.Config
 
+-- TODO: We bump the mctx depth for objects which should not contain pattern variables. This is used
+--       to ensure that *level* mvars do not get encoded as pattern variables, as `Egg.eval.core`
+--       sets the `allowLevelAssignments` option on `withNewMCtxDepth` to `true`, and here we set it
+--       to (the default value) `false`. We could just set the `allowLevelAssignments` to `false`
+--       in the first place, but that seems to cause problems when encoding rewrites. I'm not sure
+--       why though, and I think it has to do with how universe levels are elaborated.
 def encoding (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) : MetaM Request :=
   return {
-    lhs     := ← encode goal.lhs cfg
-    rhs     := ← encode goal.rhs cfg
+    lhs     := ← Meta.withNewMCtxDepth do encode goal.lhs cfg
+    rhs     := ← Meta.withNewMCtxDepth do encode goal.rhs cfg
     rws     := ← rws.encode cfg cfg.subgoals
-    guides  := ← guides.encode cfg
+    guides  := ← Meta.withNewMCtxDepth do guides.encode cfg
     vizPath := cfg.vizPath.getD ""
     cfg
   }

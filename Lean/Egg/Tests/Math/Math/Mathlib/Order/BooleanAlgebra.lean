@@ -1,34 +1,27 @@
 import Egg
-import Mathlib.Order.BooleanAlgebra.Defs
 import Mathlib.Order.BooleanAlgebra.Basic
 
-set_option egg.explLengthLimit 250
-
--- SemilatticeSup
 attribute [egg slattice_sup] sup_idem sup_comm sup_assoc sup_left_right_swap sup_left_idem
                              sup_right_idem sup_left_comm sup_right_comm sup_sup_sup_comm
                              sup_sup_distrib_left sup_sup_distrib_right sup_congr_left
                              sup_congr_right
 
--- SemilatticeInf
 attribute [egg slattice_inf] inf_of_le_left inf_of_le_right inf_idem inf_comm inf_assoc
                              inf_left_right_swap inf_left_idem inf_right_idem inf_left_comm
                              inf_right_comm inf_inf_inf_comm inf_inf_distrib_left
                              inf_inf_distrib_right inf_congr_left inf_congr_right
 
--- Lattice
 egg_basket lattice extends slattice_sup, slattice_inf with
   inf_sup_self, sup_inf_self
 
--- DistribLattice
 egg_basket distrib_lattice extends lattice with
   sup_inf_left, sup_inf_right, inf_sup_left, inf_sup_right, eq_of_inf_eq_sup_eq
 
--- GeneralizedBooleanAlgebra
 egg_basket bool extends distrib_lattice with
   sup_inf_sdiff, inf_inf_sdiff
 
 variable [GeneralizedBooleanAlgebra α] {x y z : α}
+
 example (s : x ⊓ y ⊔ z = x) (i : x ⊓ y ⊓ z = ⊥) : x \ y = z := by
   egg +bool [sup_inf_sdiff x y, inf_inf_sdiff x y, i, s]
 
@@ -45,16 +38,14 @@ theorem sdiff_sup_self' : y \ x ⊔ x = y ⊔ x := by
     _ = y ⊓ x ⊔ y \ x ⊔ x
     _ = y ⊔ x
 
--- TODO: I think this might produce a loop in proof reconstruction.
+-- TODO: This seems to loop during eqsat.
 example : y \ x ⊔ x = y ⊔ x := by
-  sorry -- egg +bool using y \ x ⊔ (x ⊔ x ⊓ y)
+  sorry -- egg +bool (config := { exitPoint := some .beforeEqSat, proofFuel? := some 5 }) using y \ x ⊔ (x ⊔ x ⊓ y)
 
 /- Previous -/ attribute [egg bool] sdiff_sup_self'
 
-attribute [egg bool] inf_sdiff_right
-
 example : x \ y ⊓ y \ x = ⊥ := by
-  egg +bool
+  egg +bool [inf_sdiff_right]
 
 /- Previous -/ attribute [egg bool] sdiff_inf_sdiff
 
@@ -90,7 +81,7 @@ example : x \ (y \ z) = x \ y ⊔ x ⊓ y ⊓ z := by
   rw [sup_comm, inf_comm, ← inf_assoc, sup_inf_inf_sdiff]
   apply sdiff_unique
   · egg +bool using x ⊓ (y \ z ⊓ (z ⊔ y) ⊔ x ⊓ (z ⊔ y) ⊔ x \ y)
-  · egg +bool [inf_sdiff_left] using x ⊓ y \ z ⊓ (z ⊓ x) ⊔ x ⊓ y \ z ⊓ x \ y
+  · egg +bool [inf_sdiff_right, inf_sdiff_left] using x ⊓ y \ z ⊓ (z ⊓ x) ⊔ x ⊓ y \ z ⊓ x \ y
 
 /- Previous -/ attribute [egg bool] sdiff_sdiff_right
 

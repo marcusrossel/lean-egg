@@ -42,7 +42,7 @@ theorem L1' : ⁅x, y⁆ = -⁅y, x⁆ := by
 example /- L1' -/ : ⁅x, y⁆ = -⁅y, x⁆ := by
   egg +lie using ⁅x + y, x⁆ + ⁅x + y, y⁆
 
-/- Previous -/ attribute [egg lie] lie_skew
+attribute [egg lie] L1'
 
 example /- neg_lie -/ : ⁅-x, m⁆ = -⁅x, m⁆ := by
   egg +lie

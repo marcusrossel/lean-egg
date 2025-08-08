@@ -75,11 +75,11 @@ def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config.Normalization) 
 inductive Violation where
   | rhsMVarInclusion (missing : MVarIdSet)
   | rhsUVarInclusion (missing : LMVarIdSet)
-  | lhsSingleMVar (mvar : MVarId)
-  | covering (missing : MVarIdSet)
-  | tcMVarInclusion (missing : MVarIdSet)
-  | tcUVarInclusion
-  | unsynthesizable (conds : MVarIdSet)
+  | lhsSingleMVar    (mvar : MVarId)
+  | mVarCovering     (missing : MVarIdSet)
+  | tcMVarInclusion  (missing : MVarIdSet)
+  | tcUVarInclusion  (missing : LMVarIdSet)
+  | unsynthesizable  (conds : MVarIdSet)
 
 -- Note: To check `covering`, it suffices to check all qvars. The reason being that all vars are
 --       either in the theorem body, the qvars, or the types of the former. The variables in the
@@ -119,12 +119,13 @@ def violations (rw : Rewrite) (subgoals : Bool) : MetaM (List Violation) := do
   let missing := (← condVisible .tcInst).subtract visible
   unless missing.isEmpty do violations := (.tcMVarInclusion missing) :: violations
   -- Checks for `tcUVarInclusion`.
-  unless (← condVisibleLvls .tcInst).subset visibleLvls do violations := .tcUVarInclusion :: violations
-  -- Checks for `covering`.
+  let missing := (← condVisibleLvls .tcInst).subtract visibleLvls
+  unless missing.isEmpty do violations := (.tcUVarInclusion missing) :: violations
+  -- Checks for `mVarCovering`.
   let mut cov ← rw.qvars.filterM fun m => Meta.isTCInstance (.mvar m) <||> Meta.isProof (.mvar m)
   cov ← MVarIdSet.typeMVarClosure (cov.union visible)
   let missing := rw.qvars.subtract cov
-  unless missing.isEmpty do violations := (.covering missing) :: violations
+  unless missing.isEmpty do violations := (.mVarCovering missing) :: violations
   return violations
 where
   condVisible (kind : Condition.Kind) : MetaM MVarIdSet := do

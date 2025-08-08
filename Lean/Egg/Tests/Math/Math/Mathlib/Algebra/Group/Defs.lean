@@ -1,4 +1,4 @@
-import Mathlib
+import Mathlib.Algebra.Order.Group.Defs
 import Egg
 
 -- NOTE: We're only covering the multiplicative (not the additive) versions of structures.
@@ -80,63 +80,63 @@ theorem inv_eq_of_mul (h : a * b = 1) : a⁻¹ = b :=
 
 /- Previous -/ attribute [egg group] inv_eq_of_mul
 
-example (a : G) : a * a⁻¹ = 1 := by
+example : a * a⁻¹ = 1 := by
   egg +group using a⁻¹⁻¹ * a⁻¹ * a
 
 /- Previous -/ attribute [egg group] mul_inv_cancel
 
 -- theorem div_self'
-example (a : G) : a / a = 1 := by
+example : a / a = 1 := by
   egg +group
 
 /- Previous -/ attribute [egg group] div_self'
 
-example (a b : G) : a⁻¹ * (a * b) = b := by
+example : a⁻¹ * (a * b) = b := by
   egg +group
 
 /- Previous -/ attribute [egg group] inv_mul_cancel_left
 
-example (a b : G) : a * (a⁻¹ * b) = b := by
+example : a * (a⁻¹ * b) = b := by
   egg +group
 
 /- Previous -/ attribute [egg group] mul_inv_cancel_left
 
-example (a b : G) : a * b * b⁻¹ = a := by
+example : a * b * b⁻¹ = a := by
   egg +group
 
 /- Previous -/ attribute [egg group] mul_inv_cancel_right
 
--- theorem mul_div_cancel_right
-example (a b : G) : a * b / b = a := by
+example : a * b / b = a := by
   egg +group
 
 /- Previous -/ attribute [egg group] mul_div_cancel_right
 
-example (a b : G) : a * b⁻¹ * b = a := by
+example : a * b⁻¹ * b = a := by
   egg +group
 
 /- Previous -/ attribute [egg group] inv_mul_cancel_right
 
-example (a b : G) : a / b * b = a := by
+example : a / b * b = a := by
   egg +group
 
 /- Previous -/ attribute [egg group] div_mul_cancel
 
--- TODO: Group.toDivisionMonoid
---
--- inv_inv: egg group using a⁻¹⁻¹ * a⁻¹ * a
--- mul_inv_rev: egg group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
-instance (priority := 100) : DivisionMonoid G :=
-  { inv_inv := fun a ↦ inv_eq_of_mul (inv_mul_cancel a)
-    mul_inv_rev :=
-      fun a b ↦ inv_eq_of_mul <| by rw [mul_assoc, mul_inv_cancel_left, mul_inv_cancel]
-    inv_eq_of_mul := fun _ _ ↦ inv_eq_of_mul }
+example : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
+  egg +group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
 
--- TODO: Group.toCancelMonoid
-instance (priority := 100) : CancelMonoid G :=
-  { ‹Group G› with
-    mul_right_cancel := fun a b c h ↦ by rw [← mul_inv_cancel_right a b, h, mul_inv_cancel_right]
-    mul_left_cancel := fun a b c h ↦ by rw [← inv_mul_cancel_left a b, h, inv_mul_cancel_left] }
+instance (priority := 100) : DivisionMonoid G where
+  inv_inv a         := by egg +group using a⁻¹⁻¹ * a⁻¹ * a
+  mul_inv_rev a b   := by egg +group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
+  inv_eq_of_mul _ _ := inv_eq_of_mul
+
+/- Previous -/ attribute [egg group] DivisionMonoid.inv_inv DivisionMonoid.mul_inv_rev DivisionMonoid.inv_eq_of_mul
+
+instance (priority := 100) : CancelMonoid G := { ‹Group G› with
+  mul_right_cancel a b _ _ := by egg +group [*] using a * b * b⁻¹
+  mul_left_cancel  a b _ _ := by egg +group [*] using a⁻¹ * (a * b)
+}
+
+/- Previous -/ attribute [egg group] RightCancelMonoid.mul_right_cancel LeftCancelMonoid.mul_left_cancel
 
 end Group
 
