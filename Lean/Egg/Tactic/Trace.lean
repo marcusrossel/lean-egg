@@ -201,7 +201,33 @@ nonrec def Explanation.trace (expl : Explanation) (cls : Name) : TacticM Unit :=
       withTraceNode cls (fun _ => return m!"{idx}: {step.dst}") do
         trace cls fun _ => m!"{step.id.src.description}({step.dir.format})"
 
-nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
+def Source.longDescription : Source → Option Syntax → MessageData
+  | goal,                   _        => m!"⊢"
+  | intro _,                _        => m!"An argument introduced from the goal"
+  | guide ..,               _        => m!"Guide"
+  | explicit _ none,        none     => m!"An explicit argument"
+  | explicit _ none,        some stx => m!"Explicit argument '{stx}'"
+  | explicit _ (some eqn),  none     => m!"Equation #{eqn} of a given definition"
+  | explicit _ (some eqn),  some stx => m!"Equation #{eqn} of given definition '{stx}'"
+  | star id,                _        => m!"Local hypothesis '{Expr.fvar id}' obtained by '*'"
+  | ground src,             stx?     => m!"Ground equation for: {src.longDescription stx?}"
+  | reifiedEq,              _        => m!"Equality reflected in the e-graph"
+  | factAnd,                _        => m!"Conjunction of facts"
+  | structProj _,           _        => m!"Structure projection"
+  | goalTypeSpec src _,     stx?     => m!"Goal type specialization for: {src.longDescription stx?}"
+  | tcProj src ..,          stx?     => m!"Type class projection reduction derived from: {src.longDescription stx?}"
+  | explosion src _,        stx?     => m!"Explosion of: {src.longDescription stx?}"
+  | natLit _,               _        => m!"Definitional equality on natural number literals"
+  | eta false,              _        => m!"η-reduction"
+  | eta true,               _        => m!"η-expasion"
+  | beta,                   _        => m!"β-reduction"
+  | level _,                _        => m!"Definitional equality on universe levels"
+  | builtin _,              _        => m!"A builtin equation"
+  | tagged name none,       _        => m!"The egg-basket theorem '{mkIdent name}'"
+  | tagged name (some eqn), _        => m!"Equation #{eqn} of the egg-basket theorem '{mkIdent name}'"
+  | shift .., _ | subst .., _        => m!"A substitution or bvar index shift"
+
+nonrec def Proof.trace (prf : Proof) (stxs : HashMap Source Syntax) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Proof") do
     for step in prf, idx in [:prf.size] do
       if idx == 0 then
@@ -211,15 +237,17 @@ nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
       | .defeq src =>
         if src.isNatLitConversion || src.isSubst then continue
         withTraceNode cls (fun _ => instantiateMVars step.rhs) do
-          trace cls fun _ => m!"{src.description}({step.dir.format})"
+          trace cls fun _ => m!"{step.dir.format} {src.longDescription none}"
       | .rw rule _ =>
         if rule.src.containsTcProj then continue
         withTraceNode cls (fun _ => instantiateMVars step.rhs) do
-          traceM cls fun _ => return m!"{rule.src.description}({step.dir.format}) {← rule.rw.toMessageData}"
-          trace  cls fun _ => step.proof
+          traceM cls fun _ => return m!"{step.dir.format} {rule.src.longDescription stxs[rule.src]?}"
+          traceM cls fun _ => return m!"{← rule.rw.toMessageData}"
+          withTraceNode cls (fun _ => return "Proof Term") (collapsed := true) do
+            trace cls fun _ => step.proof
       | .reifiedEq =>
         withTraceNode cls (fun _ => instantiateMVars step.rhs) do
-          trace cls fun _ => m!"Reified Equality"
+          trace cls fun _ => m!"Equality reflected in the e-graph"
       | .factAnd =>
         withTraceNode cls (fun _ => instantiateMVars step.rhs) do
-          trace cls fun _ => m!"Fact ∧ Fact"
+          trace cls fun _ => m!"Conjunction of facts"

@@ -30,7 +30,7 @@ private def resultToProof
         throw err
       else
         return .retryWithShapes
-  steps.trace `egg.proof
+  steps.trace rules.stxs `egg.proof
   proof ← instantiateMVars proof
   withTraceNode `egg.proof.term (fun _ => return "Proof Term") do trace[egg.proof.term] proof
   -- Note: This only abstracts mvars of the current mctx depth, which is exactly what we want.
