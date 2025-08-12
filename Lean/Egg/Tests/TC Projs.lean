@@ -98,18 +98,6 @@ example (l : List α) : l ++ l = Append.append l l := by
 
 /--
 trace: [egg.rewrites.tcProj] Type Class Projections (4)
-  [egg.rewrites.tcProj] ⊢[▸4096,1](⇒)
-    [egg.rewrites.tcProj] Add.add = Nat.add
-    [egg.rewrites.tcProj] LHS MVars
-        []
-    [egg.rewrites.tcProj] RHS MVars
-        []
-  [egg.rewrites.tcProj] ⊢[▸4096,1](⇐)
-    [egg.rewrites.tcProj] Nat.add = Add.add
-    [egg.rewrites.tcProj] LHS MVars
-        []
-    [egg.rewrites.tcProj] RHS MVars
-        []
   [egg.rewrites.tcProj] ⊢[▸4096,0](⇒)
     [egg.rewrites.tcProj] HAdd.hAdd = Add.add
     [egg.rewrites.tcProj] LHS MVars
@@ -118,6 +106,18 @@ trace: [egg.rewrites.tcProj] Type Class Projections (4)
         []
   [egg.rewrites.tcProj] ⊢[▸4096,0](⇐)
     [egg.rewrites.tcProj] Add.add = HAdd.hAdd
+    [egg.rewrites.tcProj] LHS MVars
+        []
+    [egg.rewrites.tcProj] RHS MVars
+        []
+  [egg.rewrites.tcProj] ⊢[▸4096,1](⇒)
+    [egg.rewrites.tcProj] Add.add = Nat.add
+    [egg.rewrites.tcProj] LHS MVars
+        []
+    [egg.rewrites.tcProj] RHS MVars
+        []
+  [egg.rewrites.tcProj] ⊢[▸4096,1](⇐)
+    [egg.rewrites.tcProj] Nat.add = Add.add
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars
@@ -131,18 +131,6 @@ example (a b : Nat) : a + b = a + b := by
 
 /--
 trace: [egg.rewrites.tcProj] Type Class Projections (4)
-  [egg.rewrites.tcProj] ⊢[◂4096,1](⇒)
-    [egg.rewrites.tcProj] Add.add = Nat.add
-    [egg.rewrites.tcProj] LHS MVars
-        []
-    [egg.rewrites.tcProj] RHS MVars
-        []
-  [egg.rewrites.tcProj] ⊢[◂4096,1](⇐)
-    [egg.rewrites.tcProj] Nat.add = Add.add
-    [egg.rewrites.tcProj] LHS MVars
-        []
-    [egg.rewrites.tcProj] RHS MVars
-        []
   [egg.rewrites.tcProj] ⊢[◂4096,0](⇒)
     [egg.rewrites.tcProj] HAdd.hAdd = Add.add
     [egg.rewrites.tcProj] LHS MVars
@@ -151,6 +139,18 @@ trace: [egg.rewrites.tcProj] Type Class Projections (4)
         []
   [egg.rewrites.tcProj] ⊢[◂4096,0](⇐)
     [egg.rewrites.tcProj] Add.add = HAdd.hAdd
+    [egg.rewrites.tcProj] LHS MVars
+        []
+    [egg.rewrites.tcProj] RHS MVars
+        []
+  [egg.rewrites.tcProj] ⊢[◂4096,1](⇒)
+    [egg.rewrites.tcProj] Add.add = Nat.add
+    [egg.rewrites.tcProj] LHS MVars
+        []
+    [egg.rewrites.tcProj] RHS MVars
+        []
+  [egg.rewrites.tcProj] ⊢[◂4096,1](⇐)
+    [egg.rewrites.tcProj] Nat.add = Add.add
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars

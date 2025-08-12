@@ -1,7 +1,5 @@
-import Egg.Core.Rewrite.Basic
+import Egg.Core.Rewrite.Rule
 import Egg.Core.Guides
-import Lean
-import Std
 
 open Lean Std Meta Elab Term
 
@@ -32,9 +30,8 @@ where
           { info with ctor := some ctorInfo }
     return infos
 
-private def StructInfos.rws (infos : StructInfos) (cfg : Config.Normalization) :
-    MetaM Rewrites := do
-  let mut rws := #[]
+private def StructInfos.rules (infos : StructInfos) (cfg : Config.Normalization) : MetaM Rewrite.Rules := do
+  let mut rules := ∅
   for (structName, info) in infos do
     let some ctor := info.ctor | continue
     for projIdx in info.projs do
@@ -47,10 +44,10 @@ private def StructInfos.rws (infos : StructInfos) (cfg : Config.Normalization) :
       let rhs := mvars[ctor.numParams + projIdx]!
       let eq ← mkForallFVars mvars (← mkEq lhs rhs)
       let proof ← mkLambdaFVars mvars (← mkEqRefl lhs)
-      let some rw ← Rewrite.from? .forward proof eq (.structProj rws.size) cfg
+      let some rules' ← rules.add? (.structProj rules.rws.size) proof eq cfg (.dir .forward)
         | throwError "Internal error in 'Egg.StructInfos.rws'"
-      rws := rws.push rw
-  return rws
+      rules := rules'
+  return rules
 
 private def Congr.structInfos (cgr : Congr) (init : StructInfos := ∅) : MetaM StructInfos := do
   StructInfos.ofExpr cgr.rhs (init := ← StructInfos.ofExpr cgr.lhs init)
@@ -64,9 +61,9 @@ private def Rewrite.structInfos (rw : Rewrite) (init : StructInfos := ∅) : Met
   for cond in rw.conds.active do infos ← cond.structInfos (init := infos)
   return infos
 
-private def Rewrites.structInfos (rws : Rewrites) (init : StructInfos := ∅) : MetaM StructInfos := do
+private def Rewrite.Rules.structInfos (rules : Rewrite.Rules) (init : StructInfos := ∅) : MetaM StructInfos := do
   let mut infos := init
-  for rw in rws do infos ← rw.structInfos (init := infos)
+  for rule in rules.entries do infos ← rule.rw.structInfos (init := infos)
   return infos
 
 private def Guide.structInfos (guide : Guide) (init : StructInfos := ∅) : MetaM StructInfos := do
@@ -78,6 +75,6 @@ private def Guides.structInfos (guides : Guides) (init : StructInfos := ∅) : M
   return infos
 
 def genStructProjRws
-    (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config.Normalization) :
-    MetaM Rewrites := do
-  (← goal.structInfos <| ← rws.structInfos <| ← guides.structInfos).rws cfg
+    (goal : Congr) (rules : Rewrite.Rules) (guides : Guides) (cfg : Config.Normalization) :
+    MetaM Rewrite.Rules := do
+  (← goal.structInfos <| ← rules.structInfos <| ← guides.structInfos).rules cfg

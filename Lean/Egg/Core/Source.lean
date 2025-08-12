@@ -15,21 +15,21 @@ inductive Source.NatLit where
   | pow
   | div
   | mod
-  deriving Inhabited, BEq, Hashable
+deriving Inhabited, BEq, Hashable
 
 inductive Source.Level where
   | maxSucc
   | maxComm
   | imaxZero
   | imaxSucc
-  deriving Inhabited, BEq, Hashable
+deriving Inhabited, BEq, Hashable
 
 inductive Source.TcProjLocation where
   | root
   | left
   | right
   | cond (idx : Nat)
-  deriving Inhabited, BEq, Hashable
+deriving Inhabited, BEq, Hashable
 
 inductive Source.SubstShift where
   | bvar
@@ -44,7 +44,7 @@ inductive Source.SubstShift where
   | inst
   | unknown
   | abort
-  deriving Inhabited, BEq, Hashable
+deriving Inhabited, BEq, Hashable
 
 inductive Source where
   | goal
@@ -67,7 +67,7 @@ inductive Source where
   | level (src : Source.Level)
   | builtin (idx : Nat)
   | tagged (name : Name) (eqn? : Option Nat)
-  deriving Inhabited, BEq, Hashable
+deriving Inhabited, BEq, Hashable
 
 namespace Source
 
@@ -137,6 +137,9 @@ def description : Source → String
 
 instance : ToString Source where
   toString := description
+
+instance : Ord Source where
+  compare src₁ src₂ := compare src₁.description src₂.description
 
 def isDefEq : Source → Bool
   | natLit _ | eta _ | beta | level _ | subst _ | shift _ | structProj _ => true

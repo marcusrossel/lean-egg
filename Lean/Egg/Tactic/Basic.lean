@@ -4,11 +4,10 @@ import Egg.Tactic.Config.Option
 import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Goal
 import Egg.Tactic.Guides
-import Egg.Tactic.Premises.Gen.Basic
+import Egg.Tactic.Rewrite.Rules.Gen.Basic
 import Egg.Core.Gen.Guides
 import Egg.Tactic.Trace
 import Egg.Tactic.Calcify
-import Lean
 
 open Lean Meta Elab Tactic
 
@@ -19,11 +18,11 @@ private inductive Proof? where
   | retryWithShapes
 
 private def resultToProof
-    (result : Request.Result) (goal : Goal) (rws : Rewrites) (cfg : Config.Encoding)
+    (result : Request.Result) (goal : Goal) (rules : Rewrite.Rules) (cfg : Config.Encoding)
     (retryWithShapes subgoals : Bool) (proofFuel? : Option Nat) : TacticM Proof? := do
   let mut (proof, steps) ←
     try
-      result.expl.prove' goal.toCongr rws result.egraph cfg subgoals proofFuel?
+      result.expl.prove' goal.toCongr rules result.egraph cfg subgoals proofFuel?
     catch err =>
       -- If proof reconstruction fails but we haven't tried using shapes yet, retry with shapes
       -- (assuming the corresponding option is enabled).
@@ -42,7 +41,7 @@ open Config.Modifier (egg_cfg_mod)
 syntax egg_baskets := ("+" noWs ident)*
 
 protected partial def eval
-    (mod : TSyntax ``egg_cfg_mod) (prems : TSyntax `egg_premises)
+    (mod : TSyntax ``egg_cfg_mod) (args : TSyntax `egg_args)
     (guides : Option (TSyntax `egg_guides)) (baskets : TSyntax `Egg.egg_baskets)
     (calcifyTk? : Option Syntax := none) : TacticM Unit := do
   let save ← saveState
@@ -62,10 +61,13 @@ where
       -- generation proof and reconstruction. Note that this also means that we can't assign the
       -- `goal` mvar inside of this `do`-block .
       let res ← withNewMCtxDepth (allowLevelAssignments := true) do
-        let rws ← Premises.gen goal prems guides cfg
-        let guides ← do if cfg.derivedGuides then pure (guides ++ (← genDerivedGuides goal.toCongr rws)) else pure guides
+        let rules ← Rewrite.Rules.gen goal args guides cfg
+        let mut guides := guides
+        if cfg.derivedGuides then
+            let rws := rules.entries.map (·.rw)
+            guides := guides ++ (← genDerivedGuides goal.toCongr rws)
         withTraceNode `egg.guides (fun _ => return "Guides") do guides.trace `egg.guides
-        runEqSat goal rws guides cfg
+        runEqSat goal rules guides cfg
       match res with
       | some (proof, proofTime, result) =>
         if cfg.reporting then
@@ -77,20 +79,20 @@ where
         if let some tk := calcifyTk? then calcify tk proof goal.intros.unzip.snd
       | none => goal.id.admit
   runEqSat
-      (goal : Goal) (rws : Rewrites) (guides : Guides) (cfg : Config) :
+      (goal : Goal) (rules : Rewrite.Rules) (guides : Guides) (cfg : Config) :
       TacticM <| Option (AbstractMVarsResult × Nat × Request.Result) := do
-    let req ← Request.encoding goal.toCongr rws guides cfg
+    let req ← Request.encoding goal.toCongr rules guides cfg
     withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
     if let .beforeEqSat := cfg.exitPoint then return none
     let result ← req.run cfg.explLengthLimit (onEqSatFailure cfg)
     result.expl.trace `egg.explanation.steps
     if let .beforeProof := cfg.exitPoint then return none
     let beforeProof ← IO.monoMsNow
-    match ← resultToProof result goal rws cfg cfg.retryWithShapes cfg.subgoals cfg.proofFuel? with
+    match ← resultToProof result goal rules cfg cfg.retryWithShapes cfg.subgoals cfg.proofFuel? with
     | .proof prf =>
       let proofTime := (← IO.monoMsNow) - beforeProof
       return some (prf, proofTime, result)
-    | .retryWithShapes => runEqSat goal rws guides { cfg with shapes := true }
+    | .retryWithShapes => runEqSat goal rules guides { cfg with shapes := true }
   onEqSatFailure (cfg : Config) (report : Request.Result.Report) : Request.Failure → MetaM MessageData
     | .backend msg? => do
       let mut msg := msg?
@@ -104,16 +106,16 @@ where
       unless cfg.reporting do return msg
       return msg ++ formatReport cfg.flattenReports report
 
-elab "egg " baskets:egg_baskets mod:egg_cfg_mod prems:egg_premises guides:(egg_guides)? : tactic =>
-  Egg.eval mod prems guides baskets
+elab "egg " baskets:egg_baskets mod:egg_cfg_mod args:egg_args guides:(egg_guides)? : tactic =>
+  Egg.eval mod args guides baskets
 
 -- WORKAROUND: This fixes `Tests/EndOfInput *`.
 macro "egg " baskets:egg_baskets mod:egg_cfg_mod : tactic =>
   `(tactic| egg $baskets $mod:egg_cfg_mod)
 
 -- The syntax `egg?` calls calcify after running egg.
-elab tk:"egg? " baskets:egg_baskets mod:egg_cfg_mod prems:egg_premises guides:(egg_guides)? : tactic =>
-  Egg.eval mod prems guides baskets (calcifyTk? := tk)
+elab tk:"egg? " baskets:egg_baskets mod:egg_cfg_mod args:egg_args guides:(egg_guides)? : tactic =>
+  Egg.eval mod args guides baskets (calcifyTk? := tk)
 
 -- WORKAROUND: This fixes a problem analogous to `Tests/EndOfInput *` for `egg?`.
 macro "egg? " baskets:egg_baskets mod:egg_cfg_mod : tactic =>

@@ -8,7 +8,7 @@ namespace Egg
 structure Prerewrite extends Congr where private mk ::
   qvars : MVarIdSet
   proof : Expr
-  deriving Inhabited
+deriving Inhabited
 
 def Prerewrite.from? (proof type : Expr) (cfg : Config.Normalization) (normalize : Bool) :
     MetaM (Option Prerewrite) := do

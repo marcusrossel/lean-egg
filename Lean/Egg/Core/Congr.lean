@@ -7,13 +7,13 @@ namespace Egg.Congr
 inductive Rel where
   | eq
   | iff
-  deriving Inhabited
+deriving Inhabited
 
 structure _root_.Egg.Congr where
   rel : Congr.Rel
   lhs : Expr
   rhs : Expr
-  deriving Inhabited
+deriving Inhabited
 
 namespace Rel
 

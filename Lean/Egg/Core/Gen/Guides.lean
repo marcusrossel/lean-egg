@@ -30,7 +30,7 @@ private def deriveGuides (rw : Rewrite) : MetaM ExprSet := do
   for cond in rw.conds.active do result := result.union (← closedSubexprs cond.type)
   return result
 
-def genDerivedGuides (goal : Congr) (rws : Rewrites) : MetaM Guides := do
+def genDerivedGuides (goal : Congr) (rws : Array Rewrite) : MetaM Guides := do
   let guides : ExprSet ← rws.foldlM (init := {← goal.expr}) (return ·.union <| ← deriveGuides ·)
   let mut result := #[]
   for guide in guides, idx in [:guides.size] do

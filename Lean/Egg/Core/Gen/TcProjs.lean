@@ -1,4 +1,4 @@
-import Egg.Core.Rewrite.Basic
+import Egg.Core.Rewrite.Rule
 import Egg.Core.Guides
 import Lean
 
@@ -16,12 +16,12 @@ def Congr.tcProjTargets (cgr : Congr) (src : Source) : Array TcProjTarget := #[
   { expr := cgr.rhs, src, loc := .right }
 ]
 
-def Rewrites.tcProjTargets (rws : Rewrites) : Array TcProjTarget := Id.run do
+def Rewrite.Rules.tcProjTargets (rules : Rewrite.Rules) : Array TcProjTarget := Id.run do
   let mut sources : Array TcProjTarget := #[]
-  for rw in rws do
-    sources := sources ++ rw.toCongr.tcProjTargets rw.src
-    for cond in rw.conds.active, idx in [:rw.conds.active.size] do
-      sources := sources.push { expr := cond.type, src := rw.src, loc := .cond idx }
+  for rule in rules.entries do
+    sources := sources ++ rule.rw.tcProjTargets rule.src
+    for cond in rule.rw.conds.active, idx in [:rule.rw.conds.active.size] do
+      sources := sources.push { expr := cond.type, src := rule.src, loc := .cond idx }
   return sources
 
 def Guides.tcProjTargets (guides : Guides) : Array TcProjTarget :=
@@ -39,7 +39,7 @@ private abbrev TcProjs := ExprMap SourcePrefix
 private inductive Symbol where
   | const (n : Name)
   | natLit
-  deriving BEq, Hashable
+deriving BEq, Hashable
 
 private abbrev Symbols := HashSet Symbol
 
@@ -57,7 +57,7 @@ private structure CollectionM.State where
   projs : TcProjs     := ∅
   args  : Array Expr  := #[]
   pos   : SubExpr.Pos := .root
-  deriving Inhabited
+deriving Inhabited
 
 private abbrev CollectionM := StateT CollectionM.State MetaM
 
@@ -193,7 +193,7 @@ private def terminal (reds : Reductions) : List (Expr × Expr) :=
 private inductive ActivationReason where
   | external
   | internal
-  deriving Inhabited
+deriving Inhabited
 
 instance : ToString ActivationReason where
   toString
@@ -292,7 +292,7 @@ private def Activations.fuze (acts : Activations) : MetaM <| List (Expr × Expr)
 end Reductions
 
 -- Note: This function expects its inputs' expressions to be normalized (cf. `Egg.normalize`).
-def genTcProjReductions (targets : Array TcProjTarget) (cfg : Config) : MetaM Rewrites := do
+def genTcProjReductions (targets : Array TcProjTarget) (cfg : Config) : MetaM Rewrite.Rules := do
   let (projs, symbols) ← TcProjs.from targets
   let (reds, info) ← Reductions.from projs cfg
   let acts ← reds.activations projs.keys (symbols ∪ backendSymbols)
@@ -302,17 +302,17 @@ def genTcProjReductions (targets : Array TcProjTarget) (cfg : Config) : MetaM Re
   else
     makeRewrites acts.reductions.toList info
 where
-  makeRewrites (reds : List <| Expr × Expr) (info : ReductionInfo) : MetaM Rewrites := do
-    let mut rws := #[]
+  makeRewrites (reds : List <| Expr × Expr) (info : ReductionInfo) : MetaM Rewrite.Rules := do
+    let mut rules := ∅
     for (lhs, rhs) in reds do
       let eq ← mkEq lhs rhs
       let proof ← mkEqRefl lhs
       let some src := info[lhs]?
         | throwError "egg: internal error in 'genTcProjReductions.makeRewrites'"
-      let some rs ← Rewrites.from? proof eq src cfg (normalize := false)
+      let some rules' ← rules.add? src proof eq cfg (normalize := false)
         | throwError "egg: internal error in 'genTcProjReductions.makeRewrites'"
-      rws := rws ++ rs
-    return rws
+      rules := rules'
+    return rules
   backendSymbols : Symbols := Id.run do
     let mut symbols := { .const ``True, .const ``And }
     if cfg.natLit then

@@ -1,9 +1,9 @@
-import Egg.Core.Rewrite.Basic
+import Egg.Core.Rewrite.Rule
 import Lean
 
 open Lean Meta
 
-namespace Egg.Rewrites
+namespace Egg.Rewrite.Rules
 
 theorem imp_mp {p q : Prop} (imp : p → q) (h : p) : q :=
   imp h
@@ -16,8 +16,8 @@ private def builtinTheorems (subgoals : Bool) : Array Name := Id.run do
   unless subgoals do thms := thms.push ``imp_mp
   return thms
 
-def builtins (cfg : Config.Normalization) (subgoals : Bool) : MetaM Rewrites := do
-  let mut rws := #[]
+def builtins (cfg : Config.Normalization) (subgoals : Bool) : MetaM Rules := do
+  let mut rules := ∅
   let env ← getEnv
   let thms := builtinTheorems subgoals
   for thm in thms, idx in [:thms.size] do
@@ -25,12 +25,12 @@ def builtins (cfg : Config.Normalization) (subgoals : Bool) : MetaM Rewrites := 
     let lvlMVars ← List.replicateM info.numLevelParams mkFreshLevelMVar
     let val := info.instantiateValueLevelParams! lvlMVars
     let type := info.instantiateTypeLevelParams lvlMVars
-    let some rs ← Rewrites.from? val type (.builtin idx) cfg
+    let some rules' ← rules.add? (.builtin idx) val type cfg .both (mkIdent thm)
       | throwError "egg failed to create rewrites for builtin '{thm}'"
-    rws := rws ++ rs
-  return rws
+    rules := rules'
+  return rules
 
-end Rewrites
+end Rewrite.Rules
 
-def genBuiltins (cfg : Config) : MetaM Rewrites := do
-  Rewrites.builtins cfg cfg.subgoals
+def genBuiltins (cfg : Config) : MetaM Rewrite.Rules := do
+  Rewrite.Rules.builtins cfg cfg.subgoals
