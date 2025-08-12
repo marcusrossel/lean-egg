@@ -49,11 +49,9 @@ theorem proposition_1_15 {n r : Nat} (h : n ≥ r) : n.choose r = (n !) / (r ! *
     all_goals try first | (norm_cast; done) | (norm_cast; omega)
     · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
     · exact factorial_mul_factorial_dvd_factorial h
-    · rw (occs := [1, 4]) [←cast_one]; rw [←cast_sub (by omega : 1 ≤ r), ←cast_sub (by omega : r ≤ n), ←cast_add, Real.Gamma_nat_eq_factorial, Real.Gamma_nat_eq_factorial, ←cast_mul, ←cast_mul, cast_ne_zero]; exact mul_ne_zero (mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)) (by omega)
     · rw [←cast_one, ←cast_sub (by omega : r ≤ n), ←cast_add, cast_ne_zero]; omega
-    · rw (occs := [1, 3]) [←cast_one]; rw [←cast_sub (by omega : 1 ≤ r), ←cast_sub (by omega : r ≤ n), ←cast_add, Real.Gamma_nat_eq_factorial, Real.Gamma_nat_eq_factorial, ←cast_mul, cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
+    · rw [←cast_sub (by omega : r ≤ n), Real.Gamma_nat_eq_factorial, Real.Gamma_nat_eq_factorial, ←cast_mul, cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
     · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
     · exact ho ▸ factorial_mul_factorial_dvd_factorial (sub_le_of_le_add h)
-    · rw [←cast_sub (by omega : r ≤ n), Real.Gamma_nat_eq_factorial, Real.Gamma_nat_eq_factorial, ←cast_mul, cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
     · rw [cast_ne_zero]; exact mul_ne_zero (factorial_ne_zero _) (factorial_ne_zero _)
     · exact factorial_mul_factorial_dvd_factorial <| by omega

@@ -109,8 +109,7 @@ def Rewrite.Rule.trace
     traceM cls fun _ => return m!"LHS MVars\n{← rule.rw.mvars.lhs.toMessageData}"
     traceM cls fun _ => return m!"RHS MVars\n{← rule.rw.mvars.rhs.toMessageData}"
 
-def Rewrite.Rules.trace (rules : Rewrite.Rules) (cls : Name) (subgoals : Bool) :
-    TacticM Unit := do
+def Rewrite.Rules.trace (rules : Rewrite.Rules) (cls : Name) (subgoals : Bool) : TacticM Unit := do
   for rule in rules.entries do
     let stx? := rules.stxs[rule.src]? >>= fun stx => if stx.getAtomVal == "*" then none else stx
     rule.trace stx? cls subgoals

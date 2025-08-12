@@ -159,7 +159,7 @@ private def prune (rules : Rules) : GenM Rules := do
     else if let some dup ← (← all).dup? rule.rw then
       pruned := pruned.insert rule dup
     else
-      keep := keep.insert rule
+      keep := keep.insert rule rules.stxs[rule.src]?
   addPruned pruned
   return keep
 

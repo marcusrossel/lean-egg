@@ -7,19 +7,19 @@ set_option linter.unusedVariables false
 
 /--
 trace: [egg.rewrites.pruned] Pruned (3)
-  [egg.rewrites.pruned] #0(⇒) by #0
-    [egg.rewrites.pruned] 0 = 0
-    [egg.rewrites.pruned] LHS MVars
-        []
-    [egg.rewrites.pruned] RHS MVars
-        []
-  [egg.rewrites.pruned] #1(⇐) by #0
+  [egg.rewrites.pruned] #0(⇐) by #0
     [egg.rewrites.pruned] 0 = 0
     [egg.rewrites.pruned] LHS MVars
         []
     [egg.rewrites.pruned] RHS MVars
         []
   [egg.rewrites.pruned] #1(⇒) by #0
+    [egg.rewrites.pruned] 0 = 0
+    [egg.rewrites.pruned] LHS MVars
+        []
+    [egg.rewrites.pruned] RHS MVars
+        []
+  [egg.rewrites.pruned] #1(⇐) by #0
     [egg.rewrites.pruned] 0 = 0
     [egg.rewrites.pruned] LHS MVars
         []
@@ -32,20 +32,20 @@ example (h₁ h₂ : 0 = 0) : 0 = 0 := by
 
 /--
 trace: [egg.rewrites.pruned] Pruned (4)
-  [egg.rewrites.pruned] #0(⇒) by #0
-    [egg.rewrites.pruned] ?n + ?m = ?m + ?n
+  [egg.rewrites.pruned] #0(⇐) by #0
+    [egg.rewrites.pruned] ?m + ?n = ?n + ?m
     [egg.rewrites.pruned] LHS MVars
         [?n: [unconditionallyVisible], ?m: [unconditionallyVisible]]
     [egg.rewrites.pruned] RHS MVars
         [?n: [unconditionallyVisible], ?m: [unconditionallyVisible]]
-  [egg.rewrites.pruned] #1(⇐) by #0
-    [egg.rewrites.pruned] ?b + ?a = ?a + ?b
-    [egg.rewrites.pruned] LHS MVars
-        [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
-    [egg.rewrites.pruned] RHS MVars
-        [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
   [egg.rewrites.pruned] #1(⇒) by #0
     [egg.rewrites.pruned] ?a + ?b = ?b + ?a
+    [egg.rewrites.pruned] LHS MVars
+        [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
+    [egg.rewrites.pruned] RHS MVars
+        [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
+  [egg.rewrites.pruned] #1(⇐) by #0
+    [egg.rewrites.pruned] ?b + ?a = ?a + ?b
     [egg.rewrites.pruned] LHS MVars
         [?a: [unconditionallyVisible], ?b: [unconditionallyVisible]]
     [egg.rewrites.pruned] RHS MVars

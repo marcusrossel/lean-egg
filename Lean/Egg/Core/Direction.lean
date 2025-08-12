@@ -4,20 +4,20 @@ open Lean
 namespace Egg
 
 inductive Direction where
-  | backward
   | forward
+  | backward
 deriving Inhabited, BEq, Hashable, Ord
 
 namespace Direction
 
 def description : Direction → String
-  | backward => "←"
   | forward  => "→"
+  | backward => "←"
 
 def opposite : Direction → Direction
-  | backward => forward
   | forward  => backward
+  | backward => forward
 
 def merge : Direction → Direction → Direction
-  | backward, backward | forward, forward  => forward
-  | backward, forward  | forward, backward => backward
+  | forward, forward  | backward, backward => forward
+  | forward, backward | backward, forward  => backward
