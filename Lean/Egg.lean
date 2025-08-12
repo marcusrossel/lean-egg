@@ -1,9 +1,9 @@
 import Egg.Tactic.Baskets
+import Egg.Tactic.Rewrite.Rules.Gen.Intros
+import Egg.Tactic.Rewrite.Rules.Gen.GenM
+import Egg.Tactic.Rewrite.Rules.Gen.Basic
+import Egg.Tactic.Rewrite.Rules.Parse
 import Egg.Tactic.Calc
-import Egg.Tactic.Premises.Gen.Intros
-import Egg.Tactic.Premises.Gen.GenM
-import Egg.Tactic.Premises.Gen.Basic
-import Egg.Tactic.Premises.Parse
 import Egg.Tactic.Config.Option
 import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Calcify
@@ -12,6 +12,7 @@ import Egg.Tactic.Trace
 import Egg.Tactic.Goal
 import Egg.Tactic.Guides
 import Egg.Core.Rewrite.Basic
+import Egg.Core.Rewrite.Rule
 import Egg.Core.Rewrite.Prerewrite
 import Egg.Core.Rewrite.Condition
 import Egg.Core.Explanation.Parse.Slotted
@@ -23,8 +24,8 @@ import Egg.Core.Explanation.Congr
 import Egg.Core.Explanation.Proof
 import Egg.Core.Explanation.Expr
 import Egg.Core.Encode.Shapes
+import Egg.Core.Encode.Rules
 import Egg.Core.Encode.Basic
-import Egg.Core.Encode.Rewrites
 import Egg.Core.Encode.EncodeM
 import Egg.Core.Encode.Guides
 import Egg.Core.Congr

@@ -1,5 +1,4 @@
-import Egg.Core.Rewrite.Basic
-import Lean
+import Egg.Core.Rewrite.Rule
 open Lean Meta
 
 namespace Egg
@@ -42,34 +41,33 @@ private def Congr.unificationTargets (cgr : Congr) : MetaM (List Expr) := do
   else
     return [cgrType]
 
-private def specializeForTargets
-    (rw : Rewrite) (goalUnif rwUnif : Expr) (subgoals : Bool) (idx : Nat) :
+private def specializeForTargets (rw : Rewrite) (goalUnif rwUnif : Expr) (subgoals : Bool) :
     MetaM (Option Rewrite) := do
-  let mut (spec, subst) ← rw.freshWithSubst (src := .goalTypeSpec rw.src idx)
+  let mut (spec, subst) ← rw.freshWithSubst
   unless ← isDefEq goalUnif (subst.apply rwUnif) do return none
   spec ← spec.instantiateMVars
-  if ← spec.isValid subgoals then return spec else return none
+  unless ← spec.isValid subgoals do return none
+  return spec
 
-private def specialize (rw : Rewrite) (goal : Congr) (subgoals : Bool) :
-    MetaM (Array Rewrite) := do
+private def specialize (rule : Rewrite.Rule) (goal : Congr) (subgoals : Bool) : MetaM Rewrite.Rules := do
   -- Computes the unification targets.
   let goalTargets ← goal.unificationTargets
-  let rwTargets   ← rw.unificationTargets
+  let rwTargets   ← rule.rw.unificationTargets
   -- (Potentially) generates a rewrite for each pair of unification targets.
-  let mut result := #[]
+  let mut result := ∅
   let mut idx := 0
   for goalTarget in goalTargets do
     for rwTarget in rwTargets do
-      let some spec ← specializeForTargets rw goalTarget rwTarget subgoals idx | continue
-      result := result.push spec
+      let some spec ← specializeForTargets rule.rw goalTarget rwTarget subgoals | continue
+      result := result.insert <| spec.with (.goalTypeSpec rule.src idx) rule.dir
       idx := idx + 1
   return result
 
-def genGoalTypeSpecializations (targets : Rewrites) (goal : Congr) (subgoals : Bool) :
-    MetaM Rewrites := do
-  let mut result := #[]
-  for rw in targets do
-    if ← rw.isValid subgoals then continue
-    let specs ← specialize rw goal subgoals
-    result := result ++ specs
+def genGoalTypeSpecializations (rules : Rewrite.Rules) (goal : Congr) (subgoals : Bool) :
+    MetaM Rewrite.Rules := do
+  let mut result := ∅
+  for rule in rules.entries do
+    if ← rule.rw.isValid subgoals then continue
+    let specs ← specialize rule goal subgoals
+    result := result ∪ specs
   return result

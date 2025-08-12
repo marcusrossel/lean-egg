@@ -1,5 +1,6 @@
 import Egg.Core.Source
 import Egg.Core.Direction
+import Egg.Core.Rewrite.Rule
 
 open Lean
 
@@ -17,21 +18,20 @@ structure Raw where
 namespace Rewrite
 
 structure Descriptor where
-  src      : Source
-  srcDir   : Direction
+  id       : Rewrite.Rule.Id
   dir      : Direction
   weakVars : Array (Nat × Nat)
-  deriving Inhabited
+deriving Inhabited
 
 structure Info extends Descriptor where
   pos? : Option SubExpr.Pos
-  deriving Inhabited
+deriving Inhabited
 
 end Rewrite
 
 structure Step extends Rewrite.Info where
   dst : Expr
-  deriving Inhabited
+deriving Inhabited
 
 structure Steps where
   start : Expr

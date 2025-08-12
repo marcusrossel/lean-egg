@@ -5,14 +5,14 @@ import Egg
 
 /--
 trace: [egg.rewrites.explicit] Basic (1)
-  [egg.rewrites.explicit] #0(⇒): _h
-    [egg.rewrites.explicit] f ?b = f ?a
+  [egg.rewrites.explicit] #0(⇐)
+    [egg.rewrites.explicit] f ?a = f ?b
     [egg.rewrites.explicit] Conditions
       [egg.rewrites.explicit] ?a = ?b
     [egg.rewrites.explicit] LHS MVars
-        [?b: [unconditionallyVisible]]
-    [egg.rewrites.explicit] RHS MVars
         [?a: [unconditionallyVisible]]
+    [egg.rewrites.explicit] RHS MVars
+        [?b: [unconditionallyVisible]]
 -/
 #guard_msgs in
 set_option trace.egg.rewrites.explicit true in

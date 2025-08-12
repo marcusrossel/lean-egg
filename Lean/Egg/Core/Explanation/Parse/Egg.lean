@@ -20,7 +20,7 @@ private inductive Expression where
   | subst  (idx : Nat) (to e : Expression)
   | shift  (offset : Int) (cutoff : Nat) (e : Expression)
   | unknown
-  deriving Inhabited
+deriving Inhabited
 
 -- If `synthesize` is true, we try to fill type class instance holes immediately by synthesis.
 private def Expression.toExpr (e : Expression) (synthesize := false) : MetaM Expr := do
@@ -154,7 +154,7 @@ where
     let rwIsOutsideType := (← get).isSome
     let e ← go pos t
     if let some rwInfo ← get then
-      unless rwIsOutsideType || rwInfo.src.isDefEq do throw .nonDefeqTypeRw
+      unless rwIsOutsideType || rwInfo.id.src.isDefEq do throw .nonDefeqTypeRw
     return e
 
   parseRw (dir : TSyntax `rw_dir) (src : TSyntax `rw_src) (body : TSyntax `egg_expr)

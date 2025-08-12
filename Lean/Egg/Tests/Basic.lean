@@ -6,7 +6,7 @@ example : true = false := by
   egg
 
 /--
-error: egg requires premises to be (proofs of) propositions or (non-propositional) definitions
+error: egg requires arguments to be (proofs of) propositions or (non-propositional) definitions
 -/
 #guard_msgs in
 example : 0 = 0 := by

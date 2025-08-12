@@ -80,7 +80,7 @@ example (as bs : List α) : reverse (as ++ bs) = (reverse bs) ++ (reverse as) :=
       _ = reverse (as ++ bs) ++ (a :: []) := by simp only [(· ++ ·), Append.append, append, reverse_cons]
       _ = reverse bs ++ reverse (a :: as) := by rw [ih, append_assoc, reverse_cons]
 
-syntax "lists" egg_premises : tactic
+syntax "lists" egg_args : tactic
 macro_rules
   | `(tactic| lists $[[ $rws?,* ]]?) => open List in
     `(tactic| egg [reverse_nil, reverse_cons, append, append_nil, append_assoc, $(rws?.getD ⟨#[]⟩),*])

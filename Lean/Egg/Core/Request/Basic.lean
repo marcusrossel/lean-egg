@@ -1,5 +1,5 @@
 import Egg.Core.Request.EGraph
-import Egg.Core.Encode.Rewrites
+import Egg.Core.Encode.Rules
 import Egg.Core.Encode.Guides
 import Egg.Core.Config
 import Egg.Core.Explanation.Parse.Basic
@@ -45,7 +45,7 @@ structure _root_.Egg.Request where
   private mk ::
   lhs     : Expression
   rhs     : Expression
-  rws     : Rewrites.Encoded
+  rws     : Rewrite.Rules.Encoded
   guides  : Guides.Encoded
   vizPath : String
   cfg     : Request.Config
@@ -56,11 +56,11 @@ structure _root_.Egg.Request where
 --       to (the default value) `false`. We could just set the `allowLevelAssignments` to `false`
 --       in the first place, but that seems to cause problems when encoding rewrites. I'm not sure
 --       why though, and I think it has to do with how universe levels are elaborated.
-def encoding (goal : Congr) (rws : Rewrites) (guides : Guides) (cfg : Config) : MetaM Request :=
+def encoding (goal : Congr) (rules : Rewrite.Rules) (guides : Guides) (cfg : Config) : MetaM Request :=
   return {
     lhs     := ← Meta.withNewMCtxDepth do encode goal.lhs cfg
     rhs     := ← Meta.withNewMCtxDepth do encode goal.rhs cfg
-    rws     := ← rws.encode cfg cfg.subgoals
+    rws     := ← rules.encode cfg cfg.subgoals
     guides  := ← Meta.withNewMCtxDepth do guides.encode cfg
     vizPath := cfg.vizPath.getD ""
     cfg
@@ -73,7 +73,7 @@ inductive Result.StopReason where
   | iterationLimit
   | nodeLimit
   | other
-  deriving Inhabited
+deriving Inhabited
 
 def Result.StopReason.description : StopReason → String
   | saturated      => "saturated"
@@ -92,14 +92,14 @@ structure Result.Report where
   time        : Float
   rwStats     : String
   activations : String
-  deriving Inhabited
+deriving Inhabited
 
 -- IMPORTANT: The C interface to egg depends on the order of these constructors.
 private inductive Explanation.Kind.Raw where
   | none
   | sameEClass
   | eqTrue
-  deriving Inhabited
+deriving Inhabited
 
 private def Explanation.Kind.Raw.toKind? : Raw → Option Explanation.Kind
   | none       => .none
@@ -112,7 +112,7 @@ structure Result.Raw where
   expl    : String
   egraph? : Option EGraph.Obj
   report  : Report
-  deriving Inhabited
+deriving Inhabited
 
 @[extern "run_eqsat_request"]
 private opaque runRaw (req : Request) : MetaM Result.Raw

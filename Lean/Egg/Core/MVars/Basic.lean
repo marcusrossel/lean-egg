@@ -46,7 +46,7 @@ inductive Property where
   | inProofTerm
   | inErasedProof
   | inEqType
-  deriving BEq, Hashable
+deriving BEq, Hashable
 
 def Property.isVisible : Property → Bool
   | unconditionallyVisible | inErasedTcInst | inErasedProof => true
@@ -67,7 +67,7 @@ end Properties
 structure _root_.Egg.MVars where
   expr : HashMap  MVarId Properties := ∅
   lvl  : HashMap LMVarId Properties := ∅
-  deriving Inhabited
+deriving Inhabited
 
 def isEmpty (mvars : MVars) : Bool :=
   mvars.expr.isEmpty && mvars.lvl.isEmpty

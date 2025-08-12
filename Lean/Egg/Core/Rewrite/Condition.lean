@@ -7,14 +7,14 @@ namespace Egg.Rewrite
 protected structure MVars where
   lhs : MVars
   rhs : MVars
-  deriving Inhabited
+deriving Inhabited
 
 namespace Condition
 
 inductive Kind where
   | proof
   | tcInst
-  deriving BEq
+deriving BEq
 
 def Kind.isProof : Kind → Bool
   | proof  => true

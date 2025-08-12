@@ -4,7 +4,7 @@ structure Normalization where
   betaReduceRws := true
   etaReduceRws  := true
   natReduceRws  := true
-  deriving BEq
+deriving BEq
 
 def Normalization.noReduce : Normalization where
   betaReduceRws := false
@@ -14,7 +14,7 @@ def Normalization.noReduce : Normalization where
 structure Encoding extends Normalization where
   -- TODO: Currently, this option implicitly disables defeq rewrites as they can not handle shapes, yet.
   shapes := false
-  deriving BEq
+deriving BEq
 
 -- TODO: The slotted backend is currently not supported.
 def Encoding.slotted (_ : Encoding) : Bool :=
@@ -30,7 +30,7 @@ structure Gen where
   groundEqs     := true
   derivedGuides := true
   explosion     := false
-  deriving BEq
+deriving BEq
 
 structure DefEq where
   natLit    := true
@@ -47,19 +47,19 @@ structure Backend where
   iterLimit      := 1000000000000000000
   reporting      := false
   flattenReports := false
-  deriving BEq
+deriving BEq
 
 inductive Debug.ExitPoint
   | none
   | beforeEqSat
   | beforeProof
-  deriving BEq, Inhabited
+deriving BEq, Inhabited
 
 structure Debug where
   exitPoint  := Debug.ExitPoint.none
   proofFuel? := (none : Option Nat)
   vizPath    := (none : Option String)
-  deriving BEq
+deriving BEq
 
 structure _root_.Egg.Config extends Encoding, DefEq, Gen, Backend, Debug where
   retryWithShapes := false

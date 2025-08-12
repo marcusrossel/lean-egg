@@ -10,14 +10,14 @@ example : true = true := by
 
 /--
 trace: [egg.rewrites.tcProj] Type Class Projections (2)
-  [egg.rewrites.tcProj] ⊢[▸64,0](⇒)
-    [egg.rewrites.tcProj] @OfNat.ofNat Nat (nat_lit 0) (instOfNatNat (nat_lit 0)) = nat_lit 0
+  [egg.rewrites.tcProj] ⊢[▸64,0](⇐)
+    [egg.rewrites.tcProj] nat_lit 0 = @OfNat.ofNat Nat (nat_lit 0) (instOfNatNat (nat_lit 0))
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars
         []
-  [egg.rewrites.tcProj] ⊢[▸64,0](⇐)
-    [egg.rewrites.tcProj] nat_lit 0 = @OfNat.ofNat Nat (nat_lit 0) (instOfNatNat (nat_lit 0))
+  [egg.rewrites.tcProj] ⊢[▸64,0](⇒)
+    [egg.rewrites.tcProj] @OfNat.ofNat Nat (nat_lit 0) (instOfNatNat (nat_lit 0)) = nat_lit 0
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars
@@ -39,26 +39,26 @@ example (l : List α) : l ++ l = l ++ l := by
 -- appear anywhere.
 /--
 trace: [egg.rewrites.tcProj] Type Class Projections (4)
-  [egg.rewrites.tcProj] ⊢[▸4096,0](⇒)
-    [egg.rewrites.tcProj] HAppend.hAppend = Append.append
-    [egg.rewrites.tcProj] LHS MVars
-        []
-    [egg.rewrites.tcProj] RHS MVars
-        []
   [egg.rewrites.tcProj] ⊢[▸4096,0](⇐)
     [egg.rewrites.tcProj] Append.append = HAppend.hAppend
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars
         []
-  [egg.rewrites.tcProj] ⊢[▸4096,1](⇒)
-    [egg.rewrites.tcProj] Append.append = List.append
+  [egg.rewrites.tcProj] ⊢[▸4096,0](⇒)
+    [egg.rewrites.tcProj] HAppend.hAppend = Append.append
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars
         []
   [egg.rewrites.tcProj] ⊢[▸4096,1](⇐)
     [egg.rewrites.tcProj] List.append = Append.append
+    [egg.rewrites.tcProj] LHS MVars
+        []
+    [egg.rewrites.tcProj] RHS MVars
+        []
+  [egg.rewrites.tcProj] ⊢[▸4096,1](⇒)
+    [egg.rewrites.tcProj] Append.append = List.append
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars
@@ -72,14 +72,14 @@ example (l : List α) : l ++ l = l ++ l := by
 -- appear anywhere.
 /--
 trace: [egg.rewrites.tcProj] Type Class Projections (2)
-  [egg.rewrites.tcProj] ⊢[◂4096,0](⇒)
-    [egg.rewrites.tcProj] HAppend.hAppend = Append.append
+  [egg.rewrites.tcProj] ⊢[◂4096,0](⇐)
+    [egg.rewrites.tcProj] Append.append = HAppend.hAppend
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars
         []
-  [egg.rewrites.tcProj] ⊢[◂4096,0](⇐)
-    [egg.rewrites.tcProj] Append.append = HAppend.hAppend
+  [egg.rewrites.tcProj] ⊢[◂4096,0](⇒)
+    [egg.rewrites.tcProj] HAppend.hAppend = Append.append
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars
@@ -98,14 +98,8 @@ example (l : List α) : l ++ l = Append.append l l := by
 
 /--
 trace: [egg.rewrites.tcProj] Type Class Projections (4)
-  [egg.rewrites.tcProj] ⊢[▸4096,1](⇒)
-    [egg.rewrites.tcProj] Add.add = Nat.add
-    [egg.rewrites.tcProj] LHS MVars
-        []
-    [egg.rewrites.tcProj] RHS MVars
-        []
-  [egg.rewrites.tcProj] ⊢[▸4096,1](⇐)
-    [egg.rewrites.tcProj] Nat.add = Add.add
+  [egg.rewrites.tcProj] ⊢[▸4096,0](⇐)
+    [egg.rewrites.tcProj] Add.add = HAdd.hAdd
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars
@@ -116,8 +110,14 @@ trace: [egg.rewrites.tcProj] Type Class Projections (4)
         []
     [egg.rewrites.tcProj] RHS MVars
         []
-  [egg.rewrites.tcProj] ⊢[▸4096,0](⇐)
-    [egg.rewrites.tcProj] Add.add = HAdd.hAdd
+  [egg.rewrites.tcProj] ⊢[▸4096,1](⇐)
+    [egg.rewrites.tcProj] Nat.add = Add.add
+    [egg.rewrites.tcProj] LHS MVars
+        []
+    [egg.rewrites.tcProj] RHS MVars
+        []
+  [egg.rewrites.tcProj] ⊢[▸4096,1](⇒)
+    [egg.rewrites.tcProj] Add.add = Nat.add
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars
@@ -131,14 +131,8 @@ example (a b : Nat) : a + b = a + b := by
 
 /--
 trace: [egg.rewrites.tcProj] Type Class Projections (4)
-  [egg.rewrites.tcProj] ⊢[◂4096,1](⇒)
-    [egg.rewrites.tcProj] Add.add = Nat.add
-    [egg.rewrites.tcProj] LHS MVars
-        []
-    [egg.rewrites.tcProj] RHS MVars
-        []
-  [egg.rewrites.tcProj] ⊢[◂4096,1](⇐)
-    [egg.rewrites.tcProj] Nat.add = Add.add
+  [egg.rewrites.tcProj] ⊢[◂4096,0](⇐)
+    [egg.rewrites.tcProj] Add.add = HAdd.hAdd
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars
@@ -149,8 +143,14 @@ trace: [egg.rewrites.tcProj] Type Class Projections (4)
         []
     [egg.rewrites.tcProj] RHS MVars
         []
-  [egg.rewrites.tcProj] ⊢[◂4096,0](⇐)
-    [egg.rewrites.tcProj] Add.add = HAdd.hAdd
+  [egg.rewrites.tcProj] ⊢[◂4096,1](⇐)
+    [egg.rewrites.tcProj] Nat.add = Add.add
+    [egg.rewrites.tcProj] LHS MVars
+        []
+    [egg.rewrites.tcProj] RHS MVars
+        []
+  [egg.rewrites.tcProj] ⊢[◂4096,1](⇒)
+    [egg.rewrites.tcProj] Add.add = Nat.add
     [egg.rewrites.tcProj] LHS MVars
         []
     [egg.rewrites.tcProj] RHS MVars

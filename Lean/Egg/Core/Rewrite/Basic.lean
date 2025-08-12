@@ -11,7 +11,7 @@ structure Rewrite.Conditions where
   active          : Array Rewrite.Condition
   synthesized     : MVarIdSet
   unsynthesizable : MVarIdSet
-  deriving Inhabited
+deriving Inhabited
 
 instance : EmptyCollection Rewrite.Conditions where
   emptyCollection := { active := #[], synthesized := ∅, unsynthesizable := ∅ }
@@ -20,9 +20,7 @@ instance : EmptyCollection Rewrite.Conditions where
 structure Rewrite extends Prerewrite where private mk ::
   conds : Rewrite.Conditions
   mvars : Rewrite.MVars
-  src   : Source
-  dir   : Direction
-  deriving Inhabited
+deriving Inhabited
 
 -- Note: It suffices to iterate over the qvars and the body mvars, as any mvars not appearing in
 --       either of these must be the *type* of some mvar which does appear. But types can never turn
@@ -42,23 +40,29 @@ private def collectConditions (qvars : MVarIdSet) (mLhs mRhs : MVars) : MetaM Re
     | .some cond       => active          := active.push cond
   return { active, synthesized, unsynthesizable }
 
-def Prerewrite.complete (pre : Prerewrite) (src : Source) (dir : Direction) : MetaM Rewrite := do
+def Prerewrite.complete (pre : Prerewrite) (dir : Direction) : MetaM Rewrite := do
   let pre  ← pre.forDir dir
   let mLhs ← MVars.collect pre.lhs
   let mRhs ← MVars.collect pre.rhs
   let conds ← collectConditions pre.qvars mLhs mRhs
-  return { pre with conds, mvars := ⟨mLhs, mRhs⟩, src, dir }
+  return { pre with conds, mvars := ⟨mLhs, mRhs⟩ }
 
 namespace Rewrite
 
-def from?
-    (dir : Direction) (proof type : Expr) (src : Source) (cfg : Config.Normalization)
-    (normalize := true) : MetaM <| Option Rewrite := do
+def from? (dir : Direction) (proof type : Expr) (cfg : Config.Normalization) (normalize := true) :
+    MetaM (Option Rewrite) := do
   let some pre ← Prerewrite.from? proof type cfg normalize | return none
-  pre.complete src dir
+  pre.complete dir
+
+def both? (proof type : Expr) (cfg : Config.Normalization) (normalize := true) :
+    MetaM <| Option (Rewrite × Rewrite) := do
+  let some pre ← Prerewrite.from? proof type cfg normalize | return none
+  -- We are sharing mvars here. That should be ok, as we always create fresh mvars when *using* a
+  -- rewrite anyway.
+  return some (← pre.complete .forward, ← pre.complete .backward)
 
 -- Returns `none` if the given type is already ground.
-def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config.Normalization) (normalize := true) :
+def ground? (proof type : Expr) (cfg : Config.Normalization) (normalize := true) :
     MetaM (Option Rewrite) := do
   unless (← inferType type).isProp do return none
   let type ← if normalize then Egg.normalize type cfg else pure type
@@ -69,7 +73,7 @@ def mkGroundEq? (proof type : Expr) (src : Source) (cfg : Config.Normalization) 
   let cgr : Congr := { rel := .eq, lhs := type, rhs := .const ``True [] }
   let proof ← mkEqTrue proof
   -- One direction suffices.
-  return some { cgr with qvars := ∅, proof, conds := ∅, mvars := ⟨{}, {}⟩, src, dir := .forward }
+  return some { cgr with qvars := ∅, proof, conds := ∅, mvars := ⟨{}, {}⟩ }
 
 -- TODO: Do we need something like `covering` for levels?
 inductive Violation where
@@ -151,8 +155,7 @@ def forDir (rw : Rewrite) : Direction → MetaM Rewrite
   | .backward => return { rw with
       lhs := rw.rhs, rhs := rw.lhs,
       proof := ← rw.rel.mkSymm rw.proof,
-      mvars.lhs :=  rw.mvars.rhs, mvars.rhs :=  rw.mvars.lhs,
-      dir := rw.dir.opposite
+      mvars := { lhs := rw.mvars.rhs, rhs := rw.mvars.lhs }
     }
 
 def eqProof (rw : Rewrite) : MetaM Expr := do
@@ -160,13 +163,13 @@ def eqProof (rw : Rewrite) : MetaM Expr := do
   | .eq  => return rw.proof
   | .iff => mkPropExt rw.proof
 
-def freshWithSubst (rw : Rewrite) (src : Source := rw.src) : MetaM (Rewrite × MVars.Subst) := do
+def freshWithSubst (rw : Rewrite) : MetaM (Rewrite × MVars.Subst) := do
   let (qvars, subst) ← freshQVars
   let (mLhs, subst)  ← rw.mvars.lhs.fresh (init := subst)
   let (mRhs, subst)  ← rw.mvars.rhs.fresh (init := subst)
   let (conds, subst) ← freshConds (init := subst)
   let rw' := { rw with
-    qvars, conds, src
+    qvars, conds
     lhs   := subst.apply rw.lhs
     rhs   := subst.apply rw.rhs
     proof := subst.apply rw.proof
@@ -196,8 +199,8 @@ where
 -- is used during proof reconstruction, as rewrites may be used multiple times but instantiated
 -- differently. If we don't use fresh mvars, the mvars will already be assigned and new assignment
 -- (via `isDefEq`) will fail.
-def fresh (rw : Rewrite) (src : Source := rw.src) : MetaM Rewrite :=
-  Prod.fst <$> rw.freshWithSubst src
+def fresh (rw : Rewrite) : MetaM Rewrite :=
+  Prod.fst <$> rw.freshWithSubst
 
 -- Note: We have to compute `qvars`, `mLhs`, and `mRhs` in two steps, because we first need to prune
 --       assign mvars, then recompute the set of conditions which might synthesize some instances,
@@ -219,22 +222,4 @@ nonrec def instantiateMVars (rw : Rewrite) : MetaM Rewrite := do
     mvars := ⟨mLhs, mRhs⟩
   }
 
--- TODO: Remove this after the overhaul of type class projection generation.
-def eraseConditions (rw : Rewrite) : Rewrite :=
-  { rw with conds := ∅ }
-
 end Rewrite
-
-abbrev Rewrites := Array Rewrite
-
-namespace Rewrites
-
--- Note: We are sharing mvars here. That should be ok, as we always create fresh mvars when *using*
---       a rewrite anyway.
-def from? (proof type : Expr) (src : Source) (cfg : Config.Normalization) (normalize := true) :
-    MetaM <| Option Rewrites := do
-  let some pre ← Prerewrite.from? proof type cfg normalize | return none
-  return #[← pre.complete src .forward, ← pre.complete src .backward]
-
-nonrec def find? (rws : Rewrites) (src : Source) (dir : Direction) : Option Rewrite :=
-  rws.find? fun rw => rw.src == src && rw.dir == dir

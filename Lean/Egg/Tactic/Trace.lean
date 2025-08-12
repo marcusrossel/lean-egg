@@ -1,6 +1,6 @@
 import Egg.Core.Request.Basic
 import Egg.Core.Explanation.Proof
-import Egg.Tactic.Premises.Parse
+import Egg.Tactic.Rewrite.Rules.Parse
 import Lean
 open Lean Meta Elab Tactic Std Format
 
@@ -31,7 +31,7 @@ def Direction.format : Direction → Format
   | .backward => "⇐"
 
 def Explanation.involvesBinderRewrites (expl : Explanation) : Bool :=
-  expl.steps.any (·.src.involvesBinders)
+  expl.steps.any (·.id.src.involvesBinders)
 
 def Config.Debug.ExitPoint.format : Config.Debug.ExitPoint → Format
   | .none        => "None"
@@ -93,43 +93,44 @@ def Rewrite.Violation.toMessageData : Rewrite.Violation → MessageData
   | tcUVarInclusion missing  => m!"tcUVarInclusion: {missing.toList.map Level.mvar}"
   | unsynthesizable ms       => m!"unsynthesizable: {ms.toList.map Expr.mvar}"
 
-def Rewrite.trace (rw : Rewrite) (stx? : Option Syntax) (cls : Name) (subgoals : Bool)
+def Rewrite.Rule.trace
+    (rule : Rewrite.Rule) (stx? : Option Syntax) (cls : Name) (subgoals : Bool)
     (headerAnnotation : String := "") : TacticM Unit := do
-  let violations := (← rw.violations subgoals).map (·.toMessageData)
+  let violations := (← rule.rw.violations subgoals).map (·.toMessageData)
   let violations := if violations.isEmpty then MessageData.nil else m!"❌{violations}"
-  let mut header := m!"{rw.src.description}({rw.dir.format}){violations}{headerAnnotation}"
+  let mut header := m!"{rule.src.description}({rule.dir.format}){violations}{headerAnnotation}"
   if let some stx := stx? then header := m!"{header}: {stx}"
   withTraceNode cls (fun _ => return header) do
-    traceM cls fun _ => rw.toCongr.toMessageData
-    unless rw.conds.active.isEmpty do
+    traceM cls fun _ => rule.rw.toMessageData
+    unless rule.rw.conds.active.isEmpty do
       withTraceNode cls (fun _ => return "Conditions") (collapsed := false) do
-        for cond in rw.conds.active do
+        for cond in rule.rw.conds.active do
           traceM cls fun _ => return m!"{cond.type}"
-    traceM cls fun _ => return m!"LHS MVars\n{← rw.mvars.lhs.toMessageData}"
-    traceM cls fun _ => return m!"RHS MVars\n{← rw.mvars.rhs.toMessageData}"
+    traceM cls fun _ => return m!"LHS MVars\n{← rule.rw.mvars.lhs.toMessageData}"
+    traceM cls fun _ => return m!"RHS MVars\n{← rule.rw.mvars.rhs.toMessageData}"
 
-def Rewrites.trace (rws : Rewrites) (stx : Array Syntax) (cls : Name) (subgoals : Bool) :
+def Rewrite.Rules.trace (rules : Rewrite.Rules) (cls : Name) (subgoals : Bool) :
     TacticM Unit := do
-  for rw in rws, idx in [:rws.size] do
-    let stx? := stx[idx]? >>= fun s => if s.getAtomVal == "*" then none else s
-    rw.trace stx? cls subgoals
+  for rule in rules.entries do
+    let stx? := rules.stxs[rule.src]? >>= fun stx => if stx.getAtomVal == "*" then none else stx
+    rule.trace stx? cls subgoals
 
-def Rewrites.tracePruned
-    (rws : Rewrites) (reasons : Array Source) (cls : Name) (subgoals : Bool) :
-    TacticM Unit := do
-  for rw in rws, reason in reasons do
-    rw.trace (stx? := none) cls subgoals (headerAnnotation := s!" by {reason.description}")
+def Rewrite.Rules.tracePruned
+    (rules : Rewrite.Rules) (reasons : HashMap Rewrite.Rule.Id Source) (cls : Name)
+    (subgoals : Bool) : TacticM Unit := do
+  for rule in rules.entries do
+    rule.trace rules.stxs[rule.src]? cls subgoals (headerAnnotation := s!" by {reasons[rule.id]!.description}")
 
-def Rewrite.Encoded.trace (rw : Rewrite.Encoded) (cls : Name) : TacticM Unit := do
-  let header := m!"{rw.name}"
+def Rewrite.Rule.Encoded.trace (enc : Rewrite.Rule.Encoded) (cls : Name) : TacticM Unit := do
+  let header := m!"{enc.name}"
   withTraceNode cls (fun _ => return header) do
-    Lean.trace cls fun _ => m!"LHS: {rw.lhs}"
-    Lean.trace cls fun _ => m!"RHS: {rw.rhs}"
-    if rw.conds.isEmpty then
+    Lean.trace cls fun _ => m!"LHS: {enc.lhs}"
+    Lean.trace cls fun _ => m!"RHS: {enc.rhs}"
+    if enc.conds.isEmpty then
       Lean.trace cls fun _ => "No Conditions"
     else
       withTraceNode cls (fun _ => return "Conditions") (collapsed := false) do
-        for cond in rw.conds do
+        for cond in enc.conds do
           Lean.trace cls fun _ => cond
 
 def _root_.Bool.toEmoji : Bool → String
@@ -199,7 +200,7 @@ nonrec def Explanation.trace (expl : Explanation) (cls : Name) : TacticM Unit :=
     trace cls fun _ => m!"{expl.start}"
     for step in expl.steps, idx in [:expl.steps.size] do
       withTraceNode cls (fun _ => return m!"{idx}: {step.dst}") do
-        trace cls fun _ => m!"{step.src.description}({step.dir.format})"
+        trace cls fun _ => m!"{step.id.src.description}({step.dir.format})"
 
 nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
   withTraceNode cls (fun _ => return "Proof") do
@@ -212,10 +213,10 @@ nonrec def Proof.trace (prf : Proof) (cls : Name) : TacticM Unit := do
         if src.isNatLitConversion || src.isSubst then continue
         withTraceNode cls (fun _ => instantiateMVars step.rhs) do
           trace cls fun _ => m!"{src.description}({step.dir.format})"
-      | .rw rw _ =>
-        if rw.src.containsTcProj then continue
+      | .rw rule _ =>
+        if rule.src.containsTcProj then continue
         withTraceNode cls (fun _ => instantiateMVars step.rhs) do
-          traceM cls fun _ => return m!"{rw.src.description}({step.dir.format}) {← rw.toCongr.toMessageData}"
+          traceM cls fun _ => return m!"{rule.src.description}({step.dir.format}) {← rule.rw.toMessageData}"
           trace  cls fun _ => step.proof
       | .reifiedEq =>
         withTraceNode cls (fun _ => instantiateMVars step.rhs) do

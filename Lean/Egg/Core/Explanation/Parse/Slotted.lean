@@ -18,7 +18,7 @@ private inductive Expression where
   | inst   (cls : Expression)
   | subst  (var : String) (to e : Expression)
   | unknown
-  deriving Inhabited
+deriving Inhabited
 
 private structure ToExprM.State where
   bvars  : Std.HashMap String Expr
@@ -157,7 +157,7 @@ where
     let rwIsOutsideType := (← get).isSome
     let e ← go pos t
     if let some rwInfo ← get then
-      unless rwIsOutsideType || rwInfo.src.isDefEq do throw .nonDefeqTypeRw
+      unless rwIsOutsideType || rwInfo.id.src.isDefEq do throw .nonDefeqTypeRw
     return e
 
   parseRw (dir : TSyntax `rw_dir) (src : TSyntax `rw_src) (body : TSyntax `slotted_expr)

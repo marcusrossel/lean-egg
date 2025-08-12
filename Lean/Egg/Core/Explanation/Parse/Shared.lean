@@ -197,24 +197,24 @@ private def parseDefeqRwSrc : (TSyntax `defeq_rw_src) → Source
 
 def parseRwSrc : (TSyntax `rw_src) → Rewrite.Descriptor
   | `(rw_src|→$src:lean_rw_src$[,$weakVars=$weakClasses]*) => {
-      src      := parseLeanRwSrc src
-      srcDir   := .forward
+      id.src   := parseLeanRwSrc src
+      id.dir   := .forward
       dir      := .forward
       weakVars := weakVars.zip weakClasses |>.map fun (v, c) => (v.getNat, c.getNat)
     }
   | `(rw_src|←$src:lean_rw_src$[,$weakVars=$weakClasses]*) => {
-      src      := parseLeanRwSrc src
-      srcDir   := .backward
+      id.src   := parseLeanRwSrc src
+      id.dir   := .backward
       dir      := .forward
       weakVars := weakVars.zip weakClasses |>.map fun (v, c) => (v.getNat, c.getNat)
     }
   | `(rw_src|$src:defeq_rw_src$[-rev%$tk]?) => {
-      src    := parseDefeqRwSrc src,
-      srcDir := .forward,
+      id.src := parseDefeqRwSrc src,
+      id.dir := .forward,
       dir    := if tk.isSome then .backward else .forward, weakVars := #[]
     }
-  | `(rw_src|=) => { src := .reifiedEq, srcDir := .forward, dir := .forward, weakVars := #[] }
-  | `(rw_src|∧) => { src := .factAnd, srcDir := .forward, dir := .forward, weakVars := #[] }
+  | `(rw_src|=) => { id.src := .reifiedEq, id.dir := .forward, dir := .forward, weakVars := #[] }
+  | `(rw_src|∧) => { id.src := .factAnd,   id.dir := .forward, dir := .forward, weakVars := #[] }
   | _ => unreachable!
 
 inductive ParseError where
@@ -223,7 +223,7 @@ inductive ParseError where
   | missingRw
   | multipleRws
   | nonDefeqTypeRw
-  deriving Inhabited
+deriving Inhabited
 
 def ParseError.msgPrefix :=
   "egg received invalid explanation:"

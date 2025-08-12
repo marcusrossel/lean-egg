@@ -52,7 +52,7 @@ example (h : ∀ p q : Prop, (1 = 2) → p ∧ q) : 0 = 0 := by
 
 /--
 trace: [egg.guides] Guides
-  [egg.guides] ↣0!: ∀ (p : Prop), p
+  [egg.guides] ↣0!: ∀ (q : Prop), q
   [egg.guides] ↣1!: 0 = 0
 -/
 #guard_msgs in
@@ -62,8 +62,8 @@ example (h : (∀ p : Prop, p) ↔ (∀ q : Prop, q)) : 0 = 0 := by
 /--
 trace: [egg.guides] Guides
   [egg.guides] ↣0!: ∀ (a : Prop), (∀ (p : Prop), a ∧ p) ↔ ∀ (q : Prop), q
-  [egg.guides] ↣1!: Prop
-  [egg.guides] ↣2!: ∀ (q : Prop), q
+  [egg.guides] ↣1!: ∀ (q : Prop), q
+  [egg.guides] ↣2!: Prop
   [egg.guides] ↣3!: True
   [egg.guides] ↣4!: And
   [egg.guides] ↣5!: 0 = 0
