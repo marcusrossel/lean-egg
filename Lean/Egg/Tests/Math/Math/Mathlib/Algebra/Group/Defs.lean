@@ -127,16 +127,19 @@ example : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
 example : DivisionMonoid G where
   inv_inv a         := by egg +group using a⁻¹⁻¹ * a⁻¹ * a
   mul_inv_rev a b   := by egg +group using b⁻¹ * a⁻¹ * (a * b) * (a * b)⁻¹
+  -- TODO: I'm not sure why `egg +group` fails proof reconstruction here. It migh be related to
+  --       `Weak Vars Bug.lean` - i.e. we might be assigning the wrong term to the weak variable for
+  --       `x_1`, but it doesn't look like it
   inv_eq_of_mul _ _ := inv_eq_of_mul
 
 /- Previous -/ attribute [egg group] DivisionMonoid.inv_inv DivisionMonoid.mul_inv_rev DivisionMonoid.inv_eq_of_mul
 
 example : CancelMonoid G := { ‹Group G› with
-  mul_right_cancel a b _ _ := by egg +group [*] using a * b * b⁻¹
+  mul_right_cancel a b c h := by egg +group [*] using b * a * a⁻¹
   mul_left_cancel  a b _ _ := by egg +group [*] using a⁻¹ * (a * b)
 }
 
-/- Previous -/ attribute [egg group] RightCancelMonoid.mul_right_cancel LeftCancelMonoid.mul_left_cancel
+/- Previous -/ attribute [egg group] IsRightCancelMul.mul_right_cancel IsLeftCancelMul.mul_left_cancel
 
 end Group
 
