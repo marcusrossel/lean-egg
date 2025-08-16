@@ -21,11 +21,11 @@ structure Descriptor where
   id       : Rewrite.Rule.Id
   dir      : Direction
   weakVars : Array (Nat × Nat)
-deriving Inhabited
+deriving Inhabited, Repr
 
 structure Info extends Descriptor where
   pos? : Option SubExpr.Pos
-deriving Inhabited
+deriving Inhabited, Repr
 
 end Rewrite
 

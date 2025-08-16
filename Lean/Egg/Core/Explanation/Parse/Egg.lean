@@ -20,7 +20,24 @@ private inductive Expression where
   | subst  (idx : Nat) (to e : Expression)
   | shift  (offset : Int) (cutoff : Nat) (e : Expression)
   | unknown
-deriving Inhabited
+deriving Inhabited, Repr
+
+private def Expression.pp (levels := false) :  Expression → String
+  | bvar idx => toString idx
+  | fvar id => toString id.name
+  | mvar id => s!"?{toString id.name}"
+  | sort lvl => if levels then s!"Sort.\{{toString lvl}}" else "Sort"
+  | const name lvls => if levels then s!"{name}\{{",".intercalate <| lvls.map toString}}" else toString name
+  | app fn arg => s!"({Expression.pp (levels:=levels) fn} {Expression.pp (levels:=levels) arg})"
+  | lam _ body => s!"(λ.{Expression.pp (levels:=levels) body})"
+  | «forall»  _ body => s!"(λ.{Expression.pp (levels:=levels) body})"
+  | lit l => s!"{repr l}"
+  | eq lhs rhs => s!"{Expression.pp (levels:=levels) lhs} = {Expression.pp (levels:=levels) rhs}"
+  | proof _ => "⋯"
+  | inst cls => s!"inst{Expression.pp (levels:=levels) cls}"
+  | subst idx to e => s!"(subst {idx} {Expression.pp (levels:=levels) to} {Expression.pp (levels:=levels) e})"
+  | shift offset cutoff e => s!"(shift {offset} {cutoff} {Expression.pp (levels:=levels) e}"
+  | unknown => "???"
 
 -- If `synthesize` is true, we try to fill type class instance holes immediately by synthesis.
 private def Expression.toExpr (e : Expression) (synthesize := false) : MetaM Expr := do
