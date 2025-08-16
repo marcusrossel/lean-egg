@@ -171,7 +171,8 @@ where
     let rwIsOutsideType := (← get).isSome
     let e ← go pos t
     if let some rwInfo ← get then
-      unless rwIsOutsideType || rwInfo.id.src.isDefEq do throw .nonDefeqTypeRw
+      unless rwIsOutsideType || rwInfo.id.src.isDefEq do
+        throw .nonDefeqTypeRw
     return e
 
   parseRw (dir : TSyntax `rw_dir) (src : TSyntax `rw_src) (body : TSyntax `egg_expr)
