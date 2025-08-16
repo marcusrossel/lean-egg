@@ -6,7 +6,7 @@ namespace Egg
 inductive Direction where
   | forward
   | backward
-deriving Inhabited, BEq, Hashable, Ord
+deriving Inhabited, BEq, Hashable, Ord, Repr
 
 namespace Direction
 
