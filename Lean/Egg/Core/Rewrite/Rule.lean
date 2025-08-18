@@ -7,7 +7,7 @@ namespace Egg.Rewrite
 structure Rule.Id where
   src : Source
   dir : Direction
-deriving Inhabited, BEq, Hashable, Ord
+deriving Inhabited, BEq, Hashable, Ord, Repr
 
 -- TODO: We are currently ordering `Source`s by their string description. Other orderings (e.g. by
 --       category may be nicer for tracing).
