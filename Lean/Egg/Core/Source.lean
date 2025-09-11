@@ -146,6 +146,10 @@ def isDefEq : Source → Bool
   | tcProj _ _ _ _ => true
   | _              => false
 
+def isGeneratedEquation : Source → Bool
+  | explicit _ (some _) | tagged _ (some _) => true
+  | _ => false
+
 def containsTcProj : Source → Bool
   | tcProj ..                                          => true
   | ground src | goalTypeSpec src _ | explosion src .. => containsTcProj src

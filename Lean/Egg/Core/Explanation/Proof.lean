@@ -104,7 +104,7 @@ where
       }
     if let some rw := rules.rws[rwInfo.id]? then
       -- TODO: Can there be conditional rfl proofs?
-      if ← isRflProof rw.proof then
+      if ← isRflProof rw.proof <&&> (return !rwInfo.id.src.isGeneratedEquation) then
         return {
           lhs := current, rhs := next, proof := ← mkReflStep idx current next rwInfo.id.src,
           rw := .rw ⟨rwInfo.id, rw⟩ (isRefl := true), dir := rwInfo.dir
@@ -123,7 +123,7 @@ where
 
   mkReflStep (idx : Nat) (current next : Expr) (src : Source) : MetaM Expr := do
     unless ← isDefEq current next do
-      fail m!"unification failure for proof by reflexivity with rw {src.description}" idx
+      fail m!"unification failure for proof by reflexivity with rw {src.description}:\n\n{indentD current}\n\nvs\n\n{indentD next}" idx
     mkEqRefl next
 
   mkFactAndStep (idx : Nat) (current next : Expr) : MetaM Expr := do
