@@ -1,4 +1,4 @@
-import Math.Mathlib.Algebra.Group.Basic
+import Egg
 
 attribute [egg lift] Function.comp Nat.add_zero Nat.add_succ Nat.mul_zero Nat.mul_succ
 
@@ -49,10 +49,6 @@ def reduceSeq (f : α → β → β) (init : β) : Vec α n → β
   | a ::ᵥ as => reduceSeq f (f a init) as
 
 @[egg lift]
-def reduce [CommMonoid α] (as : Vec α n) : α :=
-  as.reduceSeq (· * ·) 1
-
-@[egg lift]
 def head : Vec α (n + 1) → α
   | a ::ᵥ _ => a
 
@@ -70,11 +66,6 @@ def transpose : {n m : Nat} → Vec (Vec α m) n → Vec (Vec α n) m
   | _ + 1, 0,     _   => []ᵥ
   | 0,     _,     []ᵥ => fill []ᵥ _
   | _ + 1, _ + 1, as  => map head as ::ᵥ transpose (map tail as)
-
-@[egg lift]
-theorem reduceSeq_reduce [CommMonoid α] (a : α) (as : Vec α n) : a * reduce as = reduceSeq (· * ·) a as := by
-  induction as generalizing a
-  all_goals egg +comm_monoid +lift [*]
 
 -- Note: For this theorem `egg` needs to understand addition to handle syntactic differences at the type level.
 @[egg lift]
@@ -121,7 +112,7 @@ theorem map_tail (f : α → β) (as : Vec (Vec α (m + 1)) n) : map (map f) (ma
 
 -- Note: This theorem takes a while.
 @[egg lift]
-theorem map_tail_trans (a : Vec α (m + 1)) (as : Vec (Vec α (m + 1 + 1)) (n + 1)) : map tail (transpose (tail a ::ᵥ map tail (map tail as))) = transpose (map tail (map tail as)) := by
+theorem map_tail_trans (a : Vec α (m + 1)) (as : Vec (Vec α (m + 2)) (n + 1)) : map tail (transpose (tail a ::ᵥ map tail (map tail as))) = transpose (map tail (map tail as)) := by
   induction m <;> cases a
   all_goals egg +lift [*]
 
@@ -150,8 +141,7 @@ theorem id_to_transpose (as : Vec (Vec α m) n) : transpose (transpose as) = as 
 
 /-- Figure 6: Rule 3 -/
 @[egg lift]
-theorem transpose_move (f : α → β) (as : Vec (Vec α n) m) :
-    map (map f) (transpose as) = transpose (map (map f) as) := by
+theorem transpose_move (f : α → β) (as : Vec (Vec α n) m) : map (map f) (transpose as) = transpose (map (map f) as) := by
   induction n <;> cases m <;> cases as <;> try cases ‹Vec _ (_ + 1)›
   all_goals egg +lift [*]
 
