@@ -14,7 +14,7 @@ use crate::util::*;
 
 pub struct RewriteConfig {
     binders_are_active: bool,
-    allow_unsat_conditions: bool,
+    subgoals: bool,
     env: *const c_void
 }
 
@@ -23,7 +23,7 @@ impl Config {
     pub fn to_rw_config(&self, binders_are_active: bool, env: *const c_void) -> RewriteConfig {
         RewriteConfig {
             binders_are_active,
-            allow_unsat_conditions: self.allow_unsat_conditions,
+            subgoals: self.subgoals,
             env
         }
     }
@@ -53,7 +53,7 @@ impl RewriteTemplate {
             return Ok(Either::Right(GroundEq { name: self.name, lhs: self.lhs.ast, rhs: self.rhs.ast }))
         }
 
-        let lhs = if self.prop_conds.is_empty() || cfg.allow_unsat_conditions {
+        let lhs = if self.prop_conds.is_empty() || cfg.subgoals {
             self.lhs.clone()
         } else {
             let mut str = format!("(= {} {})", self.lhs, self.lhs);
@@ -107,7 +107,7 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
         }
 
         let mut rule = rule;
-        if !self.weak_vars.is_empty() && !self.cfg.allow_unsat_conditions {
+        if !self.weak_vars.is_empty() && !self.cfg.subgoals {
             let mut r = rule.as_str().to_string();
             for var in &self.weak_vars {
                 let assignment = format!("{}={:?}", var.to_string().replace("?", ","), subst[*var]);

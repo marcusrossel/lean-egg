@@ -9,35 +9,35 @@ namespace Egg.Request
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
 protected structure Config where
-  slotted              : Bool
-  optimizeExpl         : Bool
-  timeLimit            : Nat
-  nodeLimit            : Nat
-  iterLimit            : Nat
-  natLit               : Bool
-  eta                  : Bool
-  etaExpand            : Bool
-  beta                 : Bool
-  levels               : Bool
-  shapes               : Bool
-  unionSemantics       : Bool
-  allowUnsatConditions : Bool
+  slotted        : Bool
+  optimizeExpl   : Bool
+  timeLimit      : Nat
+  nodeLimit      : Nat
+  iterLimit      : Nat
+  natLit         : Bool
+  eta            : Bool
+  etaExpand      : Bool
+  beta           : Bool
+  levels         : Bool
+  shapes         : Bool
+  unionSemantics : Bool
+  subgoals       : Bool
 
 instance : Coe Config Request.Config where
   coe cfg := {
-    slotted              := cfg.slotted
-    optimizeExpl         := cfg.optimizeExpl
-    timeLimit            := cfg.timeLimit
-    nodeLimit            := cfg.nodeLimit
-    iterLimit            := cfg.iterLimit
-    natLit               := cfg.natLit
-    eta                  := cfg.eta
-    etaExpand            := cfg.etaExpand
-    beta                 := cfg.beta
-    levels               := cfg.levels
-    shapes               := cfg.shapes
-    unionSemantics       := cfg.unionSemantics
-    allowUnsatConditions := cfg.subgoals
+    slotted        := cfg.slotted
+    optimizeExpl   := cfg.optimizeExpl
+    timeLimit      := cfg.timeLimit
+    nodeLimit      := cfg.nodeLimit
+    iterLimit      := cfg.iterLimit
+    natLit         := cfg.natLit
+    eta            := cfg.eta
+    etaExpand      := cfg.etaExpand
+    beta           := cfg.beta
+    levels         := cfg.levels
+    shapes         := cfg.shapes
+    unionSemantics := cfg.unionSemantics
+    subgoals       := cfg.subgoals
   }
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.

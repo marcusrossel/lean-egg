@@ -18,18 +18,18 @@ use crate::util::*;
 
 #[repr(C)]
 pub struct Config {
-    optimize_expl:              bool,
-    time_limit:                 usize,
-    node_limit:                 usize,
-    iter_limit:                 usize, 
-    nat_lit:                    bool, 
-    eta:                        bool,
-    eta_expand:                 bool,
-    beta:                       bool,
-    levels:                     bool,
-    shapes:                     bool,
-    union_semantics:            bool,
-    pub allow_unsat_conditions: bool
+    optimize_expl:   bool,
+    time_limit:      usize,
+    node_limit:      usize,
+    iter_limit:      usize, 
+    nat_lit:         bool, 
+    eta:             bool,
+    eta_expand:      bool,
+    beta:            bool,
+    levels:          bool,
+    shapes:          bool,
+    union_semantics: bool,
+    pub subgoals:    bool
 }
 
 pub struct ExplainedCongr {

@@ -80,7 +80,7 @@ typedef struct config {
     _Bool  levels;
     _Bool  shapes;
     _Bool  union_semantics;
-    _Bool  allow_unsat_conditions;
+    _Bool  subgoals;
 } config;
 
 typedef struct lean_config {
@@ -90,19 +90,19 @@ typedef struct lean_config {
 
 /*
 structure Config where
-  slotted              : Bool
-  optimizeExpl         : Bool
-  timeLimit            : Nat
-  nodeLimit            : Nat
-  iterLimit            : Nat
-  natLit               : Bool
-  eta                  : Bool
-  etaExpand            : Bool
-  beta                 : Bool
-  levels               : Bool
-  shapes               : Bool
-  unionSemantics       : Bool
-  allowUnsatConditions : Bool
+  slotted        : Bool
+  optimizeExpl   : Bool
+  timeLimit      : Nat
+  nodeLimit      : Nat
+  iterLimit      : Nat
+  natLit         : Bool
+  eta            : Bool
+  etaExpand      : Bool
+  beta           : Bool
+  levels         : Bool
+  shapes         : Bool
+  unionSemantics : Bool
+  subgoals       : Bool
 */
 lean_config config_from_lean_obj(lean_obj_arg cfg) {
     unsigned scalar_base_offset = lean_ctor_num_objs(cfg) * sizeof(void*);
@@ -110,18 +110,18 @@ lean_config config_from_lean_obj(lean_obj_arg cfg) {
     return (lean_config) { 
         .slotted = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 0),
         .rust_config = (config) {
-            .optimize_expl          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 1),
-            .time_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 0)),
-            .node_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 1)),
-            .iter_limit             = nat_from_lean_obj(lean_ctor_get(cfg, 2)),  
-            .nat_lit                = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 2),  
-            .eta                    = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 3),  
-            .eta_expand             = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 4),  
-            .beta                   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 5),  
-            .levels                 = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6),  
-            .shapes                 = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7), 
-            .union_semantics        = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 8),
-            .allow_unsat_conditions = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 9),  
+            .optimize_expl   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 1),
+            .time_limit      = nat_from_lean_obj(lean_ctor_get(cfg, 0)),
+            .node_limit      = nat_from_lean_obj(lean_ctor_get(cfg, 1)),
+            .iter_limit      = nat_from_lean_obj(lean_ctor_get(cfg, 2)),  
+            .nat_lit         = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 2),  
+            .eta             = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 3),  
+            .eta_expand      = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 4),  
+            .beta            = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 5),  
+            .levels          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 6),  
+            .shapes          = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 7), 
+            .union_semantics = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 8),
+            .subgoals        = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 9),  
         }
     };
 }

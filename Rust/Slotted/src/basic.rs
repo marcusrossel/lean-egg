@@ -9,20 +9,18 @@ use crate::rewrite::*;
 
 #[repr(C)]
 pub struct Config {
-    optimize_expl:          bool,
-    time_limit:             usize,
-    node_limit:             usize,
-    iter_limit:             usize, 
-    nat_lit:                bool, 
-    eta:                    bool,
-    eta_expand:             bool,
-    beta:                   bool,
-    levels:                 bool,
-    shapes:                 bool,
-    block_invalid_matches:  bool,
-    shift_captured_bvars:   bool,
-    union_semantics:        bool,
-    allow_unsat_conditions: bool
+    optimize_expl:   bool,
+    time_limit:      usize,
+    node_limit:      usize,
+    iter_limit:      usize, 
+    nat_lit:         bool, 
+    eta:             bool,
+    eta_expand:      bool,
+    beta:            bool,
+    levels:          bool,
+    shapes:          bool,
+    union_semantics: bool,
+    subgoals:        bool
 }
 
 pub fn explain_congr(
@@ -48,7 +46,7 @@ pub fn explain_congr(
     }
 
     let mut rws;
-    match templates_to_rewrites(rw_templates, cfg.allow_unsat_conditions) {
+    match templates_to_rewrites(rw_templates, cfg.subgoals) {
         Ok(r)    => rws = r,
         Err(err) => return Err(Error::Rewrite(err.to_string()))
     }

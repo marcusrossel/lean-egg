@@ -42,9 +42,7 @@ fn subst_is_valid(subst: &Subst, illegal_slots: &HashSet<Slot>) -> bool {
     true
 }
 
-pub fn templates_to_rewrites(
-    templates: Vec<RewriteTemplate>, _allow_unsat_conditions: bool
-) -> Res<Vec<LeanRewrite>> {
+pub fn templates_to_rewrites(templates: Vec<RewriteTemplate>, _subgoals: bool) -> Res<Vec<LeanRewrite>> {
     let mut result: Vec<LeanRewrite> = vec![];
     for template in templates {
         let lhs_search = template.lhs.clone();
