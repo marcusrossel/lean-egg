@@ -23,7 +23,7 @@ syntax egg_calc_step := ppIndent(colGe term (&" with " egg_cfg_mod egg_args)? (e
 
 structure Step where
   mod    : TSyntax ``egg_cfg_mod
-  args  : TSyntax `egg_args
+  args   : TSyntax `egg_args
   guides : Option (TSyntax `egg_guides)
 deriving Inhabited
 
@@ -65,11 +65,11 @@ def parseRawSteps : (TSyntax ``egg_calc_steps) → TacticM RawSteps
       $tail]*) => return { head := ← parseRawStep head, tail := ← tail.mapM parseRawStep }
   | _ => throwUnsupportedSyntax
 
-syntax &"egg " egg_baskets &" calc " egg_args egg_calc_steps : tactic
+syntax &"egg " egg_baskets &" calc " egg_args egg_calc_steps (egg_blocks)? : tactic
 
 def eval
     (baskets : TSyntax `Egg.egg_baskets) (args : TSyntax `egg_args)
-    (steps : TSyntax ``egg_calc_steps) : TacticM Unit := do
+    (steps : TSyntax ``egg_calc_steps) (blocks : Option <| TSyntax `egg_blocks) : TacticM Unit := do
   withMainContext do
     let rawSteps ← parseRawSteps steps
     let goalType ← getMainTarget
@@ -112,7 +112,7 @@ where
     throwError "'egg calc' failed to infer goal type"
   stepToEgg (step : Step) : TacticM (TSyntax `tactic) := do
     let allPrems ← appendArgs step.args args
-    `(tactic| egg $baskets $step.mod:egg_cfg_mod $allPrems $[$step.guides]?)
+    `(tactic| egg $baskets $step.mod:egg_cfg_mod $allPrems $[$step.guides]? $[$blocks]?)
   dedupSubgoals (subgoals : List MVarId) : MetaM (List MVarId) := do
     let mut result := []
     for subgoal in subgoals do
@@ -164,5 +164,5 @@ where
       lastRhs := rhs
     return result
 
-elab "egg " baskets:egg_baskets " calc " args:egg_args steps:egg_calc_steps : tactic =>
-  eval baskets args steps
+elab "egg " baskets:egg_baskets " calc " args:egg_args steps:egg_calc_steps blocks:(egg_blocks)?: tactic =>
+  eval baskets args steps blocks

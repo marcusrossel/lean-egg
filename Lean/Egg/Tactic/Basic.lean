@@ -4,6 +4,7 @@ import Egg.Tactic.Config.Option
 import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Goal
 import Egg.Tactic.Guides
+import Egg.Tactic.Blocks
 import Egg.Tactic.Rewrite.Rules.Gen.Basic
 import Egg.Core.Gen.Guides
 import Egg.Tactic.Trace
@@ -41,8 +42,8 @@ open Config.Modifier (egg_cfg_mod)
 syntax egg_baskets := ("+" noWs ident)*
 
 protected partial def eval
-    (mod : TSyntax ``egg_cfg_mod) (args : TSyntax `egg_args)
-    (guides : Option (TSyntax `egg_guides)) (baskets : TSyntax `Egg.egg_baskets)
+    (mod : TSyntax ``egg_cfg_mod) (args : TSyntax `egg_args) (guides : Option (TSyntax `egg_guides))
+    (blocks : Option (TSyntax `egg_blocks)) (baskets : TSyntax `Egg.egg_baskets)
     (calcifyTk? : Option Syntax := none) : TacticM Unit := do
   let save ← saveState
   try core catch err => restoreState save; throw err
@@ -57,6 +58,7 @@ where
     let goal ← Goal.gen goal
     goal.id.withContext do
       let guides := (← guides.mapM Guides.parseGuides).getD #[]
+      let blocks ← getBlocks blocks cfg
       -- We increase the mvar context depth, so that ambient mvars aren't unified during rewrite
       -- generation proof and reconstruction. Note that this also means that we can't assign the
       -- `goal` mvar inside of this `do`-block .
@@ -67,7 +69,7 @@ where
             let rws := rules.entries.map (·.rw)
             guides := guides ++ (← genDerivedGuides goal.toCongr rws)
         withTraceNode `egg.guides (fun _ => return "Guides") do guides.trace `egg.guides
-        runEqSat goal rules guides cfg
+        runEqSat goal rules guides blocks cfg
       match res with
       | some (proof, proofTime, result) =>
         if cfg.reporting then
@@ -79,9 +81,9 @@ where
         if let some tk := calcifyTk? then calcify tk proof goal.intros.unzip.snd
       | none => goal.id.admit
   runEqSat
-      (goal : Goal) (rules : Rewrite.Rules) (guides : Guides) (cfg : Config) :
+      (goal : Goal) (rules : Rewrite.Rules) (guides : Guides) (blocks : Blocks) (cfg : Config) :
       TacticM <| Option (AbstractMVarsResult × Nat × Request.Result) := do
-    let req ← Request.encoding goal.toCongr rules guides #[] cfg
+    let req ← Request.encoding goal.toCongr rules guides blocks cfg
     withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
     if let .beforeEqSat := cfg.exitPoint then return none
     let result ← req.run cfg.explLengthLimit (onEqSatFailure cfg)
@@ -92,7 +94,7 @@ where
     | .proof prf =>
       let proofTime := (← IO.monoMsNow) - beforeProof
       return some (prf, proofTime, result)
-    | .retryWithShapes => runEqSat goal rules guides { cfg with shapes := true }
+    | .retryWithShapes => runEqSat goal rules guides blocks { cfg with shapes := true }
   onEqSatFailure (cfg : Config) (report : Request.Result.Report) : Request.Failure → MetaM MessageData
     | .backend msg? => do
       let mut msg := msg?
@@ -105,17 +107,21 @@ where
       let msg := s!"egg found an explanation exceeding the length limit ({len} vs {cfg.explLengthLimit})\nYou can increase this limit using 'set_option egg.explLengthLimit <num>'.\n"
       unless cfg.reporting do return msg
       return msg ++ formatReport cfg.flattenReports report
+  getBlocks (stx? : Option <| TSyntax `egg_blocks) (cfg : Config) : TacticM Blocks := do
+    let some stx := stx? | return #[]
+    unless cfg.subgoals do logWarningAt stx "conditions are only blocked when `egg.subgoals` is `true`"
+    Blocks.parseBlocks cfg.toNormalization stx
 
-elab "egg " baskets:egg_baskets mod:egg_cfg_mod args:egg_args guides:(egg_guides)? : tactic =>
-  Egg.eval mod args guides baskets
+elab "egg " baskets:egg_baskets mod:egg_cfg_mod args:egg_args guides:(egg_guides)? blocks:(egg_blocks)? : tactic =>
+  Egg.eval mod args guides blocks baskets
 
 -- WORKAROUND: This fixes `Tests/EndOfInput *`.
 macro "egg " baskets:egg_baskets mod:egg_cfg_mod : tactic =>
   `(tactic| egg $baskets $mod:egg_cfg_mod)
 
 -- The syntax `egg?` calls calcify after running egg.
-elab tk:"egg? " baskets:egg_baskets mod:egg_cfg_mod args:egg_args guides:(egg_guides)? : tactic =>
-  Egg.eval mod args guides baskets (calcifyTk? := tk)
+elab tk:"egg? " baskets:egg_baskets mod:egg_cfg_mod args:egg_args guides:(egg_guides)? blocks:(egg_blocks)? : tactic =>
+  Egg.eval mod args guides blocks baskets (calcifyTk? := tk)
 
 -- WORKAROUND: This fixes a problem analogous to `Tests/EndOfInput *` for `egg?`.
 macro "egg? " baskets:egg_baskets mod:egg_cfg_mod : tactic =>
