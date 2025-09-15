@@ -251,6 +251,7 @@ extern egg_result egg_explain_congr(
     const char* goal, 
     rws_array rws, 
     str_array guides, 
+    str_array blocks, 
     config cfg,
     const char* viz_path,
     void* e
@@ -271,6 +272,7 @@ structure Egg.Request where
   rhs     : String
   rws     : Array Rewrite.Encoded
   guides  : Array String
+  blocks  : Array String
   vizPath : String
   cfg     : Request.Config
 */
@@ -279,8 +281,9 @@ eqsat_result run_eqsat_request_core(lean_obj_arg req, env* e) {
     const char* rhs      = lean_string_cstr(lean_ctor_get(req, 1));
     rws_array rws        = rewrites_from_lean_obj(lean_ctor_get(req, 2));
     str_array guides     = str_array_from_lean_obj(lean_ctor_get(req, 3));
-    const char* viz_path = lean_string_cstr(lean_ctor_get(req, 4));
-    lean_config cfg      = config_from_lean_obj(lean_ctor_get(req, 5));
+    str_array blocks     = str_array_from_lean_obj(lean_ctor_get(req, 4));
+    const char* viz_path = lean_string_cstr(lean_ctor_get(req, 5));
+    lean_config cfg      = config_from_lean_obj(lean_ctor_get(req, 6));
 
     eqsat_result result;
     if (cfg.slotted) {
@@ -293,7 +296,7 @@ eqsat_result run_eqsat_request_core(lean_obj_arg req, env* e) {
             .rep     = res.rep,
         };
     } else {
-        egg_result res = egg_explain_congr(lhs, rhs, rws, guides, cfg.rust_config, viz_path, e);
+        egg_result res = egg_explain_congr(lhs, rhs, rws, guides, blocks, cfg.rust_config, viz_path, e);
         result = (eqsat_result) {
             .slotted = false,
             .kind    = res.kind,

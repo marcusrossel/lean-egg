@@ -35,7 +35,8 @@ pub struct RewriteTemplate {
     pub rhs:        Pattern<LeanExpr>,
     pub prop_conds: Vec<Pattern<LeanExpr>>,
     pub tc_conds:   Vec<Pattern<LeanExpr>>,
-    pub weak_vars:  Vec<Var>
+    pub weak_vars:  Vec<Var>,
+    pub blocks:     Vec<RecExpr<LeanExpr>>
 }
 
 pub struct GroundEq {
@@ -58,7 +59,7 @@ impl RewriteTemplate {
         } else {
             let mut str = format!("(= {} {})", self.lhs, self.lhs);
 
-            for cond in self.prop_conds { 
+            for cond in self.prop_conds.iter() { 
                 str = format!("(app (app (const \"And\") {}) {})", str, cond);
             }
 
@@ -67,7 +68,8 @@ impl RewriteTemplate {
         };
 
         let applier = LeanApplier { 
-            lhs: self.lhs, rhs: self.rhs, tc_conds: self.tc_conds, weak_vars: self.weak_vars, cfg 
+            lhs: self.lhs, rhs: self.rhs, tc_conds: self.tc_conds, prop_conds: self.prop_conds, 
+            weak_vars: self.weak_vars, blocks: self.blocks, cfg 
         };
         match Rewrite::new(self.name, lhs, applier) {
             Ok(rw)   => Ok(Either::Left(rw)),
@@ -80,11 +82,13 @@ unsafe impl Send for LeanApplier {}
 unsafe impl Sync for LeanApplier {}
 
 struct LeanApplier {
-    pub lhs:       Pattern<LeanExpr>,
-    pub rhs:       Pattern<LeanExpr>,
-    pub tc_conds:  Vec<Pattern<LeanExpr>>,
-    pub weak_vars: Vec<Var>,
-    pub cfg:       RewriteConfig,
+    pub lhs:        Pattern<LeanExpr>,
+    pub rhs:        Pattern<LeanExpr>,
+    pub tc_conds:   Vec<Pattern<LeanExpr>>,
+    pub prop_conds: Vec<Pattern<LeanExpr>>,
+    pub weak_vars:  Vec<Var>,
+    pub blocks:     Vec<RecExpr<LeanExpr>>, // TODO: This could be extended to cover patterns, if needed.
+    pub cfg:        RewriteConfig,
 }
 
 impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
@@ -107,7 +111,19 @@ impl Applier<LeanExpr, LeanAnalysis> for LeanApplier {
         }
 
         let mut rule = rule;
-        if !self.weak_vars.is_empty() && !self.cfg.subgoals {
+        if self.cfg.subgoals {
+            if !self.blocks.is_empty() {
+                // If subgoals are activated, still check that no conditional proposition is blocked.
+                for prop_cond in self.prop_conds.iter() {
+                    let (fresh, i) = in_fresh_graph(prop_cond, graph, subst);
+                    let prop_cond_expr = fresh.id_to_expr(i);  
+                    if self.blocks.contains(&prop_cond_expr) {
+                        return vec![]
+                    }
+                }       
+            }   
+        } else if !self.weak_vars.is_empty() {
+            // If subgoals are not activated, assign weak vars (if any exists).
             let mut r = rule.as_str().to_string();
             for var in &self.weak_vars {
                 let assignment = format!("{}={:?}", var.to_string().replace("?", ","), subst[*var]);

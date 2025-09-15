@@ -1,9 +1,9 @@
 import Egg.Tactic.Baskets
+import Egg.Tactic.Calc
 import Egg.Tactic.Rewrite.Rules.Gen.Intros
 import Egg.Tactic.Rewrite.Rules.Gen.GenM
 import Egg.Tactic.Rewrite.Rules.Gen.Basic
 import Egg.Tactic.Rewrite.Rules.Parse
-import Egg.Tactic.Calc
 import Egg.Tactic.Config.Option
 import Egg.Tactic.Config.Modifier
 import Egg.Tactic.Calcify
@@ -26,6 +26,7 @@ import Egg.Core.Explanation.Expr
 import Egg.Core.Encode.Shapes
 import Egg.Core.Encode.Rules
 import Egg.Core.Encode.Basic
+import Egg.Core.Encode.Blocks
 import Egg.Core.Encode.EncodeM
 import Egg.Core.Encode.Guides
 import Egg.Core.Congr
@@ -48,4 +49,5 @@ import Egg.Core.Request.Term
 import Egg.Core.Request.Equiv
 import Egg.Core.Request.Synth
 import Egg.Core.Config
+import Egg.Core.Blocks
 import Egg.Core.Guides

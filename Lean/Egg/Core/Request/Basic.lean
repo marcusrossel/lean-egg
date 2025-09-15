@@ -1,6 +1,7 @@
 import Egg.Core.Request.EGraph
 import Egg.Core.Encode.Rules
 import Egg.Core.Encode.Guides
+import Egg.Core.Encode.Blocks
 import Egg.Core.Config
 import Egg.Core.Explanation.Parse.Basic
 open Lean
@@ -47,6 +48,7 @@ structure _root_.Egg.Request where
   rhs     : Expression
   rws     : Rewrite.Rules.Encoded
   guides  : Guides.Encoded
+  blocks  : Blocks.Encoded
   vizPath : String
   cfg     : Request.Config
 
@@ -56,12 +58,13 @@ structure _root_.Egg.Request where
 --       to (the default value) `false`. We could just set the `allowLevelAssignments` to `false`
 --       in the first place, but that seems to cause problems when encoding rewrites. I'm not sure
 --       why though, and I think it has to do with how universe levels are elaborated.
-def encoding (goal : Congr) (rules : Rewrite.Rules) (guides : Guides) (cfg : Config) : MetaM Request :=
+def encoding (goal : Congr) (rules : Rewrite.Rules) (guides : Guides) (blocks : Blocks) (cfg : Config) : MetaM Request :=
   return {
     lhs     := ← Meta.withNewMCtxDepth do encode goal.lhs cfg
     rhs     := ← Meta.withNewMCtxDepth do encode goal.rhs cfg
     rws     := ← rules.encode cfg cfg.subgoals
     guides  := ← Meta.withNewMCtxDepth do guides.encode cfg
+    blocks  := ← Meta.withNewMCtxDepth do blocks.encode cfg
     vizPath := cfg.vizPath.getD ""
     cfg
   }

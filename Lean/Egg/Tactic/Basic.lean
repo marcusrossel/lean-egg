@@ -81,7 +81,7 @@ where
   runEqSat
       (goal : Goal) (rules : Rewrite.Rules) (guides : Guides) (cfg : Config) :
       TacticM <| Option (AbstractMVarsResult × Nat × Request.Result) := do
-    let req ← Request.encoding goal.toCongr rules guides cfg
+    let req ← Request.encoding goal.toCongr rules guides #[] cfg
     withTraceNode `egg.encoded (fun _ => return "Encoded") do req.trace `egg.encoded
     if let .beforeEqSat := cfg.exitPoint then return none
     let result ← req.run cfg.explLengthLimit (onEqSatFailure cfg)

@@ -70,7 +70,7 @@ pub struct CRewritesArray {
 
 impl CRewritesArray {
 
-    fn to_templates(&self) -> Res<Vec<RewriteTemplate>> {
+    fn to_templates(&self, blocks: Vec<RecExpr<LeanExpr>>) -> Res<Vec<RewriteTemplate>> {
         let rws = unsafe { std::slice::from_raw_parts(self.ptr, self.len) };
         let mut res: Vec<RewriteTemplate> = vec![];
         
@@ -114,7 +114,8 @@ impl CRewritesArray {
                 rhs:        rhs.clone(), 
                 prop_conds: prop_conds.clone(),
                 tc_conds:   tc_conds.clone(),
-                weak_vars:  weak_vars.clone()
+                weak_vars:  weak_vars.clone(),
+                blocks:     blocks.clone()
             });
         }
         Ok(res)
@@ -188,6 +189,7 @@ pub extern "C" fn egg_explain_congr(
     goal_str_ptr: *const c_char, 
     rws: CRewritesArray, 
     guides: CStringArray, 
+    blocks: CStringArray, 
     cfg: Config,
     viz_path_ptr: *const c_char,
     env: *const c_void,
@@ -195,8 +197,9 @@ pub extern "C" fn egg_explain_congr(
     let init   = c_str_to_string(init_str_ptr);
     let goal   = c_str_to_string(goal_str_ptr);
     let guides = guides.to_vec();
-    
-    let rw_templates = rws.to_templates();
+    let blocks = blocks.to_vec().iter().map(|block| block.parse().unwrap()).collect();
+
+    let rw_templates = rws.to_templates(blocks);
     if let Err(rws_err) = rw_templates { 
         return EqsatResult { 
             kind: ExplanationKind::None.to_c(), 
