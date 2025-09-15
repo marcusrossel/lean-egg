@@ -25,7 +25,7 @@ private partial def exprReferencesMVar (e : Expr) (m : MVarId) : MetaM Bool := d
 
 private partial def genExplosionsForRw
     (rw : Rewrite) (id : Rewrite.Rule.Id) (subgoals : Bool) : MetaM Rewrite.Rules := do
-  let mut missing := rw.mvars.rhs.visibleExpr.subtract rw.mvars.lhs.visibleExpr
+  let mut missing := rw.mvars.rhs.visibleExpr.eraseMany rw.mvars.lhs.visibleExpr
   for violation in ← rw.violations subgoals do
     if let .lhsSingleMVar m := violation then
       missing := missing.insert m

@@ -34,7 +34,7 @@ instance : Union Pruned where
 
 namespace GenM
 
-private inductive RewriteCategory where
+inductive RewriteCategory where
   | tagged
   | intros
   | basic

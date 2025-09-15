@@ -73,7 +73,7 @@ Note: We only consider mvars of the current mctx depth.
 partial def MVarIdSet.typeMVarClosure (init : MVarIdSet) : MetaM MVarIdSet := do
   let mut closure : MVarIdSet := ∅
   let mut todos := init
-  let mut nextTodo? := todos.min
+  let mut nextTodo? := todos.min?
   while h : nextTodo?.isSome do
     let m := nextTodo?.get h
     todos := todos.erase m
@@ -81,7 +81,7 @@ partial def MVarIdSet.typeMVarClosure (init : MVarIdSet) : MetaM MVarIdSet := do
       closure := closure.insert m
       let { result, .. } := (← m.getType).collectMVars {}
       for r in result do todos := todos.insert r
-    nextTodo? := todos.min
+    nextTodo? := todos.min?
   return closure
 
 instance : Singleton MVarId MVarIdSet where
@@ -132,17 +132,8 @@ def LMVarId.fromUniqueIdx (idx : Nat) : LMVarId :=
 
 deriving instance BEq, Hashable for SubExpr.Pos
 
-def RBTree.filterM [Monad m] (t : RBTree α cmp) (keep : α → m Bool) : m (RBTree α cmp) :=
-  t.foldM (init := t) fun res a => return if ← keep a then res else res.erase a
-
-def RBTree.map (t : RBTree α cmp) (f : α → α) : RBTree α cmp :=
-  t.fold (init := ∅) fun res a => res.insert (f a)
-
-def RBTree.subtract (t₁ t₂ : RBTree α cmp) : RBTree α cmp :=
-  t₁.filter (!t₂.contains ·)
-
-def RBTree.singleton (a : α) : RBTree α cmp :=
-  insert ∅ a
+def Std.TreeSet.filterM [Monad m] (t : Std.TreeSet α cmp) (keep : α → m Bool) : m (Std.TreeSet α cmp) :=
+  t.foldlM (init := t) fun res a => return if ← keep a then res else res.erase a
 
 def Syntax.Term.isWildcard : Term → Bool
   | `(_) => true

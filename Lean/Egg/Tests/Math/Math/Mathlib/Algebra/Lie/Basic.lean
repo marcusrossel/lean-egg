@@ -112,7 +112,7 @@ attribute [egg lie] LieHom.lie_apply
 example : LieModule R L (M →ₗ[R] N) where
   smul_lie t x f := by
     ext n
-    simp only [smul_sub, smul_lie, LinearMap.smul_apply, LinearMap.map_smul]
+    simp only [smul_lie, LinearMap.smul_apply]
   lie_smul t x f := by
     ext n
     set_option trace.egg true in

@@ -111,24 +111,24 @@ def violations (rw : Rewrite) (subgoals : Bool) : MetaM (List Violation) := do
     violations := (.lhsSingleMVar rw.lhs.mvarId!) :: violations
   -- Checks for `rhsMVarInclusion`.
   let mut visible := rw.mvars.lhs.visibleExpr
-  unless subgoals do visible := visible.union (← condVisible .proof)
-  let missing := rw.mvars.rhs.visibleExpr.subtract visible
+  unless subgoals do visible := visible.merge (← condVisible .proof)
+  let missing := rw.mvars.rhs.visibleExpr.eraseMany visible
   unless missing.isEmpty do violations := (.rhsMVarInclusion missing) :: violations
   -- Checks for `rhsUVarInclusion`.
   let mut visibleLvls := rw.mvars.lhs.visibleLevel
-  unless subgoals do visibleLvls := visibleLvls.union (← condVisibleLvls .proof)
-  let missing := rw.mvars.rhs.visibleLevel.subtract visibleLvls
+  unless subgoals do visibleLvls := visibleLvls.merge (← condVisibleLvls .proof)
+  let missing := rw.mvars.rhs.visibleLevel.eraseMany visibleLvls
   unless missing.isEmpty do violations := (.rhsUVarInclusion missing) :: violations
   -- Checks for `tcMVarInclusion`.
-  let missing := (← condVisible .tcInst).subtract visible
+  let missing := (← condVisible .tcInst).eraseMany visible
   unless missing.isEmpty do violations := (.tcMVarInclusion missing) :: violations
   -- Checks for `tcUVarInclusion`.
-  let missing := (← condVisibleLvls .tcInst).subtract visibleLvls
+  let missing := (← condVisibleLvls .tcInst).eraseMany visibleLvls
   unless missing.isEmpty do violations := (.tcUVarInclusion missing) :: violations
   -- Checks for `mVarCovering`.
   let mut cov ← rw.qvars.filterM fun m => Meta.isTCInstance (.mvar m) <||> Meta.isProof (.mvar m)
-  cov ← MVarIdSet.typeMVarClosure (cov.union visible)
-  let missing := rw.qvars.subtract cov
+  cov ← MVarIdSet.typeMVarClosure (cov.merge visible)
+  let missing := rw.qvars.eraseMany cov
   unless missing.isEmpty do violations := (.mVarCovering missing) :: violations
   return violations
 where
@@ -137,14 +137,14 @@ where
     for cond in rw.conds.active do
       if cond.kind == kind then
         let mvars ← MVars.collect cond.type
-        vis := vis.union mvars.visibleExpr
+        vis := vis.merge mvars.visibleExpr
     return vis
   condVisibleLvls (kind : Condition.Kind) : MetaM LMVarIdSet := do
     let mut vis := ∅
     for cond in rw.conds.active do
       if cond.kind == kind then
         let mvars ← MVars.collect cond.type
-        vis := vis.union mvars.visibleLevel
+        vis := vis.merge mvars.visibleLevel
     return vis
 
 def isValid (rw : Rewrite) (subgoals : Bool) : MetaM Bool :=
@@ -210,7 +210,7 @@ nonrec def instantiateMVars (rw : Rewrite) : MetaM Rewrite := do
   let mut mLhs  ← rw.mvars.lhs.removeAssigned
   let mut mRhs  ← rw.mvars.rhs.removeAssigned
   let conds ← collectConditions qvars mLhs mRhs
-  for s in conds.synthesized.union conds.unsynthesizable do
+  for s in conds.synthesized.merge conds.unsynthesizable do
     qvars := qvars.erase s
     mLhs  := { mLhs with expr := mLhs.expr.erase s }
     mRhs  := { mLhs with expr := mRhs.expr.erase s }
