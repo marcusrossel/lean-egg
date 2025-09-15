@@ -38,6 +38,7 @@ theorem freshmans_dream₂' : (x + y) ^ 2 = x ^ 2 + y ^ 2 := by
   char_two_ring
 
 set_option egg.timeLimit 10 in
+set_option egg.explLengthLimit 300 in
 theorem freshmans_dream₃ : (x + y) ^ 3 = x ^ 3 + x * y ^ 2 + x ^ 2 * y + y ^ 3 := by
   calc (x + y) ^ 3
     _ = (x + y) * (x + y) * (x + y)                     := by char_two_ring
