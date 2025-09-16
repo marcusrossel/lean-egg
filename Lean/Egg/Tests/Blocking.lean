@@ -47,3 +47,16 @@ example {Q : Prop} (hq : Q) (h₁ : P → False) (h₂ : Q → False) : False :=
 example {Q : Prop} (hq : Q) (_h₁ : P → False) (h₂ : Q → False) : False := by
   egg [_h₁, h₂] blocking P
   exact hq
+
+example (h : ∀ n, n > 0 → P) : P := by
+  egg [h]
+  · exact 1
+  · simp
+
+example (h : ∀ n, n > 1 → n > 0) : 2 > 0 := by
+  egg [h]
+  simp
+
+example {f : Nat → Nat} (h : ∀ n, n > 2 → f n = x) : f 3 = x := by
+  egg [h]
+  simp
