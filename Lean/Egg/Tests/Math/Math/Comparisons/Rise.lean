@@ -1,5 +1,7 @@
 import Egg
 
+-- Note: To find theorems which are not solved by `grind`, search for `solved_by simp` or `sorry`.
+
 open Lean Meta Elab Term Tactic
 elab "solved_by " grind?:"grind"? simp?:"simp"? : tactic => do
   match grind?, simp? with
@@ -78,7 +80,7 @@ def transpose : {n m : Nat} → Vec (Vec α m) n → Vec (Vec α n) m
   | _ + 1, _ + 1, as  => map head as ::ᵥ transpose (map tail as)
 
 -- Note: For this theorem `egg` needs to understand addition to handle syntactic differences at the type level.
-@[grind, simp]
+@[grind _=_, simp]
 theorem map_take (f : α → β) (as : Vec α (m + n)) : map f (take n as) = take n (map f as) := by
   induction n <;> try cases as
   all_goals solved_by simp
@@ -94,10 +96,10 @@ theorem fill_nil₂ (as : Vec α n) : map tail (transpose (as ::ᵥ []ᵥ)) = fi
   all_goals solved_by grind simp
 
 -- Note: For this theorem `egg` needs to understand addition to handle syntactic differences at the type level.
-@[grind, simp]
+@[grind _=_, simp]
 theorem map_drop (f : α → β) (as : Vec α (m + n)) : map f (drop n as) = (drop n (map f as)) := by
   induction n generalizing m <;> cases as
-  all_goals all_goals solved_by simp
+  all_goals solved_by simp
 
 @[grind, simp]
 theorem take_drop (as : Vec α (m + n)) : take n as ++ᵥ drop n as = as := by
@@ -105,17 +107,17 @@ theorem take_drop (as : Vec α (m + n)) : take n as ++ᵥ drop n as = as := by
   all_goals solved_by grind simp
 
 -- Note: For this theorem `egg` needs to understand multiplication to handle syntactic differences at the type level.
-@[grind, simp]
+@[grind _=_, simp]
 theorem map_split (f : α → β) (as : Vec α (n * m)) : map (map f) (split n as) = split n (map f as) := by
   induction m
   all_goals solved_by grind simp
 
-@[grind, simp]
+@[grind _=_, simp]
 theorem map_head (f : α → β) (as : Vec (Vec α (m + 1)) n) : map f (map head as) = map head (map (map f) as) := by
   induction as <;> try cases ‹Vec _ (_ + 1)›
   all_goals solved_by grind simp
 
-@[grind, simp]
+@[grind _=_, simp]
 theorem map_tail (f : α → β) (as : Vec (Vec α (m + 1)) n) : map (map f) (map tail as) = map tail (map (map f) as) := by
   induction as <;> try cases ‹Vec _ (_ + 1)›
   all_goals solved_by grind simp
@@ -152,7 +154,7 @@ theorem id_to_transpose (as : Vec (Vec α m) n) : transpose (transpose as) = as 
     solved_by grind
 
 /-- Figure 6: Rule 3 -/
-@[grind, simp]
+@[grind _=_, simp]
 theorem transpose_move (f : α → β) (as : Vec (Vec α n) m) : map (map f) (transpose as) = transpose (map (map f) as) := by
   induction n <;> cases m <;> cases as <;> try cases ‹Vec _ (_ + 1)›
   fail_if_success all_goals (simp [*]; done)
@@ -160,12 +162,12 @@ theorem transpose_move (f : α → β) (as : Vec (Vec α n) m) : map (map f) (tr
   all_goals sorry
 
 /-- Figure 6: Rule 4 -/
-@[grind, simp]
+@[grind _=_, simp]
 theorem split_join (n : Nat) (f : α → β) (as : Vec α (n * m)) : (join ∘ (map (map f)) ∘ split n) as = map f as := by
   solved_by grind simp
 
 /-- Figure 6: Rule 5 -/
-@[grind, simp]
+@[grind _=_, simp]
 theorem map_fusion (f : β → γ) (g : α → β) (as : Vec α n) : (map f ∘ map g) as = map (f ∘ g) as := by
   induction as
   all_goals solved_by grind

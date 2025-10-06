@@ -4,22 +4,24 @@ import Math.Comparisons.Simp
 set_option grind.warning false
 
 -- SemilatticeSup
-attribute [grind, bool_simp] sup_idem sup_comm sup_assoc sup_left_right_swap sup_left_idem
+attribute [grind, bool_simp] sup_idem sup_congr_left sup_congr_right
+attribute [grind _=_, bool_simp] sup_comm sup_assoc sup_left_right_swap sup_left_idem
                   sup_right_idem sup_left_comm sup_right_comm sup_sup_sup_comm
-                  sup_sup_distrib_left sup_sup_distrib_right sup_congr_left
-                  sup_congr_right
+                  sup_sup_distrib_left sup_sup_distrib_right
 
 -- SemilatticeInf
-attribute [grind, bool_simp] inf_of_le_left inf_of_le_right inf_idem inf_comm inf_assoc
+attribute [grind, bool_simp] inf_of_le_left inf_of_le_right inf_idem inf_congr_left inf_congr_right
+attribute [grind _=_, bool_simp] inf_comm inf_assoc
                   inf_left_right_swap inf_left_idem inf_right_idem inf_left_comm
                   inf_right_comm inf_inf_inf_comm inf_inf_distrib_left
-                  inf_inf_distrib_right inf_congr_left inf_congr_right
+                  inf_inf_distrib_right
 
 -- Lattice
 attribute [grind, bool_simp] inf_sup_self sup_inf_self
 
 -- DistribLattice
-attribute [grind, bool_simp] sup_inf_left sup_inf_right inf_sup_left inf_sup_right eq_of_inf_eq_sup_eq
+attribute [grind, bool_simp] eq_of_inf_eq_sup_eq
+attribute [grind _=_, bool_simp] sup_inf_left sup_inf_right inf_sup_left inf_sup_right
 
 -- GeneralizedBooleanAlgebra
 attribute [grind, bool_simp] sup_inf_sdiff inf_inf_sdiff
@@ -108,9 +110,7 @@ example : x \ (y \ z) = x \ y ⊔ x ⊓ y ⊓ z := by
 /- Previous -/ attribute [grind, bool_simp] sdiff_sdiff_right
 
 example : x \ (y \ z) = x \ y ⊔ x ⊓ z := by
-  grind
-
-example : x \ (y \ z) = x \ y ⊔ x ⊓ z := by
+  fail_if_success grind
   fail_if_success simp only [*, bool_simp]
   sorry
 
@@ -154,7 +154,7 @@ example : (x ⊓ y) \ z = x \ z ⊓ y \ z := by
 example (x y z : α) : (x ⊓ y) \ z = x ⊓ y \ z := by
   apply sdiff_unique
   · (fail_if_success grind [inf_bot_eq]); sorry
-  · grind [inf_bot_eq]
+  · (fail_if_success grind [inf_bot_eq]); sorry
 
   example (x y z : α) : (x ⊓ y) \ z = x ⊓ y \ z := by
   apply sdiff_unique
