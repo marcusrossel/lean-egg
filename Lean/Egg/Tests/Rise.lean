@@ -141,23 +141,27 @@ theorem id_to_transpose (as : Vec (Vec α m) n) : transpose (transpose as) = as 
 
 /-- Figure 6: Rule 3 -/
 @[egg rise]
-theorem transpose_move (f : α → β) (as : Vec (Vec α n) m) : map (map f) (transpose as) = transpose (map (map f) as) := by
+theorem transpose_move (f : α → β) (as : Vec (Vec α n) m) :
+    map (map f) (transpose as) = transpose (map (map f) as) := by
   induction n <;> cases m <;> cases as <;> try cases ‹Vec _ (_ + 1)›
   all_goals egg +rise [*]
 
 /-- Figure 6: Rule 4 -/
 @[egg rise]
-theorem split_join (n : Nat) (f : α → β) (as : Vec α (n * m)) : (join ∘ (map (map f)) ∘ split n) as = map f as := by
+theorem split_join (n : Nat) (f : α → β) (as : Vec α (n * m)) :
+    (join ∘ (map (map f)) ∘ split n) as = map f as := by
   egg +rise
 
 /-- Figure 6: Rule 5 -/
 @[egg rise]
-theorem map_fusion (f : β → γ) (g : α → β) (as : Vec α n) : (map f ∘ map g) as = map (f ∘ g) as := by
+theorem map_fusion (f : β → γ) (g : α → β) (as : Vec α n) :
+    (map f ∘ map g) as = map (f ∘ g) as := by
   induction as
   all_goals egg +rise [*]
 
 /-- Figure 6: Rule 6 -/
 @[egg rise]
-theorem fuse_reduce_map (f : α → β) (bf : β → γ → γ) (init : γ) (as : Vec α n) : reduceSeq (fun a b => bf (f a) b) init as = (reduceSeq bf init ∘ map f) as := by
+theorem fuse_reduce_map (f : α → β) (bf : β → γ → γ) (init : γ) (as : Vec α n) :
+    reduceSeq (fun a b => bf (f a) b) init as = (reduceSeq bf init ∘ map f) as := by
   induction as generalizing init
   all_goals egg +rise [*]

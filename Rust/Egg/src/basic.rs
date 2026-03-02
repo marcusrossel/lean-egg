@@ -55,9 +55,11 @@ pub fn explain_congr(
         egraph.union_instantiations(&eq.lhs, &eq.rhs, &Subst::with_capacity(0), eq.name); 
     }
 
-    let mut runner = mk_runner(egraph, init_id, goal_id, &cfg, viz_path).run(&rws);
+    // TODO: We replaced the `viz_path` with none here as we want to use it for the extraction gym.
+    let mut runner = mk_runner(egraph, init_id, goal_id, &cfg, None).run(&rws);
     let report = runner.report();
     let rw_stats = collect_rw_stats(&runner);
+    export_for_extraction_gym(&runner.egraph, init.init_id, init.goal_id, viz_path);
     let (kind, expl) = mk_explanation(&mut runner.egraph, init_expr, goal_expr, init_id, goal_id);
     Ok(ExplainedCongr { kind, expl, egraph: runner.egraph, report, rw_stats, activations })
 }
@@ -228,4 +230,35 @@ fn collect_rw_stats(runner: &Runner<LeanExpr, LeanAnalysis>) -> String {
     })
     .collect::<Vec<_>>()
     .join("\n")
+}
+
+pub fn export_for_extraction_gym<L, A>(
+    egraph: &EGraph<L, A>, init: Id, goal: Id, viz_path: Option<String>
+) where
+    L: Language + std::fmt::Display,
+    A: Analysis<L>,
+{
+    if init == goal {return }
+    use egraph_serialize::*;
+    let mut out = EGraph::default();
+    out.root_eclasses = vec![ClassId::from(format!("{}", init)), ClassId::from(format!("{}", goal))];
+    for class in egraph.classes() {
+        for (i, node) in class.nodes.iter().enumerate() {
+            out.add_node(
+                format!("{}.{}", class.id, i),
+                Node {
+                    op: node.to_string(),
+                    children: node
+                        .children()
+                        .iter()
+                        .map(|id| NodeId::from(format!("{}.0", id)))
+                        .collect(),
+                    eclass: ClassId::from(format!("{}", class.id)),
+                    cost: Cost::new(1.0).unwrap(),
+                    subsumed: false
+                },
+            )
+        }
+    }
+    _ = out.to_json_file(viz_path.unwrap());
 }

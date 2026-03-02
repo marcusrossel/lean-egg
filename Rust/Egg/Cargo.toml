@@ -9,6 +9,7 @@ crate-type = ["staticlib"]
 [dependencies]
 egg = "0.10"
 libc = "0.2"
+egraph-serialize = "0.3.0"
 
 [build-dependencies]
 cc = "1.0"

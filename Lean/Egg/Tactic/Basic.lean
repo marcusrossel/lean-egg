@@ -52,6 +52,8 @@ where
     let startTime ← IO.monoMsNow
     let goal ← getMainGoal
     let mod  ← Config.Modifier.parse mod
+    let filepath := (System.FilePath.mk <| ← getFileName).fileName.get!.dropRight 5 ++ s!" #{← IO.monoMsNow}.json"
+    let mod := { mod with vizPath := s!"/Users/marcus/Arbeit/lean-egg/Gym/{filepath}" }
     let `(egg_baskets|$[+$baskets]*) := baskets | unreachable!
     let cfg := { (← Config.fromOptions).modify mod with baskets := baskets.map (·.getId) }
     cfg.trace `egg.config
