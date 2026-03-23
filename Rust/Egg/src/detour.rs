@@ -27,6 +27,8 @@ pub fn pat_detour_eqsat_step<L: Language, N: Analysis<L>>(roots: &[Id], rws: &[R
         }
     }
 
+    let eg_data = |eg: &EGraph<_, _>| (eg.number_of_classes(), eg.total_size());
+
     let og_data = eg_data(eg);
     let mut found_cost = None;
 
@@ -76,11 +78,6 @@ pub fn compute_ctxt_costs<L: Language, N: Analysis<L>>(roots: &[Id], eg: &EGraph
     }
 
     ctxt_cost
-}
-
-type EGData = (usize, usize);
-fn eg_data<L: Language, N: Analysis<L>>(eg: &EGraph<L, N>) -> EGData {
-    (eg.number_of_classes(), eg.total_size())
 }
 
 fn pat_cost<L: Language, N: Analysis<L>>(pat: &PatternAst<L>, subst: &Subst, ex: &Extractor<AstSize, L, N>) -> usize {
