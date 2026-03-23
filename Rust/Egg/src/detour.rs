@@ -1,7 +1,5 @@
 use egg::{Id, EGraph, Language, Extractor, AstSize, FromOp, RecExpr, Rewrite, Subst, ENodeOrVar, PatternAst, CostFunction, Analysis, Runner};
 
-// === pat detour ===
-
 use std::fmt::Display;
 use std::time::Instant;
 
@@ -20,7 +18,7 @@ pub fn detour_step<L: Language, N: Analysis<L> + Default>(i: usize, roots: &[Id]
     }
 }
 
-pub fn pat_detour_eqsat_step<L: Language, N: Analysis<L>>(roots: &[Id], rws: &[Rewrite<L, N>], eg: &mut EGraph<L, N>, stop: Instant, node_limit: usize) {
+fn pat_detour_eqsat_step<L: Language, N: Analysis<L>>(roots: &[Id], rws: &[Rewrite<L, N>], eg: &mut EGraph<L, N>, stop: Instant, node_limit: usize) {
     let ex = Extractor::new(&eg, AstSize);
     let ctxt_cost = compute_ctxt_costs(roots, eg, &ex);
 
@@ -67,7 +65,7 @@ pub fn pat_detour_eqsat_step<L: Language, N: Analysis<L>>(roots: &[Id], rws: &[R
 
 // === ctxt cost ===
 
-pub fn compute_ctxt_costs<L: Language, N: Analysis<L>>(roots: &[Id], eg: &EGraph<L, N>, ex: &Extractor<AstSize, L, N>) -> HashMap<Id, usize> {
+fn compute_ctxt_costs<L: Language, N: Analysis<L>>(roots: &[Id], eg: &EGraph<L, N>, ex: &Extractor<AstSize, L, N>) -> HashMap<Id, usize> {
     let mut ctxt_cost = HashMap::new();
 
     let mut queue: MinPrioQueue<usize, Id> = MinPrioQueue::new();
@@ -112,7 +110,7 @@ fn pat_cost<L: Language, N: Analysis<L>>(pat: &PatternAst<L>, subst: &Subst, ex:
 
 // === misc ===
 
-pub fn lookup_pat<L: Language, N: Analysis<L>>(pat: &PatternAst<L>, eg: &EGraph<L, N>, subst: &Subst) -> Option<Id> {
+fn lookup_pat<L: Language, N: Analysis<L>>(pat: &PatternAst<L>, eg: &EGraph<L, N>, subst: &Subst) -> Option<Id> {
     let mut vec = Vec::new();
     for i in 0..pat.as_ref().len() {
         match &pat[i.into()] {
@@ -133,7 +131,7 @@ pub fn lookup_pat<L: Language, N: Analysis<L>>(pat: &PatternAst<L>, eg: &EGraph<
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap, BTreeMap};
 
-pub struct MinPrioQueue<U, T>(BinaryHeap<WithOrdRev<U, T>>);
+struct MinPrioQueue<U, T>(BinaryHeap<WithOrdRev<U, T>>);
 
 impl<U: Ord, T: Eq> MinPrioQueue<U, T> {
     pub fn new() -> Self {
