@@ -69,8 +69,31 @@ pub fn explain_congr(
 
 fn detour_eqsat(egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_path: Option<String>, rws: &[LeanRewrite]) -> (LeanEGraph, Report, /*rw_stats*/ String) {
     let mut egraph = egraph;
-    for i in 0..10 {
+
+    let true_expr = "(const \"True\")".parse().unwrap();
+    let true_id = egraph.lookup_expr(&"(const \"True\")".parse().unwrap()).unwrap();
+
+    let start = std::time::Instant::now();
+
+    for i in 0.. {
         crate::detour::pat_detour_eqsat_step(i, init_id, &rws, &mut egraph);
+        if egraph.total_size() > cfg.node_limit { break }
+        if start.elapsed() > Duration::from_secs(cfg.time_limit.try_into().unwrap()) { break }
+
+        // Note: `lookup` returns a canonicalized id.
+        if egraph.lookup(LeanExpr::Eq([init_id, goal_id])) == Some(egraph.find(true_id)) {
+            // println!("proved goal!");
+            break;
+        }
+
+        let ids = egraph.classes().map(|x| x.id).collect::<Vec<_>>();
+        for class in ids {
+            if is_primitive(class, &egraph) { continue }
+            let (_, rep) = Extractor::new(&egraph, AstSize).find_best(class);
+            let eq_expr = format!("(= {} {})", rep, rep).parse().unwrap();
+            egraph.union_instantiations(&eq_expr, &true_expr, &Subst::with_capacity(0), "=");
+        }
+        egraph.rebuild();
     }
     let report = Runner::<LeanExpr, ()>::new(()).report(); // fake report
     let rw_stats = format!("<no stats>"); // fake stats
