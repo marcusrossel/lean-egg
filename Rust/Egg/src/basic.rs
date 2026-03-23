@@ -63,8 +63,12 @@ pub fn explain_congr(
     let mut report = runner.report();
     report.total_time = total_time.as_secs_f64();
     let rw_stats = collect_rw_stats(&runner);
-    let (kind, expl) = mk_explanation(&mut runner.egraph, init_expr, goal_expr, init_id, goal_id);
-    Ok(ExplainedCongr { kind, expl, egraph: runner.egraph, report, rw_stats, activations })
+
+    (runner.egraph, report, rw_stats)
+}
+
+fn detour_eqsat(egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_path: Option<String>, rws: &[LeanRewrite]) -> (LeanEGraph, Report, /*rw_stats*/ String) {
+    todo!()
 }
 
 struct Initialized {
