@@ -39,13 +39,15 @@ impl<U: Ord, T: Eq> Ord for WithOrdRev<U, T> {
 
 // === ctxt cost ===
 
-pub fn compute_ctxt_costs<L: Language, N: Analysis<L>>(root: Id, eg: &EGraph<L, N>, ex: &Extractor<AstSize, L, N>) -> HashMap<Id, usize> {
+pub fn compute_ctxt_costs<L: Language, N: Analysis<L>>(roots: &[Id], eg: &EGraph<L, N>, ex: &Extractor<AstSize, L, N>) -> HashMap<Id, usize> {
     let mut ctxt_cost = HashMap::new();
 
     let mut queue: MinPrioQueue<usize, Id> = MinPrioQueue::new();
 
     // initial
-    queue.push(0, root);
+    for root in roots {
+        queue.push(0, *root);
+    }
 
     while let Some((cst, i)) = queue.pop() {
         if ctxt_cost.contains_key(&i) { continue }
@@ -72,37 +74,12 @@ pub fn compute_ctxt_costs<L: Language, N: Analysis<L>>(root: Id, eg: &EGraph<L, 
 
 use std::fmt::Display;
 
-pub fn eqsat_pat_detour<L: Language + Display + FromOp, N: Analysis<L> + Default>(init_term: &str, rws: &[Rewrite<L, N>], stop_size: usize) {
-    let st: RecExpr<L> = init_term.parse().unwrap();
-    println!("Initial: {st}");
-    let mut eg = EGraph::new(Default::default());
-    let i = eg.add_expr(&st);
-
-    eg.rebuild();
-    for c in 0..520 {
-        pat_detour_eqsat_step(c, i, rws, &mut eg);
-
-        let ex = Extractor::new(&eg, AstSize);
-        let t = ex.find_best(i);
-        println!("Detour Extracted: {}", t.1);
-        println!("Total Size: {}", eg.total_size());
-        if t.0 <= stop_size { break }
-    }
-}
-
-pub fn pat_detour_eqsat_step<L: Language + Display, N: Analysis<L>>(c: usize, root: Id, rws: &[Rewrite<L, N>], eg: &mut EGraph<L, N>) {
+pub fn pat_detour_eqsat_step<L: Language + Display, N: Analysis<L>>(roots: &[Id], rws: &[Rewrite<L, N>], eg: &mut EGraph<L, N>) {
     let ex = Extractor::new(&eg, AstSize);
-    let ctxt_cost = compute_ctxt_costs(root, eg, &ex);
+    let ctxt_cost = compute_ctxt_costs(roots, eg, &ex);
 
     let mut matches: BTreeMap</*detour cost*/ usize, Vec<(/*rw id*/ usize, Id, Subst, /*ctxt_cost*/ usize, /*pat_cost*/ usize)>> = BTreeMap::default();
     for (rw_i, rw) in rws.iter().enumerate() {
-        // to be a bit similar to the backoff scheduler.
-        // TODO integrate real backoff scheduler.
-/*
-        if (&rw.name.to_string() == "ass" || &rw.name.to_string() == "clos") && c % 5 != 0 {
-            continue
-        }
-*/
         let lhs_pat = rw.searcher.get_pattern_ast().unwrap();
         let rhs_pat = rw.applier.get_pattern_ast().unwrap();
 
@@ -126,21 +103,8 @@ pub fn pat_detour_eqsat_step<L: Language + Display, N: Analysis<L>>(c: usize, ro
 
     let Some((full_cost, new_apps)) = matches.into_iter().next() else { return /*saturated*/ };
 
-    let root_cost = ex.find_best_cost(root);
     for (rw_i, lhs, subst, cx_cost, pat_cost) in &new_apps {
         let rw = &rws[*rw_i];
-
-        // Debugging info
-        if false {
-            // println!("rule \"{}\": {} -> {}", rw.name, rw.searcher.get_pattern_ast().unwrap(), rw.applier.get_pattern_ast().unwrap());
-            let ex = Extractor::new(&eg, AstSize);
-            println!("cx_cost = {cx_cost:02}, pat_cost = {pat_cost:02}, full_cost = {full_cost:02}, root_cost = {root_cost:02}");
-            for v in rw.searcher.vars() {
-                let term = ex.find_best(subst[v]).1;
-                // println!("  {v} = {term}");
-            }
-        }
-
         rw.applier.apply_one(eg, *lhs, subst, None, rw.name);
     }
 

@@ -76,7 +76,7 @@ fn detour_eqsat(egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_
     let start = std::time::Instant::now();
 
     for i in 0.. {
-        crate::detour::pat_detour_eqsat_step(i, init_id, &rws, &mut egraph);
+        crate::detour::pat_detour_eqsat_step(&[init_id, goal_id], &rws, &mut egraph);
         if egraph.total_size() > cfg.node_limit { break }
         if start.elapsed() > Duration::from_secs(cfg.time_limit.try_into().unwrap()) { break }
 
