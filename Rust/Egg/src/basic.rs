@@ -74,11 +74,12 @@ fn detour_eqsat(egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_
     let true_id = egraph.lookup_expr(&"(const \"True\")".parse().unwrap()).unwrap();
 
     let start = std::time::Instant::now();
+    let stop = start + Duration::from_secs(cfg.time_limit.try_into().unwrap());
 
     for i in 0.. {
-        crate::detour::pat_detour_eqsat_step(&[init_id, goal_id], &rws, &mut egraph);
+        crate::detour::pat_detour_eqsat_step(&[init_id, goal_id], &rws, &mut egraph, stop);
         if egraph.total_size() > cfg.node_limit { break }
-        if start.elapsed() > Duration::from_secs(cfg.time_limit.try_into().unwrap()) { break }
+        if stop > std::time::Instant::now() { break }
 
         // Note: `lookup` returns a canonicalized id.
         if egraph.lookup(LeanExpr::Eq([init_id, goal_id])) == Some(egraph.find(true_id)) {

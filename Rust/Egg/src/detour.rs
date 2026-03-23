@@ -73,42 +73,53 @@ pub fn compute_ctxt_costs<L: Language, N: Analysis<L>>(roots: &[Id], eg: &EGraph
 // === pat detour ===
 
 use std::fmt::Display;
+use std::time::Instant;
 
-pub fn pat_detour_eqsat_step<L: Language + Display, N: Analysis<L>>(roots: &[Id], rws: &[Rewrite<L, N>], eg: &mut EGraph<L, N>) {
+pub fn pat_detour_eqsat_step<L: Language, N: Analysis<L>>(roots: &[Id], rws: &[Rewrite<L, N>], eg: &mut EGraph<L, N>, stop: Instant) {
     let ex = Extractor::new(&eg, AstSize);
     let ctxt_cost = compute_ctxt_costs(roots, eg, &ex);
 
     let mut matches: BTreeMap</*detour cost*/ usize, Vec<(/*rw id*/ usize, Id, Subst, /*ctxt_cost*/ usize, /*pat_cost*/ usize)>> = BTreeMap::default();
     for (rw_i, rw) in rws.iter().enumerate() {
         let lhs_pat = rw.searcher.get_pattern_ast().unwrap();
-        let rhs_pat = rw.applier.get_pattern_ast().unwrap();
 
         for m in rw.searcher.search(eg) {
             let lhs = m.eclass;
             for subst in m.substs {
-                let rhs = lookup_pat(&rhs_pat, eg, &subst);
-                if Some(lhs) != rhs {
-                    let pat_cost = pat_cost(lhs_pat, &subst, &ex);
-                    // We don't subtract the root cost here, it's a constant offset, so why would we.
-                    let cx_cost = ctxt_cost[&lhs];
-                    let detour_cost = cx_cost + pat_cost;
-                    if !matches.contains_key(&detour_cost) {
-                        matches.insert(detour_cost, Vec::new());
-                    }
-                    matches.get_mut(&detour_cost).unwrap().push((rw_i, lhs, subst, cx_cost, pat_cost));
+                let pat_cost = pat_cost(lhs_pat, &subst, &ex);
+                // We don't subtract the root cost here, it's a constant offset, so why would we.
+                let cx_cost = *ctxt_cost.get(&lhs).unwrap();
+                let detour_cost = cx_cost + pat_cost;
+                if !matches.contains_key(&detour_cost) {
+                    matches.insert(detour_cost, Vec::new());
                 }
+                matches.get_mut(&detour_cost).unwrap().push((rw_i, lhs, subst, cx_cost, pat_cost));
+                if Instant::now() > stop { return }
             }
         }
     }
 
-    let Some((full_cost, new_apps)) = matches.into_iter().next() else { return /*saturated*/ };
+    let og_data = eg_data(eg);
+    let mut found_cost = None;
 
-    for (rw_i, lhs, subst, cx_cost, pat_cost) in &new_apps {
-        let rw = &rws[*rw_i];
-        rw.applier.apply_one(eg, *lhs, subst, None, rw.name);
+    const OFFSET: usize = 3;
+
+    for (full_cost, new_apps) in matches {
+        if let Some(found) = found_cost { if full_cost > found + OFFSET { break } }
+        for (rw_i, lhs, subst, cx_cost, pat_cost) in &new_apps {
+            let rw = &rws[*rw_i];
+            rw.applier.apply_one(eg, *lhs, subst, None, rw.name);
+            if eg_data(eg) != og_data { found_cost = Some(full_cost); }
+            if Instant::now() > stop { eg.rebuild(); return }
+        }
     }
 
     eg.rebuild();
+}
+
+type EGData = (usize, usize);
+fn eg_data<L: Language, N: Analysis<L>>(eg: &EGraph<L, N>) -> EGData {
+    (eg.number_of_classes(), eg.total_size())
 }
 
 fn pat_cost<L: Language, N: Analysis<L>>(pat: &PatternAst<L>, subst: &Subst, ex: &Extractor<AstSize, L, N>) -> usize {
