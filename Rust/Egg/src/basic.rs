@@ -68,7 +68,13 @@ pub fn explain_congr(
 }
 
 fn detour_eqsat(egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_path: Option<String>, rws: &[LeanRewrite]) -> (LeanEGraph, Report, /*rw_stats*/ String) {
-    todo!()
+    let mut egraph = egraph;
+    for i in 0..10 {
+        crate::detour::pat_detour_eqsat_step(i, init_id, &rws, &mut egraph);
+    }
+    let report = Runner::<LeanExpr, ()>::new(()).report(); // fake report
+    let rw_stats = format!("<no stats>"); // fake stats
+    (egraph, report, rw_stats)
 }
 
 struct Initialized {

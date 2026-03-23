@@ -11,6 +11,8 @@ use basic::*;
 use result::*;
 use rewrite::*;
 
+mod detour;
+
 mod activation;
 mod analysis;
 mod basic;
