@@ -1,75 +1,3 @@
-// === minqueue ===
-
-use egg::{Id, EGraph, Language, Extractor, AstSize, FromOp, RecExpr, Rewrite, Subst, ENodeOrVar, PatternAst, CostFunction, Analysis};
-
-use std::cmp::Ordering;
-use std::collections::{BinaryHeap, HashMap, BTreeMap};
-
-pub struct MinPrioQueue<U, T>(BinaryHeap<WithOrdRev<U, T>>);
-
-impl<U: Ord, T: Eq> MinPrioQueue<U, T> {
-    pub fn new() -> Self {
-        MinPrioQueue(BinaryHeap::default())
-    }
-
-    pub fn push(&mut self, u: U, t: T) {
-        self.0.push(WithOrdRev(u, t));
-    }
-
-    pub fn pop(&mut self) -> Option<(U, T)> {
-        self.0.pop().map(|WithOrdRev(u, t)| (u, t))
-    }
-}
-
-// Takes the `Ord` from U, but reverses it.
-#[derive(PartialEq, Eq, Debug)]
-struct WithOrdRev<U, T>(pub U, pub T);
-
-impl<U: Ord, T: Eq> PartialOrd for WithOrdRev<U, T> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        // It's the other way around, because we want a min-heap!
-        other.0.partial_cmp(&self.0)
-    }
-}
-impl<U: Ord, T: Eq> Ord for WithOrdRev<U, T> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(&other).unwrap()
-    }
-}
-
-// === ctxt cost ===
-
-pub fn compute_ctxt_costs<L: Language, N: Analysis<L>>(roots: &[Id], eg: &EGraph<L, N>, ex: &Extractor<AstSize, L, N>) -> HashMap<Id, usize> {
-    let mut ctxt_cost = HashMap::new();
-
-    let mut queue: MinPrioQueue<usize, Id> = MinPrioQueue::new();
-
-    // initial
-    for root in roots {
-        queue.push(0, *root);
-    }
-
-    while let Some((cst, i)) = queue.pop() {
-        if ctxt_cost.contains_key(&i) { continue }
-        ctxt_cost.insert(i, cst);
-        for e in &eg[i].nodes {
-            let e_cost = AstSize.cost(e, |k| ex.find_best_cost(k));
-            for &c in e.children() {
-                // optimization: don't push junk to the queue.
-                // NOTE: if we remembered what's the best thing we already pushed to the queue for some class,
-                // we could do more efficient pruning.
-                if ctxt_cost.contains_key(&c) { continue }
-
-                let c_cost = ex.find_best_cost(c);
-                let ncst = e_cost + cst - c_cost;
-                queue.push(ncst, c);
-            }
-        }
-    }
-
-    ctxt_cost
-}
-
 // === pat detour ===
 
 use std::fmt::Display;
@@ -117,6 +45,39 @@ pub fn pat_detour_eqsat_step<L: Language, N: Analysis<L>>(roots: &[Id], rws: &[R
     eg.rebuild();
 }
 
+// === ctxt cost ===
+
+pub fn compute_ctxt_costs<L: Language, N: Analysis<L>>(roots: &[Id], eg: &EGraph<L, N>, ex: &Extractor<AstSize, L, N>) -> HashMap<Id, usize> {
+    let mut ctxt_cost = HashMap::new();
+
+    let mut queue: MinPrioQueue<usize, Id> = MinPrioQueue::new();
+
+    // initial
+    for root in roots {
+        queue.push(0, *root);
+    }
+
+    while let Some((cst, i)) = queue.pop() {
+        if ctxt_cost.contains_key(&i) { continue }
+        ctxt_cost.insert(i, cst);
+        for e in &eg[i].nodes {
+            let e_cost = AstSize.cost(e, |k| ex.find_best_cost(k));
+            for &c in e.children() {
+                // optimization: don't push junk to the queue.
+                // NOTE: if we remembered what's the best thing we already pushed to the queue for some class,
+                // we could do more efficient pruning.
+                if ctxt_cost.contains_key(&c) { continue }
+
+                let c_cost = ex.find_best_cost(c);
+                let ncst = e_cost + cst - c_cost;
+                queue.push(ncst, c);
+            }
+        }
+    }
+
+    ctxt_cost
+}
+
 type EGData = (usize, usize);
 fn eg_data<L: Language, N: Analysis<L>>(eg: &EGraph<L, N>) -> EGData {
     (eg.number_of_classes(), eg.total_size())
@@ -150,3 +111,44 @@ pub fn lookup_pat<L: Language, N: Analysis<L>>(pat: &PatternAst<L>, eg: &EGraph<
     }
     vec.last().copied()
 }
+
+
+// === minqueue ===
+
+use egg::{Id, EGraph, Language, Extractor, AstSize, FromOp, RecExpr, Rewrite, Subst, ENodeOrVar, PatternAst, CostFunction, Analysis};
+
+use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap, BTreeMap};
+
+pub struct MinPrioQueue<U, T>(BinaryHeap<WithOrdRev<U, T>>);
+
+impl<U: Ord, T: Eq> MinPrioQueue<U, T> {
+    pub fn new() -> Self {
+        MinPrioQueue(BinaryHeap::default())
+    }
+
+    pub fn push(&mut self, u: U, t: T) {
+        self.0.push(WithOrdRev(u, t));
+    }
+
+    pub fn pop(&mut self) -> Option<(U, T)> {
+        self.0.pop().map(|WithOrdRev(u, t)| (u, t))
+    }
+}
+
+// Takes the `Ord` from U, but reverses it.
+#[derive(PartialEq, Eq, Debug)]
+struct WithOrdRev<U, T>(pub U, pub T);
+
+impl<U: Ord, T: Eq> PartialOrd for WithOrdRev<U, T> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        // It's the other way around, because we want a min-heap!
+        other.0.partial_cmp(&self.0)
+    }
+}
+impl<U: Ord, T: Eq> Ord for WithOrdRev<U, T> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(&other).unwrap()
+    }
+}
+
