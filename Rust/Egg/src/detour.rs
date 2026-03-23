@@ -1,9 +1,26 @@
+use egg::{Id, EGraph, Language, Extractor, AstSize, FromOp, RecExpr, Rewrite, Subst, ENodeOrVar, PatternAst, CostFunction, Analysis, Runner};
+
 // === pat detour ===
 
 use std::fmt::Display;
 use std::time::Instant;
 
-pub fn pat_detour_eqsat_step<L: Language, N: Analysis<L>>(roots: &[Id], rws: &[Rewrite<L, N>], eg: &mut EGraph<L, N>, stop: Instant) {
+pub fn detour_step<L: Language, N: Analysis<L> + Default>(i: usize, roots: &[Id], rws: &[Rewrite<L, N>], eg: &mut EGraph<L, N>, stop: Instant, node_limit: usize) {
+    if i%2 == 0 {
+        pat_detour_eqsat_step(roots, rws, eg, stop, node_limit);
+    } else {
+        let egr = std::mem::take(eg);
+        let mut runner = Runner::<L, N, ()>::new(N::default())
+            .with_egraph(egr)
+            .with_iter_limit(1)
+            .with_node_limit(node_limit)
+            .with_time_limit(stop - Instant::now())
+            .run(rws);
+        *eg = std::mem::take(&mut runner.egraph);
+    }
+}
+
+pub fn pat_detour_eqsat_step<L: Language, N: Analysis<L>>(roots: &[Id], rws: &[Rewrite<L, N>], eg: &mut EGraph<L, N>, stop: Instant, node_limit: usize) {
     let ex = Extractor::new(&eg, AstSize);
     let ctxt_cost = compute_ctxt_costs(roots, eg, &ex);
 
@@ -34,13 +51,14 @@ pub fn pat_detour_eqsat_step<L: Language, N: Analysis<L>>(roots: &[Id], rws: &[R
 
     const OFFSET: usize = 3;
 
-    for (full_cost, new_apps) in matches {
+    'outer: for (full_cost, new_apps) in matches {
         if let Some(found) = found_cost { if full_cost > found + OFFSET { break } }
         for (rw_i, lhs, subst, cx_cost, pat_cost) in &new_apps {
             let rw = &rws[*rw_i];
             rw.applier.apply_one(eg, *lhs, subst, None, rw.name);
             if eg_data(eg) != og_data { found_cost = Some(full_cost); }
-            if Instant::now() > stop { eg.rebuild(); return }
+            if Instant::now() > stop { break 'outer }
+            if eg.total_size() > node_limit { break 'outer }
         }
     }
 
@@ -111,8 +129,6 @@ pub fn lookup_pat<L: Language, N: Analysis<L>>(pat: &PatternAst<L>, eg: &EGraph<
 
 
 // === minqueue ===
-
-use egg::{Id, EGraph, Language, Extractor, AstSize, FromOp, RecExpr, Rewrite, Subst, ENodeOrVar, PatternAst, CostFunction, Analysis};
 
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap, BTreeMap};
