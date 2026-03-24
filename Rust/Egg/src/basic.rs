@@ -96,7 +96,7 @@ fn detour_eqsat(egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_
         }
         egraph.rebuild();
     }
-    let report = Runner::<LeanExpr, ()>::new(()).report(); // fake report
+    let report = Runner::<LeanExpr, ()>::new(()).run([]).report(); // fake report
     let rw_stats = format!("<no stats>"); // fake stats
     (egraph, report, rw_stats)
 }
