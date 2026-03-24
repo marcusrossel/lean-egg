@@ -76,16 +76,17 @@ fn detour_eqsat(egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_
     let start = std::time::Instant::now();
     let stop = start + Duration::from_secs(cfg.time_limit.try_into().unwrap());
 
-    for i in 0.. {
+    let mut report = Runner::<LeanExpr, ()>::new(()).run([]).report(); // fake report
+
+    let mut i = 0;
+    loop {
+        i += 1;
         crate::detour::detour_step(i, &[init_id, goal_id], &rws, &mut egraph, stop, cfg.node_limit);
-        if egraph.total_size() > cfg.node_limit { break }
-        if stop > std::time::Instant::now() { break }
+        if egraph.total_size() > cfg.node_limit { report.stop_reason = StopReason::NodeLimit(egraph.total_size()); break; }
+        if stop > std::time::Instant::now() { report.stop_reason = StopReason::TimeLimit(start.elapsed().as_secs_f64()); break; }
 
         // Note: `lookup` returns a canonicalized id.
-        if egraph.lookup(LeanExpr::Eq([init_id, goal_id])) == Some(egraph.find(true_id)) {
-            // println!("proved goal!");
-            break;
-        }
+        if egraph.lookup(LeanExpr::Eq([init_id, goal_id])) == Some(egraph.find(true_id)) { report.stop_reason = StopReason::Other(format!("Goal reached!")); break; }
 
         let ids = egraph.classes().map(|x| x.id).collect::<Vec<_>>();
         for class in ids {
@@ -96,8 +97,12 @@ fn detour_eqsat(egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_
         }
         egraph.rebuild();
     }
-    let report = Runner::<LeanExpr, ()>::new(()).run([]).report(); // fake report
-    let rw_stats = format!("<no stats>"); // fake stats
+    report.memo_size = egraph.total_size();
+    report.egraph_nodes = egraph.total_number_of_nodes();
+    report.egraph_classes = egraph.number_of_classes();
+    report.iterations = i;
+    report.total_time = start.elapsed().as_secs_f64();
+    let rw_stats = format!("<no rw_stats>"); // fake stats
     (egraph, report, rw_stats)
 }
 
