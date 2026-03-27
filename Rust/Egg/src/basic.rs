@@ -56,12 +56,19 @@ pub fn explain_congr(
         egraph.union_instantiations(&eq.lhs, &eq.rhs, &Subst::with_capacity(0), eq.name); 
     }
 
+    let (mut egraph, report, rw_stats) = detour_eqsat(egraph, init_id, goal_id, &cfg, viz_path, &rws);
+    let (kind, expl) = mk_explanation(&mut egraph, init_expr, goal_expr, init_id, goal_id);
+    Ok(ExplainedCongr { kind, expl, egraph, report, rw_stats, activations })
+}
+
+fn original_eqsat(egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_path: Option<String>, rws: &[LeanRewrite]) -> (LeanEGraph, Report, /*rw_stats*/ String) {
     let runner = mk_runner(egraph, init_id, goal_id, &cfg, viz_path);
     let start_time = Instant::now();
-    let mut runner = runner.run(&rws);
+    let runner = runner.run(rws);
     let total_time = start_time.elapsed();
     let mut report = runner.report();
     report.total_time = total_time.as_secs_f64();
+    let report = runner.report();
     let rw_stats = collect_rw_stats(&runner);
 
     (runner.egraph, report, rw_stats)
