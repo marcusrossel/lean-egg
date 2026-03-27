@@ -53,7 +53,8 @@ fn pat_detour_eqsat_step<L: Language, N: Analysis<L>>(roots: &[Id], rws: &[Rewri
         if let Some(found) = found_cost { if full_cost > found + OFFSET { break } }
         for (rw_i, lhs, subst, cx_cost, pat_cost) in &new_apps {
             let rw = &rws[*rw_i];
-            rw.applier.apply_one(eg, *lhs, subst, None, rw.name);
+            let pat_ast = rw.searcher.get_pattern_ast();
+            rw.applier.apply_one(eg, *lhs, subst, pat_ast, rw.name);
             if eg_data(eg) != og_data { found_cost = Some(full_cost); }
             if Instant::now() > stop { break 'outer }
             if eg.total_size() > node_limit { break 'outer }
