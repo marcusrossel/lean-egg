@@ -30,9 +30,6 @@ def Direction.format : Direction → Format
   | .forward  => "⇒"
   | .backward => "⇐"
 
-def Explanation.involvesBinderRewrites (expl : Explanation) : Bool :=
-  expl.steps.any (·.id.src.involvesBinders)
-
 def Config.Debug.ExitPoint.format : Config.Debug.ExitPoint → Format
   | .none        => "None"
   | .beforeEqSat => "Before Equality Saturation"
@@ -40,14 +37,13 @@ def Config.Debug.ExitPoint.format : Config.Debug.ExitPoint → Format
 
 nonrec def formatReport
     (flat : Bool) (rep : Request.Result.Report) (totalDuration? proofDuration? : Option Nat := none)
-    (expl? : Option Explanation := none) : Format :=
+    (explLength? : Option Nat := none) : Format :=
   if flat then
     "(" ++ (if let some d := totalDuration? then format d else "-") ++ "," ++
     (format <| (1000 * rep.time).toUInt64.toNat) ++ "," ++
     (if let some d := proofDuration? then format d else "-") ++ "," ++ (format rep.iterations) ++
     "," ++ (format rep.nodeCount) ++ "," ++ (format rep.classCount) ++ "," ++
-    (if let some e := expl? then format e.steps.size ++ s!",{e.involvesBinderRewrites}" else "-,-")
-    ++ ")"
+    (if let some explLength := explLength? then format explLength else "-") ++ ")"
   else
     (if let some d := totalDuration? then "\ntotal time: " ++ format d ++ "ms\n" else "") ++
     "eqsat time: " ++ (format <| (1000 * rep.time).toUInt64.toNat) ++ "ms\n" ++
@@ -55,7 +51,7 @@ nonrec def formatReport
     "iters:      " ++ (format rep.iterations) ++ "\n" ++
     "nodes:      " ++ (format rep.nodeCount)  ++ "\n" ++
     "classes:    " ++ (format rep.classCount) ++ "\n" ++
-    (if let some e := expl? then "expl steps: " ++ format e.steps.size ++ s!"\nbinder rws: {e.involvesBinderRewrites}\n" else "") ++
+    (if let some explLength := explLength? then "expl steps: " ++ format explLength else "") ++
     (if rep.rwStats.isEmpty then "" else s!"\nrw stats:\n{rep.rwStats}")
 
 def MVars.Property.toString : MVars.Property → String

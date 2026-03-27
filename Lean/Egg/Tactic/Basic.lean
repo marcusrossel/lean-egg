@@ -74,7 +74,7 @@ where
       | some (proof, proofTime, result) =>
         if cfg.reporting then
           let totalTime := (← IO.monoMsNow) - startTime
-          logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl)
+          logInfo (s!"egg succeeded " ++ formatReport cfg.flattenReports result.report totalTime proofTime result.expl.steps.size)
         let (subgoals, _, proof) ← openAbstractMVarsResult proof
         appendGoals <| Array.toList <| subgoals.map (·.mvarId!)
         goal.id.assignIfDefeq' proof
@@ -106,7 +106,7 @@ where
     | .explLength len => do
       let msg := s!"egg found an explanation exceeding the length limit ({len} vs {cfg.explLengthLimit})\nYou can increase this limit using 'set_option egg.explLengthLimit <num>'.\n"
       unless cfg.reporting do return msg
-      return msg ++ formatReport cfg.flattenReports report
+      return msg ++ formatReport cfg.flattenReports report (explLength? := len)
   getBlocks (stx? : Option <| TSyntax `egg_blocks) (cfg : Config) : TacticM Blocks := do
     let some stx := stx? | return #[]
     unless cfg.subgoals do logWarningAt stx "conditions are only blocked when `egg.subgoals` is `true`"
