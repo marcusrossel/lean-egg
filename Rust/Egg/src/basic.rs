@@ -90,7 +90,7 @@ fn detour_eqsat(egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_
         i += 1;
         crate::detour::detour_step(i, &[init_id, goal_id], &rws, &mut egraph, stop, cfg.node_limit);
         if egraph.total_size() > cfg.node_limit { report.stop_reason = StopReason::NodeLimit(egraph.total_size()); break; }
-        if stop > std::time::Instant::now() { report.stop_reason = StopReason::TimeLimit(start.elapsed().as_secs_f64()); break; }
+        if std::time::Instant::now() > stop { report.stop_reason = StopReason::TimeLimit(start.elapsed().as_secs_f64()); break; }
 
         // Note: `lookup` returns a canonicalized id.
         if egraph.lookup(LeanExpr::Eq([init_id, goal_id])) == Some(egraph.find(true_id)) { report.stop_reason = StopReason::Other(format!("Goal reached!")); break; }
