@@ -31,7 +31,7 @@ fn pat_detour_eqsat_step<L: Language, N: Analysis<L>>(roots: &[Id], rws: &[Rewri
             for subst in m.substs {
                 let pat_cost = pat_cost(lhs_pat, &subst, &ex);
                 // We don't subtract the root cost here, it's a constant offset, so why would we.
-                let cx_cost = *ctxt_cost.get(&lhs).unwrap();
+                let cx_cost = *ctxt_cost.get(&lhs).unwrap_or(&100000000); // this is the cost you get from not being able to reach any root.
                 let detour_cost = cx_cost + pat_cost;
                 if !matches.contains_key(&detour_cost) {
                     matches.insert(detour_cost, Vec::new());
