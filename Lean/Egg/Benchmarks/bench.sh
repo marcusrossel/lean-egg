@@ -24,6 +24,15 @@ process_output() {
             skip=2
             next
         }
+        /^error.*egg failed to prove the goal/ {
+            errloc=$0
+            sub(/^error[^:]*: /, "", errloc)
+            sub(/: .*$/, "", errloc)
+            sub(/Lean\/Egg\/Benchmarks\//, "", errloc)
+            # Print a tuple of dashes for any other error
+            print errloc ",-,-,-,-,-,-,-"
+            next
+        }
         skip>1 {
             skip--
             next
@@ -40,10 +49,12 @@ process_output() {
     '
 }
 
-echo -n "Clean building..."
-(cd ../../.. && lake clean && lake build) > /dev/null 2>&1
-(cd Math && lake clean && lake exec cache get && lake build) > /dev/null 2>&1
-
+# Check for --noclean flag
+if [[ "$1" != "--noclean" ]]; then
+    echo -n "Clean building..."
+    (cd ../../.. && lake clean && lake build) > /dev/null 2>&1
+    (cd Math && lake clean && lake exec cache get && lake build) > /dev/null 2>&1
+fi
 
 echo -e "\rSource,Total Time (ms),Eqsat Time (ms),Proof Time (ms),Iterations,E-Nodes,E-Classes,Explanation Length"
 
