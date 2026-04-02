@@ -67,6 +67,9 @@ fn detour_step<L: Language, N: Analysis<L> + Default>(i: usize, roots: &[Id], rw
     if i%2 == 1 {
         let mut matches = Vec::new();
 
+        // here we don't use the normal scheduler, but instead we use our own!
+        let mut sched = BackoffScheduler::default();
+
         for rw in rws {
             matches.push(sched.search_rewrite(i, eg, rw));
             stopper.check_limits(eg)?;
