@@ -80,20 +80,10 @@ fn detour_eqsat(egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_
     let true_expr = "(const \"True\")".parse().unwrap();
     let true_id = egraph.lookup_expr(&"(const \"True\")".parse().unwrap()).unwrap();
 
-    let start = std::time::Instant::now();
-    let stop = start + Duration::from_secs(cfg.time_limit.try_into().unwrap());
-
-    let mut report = Runner::<LeanExpr, ()>::new(()).run([]).report(); // fake report
-
-    let mut i = 0;
-    loop {
-        i += 1;
-        crate::detour::detour_step(i, &[init_id, goal_id], &rws, &mut egraph, stop, cfg.node_limit);
-        if egraph.total_size() > cfg.node_limit { report.stop_reason = StopReason::NodeLimit(egraph.total_size()); break; }
-        if std::time::Instant::now() > stop { report.stop_reason = StopReason::TimeLimit(start.elapsed().as_secs_f64()); break; }
-
+    let roots = &[init_id, goal_id];
+    let hook = Box::new(move |egraph: &mut EGraph<_, _>| {
         // Note: `lookup` returns a canonicalized id.
-        if egraph.lookup(LeanExpr::Eq([init_id, goal_id])) == Some(egraph.find(true_id)) { report.stop_reason = StopReason::Other(format!("Goal reached!")); break; }
+        if egraph.lookup(LeanExpr::Eq([init_id, goal_id])) == Some(egraph.find(true_id)) { return Err(format!("Goal reached!")); }
 
         let ids = egraph.classes().map(|x| x.id).collect::<Vec<_>>();
         for class in ids {
@@ -103,12 +93,14 @@ fn detour_eqsat(egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_
             egraph.union_instantiations(&eq_expr, &true_expr, &Subst::with_capacity(0), "=");
         }
         egraph.rebuild();
-    }
-    report.memo_size = egraph.total_size();
-    report.egraph_nodes = egraph.total_number_of_nodes();
-    report.egraph_classes = egraph.number_of_classes();
-    report.iterations = i;
-    report.total_time = start.elapsed().as_secs_f64();
+        Ok(())
+    });
+    let ast_size: for<'a> fn(&'a LeanExpr) -> u128 = |_|1;
+    let offset = 3;
+    let unreachable_cost = 1000;
+    let time_limit = Duration::from_secs(cfg.time_limit as _);
+    let report = crate::detour::detour_run(roots, rws, &mut egraph, &mut [hook], time_limit, cfg.node_limit, ast_size, offset, unreachable_cost);
+
     let rw_stats = format!("<no rw_stats>"); // fake stats
     (egraph, report, rw_stats)
 }
