@@ -7,8 +7,6 @@ pub type Hook<L, N> = Box<dyn FnMut(&mut EGraph<L, N>) -> Result<(), String>>;
 type RewriteId = usize;
 type Cost = u128;
 
-const MATCH_LIMIT: usize = 1_000_000;
-
 // note: 'cf: fn(&L) -> Cost' will ignore the costs of the children!
 pub fn detour_run<L: Language, N: Analysis<L> + Default>(roots: &[Id], rws: &[Rewrite<L, N>], eg: &mut EGraph<L, N>, hooks: &mut [Hook<L, N>], time_limit: Duration, node_limit: usize, cf: fn(&L) -> Cost, cfg_offset: Cost, cfg_unreachable_cost: Cost) -> Report {
     let mut stop_reason = StopReason::Saturated;
@@ -21,6 +19,8 @@ pub fn detour_run<L: Language, N: Analysis<L> + Default>(roots: &[Id], rws: &[Re
         node_limit
     };
 
+    let mut sched = BackoffScheduler::default();
+
     // The initial e-graph might be dirty.
     eg.rebuild();
 
@@ -28,7 +28,7 @@ pub fn detour_run<L: Language, N: Analysis<L> + Default>(roots: &[Id], rws: &[Re
     loop {
         let mut body = || {
             stopper.check_limits(eg)?;
-            detour_step(i, roots, rws, eg, &stopper, cf, cfg_offset, cfg_unreachable_cost)?;
+            detour_step(i, roots, rws, eg, &stopper, cf, cfg_offset, cfg_unreachable_cost, &mut sched)?;
             stopper.check_limits(eg)?;
 
             for h in hooks.iter_mut() {
@@ -63,10 +63,8 @@ pub fn detour_run<L: Language, N: Analysis<L> + Default>(roots: &[Id], rws: &[Re
     report
 }
 
-fn detour_step<L: Language, N: Analysis<L> + Default>(i: usize, roots: &[Id], rws: &[Rewrite<L, N>], eg: &mut EGraph<L, N>, stopper: &Stopper, cf: fn(&L) -> Cost, cfg_offset: Cost, cfg_unreachable_cost: Cost) -> Result<(), StopReason> {
+fn detour_step<L: Language, N: Analysis<L> + Default>(i: usize, roots: &[Id], rws: &[Rewrite<L, N>], eg: &mut EGraph<L, N>, stopper: &Stopper, cf: fn(&L) -> Cost, cfg_offset: Cost, cfg_unreachable_cost: Cost, sched: &mut impl RewriteScheduler<L, N>) -> Result<(), StopReason> {
     if i%2 == 1 {
-        let mut sched = BackoffScheduler::default(); // yes, re-created every time.
-
         let mut matches = Vec::new();
 
         for rw in rws {
@@ -84,10 +82,10 @@ fn detour_step<L: Language, N: Analysis<L> + Default>(i: usize, roots: &[Id], rw
         return Ok(());
     }
 
-    pat_detour_eqsat_step(roots, rws, eg, stopper, cf, cfg_offset, cfg_unreachable_cost)
+    pat_detour_eqsat_step(i, roots, rws, eg, stopper, cf, cfg_offset, cfg_unreachable_cost, sched)
 }
 
-fn pat_detour_eqsat_step<L: Language, N: Analysis<L>>(roots: &[Id], rws: &[Rewrite<L, N>], eg: &mut EGraph<L, N>, stopper: &Stopper, cf: fn(&L) -> Cost, cfg_offset: Cost, cfg_unreachable_cost: Cost) -> Result<(), StopReason> {
+fn pat_detour_eqsat_step<L: Language, N: Analysis<L>>(i: usize, roots: &[Id], rws: &[Rewrite<L, N>], eg: &mut EGraph<L, N>, stopper: &Stopper, cf: fn(&L) -> Cost, cfg_offset: Cost, cfg_unreachable_cost: Cost, sched: &mut impl RewriteScheduler<L, N>) -> Result<(), StopReason> {
     let ex = Extractor::new(&eg, AdditiveCostFn(cf));
     let ctxt_cost = compute_ctxt_costs(roots, eg, &ex, cf);
 
@@ -96,7 +94,7 @@ fn pat_detour_eqsat_step<L: Language, N: Analysis<L>>(roots: &[Id], rws: &[Rewri
     for (rw_i, rw) in rws.iter().enumerate() {
         let lhs_pat = rw.searcher.get_pattern_ast().unwrap();
 
-        for m in rw.searcher.search_with_limit(eg, MATCH_LIMIT) { // limit to counter oom.
+        for m in sched.search_rewrite(i, eg, rw) {
             stopper.check_limits(eg)?;
 
             let lhs = m.eclass;

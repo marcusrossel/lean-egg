@@ -96,7 +96,7 @@ fn detour_eqsat(egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, viz_
         Ok(())
     });
     let ast_size: for<'a> fn(&'a LeanExpr) -> u128 = |_|1;
-    let offset = 3;
+    let offset = 10;
     let unreachable_cost = 1000;
     let time_limit = Duration::from_secs(cfg.time_limit as _);
     let report = crate::detour::detour_run(roots, rws, &mut egraph, &mut [hook], time_limit, cfg.node_limit, ast_size, offset, unreachable_cost);
