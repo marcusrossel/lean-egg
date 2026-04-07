@@ -33,7 +33,7 @@ process_output() {
             print errloc ",-,-,-,-,-,-,-"
             next
         }
-        /^error.*(deterministic) timeout/ {
+        /^error.*\(deterministic\) timeout/ {
             errloc=$0
             sub(/^error[^:]*: /, "", errloc)
             sub(/: .*$/, "", errloc)
@@ -47,7 +47,7 @@ process_output() {
             next
         }
         skip==1 {
-            match($0, /\((-|[0-9]+),(-|[0-9]+),(-|[0-9]+),(-|[0-9]+),(-|[0-9]+),(-|[0-9]+),(-|[0-9]+)\)/)
+            match($0, /\((\?|-|[0-9]+),(\?|-|[0-9]+),(\?|-|[0-9]+),(\?|-|[0-9]+),(\?|-|[0-9]+),(\?|-|[0-9]+),(\?|-|[0-9]+)\)/)
             t = substr($0, RSTART, RLENGTH)
             sub(/^\(/, ",", t)
             sub(/\)$/, "", t)
