@@ -1,4 +1,4 @@
-import Math.Mathlib.Algebra.Group.Defs
+import Math.«Group Defs»
 
 -- NOTE: Starting around line 110.
 

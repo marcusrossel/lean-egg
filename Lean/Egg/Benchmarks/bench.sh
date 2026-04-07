@@ -60,12 +60,14 @@ echo -e "\rSource,Total Time (ms),Eqsat Time (ms),Proof Time (ms),Iterations,E-N
 
 for file in *.lean; do
     name="${file%.lean}"
-    if [[ "$name" =~ [^a-zA-Z0-9_] ]]; then
-        module="Egg.Benchmarks.«${name}»"
-    else
-        module="Egg.Benchmarks.${name}"
-    fi
+    module="Egg.Benchmarks.«${name}»"
     (cd ../../.. && lake build "$module" 2>&1) | process_output
 done
 
-(cd Math && lake build "Math" 2>&1) | process_output
+cd Math/Math
+
+for file in *.lean; do
+    name="${file%.lean}"
+    module="Math.«${name}»"
+    (cd .. && lake build "$module" 2>&1) | process_output
+done
