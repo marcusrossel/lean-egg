@@ -39,3 +39,21 @@ example (h₁ : 0 = 0 → a = b) : a = b := by
 example (h₁ : 0 = 0 → a = b) : a = b := by
   egg calc [h₁]
     _ = _ with [(rfl : 0 = 0)]
+
+/--
+error: egg failed to prove the goal (reached time limit) ⏎
+---
+error: egg failed to prove the goal (reached time limit) ⏎
+---
+error: egg failed to prove the goal (reached time limit) ⏎
+---
+error: unsolved goals
+a b c d : Nat
+⊢ a = d
+-/
+#guard_msgs in
+example (a b c d : Nat) : a = d := by
+  egg calc a
+    _ = b
+    _ = c
+    _ = d

@@ -78,6 +78,7 @@ def eval
     let steps ← elabSteps goal <| headStep?.elim rawSteps.tail (#[·] ++ rawSteps.tail)
     let mut subgoals := []
     let mut proof ← mkEqRefl goal.lhs
+    let mut failed := false
     for step in steps do
       let stepMVar ← mkFreshExprMVar (← goal.rel.relate step.lhs step.rhs)
       proof ← goal.rel.mkTrans proof stepMVar
@@ -85,7 +86,9 @@ def eval
         let sub ← evalTacticAt (← stepToEgg step.toStep) stepMVar.mvarId!
         subgoals := subgoals ++ sub
       catch err =>
-        throwErrorAt step.stx err.toMessageData
+        failed := true
+        logErrorAt step.stx err.toMessageData
+    if failed then return
     (← getMainGoal).assignIfDefeq' proof
     appendGoals (← dedupSubgoals subgoals)
 where
