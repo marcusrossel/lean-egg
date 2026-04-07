@@ -28,12 +28,17 @@ pub fn detour_run<L: Language, N: Analysis<L> + Default>(roots: &[Id], rws: &[Re
     loop {
         let mut body = || {
             stopper.check_limits(eg)?;
-            detour_step(i, roots, rws, eg, &stopper, cf, cfg_offset, cfg_unreachable_cost, &mut sched)?;
-            stopper.check_limits(eg)?;
 
             for h in hooks.iter_mut() {
                 h(eg).map_err(StopReason::Other)?;
             }
+
+            stopper.check_limits(eg)?;
+
+            detour_step(i, roots, rws, eg, &stopper, cf, cfg_offset, cfg_unreachable_cost, &mut sched)?;
+
+            stopper.check_limits(eg)?;
+
             i += 1;
 
             Ok(())
