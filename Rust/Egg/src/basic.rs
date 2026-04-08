@@ -184,9 +184,20 @@ fn mk_runner(
             }   
         })
         .with_hook(move |runner| {
-            for class in runner.egraph.classes().map(|x| x.id).collect::<Vec<_>>() {
-                if is_primitive(class, &runner.egraph) { continue }
-                let (_, rep) = Extractor::new(&runner.egraph, AstSize).find_best(class);
+            let ex = Extractor::new(&runner.egraph, AstSize);
+            let ex_map: HashMap<Id, LeanExpr> = runner.egraph.classes()
+                .map(|x| x.id)
+                .map(|x| (x, ex.find_best_node(x).clone()))
+                .collect();
+            drop(ex);
+
+            let classes: Box<[Id]> = runner.egraph.classes()
+                .map(|x| x.id)
+                .filter(|x| is_primitive(*x, &runner.egraph))
+                .collect();
+
+            for x in classes {
+                let rep = build_expr(x, &ex_map);
                 let eq_expr = format!("(= {} {})", rep, rep).parse().unwrap();
                 runner.egraph.union_instantiations(&eq_expr, &true_expr, &Subst::with_capacity(0), "=");
             }
@@ -202,6 +213,11 @@ fn mk_runner(
     }
 
     runner
+}
+
+
+fn build_expr(id: Id, ex_map: &HashMap<Id, LeanExpr>) -> RecExpr<LeanExpr> {
+    ex_map[&id].join_recexprs(|x| build_expr(x, ex_map))
 }
 
 fn collect_rw_stats(runner: &Runner<LeanExpr, LeanAnalysis>) -> String {
