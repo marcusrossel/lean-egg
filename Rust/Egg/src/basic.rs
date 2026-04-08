@@ -193,7 +193,7 @@ fn mk_runner(
 
             let classes: Box<[Id]> = runner.egraph.classes()
                 .map(|x| x.id)
-                .filter(|x| is_primitive(*x, &runner.egraph))
+                .filter(|x| !is_primitive(*x, &runner.egraph))
                 .collect();
 
             for x in classes {
