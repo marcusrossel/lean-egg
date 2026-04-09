@@ -4,6 +4,7 @@ variable (a : Nat)
 
 -- TODO: This used to succeed prior to the `better-facts` PR.
 
+set_option egg.nodeLimit 10000
 set_option egg.timeLimit 10 in
 set_option egg.reporting true in
 example :

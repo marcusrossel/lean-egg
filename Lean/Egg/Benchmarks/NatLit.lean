@@ -2,6 +2,7 @@ import Egg
 
 -- Tests involving conversions between `Nat.zero` and `Nat.succ _` and `.lit (.natVal _)`.
 
+set_option egg.nodeLimit 10000
 set_option egg.reporting true
 set_option egg.flattenReports true
 

@@ -1,6 +1,7 @@
 use std::time::Duration;
 use std::collections::HashMap;
 use std::ffi::c_void;
+use std::time::Instant;
 use egg::*;
 use crate::activation::*;
 use crate::analysis::*;
@@ -55,8 +56,12 @@ pub fn explain_congr(
         egraph.union_instantiations(&eq.lhs, &eq.rhs, &Subst::with_capacity(0), eq.name); 
     }
 
-    let mut runner = mk_runner(egraph, init_id, goal_id, &cfg, viz_path).run(&rws);
-    let report = runner.report();
+    let runner = mk_runner(egraph, init_id, goal_id, &cfg, viz_path);
+    let start_time = Instant::now();
+    let mut runner = runner.run(&rws);
+    let total_time = start_time.elapsed();
+    let mut report = runner.report();
+    report.total_time = total_time.as_secs_f64();
     let rw_stats = collect_rw_stats(&runner);
     let (kind, expl) = mk_explanation(&mut runner.egraph, init_expr, goal_expr, init_id, goal_id);
     Ok(ExplainedCongr { kind, expl, egraph: runner.egraph, report, rw_stats, activations })

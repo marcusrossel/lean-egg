@@ -33,12 +33,21 @@ process_output() {
             print errloc ",-,-,-,-,-,-,-"
             next
         }
+        /^error.*egg failed to build proof step/ {
+            errloc=$0
+            sub(/^error[^:]*: /, "", errloc)
+            sub(/: .*$/, "", errloc)
+            sub(/Lean\/Egg\/Benchmarks\//, "", errloc)
+            # Print a tuple of question marks for any other error
+            print errloc ",?,?,?,?,?,?,?"
+            next
+        }
         /^error.*\(deterministic\) timeout/ {
             errloc=$0
             sub(/^error[^:]*: /, "", errloc)
             sub(/: .*$/, "", errloc)
             sub(/Lean\/Egg\/Benchmarks\//, "", errloc)
-            # Print a tuple of dashes for any other error
+            # Print a tuple of question marks for any other error
             print errloc ",?,?,?,?,?,?,?"
             next
         }

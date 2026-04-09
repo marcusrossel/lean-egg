@@ -1,6 +1,7 @@
 import Egg
 import Mathlib.Order.BooleanAlgebra.Basic
 
+set_option egg.nodeLimit 10000
 set_option egg.reporting true
 set_option egg.flattenReports true
 
