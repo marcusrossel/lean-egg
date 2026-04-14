@@ -1,180 +1,180 @@
-Source,Total Time (ms),Eqsat Time (ms),Proof Time (ms),Iterations,E-Nodes,E-Classes,Explanation Length 
-Crash 4.lean:22:2,30,12,3,2,279,150,4
-Explosion Failure.lean:12:2,33,10,1,1,229,116,2
-Freshman Calc.lean:29:2,130,38,28,6,315,148,10
-Freshman Calc.lean:29:2,67,3,14,1,180,98,3
-Freshman Calc.lean:29:2,413,57,199,6,333,143,37
-Freshman Calc.lean:36:2,200,83,35,8,496,228,14
-Freshman Calc.lean:36:2,89,4,31,1,193,106,4
-Freshman Calc.lean:36:2,529,131,236,6,582,213,28
-Freshman Calc.lean:36:2,96,14,16,2,251,131,4
-Freshman Calc.lean:36:2,99,8,21,1,246,128,3
-Freshman Calc.lean:36:2,344,22,80,2,288,144,21
-Freshman Pow.lean:36:44,134,39,30,6,315,148,10
-Freshman Pow.lean:37:44,72,3,15,1,180,98,3
-Freshman Pow.lean:39:44,450,61,217,6,333,143,37
-Freshman Pow.lean:42:2,3340,105,937,11,369,150,122
-Freshman Pow.lean:47:62,215,88,39,8,496,228,14
-Freshman Pow.lean:49:62,-,409,-,7,1305,407,291
-Freshman Pow.lean:50:62,226,88,64,5,510,218,4
-Freshman Pow.lean:51:62,107,16,19,2,251,131,4
-Freshman Pow.lean:52:62,108,9,23,1,246,128,3
-Freshman Pow.lean:53:62,367,25,85,2,288,144,21
-Freshman Pow.lean:56:2,-,368,-,11,710,235,1398
-Freshman Pow.lean:59:2,-,474,-,13,764,240,8537
-Freshman Tags.lean:46:2,73,9,9,2,213,112,2
-Freshman Tags.lean:46:2,78,3,15,1,189,103,3
-Freshman Tags.lean:46:2,175,17,78,2,271,135,7
-Freshman Tags.lean:46:2,161,42,44,5,310,143,4
-Freshman Tags.lean:53:2,388,73,188,9,319,140,18
-Freshman Tags.lean:56:2,117,30,20,4,241,120,3
-Freshman Tags.lean:56:2,110,5,32,1,202,111,4
-Freshman Tags.lean:56:2,229,23,114,2,323,161,7
-Freshman Tags.lean:56:2,222,80,65,5,470,194,4
-Freshman Tags.lean:56:2,110,15,17,2,264,137,4
-Freshman Tags.lean:56:2,109,8,21,1,247,130,3
-Freshman Tags.lean:56:2,258,11,128,1,240,127,9
-Freshman Tags.lean:66:2,-,254,-,10,668,241,879
-Groups.lean:22:2,31,6,7,3,157,86,3
-Groups.lean:25:2,38,6,7,3,157,86,3
-Groups.lean:28:2,33,5,2,2,142,78,2
-Groups.lean:31:49,389,31,184,6,259,121,24
-Groups.lean:32:49,40,11,8,3,197,102,3
-Groups.lean:35:35,37,6,7,2,150,82,2
-Groups.lean:36:35,31,6,7,3,157,84,3
-Groups.lean:39:2,149,34,71,7,267,123,11
-Groups.lean:42:2,228,43,117,7,359,147,14
-Groups.lean:45:2,45,9,14,4,165,87,5
-Int.lean:10:2,107,35,35,3,296,145,7
-NatLit.lean:18:61,1082,852,3,42,298,151,70
-NatLit.lean:22:2,4313,229,1611,16,341,143,82
-Rise.lean:78:12,215,5,6,2,179,98,3
-Rise.lean:78:12,90,7,6,2,222,124,3
-Rise.lean:78:12,172,23,45,5,259,136,14
-Rise.lean:83:12,580,1,1,1,155,88,1
-Rise.lean:83:12,91,2,6,1,183,104,3
-Rise.lean:88:12,719,12,32,3,206,110,16
-Rise.lean:88:12,1189,40,140,5,312,160,38
-Rise.lean:94:12,2028,2,6,1,175,97,3
-Rise.lean:94:12,100,3,6,1,198,109,3
-Rise.lean:94:12,168,22,39,5,242,128,13
-Rise.lean:99:12,2418,4,9,2,165,90,3
-Rise.lean:99:12,112,5,10,2,194,106,3
-Rise.lean:99:12,165,17,34,5,213,113,6
-Rise.lean:99:12,191,22,37,5,224,118,6
-Rise.lean:105:12,3017,7,6,2,212,116,3
-Rise.lean:105:12,384,31,69,5,304,160,30
-Rise.lean:110:12,3537,9,11,2,234,126,4
-Rise.lean:110:12,209,27,35,3,324,169,8
-Rise.lean:115:12,3902,10,11,2,246,132,4
-Rise.lean:115:12,227,31,35,3,336,175,8
-Rise.lean:121:12,61124,43,393,5,279,144,191
+Source,Total Time (ms),Eqsat Time (ms),Proof Time (ms),Iterations,E-Nodes,E-Classes,Explanation Length
+Crash 4.lean:22:2,27,12,4,3,279,150,4
+Explosion Failure.lean:12:2,34,10,1,2,229,116,2
+Freshman Calc.lean:29:2,127,36,27,7,315,148,10
+Freshman Calc.lean:29:2,67,3,14,2,180,98,3
+Freshman Calc.lean:29:2,476,57,248,7,333,143,37
+Freshman Calc.lean:36:2,205,83,39,9,496,228,14
+Freshman Calc.lean:36:2,97,4,34,2,193,106,4
+Freshman Calc.lean:36:2,624,159,264,7,582,213,28
+Freshman Calc.lean:36:2,100,14,18,3,251,131,4
+Freshman Calc.lean:36:2,103,8,22,2,246,128,3
+Freshman Calc.lean:36:2,340,21,79,3,288,144,21
+Freshman Pow.lean:36:44,133,39,30,7,315,148,10
+Freshman Pow.lean:37:44,78,3,17,2,180,98,3
+Freshman Pow.lean:39:44,549,68,275,7,333,143,37
+Freshman Pow.lean:42:2,4108,119,1070,12,369,150,122
+Freshman Pow.lean:47:62,256,106,49,9,496,228,14
+Freshman Pow.lean:49:62,-,509,-,8,1305,407,291
+Freshman Pow.lean:50:62,283,105,85,6,510,218,4
+Freshman Pow.lean:51:62,135,19,23,3,251,131,4
+Freshman Pow.lean:52:62,134,11,28,2,246,128,3
+Freshman Pow.lean:53:62,455,29,105,3,288,144,21
+Freshman Pow.lean:56:2,-,482,-,12,710,235,1398
+Freshman Pow.lean:59:2,-,652,-,14,764,240,8537
+Freshman Tags.lean:46:2,71,8,8,3,213,112,2
+Freshman Tags.lean:46:2,82,3,16,2,189,103,3
+Freshman Tags.lean:46:2,204,20,95,3,271,135,7
+Freshman Tags.lean:46:2,197,51,55,6,310,143,4
+Freshman Tags.lean:53:2,469,76,252,10,319,140,18
+Freshman Tags.lean:56:2,137,35,25,5,241,120,3
+Freshman Tags.lean:56:2,140,6,44,2,202,111,4
+Freshman Tags.lean:56:2,297,30,146,3,323,161,7
+Freshman Tags.lean:56:2,261,91,77,6,470,194,4
+Freshman Tags.lean:56:2,114,16,17,3,264,137,4
+Freshman Tags.lean:56:2,109,8,21,2,247,130,3
+Freshman Tags.lean:56:2,253,9,124,2,240,127,9
+Freshman Tags.lean:66:2,-,253,-,11,668,241,879
+Groups.lean:22:2,31,6,7,4,157,86,3
+Groups.lean:25:2,34,6,9,4,157,86,3
+Groups.lean:28:2,30,3,2,3,142,78,2
+Groups.lean:31:49,448,34,212,7,259,121,24
+Groups.lean:32:49,41,11,8,4,197,102,3
+Groups.lean:35:35,30,4,7,3,150,82,2
+Groups.lean:36:35,34,7,8,4,157,84,3
+Groups.lean:39:2,170,41,77,8,267,123,11
+Groups.lean:42:2,278,56,139,8,359,147,14
+Groups.lean:45:2,45,9,14,5,165,87,5
+Int.lean:10:2,106,35,34,4,296,145,7
+NatLit.lean:18:61,1062,835,2,43,298,151,70
+NatLit.lean:22:2,4255,224,1598,17,341,143,82
+Rise.lean:78:12,217,5,6,3,179,98,3
+Rise.lean:78:12,89,7,5,3,222,124,3
+Rise.lean:78:12,169,22,44,6,259,136,14
+Rise.lean:83:12,575,1,0,2,155,88,1
+Rise.lean:83:12,90,2,5,2,183,104,3
+Rise.lean:88:12,710,11,32,4,206,110,16
+Rise.lean:88:12,1168,39,138,6,312,160,38
+Rise.lean:94:12,1996,3,6,2,175,97,3
+Rise.lean:94:12,99,3,6,2,198,109,3
+Rise.lean:94:12,167,21,39,6,242,128,13
+Rise.lean:99:12,2381,4,10,3,165,90,3
+Rise.lean:99:12,109,5,10,3,194,106,3
+Rise.lean:99:12,164,16,33,6,213,113,6
+Rise.lean:99:12,187,21,37,6,224,118,6
+Rise.lean:105:12,2963,7,6,3,212,116,3
+Rise.lean:105:12,379,31,68,6,304,160,30
+Rise.lean:110:12,3477,9,11,3,234,126,4
+Rise.lean:110:12,205,26,34,4,324,169,8
+Rise.lean:115:12,3837,10,11,3,246,132,4
+Rise.lean:115:12,224,30,34,4,336,175,8
+Rise.lean:121:12,61016,43,418,6,279,144,191
 Rise.lean:121:12,?,?,?,?,?,?,?
-Rise.lean:127:12,422392,15,33,3,219,118,17
-Rise.lean:127:12,14750,69,272,6,319,162,105
-Rise.lean:133:12,440395,16,149,3,227,121,64
-Rise.lean:133:12,24718,48,267,5,303,157,112
-Rise.lean:133:12,8854,36,212,4,303,164,74
-Rise.lean:133:12,-,132,-,8,418,208,384
-Rise.lean:138:12,474772,3,4,2,165,91,2
-Rise.lean:138:12,193,22,15,6,230,123,7
-Rise.lean:144:12,475139,3,7,2,160,88,4
-Rise.lean:144:12,179,4,4,2,187,104,2
-Rise.lean:144:12,192,7,10,2,214,116,4
-Rise.lean:144:12,-,78,-,8,338,171,423
-Rise.lean:150:12,476244,11,15,3,216,117,6
-Rise.lean:150:12,219,18,18,3,263,141,5
-Rise.lean:150:12,298,49,46,6,318,163,13
-Rise.lean:150:12,12142,108,217,6,473,238,78
-Rise.lean:155:2,489131,26,8,4,262,143,4
-Rise.lean:161:12,489338,15,6,3,237,131,4
-Rise.lean:161:12,235,25,16,3,314,168,7
-Rise.lean:167:12,489798,14,8,3,245,135,4
-Rise.lean:167:12,272,50,8,6,341,177,18
+Rise.lean:127:12,425616,14,32,4,219,118,17
+Rise.lean:127:12,14400,63,272,7,319,162,105
+Rise.lean:133:12,443216,16,147,4,227,121,64
+Rise.lean:133:12,24384,47,263,6,303,157,112
+Rise.lean:133:12,8742,34,207,5,303,164,74
+Rise.lean:133:12,-,129,-,9,418,208,384
+Rise.lean:138:12,477134,3,4,3,165,91,2
+Rise.lean:138:12,191,20,15,7,230,123,7
+Rise.lean:144:12,477499,3,8,3,160,88,4
+Rise.lean:144:12,175,4,4,3,187,104,2
+Rise.lean:144:12,189,7,10,3,214,116,4
+Rise.lean:144:12,-,79,-,9,338,171,423
+Rise.lean:150:12,478589,11,14,4,216,117,6
+Rise.lean:150:12,217,17,17,4,263,141,5
+Rise.lean:150:12,297,48,46,7,318,163,13
+Rise.lean:150:12,11993,107,213,7,473,238,78
+Rise.lean:155:2,491326,25,7,5,262,143,4
+Rise.lean:161:12,491527,14,6,4,237,131,4
+Rise.lean:161:12,230,24,15,4,314,168,7
+Rise.lean:167:12,491979,14,8,4,245,135,4
+Rise.lean:167:12,268,50,8,7,341,177,18
 WIP AC.lean:13:2,-,-,-,-,-,-,-
-Math/BooleanAlgebra.lean:30:2,-,360,-,4,252,102,487
-Math/BooleanAlgebra.lean:35:2,154,17,5,3,282,135,2
-Math/BooleanAlgebra.lean:40:2,440,129,19,4,322,112,9
-Math/BooleanAlgebra.lean:45:2,718,62,58,4,191,88,18
-Math/BooleanAlgebra.lean:50:2,355,129,52,4,1187,541,18
-Math/BooleanAlgebra.lean:56:4,663,13,311,2,503,233,49
-Math/BooleanAlgebra.lean:57:4,1817,1378,168,4,5377,2139,39
-Math/BooleanAlgebra.lean:62:2,443,60,162,6,296,145,29
-Math/BooleanAlgebra.lean:68:2,198,9,7,3,209,114,4
-Math/BooleanAlgebra.lean:73:2,367,138,31,3,1449,598,12
+Math/BooleanAlgebra.lean:30:2,-,359,-,5,252,102,487
+Math/BooleanAlgebra.lean:35:2,153,17,5,4,282,135,2
+Math/BooleanAlgebra.lean:40:2,432,124,19,5,322,112,9
+Math/BooleanAlgebra.lean:45:2,709,62,59,5,191,88,18
+Math/BooleanAlgebra.lean:50:2,348,127,50,5,1187,541,18
+Math/BooleanAlgebra.lean:56:4,662,13,312,3,503,233,49
+Math/BooleanAlgebra.lean:57:4,1806,1372,167,5,5377,2139,39
+Math/BooleanAlgebra.lean:62:2,446,62,164,7,296,145,29
+Math/BooleanAlgebra.lean:68:2,195,8,7,4,209,114,4
+Math/BooleanAlgebra.lean:73:2,369,140,31,4,1449,598,12
 Math/BooleanAlgebra.lean:80:4,-,-,-,-,-,-,-
 Math/BooleanAlgebra.lean:81:4,-,-,-,-,-,-,-
-Math/BooleanAlgebra.lean:86:2,231,9,16,2,349,179,7
-Math/BooleanAlgebra.lean:91:2,1817,1176,251,4,4920,2030,40
-Math/BooleanAlgebra.lean:96:2,279,19,25,2,683,321,9
+Math/BooleanAlgebra.lean:86:2,230,8,16,3,349,179,7
+Math/BooleanAlgebra.lean:91:2,1807,1166,254,5,4920,2030,40
+Math/BooleanAlgebra.lean:96:2,282,19,26,3,683,321,9
 Math/BooleanAlgebra.lean:101:25,-,-,-,-,-,-,-
-Math/BooleanAlgebra.lean:101:25,899,428,161,3,812,225,42
-Math/BooleanAlgebra.lean:106:25,451,185,11,3,630,247,3
-Math/BooleanAlgebra.lean:106:25,416,128,20,3,356,130,5
-Math/BooleanAlgebra.lean:111:2,333,14,48,2,488,224,15
-Math/Group Defs.lean:30:2,53,5,14,2,187,98,5
-Math/Group Defs.lean:52:2,55,6,2,2,193,108,2
-Math/Group Defs.lean:57:2,71,6,8,2,202,114,3
-Math/Group Defs.lean:62:2,63,2,1,1,170,99,1
-Math/Group Defs.lean:88:2,193,21,58,4,261,133,12
-Math/Group Defs.lean:94:2,108,5,1,2,195,109,2
-Math/Group Defs.lean:99:2,126,10,8,3,207,111,3
-Math/Group Defs.lean:104:2,136,11,9,3,214,114,3
-Math/Group Defs.lean:109:2,148,11,10,3,222,118,3
-Math/Group Defs.lean:114:2,142,6,2,2,197,110,2
-Math/Group Defs.lean:119:2,165,11,9,3,213,113,3
-Math/Group Defs.lean:124:2,163,6,7,2,193,110,2
-Math/Group Defs.lean:129:2,233,25,34,4,281,141,8
-Math/Group Defs.lean:132:26,184,13,10,3,212,111,3
-Math/Group Defs.lean:133:26,252,25,44,4,288,145,8
-Math/Group Defs.lean:143:33,221,8,10,2,221,120,3
-Math/Group Defs.lean:142:33,215,7,10,2,233,126,3
-Math/Group Defs.lean:156:2,229,7,12,2,220,118,2
-Math/Group Defs.lean:161:2,236,8,4,2,229,123,2
-Math/Group Defs.lean:166:2,242,7,3,2,221,118,2
-Math/Group Defs.lean:171:2,259,8,2,2,227,121,2
-Math/Group Basic.lean:14:2,26,6,10,2,140,75,3
-Math/Group Basic.lean:19:2,28,6,10,2,139,75,3
-Math/Group Basic.lean:24:2,42,9,17,2,201,94,4
-Math/Group Basic.lean:29:2,21,3,2,1,135,75,2
-Math/Group Basic.lean:34:2,25,3,3,1,134,75,2
-Math/Group Defs.lean:30:2,53,5,14,2,187,98,5
-Math/Group Defs.lean:52:2,55,6,2,2,193,108,2
-Math/Group Defs.lean:57:2,71,6,8,2,202,114,3
-Math/Group Defs.lean:62:2,63,2,1,1,170,99,1
-Math/Group Defs.lean:88:2,193,21,58,4,261,133,12
-Math/Group Defs.lean:94:2,108,5,1,2,195,109,2
-Math/Group Defs.lean:99:2,126,10,8,3,207,111,3
-Math/Group Defs.lean:104:2,136,11,9,3,214,114,3
-Math/Group Defs.lean:109:2,148,11,10,3,222,118,3
-Math/Group Defs.lean:114:2,142,6,2,2,197,110,2
-Math/Group Defs.lean:119:2,165,11,9,3,213,113,3
-Math/Group Defs.lean:124:2,163,6,7,2,193,110,2
-Math/Group Defs.lean:129:2,233,25,34,4,281,141,8
-Math/Group Defs.lean:132:26,184,13,10,3,212,111,3
-Math/Group Defs.lean:133:26,252,25,44,4,288,145,8
-Math/Group Defs.lean:143:33,221,8,10,2,221,120,3
-Math/Group Defs.lean:142:33,215,7,10,2,233,126,3
-Math/Group Defs.lean:156:2,229,7,12,2,220,118,2
-Math/Group Defs.lean:161:2,236,8,4,2,229,123,2
-Math/Group Defs.lean:166:2,242,7,3,2,221,118,2
-Math/Group Defs.lean:171:2,259,8,2,2,227,121,2
-Math/Lie.lean:40:2,775,411,83,3,2777,1202,10
-Math/Lie.lean:46:17,308,17,21,2,522,324,4
-Math/Lie.lean:47:17,275,3,2,1,211,124,1
+Math/BooleanAlgebra.lean:101:25,891,420,163,4,812,225,42
+Math/BooleanAlgebra.lean:106:25,450,184,11,4,630,247,3
+Math/BooleanAlgebra.lean:106:25,414,129,21,4,356,130,5
+Math/BooleanAlgebra.lean:111:2,335,14,47,3,488,224,15
+Math/Group Defs.lean:30:2,53,4,14,3,187,98,5
+Math/Group Defs.lean:52:2,55,6,2,3,193,108,2
+Math/Group Defs.lean:57:2,70,6,8,3,202,114,3
+Math/Group Defs.lean:62:2,62,2,1,2,170,99,1
+Math/Group Defs.lean:88:2,192,21,58,5,261,133,12
+Math/Group Defs.lean:94:2,106,5,2,3,195,109,2
+Math/Group Defs.lean:99:2,125,10,8,4,207,111,3
+Math/Group Defs.lean:104:2,137,11,9,4,214,114,3
+Math/Group Defs.lean:109:2,145,11,9,4,222,118,3
+Math/Group Defs.lean:114:2,138,6,1,3,197,110,2
+Math/Group Defs.lean:119:2,162,11,9,4,213,113,3
+Math/Group Defs.lean:124:2,161,6,8,3,193,110,2
+Math/Group Defs.lean:129:2,230,25,35,5,281,141,8
+Math/Group Defs.lean:132:26,185,13,10,4,212,111,3
+Math/Group Defs.lean:133:26,247,25,42,5,288,145,8
+Math/Group Defs.lean:143:33,218,8,10,3,221,120,3
+Math/Group Defs.lean:142:33,212,6,10,3,233,126,3
+Math/Group Defs.lean:156:2,224,7,9,3,220,118,2
+Math/Group Defs.lean:161:2,229,8,3,3,229,123,2
+Math/Group Defs.lean:166:2,241,8,3,3,221,118,2
+Math/Group Defs.lean:171:2,259,8,2,3,227,121,2
+Math/Group Basic.lean:14:2,26,6,10,3,140,75,3
+Math/Group Basic.lean:19:2,27,6,9,3,139,75,3
+Math/Group Basic.lean:24:2,42,8,17,3,201,94,4
+Math/Group Basic.lean:29:2,22,3,3,2,135,75,2
+Math/Group Basic.lean:34:2,26,3,3,2,134,75,2
+Math/Group Defs.lean:30:2,53,4,14,3,187,98,5
+Math/Group Defs.lean:52:2,55,6,2,3,193,108,2
+Math/Group Defs.lean:57:2,70,6,8,3,202,114,3
+Math/Group Defs.lean:62:2,62,2,1,2,170,99,1
+Math/Group Defs.lean:88:2,192,21,58,5,261,133,12
+Math/Group Defs.lean:94:2,106,5,2,3,195,109,2
+Math/Group Defs.lean:99:2,125,10,8,4,207,111,3
+Math/Group Defs.lean:104:2,137,11,9,4,214,114,3
+Math/Group Defs.lean:109:2,145,11,9,4,222,118,3
+Math/Group Defs.lean:114:2,138,6,1,3,197,110,2
+Math/Group Defs.lean:119:2,162,11,9,4,213,113,3
+Math/Group Defs.lean:124:2,161,6,8,3,193,110,2
+Math/Group Defs.lean:129:2,230,25,35,5,281,141,8
+Math/Group Defs.lean:132:26,185,13,10,4,212,111,3
+Math/Group Defs.lean:133:26,247,25,42,5,288,145,8
+Math/Group Defs.lean:143:33,218,8,10,3,221,120,3
+Math/Group Defs.lean:142:33,212,6,10,3,233,126,3
+Math/Group Defs.lean:156:2,224,7,9,3,220,118,2
+Math/Group Defs.lean:161:2,229,8,3,3,229,123,2
+Math/Group Defs.lean:166:2,241,8,3,3,221,118,2
+Math/Group Defs.lean:171:2,259,8,2,3,227,121,2
+Math/Lie.lean:40:2,769,403,83,4,2777,1202,10
+Math/Lie.lean:46:17,306,17,21,3,522,324,4
+Math/Lie.lean:47:17,272,3,2,2,211,124,1
 Math/Lie.lean:56:2,?,?,?,?,?,?,?
-Math/Lie.lean:61:2,2801,2463,45,7,2611,1022,8
-Math/Lie.lean:66:2,315,18,21,2,663,408,4
-Math/Lie.lean:71:2,330,10,21,2,520,321,4
-Math/Lie.lean:78:2,409,26,11,2,664,409,2
-Math/Lie.lean:83:2,528,75,48,3,741,324,7
-Math/Lie.lean:94:62,892,100,57,2,1069,656,10
-Math/Rotman.lean:33:15,120,14,66,3,261,133,23
-Math/Rotman.lean:41:77,76,17,33,2,363,193,4
-Math/Rotman.lean:44:4,1175,262,315,4,1059,532,17
-Math/Rotman.lean:44:4,2132,534,292,4,5389,2537,20
+Math/Lie.lean:61:2,2779,2446,43,8,2611,1022,8
+Math/Lie.lean:66:2,308,17,20,3,663,408,4
+Math/Lie.lean:71:2,325,10,19,3,520,321,4
+Math/Lie.lean:78:2,397,25,10,3,664,409,2
+Math/Lie.lean:83:2,519,75,47,4,741,324,7
+Math/Lie.lean:94:62,883,99,58,3,1069,656,10
+Math/Rotman.lean:33:15,119,15,67,4,261,133,23
+Math/Rotman.lean:41:77,75,17,34,3,363,193,4
+Math/Rotman.lean:44:4,1166,263,309,5,1059,532,17
+Math/Rotman.lean:44:4,2104,523,287,5,5389,2537,20
 Math/Rotman.lean:48:6,-,-,-,-,-,-,-
-Math/Rotman.lean:44:4,499,95,60,2,1110,584,3
-Math/Rotman.lean:44:4,927,173,228,3,1246,601,14
-Math/Rotman.lean:44:4,661,167,123,4,908,458,10
-Math/Zulip AC.lean:13:2,100,18,61,5,212,92,9
+Math/Rotman.lean:44:4,493,93,61,3,1110,584,3
+Math/Rotman.lean:44:4,914,173,222,4,1246,601,14
+Math/Rotman.lean:44:4,650,167,120,5,908,458,10
+Math/Zulip AC.lean:13:2,102,18,63,6,212,92,9

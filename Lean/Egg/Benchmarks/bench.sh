@@ -74,7 +74,6 @@ process_output() {
 
 # Check for --noclean flag
 if [[ "$1" != "--noclean" ]]; then
-    echo -n "Clean building..."
     (cd ../../.. && lake clean && lake build) > /dev/null 2>&1
     (cd Math && lake clean && lake exec cache get && lake build) > /dev/null 2>&1
 fi
