@@ -54,7 +54,7 @@ pub fn detour_run<L: Language, N: Analysis<L> + Default>(roots: &[Id], rws: &[Re
     report.stop_reason = stop_reason;
     report.total_time = total_time;
 
-    report.iterations = i;
+    report.iterations = i+1; // in egg, any aborted iteration still counts as an iteration and increments the counter.
     report.egraph_nodes = eg.total_number_of_nodes();
     report.egraph_classes = eg.number_of_classes();
     report.memo_size = eg.total_size();
