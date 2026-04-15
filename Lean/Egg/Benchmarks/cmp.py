@@ -11,12 +11,24 @@ RESET = "\033[0m"
 
 greens = 0
 reds = 0
+whites = 0
 
-def gt(x, y):
+WHITE_DELTA = 10
+
+def cmp(x, y):
     try:
-        return int(x) > int(y)
+        y = int(y)
     except Exception:
-        return False
+        return 0
+
+    try:
+        x = int(x)
+    except Exception:
+        return -1
+
+    if abs(x-y) < WHITE_DELTA: return 0
+    if x < y: return 1
+    if x > y: return -1
 
 i = int(sys.argv[1])
 print(detour_lines[0].split(",")[i])
@@ -27,13 +39,18 @@ for l, r in zip(detour_lines[1:], original_lines[1:]):
     r = r.split(",")[i]
     color = RESET
     op = " "
-    if gt(l, r) :
+    c = cmp(l, r)
+    if c == -1:
         reds += 1
         color = RED
         op = ">"
-    elif gt(r, l):
+    elif c == 0:
+        whites += 1
+        color = RESET
+        op = "~"
+    else:
         greens += 1
         color = GREEN
         op = "<"
     print(f"{color}{ex:32} D: {l:6} {op} O: {r:6}{RESET}")
-print(f"GREENS: {greens} / REDS: {reds}")
+print(f"GREENS: {greens} / REDS: {reds} / WHITES: {whites}")
