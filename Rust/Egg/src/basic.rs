@@ -78,7 +78,6 @@ fn original_eqsat(egraph: LeanEGraph, init_id: Id, goal_id: Id, cfg: &Config, vi
     let total_time = start_time.elapsed();
     let mut report = runner.report();
     report.total_time = total_time.as_secs_f64();
-    let report = runner.report();
     let rw_stats = collect_rw_stats(&runner);
 
     (runner.egraph, report, rw_stats)
