@@ -17,14 +17,10 @@ WHITE_DELTA = 10
 
 def cmp(x, y):
     try:
+        x = int(x)
         y = int(y)
     except Exception:
         return 0
-
-    try:
-        x = int(x)
-    except Exception:
-        return -1
 
     if abs(x-y) < WHITE_DELTA: return 0
     if x < y: return 1
