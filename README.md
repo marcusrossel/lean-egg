@@ -1,6 +1,11 @@
 # <img src="Docs/icon.png" alt="lean-egg logo" height="38" align="left"> Equality Saturation Tactic for Lean
 
-This repository contains a (work-in-progress) [equality saturation](https://arxiv.org/abs/1012.1802) tactic for [Lean](https://lean-lang.org) based on [egg](https://egraphs-good.github.io). This `egg` tactic is useful for automated equational reasoning based on given equational theorems. 
+> [!CAUTION]
+> The `egg` tactic is no longer being developed!
+> We recommend you use Lean's `grind` tactic instead, which also uses rewriting based on e-graphs internally.
+> If you are interested in the internals of the `egg` tactic, see [Towards Pen-and-Paper-Style Equational Reasoning in Interactive Theorem Provers by Equality Saturation](https://doi.org/10.1145/3776667). 
+
+This repository contains a **deprecated** [equality saturation](https://arxiv.org/abs/1012.1802) tactic for [Lean](https://lean-lang.org) based on [egg](https://egraphs-good.github.io). This `egg` tactic could be used for automated equational reasoning based on given equational theorems. 
 
 ## Setup
 
@@ -95,7 +100,8 @@ Note that rewrites are also applied to hypotheses.
 
 ## Related Work
 
+* [Towards Pen-and-Paper-Style Equational Reasoning in Interactive Theorem Provers by Equality Saturation](https://doi.org/10.1145/3776667) is a paper detailing the ideas behind the implementation of the `egg` tactic.
 * [Lean Together 2025: "Egg: An Equality Saturation Tactic in Lean"](https://researchseminars.org/talk/LeanTogether2025/22/) is a talk which motivates the use cases of the `egg` tactic.
 * [An Equality Saturation Tactic for Lean](https://cfaed.tu-dresden.de/files/Images/people/chair-cc/theses/2407_Rossel_MA.pdf) contains a detailed description of the tactic's inner workings as of June 2024.
 * [Guided Equality Saturation](https://dl.acm.org/doi/10.1145/3632900) introduces the original prototype of the `egg` tactic.
-* [Bridging Syntax and Semantics of Lean Expressions in E-Graphs](http://arxiv.org/abs/2405.10188) contains a high-level description of how the tactic handles binders and definitional equality. 
+* [Bridging Syntax and Semantics of Lean Expressions in E-Graphs](http://arxiv.org/abs/2405.10188) contains a (**partially outdated**) high-level description of how the tactic handles binders and definitional equality. 

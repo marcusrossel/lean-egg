@@ -8,3 +8,4 @@
 /Rust/Slotted/Cargo.lock
 /Rust/Slotted/target
 /.lake
+.DS_Store
