@@ -4,7 +4,7 @@ open Lean Meta
 
 namespace Egg.Explanation
 
-private inductive Expression where
+inductive Expression where
   | bvar   (idx : Nat)
   | fvar   (id : FVarId)
   | mvar   (id : MVarId)
@@ -40,7 +40,7 @@ private def Expression.pp (levels := false) :  Expression → String
   | unknown => "???"
 
 -- If `synthesize` is true, we try to fill type class instance holes immediately by synthesis.
-private def Expression.toExpr (e : Expression) (synthesize := false) : MetaM Expr := do
+def Expression.toExpr (e : Expression) (synthesize := false) : MetaM Expr := do
   go e
 where
   go : Expression → MetaM Expr

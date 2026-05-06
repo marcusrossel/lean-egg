@@ -4,6 +4,7 @@ open Lean
 
 namespace Egg
 
+set_option compiler.ignoreBorrowAnnotation true in
 @[export lean_is_synthable]
 def isSynthable (ty : String) : MetaM Bool := do
   let tyExpr ← parse ty (eagerSynth := true)

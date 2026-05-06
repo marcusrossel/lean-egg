@@ -344,15 +344,14 @@ lean_obj_res eqsat_result_to_lean(eqsat_result result) {
     return lean_result;
 }
 
-lean_obj_res run_eqsat_request(lean_obj_arg req, lean_obj_arg x1, lean_obj_arg x2, lean_obj_arg x3, lean_obj_arg x4, lean_obj_arg x5) {
-    env e = { .x1 = x1, .x2 = x2, .x3 = x3, .x4 = x4, .x5 = x5 };
+lean_obj_res run_eqsat_request(lean_obj_arg req, lean_obj_arg x1, lean_obj_arg x2, lean_obj_arg x3, lean_obj_arg x4) {
+    env e = { .x1 = x1, .x2 = x2, .x3 = x3, .x4 = x4 };
     eqsat_result result = run_eqsat_request_core(req, &e);
     lean_object* res = eqsat_result_to_lean(result);
     // TODO: We should construct an error here if any `is_synthable` call fails.
     //       Cf. the comment in `rev_ffi.c`.
-    lean_object* metam_state = lean_alloc_ctor(0, 2, 0);
+    lean_object* metam_state = lean_alloc_ctor(0, 1, 0);
     lean_ctor_set(metam_state, 0, res);
-    lean_ctor_set(metam_state, 1, x5);
     return metam_state;
 }
 

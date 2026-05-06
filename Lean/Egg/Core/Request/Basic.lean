@@ -98,13 +98,13 @@ structure Result.Report where
 deriving Inhabited
 
 -- IMPORTANT: The C interface to egg depends on the order of these constructors.
-private inductive Explanation.Kind.Raw where
+inductive Explanation.Kind.Raw where
   | none
   | sameEClass
   | eqTrue
 deriving Inhabited
 
-private def Explanation.Kind.Raw.toKind? : Raw → Option Explanation.Kind
+def Explanation.Kind.Raw.toKind? : Raw → Option Explanation.Kind
   | none       => .none
   | sameEClass => some .sameEClass
   | eqTrue     => some .eqTrue
@@ -117,6 +117,7 @@ structure Result.Raw where
   report  : Report
 deriving Inhabited
 
+set_option compiler.ignoreBorrowAnnotation true in
 @[extern "run_eqsat_request"]
 private opaque runRaw (req : Request) : MetaM Result.Raw
 
