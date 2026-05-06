@@ -23,7 +23,7 @@ def builtins (cfg : Config.Normalization) (subgoals : Bool) : MetaM Rules := do
   for thm in thms, idx in [:thms.size] do
     let info := env.find? thm |>.get!
     let lvlMVars ← List.replicateM info.numLevelParams mkFreshLevelMVar
-    let val := info.instantiateValueLevelParams! lvlMVars
+    let val := mkConst thm lvlMVars
     let type := info.instantiateTypeLevelParams lvlMVars
     let some rules' ← rules.add? (.builtin idx) val type cfg .both (mkIdent thm)
       | throwError "egg failed to create rewrites for builtin '{thm}'"
