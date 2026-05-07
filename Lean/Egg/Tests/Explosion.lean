@@ -9,39 +9,39 @@ variable (f : Nat → Nat → Nat)
 set_option trace.egg.rewrites.explosion true
 
 -- This should not generate exploded rewrites.
-/-- trace: [egg.rewrites.explosion] Explosion (0) -/
+/-- trace: [egg.rewrites.explosion] ✅️ Explosion (0) -/
 #guard_msgs in
 example : true = true := by
   egg
 
 -- This should not generate exploded rewrites.
-/-- trace: [egg.rewrites.explosion] Explosion (0) -/
+/-- trace: [egg.rewrites.explosion] ✅️ Explosion (0) -/
 #guard_msgs in
 example (h : true = false) : true = false := by
   egg [h]
 
 -- This should not generate exploded rewrites.
-/-- trace: [egg.rewrites.explosion] Explosion (0) -/
+/-- trace: [egg.rewrites.explosion] ✅️ Explosion (0) -/
 #guard_msgs in
 example (h : ∀ x y : Nat, f x y = f y x) : f 1 2 = f 2 1 := by
   egg [h]
 
 -- This should not generate exploded rewrites.
-/-- trace: [egg.rewrites.explosion] Explosion (0) -/
+/-- trace: [egg.rewrites.explosion] ✅️ Explosion (0) -/
 #guard_msgs in
 example (a b : Nat) (h : ∀ x y : Nat, f x y = f y x) : f a b = f b a := by
   egg [h]
 
 -- This should generate two explosions of `h` - one for `a` and one for `b`.
 /--
-trace: [egg.rewrites.explosion] Explosion (2)
-  [egg.rewrites.explosion] #0💥[3](⇒)
+trace: [egg.rewrites.explosion] ✅️ Explosion (2)
+  [egg.rewrites.explosion] ✅️ #0💥[3](⇒)
     [egg.rewrites.explosion] f ?m.15 ?m.15 = f a ?m.15
     [egg.rewrites.explosion] LHS MVars
         [?m.15: [unconditionallyVisible]]
     [egg.rewrites.explosion] RHS MVars
         [?m.15: [unconditionallyVisible]]
-  [egg.rewrites.explosion] #0💥[4](⇒)
+  [egg.rewrites.explosion] ✅️ #0💥[4](⇒)
     [egg.rewrites.explosion] f ?m.21 ?m.21 = f b ?m.21
     [egg.rewrites.explosion] LHS MVars
         [?m.21: [unconditionallyVisible]]

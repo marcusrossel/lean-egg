@@ -105,30 +105,48 @@ def MVarId.assignIfDefeq' (g : MVarId) (e : Expr) : MetaM Unit := do
   g.assign e
 
 -- Note: The `_uniq` prefix comes from the `NameGenerator`.
+-- In Lean ≥ 4.30, the name generator produces hierarchical names like `_uniq.G.I` (group + index)
+-- instead of the flat `_uniq.N` format. We pack both formats into a single Nat for the egg backend:
+-- flat `_uniq.N` → N (always < 2^32 in practice), hierarchical `_uniq.G.I` → (G+1) * 2^32 + I.
+private def packUniqName : Name → Option Nat
+  | .num (.num (.str .anonymous "_uniq") group) idx => some ((group + 1) * 0x100000000 + idx)
+  | .num (.str .anonymous "_uniq") idx => some idx
+  | _ => none
 
-def FVarId.uniqueIdx! : FVarId → Nat
-  | { name := .num (.str .anonymous "_uniq") idx } => idx
-  | _ => panic! "tried to access unique index of non-unique fvar-id"
+private def unpackUniqName (n : Nat) : Name :=
+  if n >= 0x100000000 then
+    let group := n / 0x100000000 - 1
+    let idx := n % 0x100000000
+    .num (.num (.str .anonymous "_uniq") group) idx
+  else
+    .num (.str .anonymous "_uniq") n
+
+def FVarId.uniqueIdx! (id : FVarId) : Nat :=
+  match packUniqName id.name with
+  | some n => n
+  | none => panic! "tried to access unique index of non-unique fvar-id"
 
 def FVarId.fromUniqueIdx (idx : Nat) : FVarId :=
-  { name := .num (.str .anonymous "_uniq") idx }
+  { name := unpackUniqName idx }
 
-def MVarId.uniqueIdx! : MVarId → Nat
-  | { name := .num (.str .anonymous "_uniq") idx } => idx
-  | _ => panic! "tried to access unique index of non-unique mvar-id"
+def MVarId.uniqueIdx! (id : MVarId) : Nat :=
+  match packUniqName id.name with
+  | some n => n
+  | none => panic! "tried to access unique index of non-unique mvar-id"
 
 def MVarId.fromUniqueIdx (idx : Nat) : MVarId :=
-  { name := .num (.str .anonymous "_uniq") idx }
+  { name := unpackUniqName idx }
 
 -- Note that level mvars' names are pretty printed using the `?u` prefix, but the underlying name
 -- still uses the `_uniq` prefix:
 -- https://github.com/leanprover/lean4/blob/e206e53f4e37ecd810b2de36b7544240d579c535/src/Lean/Level.lean#L436
-def LMVarId.uniqueIdx! : LMVarId → Nat
-  | { name := .num (.str .anonymous "_uniq") idx } => idx
-  | _ => panic! "tried to access unique index of non-unique level mvar-id"
+def LMVarId.uniqueIdx! (id : LMVarId) : Nat :=
+  match packUniqName id.name with
+  | some n => n
+  | none => panic! "tried to access unique index of non-unique level mvar-id"
 
 def LMVarId.fromUniqueIdx (idx : Nat) : LMVarId :=
-  { name := .num (.str .anonymous "_uniq") idx }
+  { name := unpackUniqName idx }
 
 deriving instance BEq, Hashable for SubExpr.Pos
 

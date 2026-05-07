@@ -4,10 +4,10 @@ import Egg
 -- valid direction of rewrites.
 
 /--
-trace: [egg.rewrites.explicit] Basic (1)
-  [egg.rewrites.explicit] #0(⇒): _h
+trace: [egg.rewrites.explicit] ✅️ Basic (1)
+  [egg.rewrites.explicit] ✅️ #0(⇒): _h
     [egg.rewrites.explicit] f ?b = f ?a
-    [egg.rewrites.explicit] Conditions
+    [egg.rewrites.explicit] ✅️ Conditions
       [egg.rewrites.explicit] ?a = ?b
     [egg.rewrites.explicit] LHS MVars
         [?b: [unconditionallyVisible]]

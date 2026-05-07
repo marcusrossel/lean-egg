@@ -3,11 +3,11 @@ import Egg
 set_option egg.shapes true
 
 /--
-trace: [egg.encoded] Encoded
-  [egg.encoded] Goal
+trace: [egg.encoded] ✅️ Encoded
+  [egg.encoded] ✅️ Goal
     [egg.encoded] LHS: (◇ * (const "Bool.true"))
     [egg.encoded] RHS: (◇ * (const "Bool.true"))
-  [egg.encoded] Guides
+  [egg.encoded] ✅️ Guides
     [egg.encoded] (◇ * (= (◇ * (const "Bool.true")) (◇ * (const "Bool.true"))))
 -/
 #guard_msgs in

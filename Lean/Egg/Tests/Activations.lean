@@ -5,7 +5,7 @@ set_option egg.builtins false
 set_option linter.unusedVariables false
 
 /--
-trace: [egg.activations] Activations
+trace: [egg.activations] ✅️ Activations
   [egg.activations] nat-lit: false
       level: false
       lambda: false
@@ -16,7 +16,7 @@ example : True := by
   egg
 
 /--
-trace: [egg.activations] Activations
+trace: [egg.activations] ✅️ Activations
   [egg.activations] nat-lit: true
       level: false
       lambda: false
@@ -27,7 +27,7 @@ example : 0 = 0 := by
   egg
 
 /--
-trace: [egg.activations] Activations
+trace: [egg.activations] ✅️ Activations
   [egg.activations] nat-lit: false
       level: false
       lambda: true
@@ -38,7 +38,7 @@ example : (fun x : Bool => x) true = id true := by
   egg [id]
 
 /--
-trace: [egg.activations] Activations
+trace: [egg.activations] ✅️ Activations
   [egg.activations] nat-lit: false
       level: false
       lambda: false
@@ -49,7 +49,7 @@ example (h : ∀ x : Nat, x = x) : True := by
   egg [h]
 
 /--
-trace: [egg.activations] Activations
+trace: [egg.activations] ✅️ Activations
   [egg.activations] nat-lit: false
       level: true
       lambda: false

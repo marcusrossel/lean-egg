@@ -89,6 +89,7 @@ theorem map_take (f : α → β) (as : Vec α (m + n)) : map f (take n as) = tak
 theorem fill_nil (as : Vec (Vec α 0) n) : fill []ᵥ n = as := by
   induction as <;> try cases ‹Vec _ 0›
   all_goals solved_by grind simp
+  --egg
 
 @[grind, simp]
 theorem fill_nil₂ (as : Vec α n) : map tail (transpose (as ::ᵥ []ᵥ)) = fill []ᵥ n := by
@@ -100,6 +101,7 @@ theorem fill_nil₂ (as : Vec α n) : map tail (transpose (as ::ᵥ []ᵥ)) = fi
 theorem map_drop (f : α → β) (as : Vec α (m + n)) : map f (drop n as) = (drop n (map f as)) := by
   induction n generalizing m <;> cases as
   all_goals solved_by simp
+
 
 @[grind, simp]
 theorem take_drop (as : Vec α (m + n)) : take n as ++ᵥ drop n as = as := by

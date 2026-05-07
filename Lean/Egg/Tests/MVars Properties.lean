@@ -5,8 +5,8 @@ set_option trace.egg.rewrites.explicit true
 set_option linter.unusedVariables false
 
 /--
-trace: [egg.rewrites.explicit] Basic (1)
-  [egg.rewrites.explicit] #0(⇒)❌[lhsSingleMVar]: h
+trace: [egg.rewrites.explicit] ✅️ Basic (1)
+  [egg.rewrites.explicit] ✅️ #0(⇒)❌[lhsSingleMVar]: h
     [egg.rewrites.explicit] ?x = ?x
     [egg.rewrites.explicit] LHS MVars
         [?x: [unconditionallyVisible]]
@@ -18,14 +18,14 @@ example (h : ∀ x : Nat, x = x) : true = true := by
   egg [h]
 
 /--
-trace: [egg.rewrites.explicit] Basic (2)
-  [egg.rewrites.explicit] #0(⇒): h
+trace: [egg.rewrites.explicit] ✅️ Basic (2)
+  [egg.rewrites.explicit] ✅️ #0(⇒): h
     [egg.rewrites.explicit] f ?x = ?x
     [egg.rewrites.explicit] LHS MVars
         [?α: [unconditionallyVisible], ?x: [unconditionallyVisible]]
     [egg.rewrites.explicit] RHS MVars
         [?x: [unconditionallyVisible]]
-  [egg.rewrites.explicit] #0(⇐)❌[rhsMVarInclusion: [?α], lhsSingleMVar]: h
+  [egg.rewrites.explicit] ✅️ #0(⇐)❌[rhsMVarInclusion: [?α], lhsSingleMVar]: h
     [egg.rewrites.explicit] ?x = f ?x
     [egg.rewrites.explicit] LHS MVars
         [?x: [unconditionallyVisible]]
@@ -37,10 +37,10 @@ example (f : {α : Type} → α → α) (h : ∀ α (x : α), f x = x) : true = 
   egg [h]
 
 /--
-trace: [egg.rewrites.explicit] Basic (2)
-  [egg.rewrites.explicit] #0(⇒): h
+trace: [egg.rewrites.explicit] ✅️ Basic (2)
+  [egg.rewrites.explicit] ✅️ #0(⇒): h
     [egg.rewrites.explicit] ?x + ?x = ?x
-    [egg.rewrites.explicit] Conditions
+    [egg.rewrites.explicit] ✅️ Conditions
       [egg.rewrites.explicit] Add ?α
     [egg.rewrites.explicit] LHS MVars
         [?α: [inErasedTcInst, inTcInstTerm, unconditionallyVisible],
@@ -48,9 +48,9 @@ trace: [egg.rewrites.explicit] Basic (2)
          ?x: [unconditionallyVisible]]
     [egg.rewrites.explicit] RHS MVars
         [?x: [unconditionallyVisible]]
-  [egg.rewrites.explicit] #0(⇐)❌[tcMVarInclusion: [?α], rhsMVarInclusion: [?α], lhsSingleMVar]: h
+  [egg.rewrites.explicit] ✅️ #0(⇐)❌[tcMVarInclusion: [?α], rhsMVarInclusion: [?α], lhsSingleMVar]: h
     [egg.rewrites.explicit] ?x = ?x + ?x
-    [egg.rewrites.explicit] Conditions
+    [egg.rewrites.explicit] ✅️ Conditions
       [egg.rewrites.explicit] Add ?α
     [egg.rewrites.explicit] LHS MVars
         [?x: [unconditionallyVisible]]
@@ -64,14 +64,14 @@ example (h : ∀ {α} [Add α] (x : α), x + x = x) : true = true := by
   egg [h]
 
 /--
-trace: [egg.rewrites.explicit] Basic (2)
-  [egg.rewrites.explicit] #0(⇒): h
+trace: [egg.rewrites.explicit] ✅️ Basic (2)
+  [egg.rewrites.explicit] ✅️ #0(⇒): h
     [egg.rewrites.explicit] f ?n ⋯ = ?n
     [egg.rewrites.explicit] LHS MVars
         [?n: [inErasedProof, inProofTerm, unconditionallyVisible]]
     [egg.rewrites.explicit] RHS MVars
         [?n: [unconditionallyVisible]]
-  [egg.rewrites.explicit] #0(⇐)❌[lhsSingleMVar]: h
+  [egg.rewrites.explicit] ✅️ #0(⇐)❌[lhsSingleMVar]: h
     [egg.rewrites.explicit] ?n = f ?n ⋯
     [egg.rewrites.explicit] LHS MVars
         [?n: [unconditionallyVisible]]

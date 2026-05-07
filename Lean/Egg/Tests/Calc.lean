@@ -41,11 +41,11 @@ example (h₁ : 0 = 0 → a = b) : a = b := by
     _ = _ with [(rfl : 0 = 0)]
 
 /--
-error: egg failed to prove the goal (reached time limit) ⏎
+error: egg failed to prove the goal (saturated) ⏎
 ---
-error: egg failed to prove the goal (reached time limit) ⏎
+error: egg failed to prove the goal (saturated) ⏎
 ---
-error: egg failed to prove the goal (reached time limit) ⏎
+error: egg failed to prove the goal (saturated) ⏎
 ---
 error: unsolved goals
 a b c d : Nat

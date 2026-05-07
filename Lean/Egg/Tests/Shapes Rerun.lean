@@ -16,8 +16,8 @@ and
   ()
 
 • Types: ⏎
-  ?m.28: Unit
   ?m.30: Unit → Unit
+  ?m.28: Unit
 
 • Read Only Or Synthetic Opaque MVars: []
 -/
