@@ -241,7 +241,9 @@ pub fn export_for_extraction_gym<L, A>(
     if init == goal {return }
     use egraph_serialize::*;
     let mut out = EGraph::default();
-    out.root_eclasses = vec![ClassId::from(format!("{}", init)), ClassId::from(format!("{}", goal))];
+    let canonical_init = egraph.find(init);
+    let canonical_goal = egraph.find(goal);
+    out.root_eclasses = vec![ClassId::from(format!("{}", canonical_init)), ClassId::from(format!("{}", canonical_goal))];
     for class in egraph.classes() {
         for (i, node) in class.nodes.iter().enumerate() {
             out.add_node(

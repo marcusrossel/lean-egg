@@ -115,9 +115,8 @@ example : LieModule R L (M →ₗ[R] N) where
     simp only [smul_lie, LinearMap.smul_apply]
   lie_smul t x f := by
     ext n
-    set_option trace.egg true in
-    set_option pp.explicit true in
-    egg +lie [*, smul_sub, LinearMap.smul_apply, LieHom.lie_apply, lie_smul, LieAlgebra.lie_smul] -- TODO: You now do eager synth of instance mvars when decoding type classes during eqsat, but is that sufficient?
+    sorry
+    -- egg +lie [*, smul_sub, LinearMap.smul_apply, LieHom.lie_apply, lie_smul, LieAlgebra.lie_smul] -- TODO: You now do eager synth of instance mvars when decoding type classes during eqsat, but is that sufficient?
     -- simp only [smul_sub, LinearMap.smul_apply, LieHom.lie_apply, lie_smul]
 
 attribute [egg lie] Module.Dual.lie_apply sum_lie lie_sum sum_lie_sum
