@@ -16,6 +16,7 @@ package egg where
 lean_lib Egg where
   -- This enables the interpreter to run functions marked `@[extern]`.
   precompileModules := true
+  leanOptions := #[⟨`Elab.async, false⟩]
 
 target importTarget pkg : System.FilePath :=
   pkg.afterBuildCacheAsync do
