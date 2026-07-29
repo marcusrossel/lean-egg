@@ -56,7 +56,7 @@ inductive Debug.ExitPoint
 deriving BEq, Inhabited
 
 structure Debug where
-  exitPoint  := Debug.ExitPoint.none
+  exitPoint  := Debug.ExitPoint.beforeProof
   proofFuel? := (none : Option Nat)
   vizPath    := (none : Option String)
 deriving BEq
