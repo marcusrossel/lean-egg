@@ -7,6 +7,7 @@ namespace Egg.Config
 
 structure Modifier where
   slotted         : Option Bool            := none
+  guf             : Option Bool            := none
   shapes          : Option Bool            := none
   betaReduceRws   : Option Bool            := none
   etaReduceRws    : Option Bool            := none
@@ -39,6 +40,7 @@ structure Modifier where
   vizPath         : Option String          := none
 
 def modify (cfg : Config) (mod : Modifier) : Config where
+  guf             := mod.guf.getD cfg.guf
   shapes          := mod.shapes.getD cfg.shapes
   betaReduceRws   := mod.betaReduceRws.getD cfg.betaReduceRws
   etaReduceRws    := mod.etaReduceRws.getD cfg.etaReduceRws

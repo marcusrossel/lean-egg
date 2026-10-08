@@ -21,7 +21,7 @@ structure Request.Term where
   enode : Nat
 
 @[extern "get_term"]
-private opaque getTermRaw (graph : EGraph.Obj) (slotted : Bool) (enode : Nat) : String
+private opaque getTermRaw (graph : EGraph.Obj) (slotted guf : Bool) (enode : Nat) : String
 
 def EGraph.get (graph : EGraph) (req : Request.Term) : MetaM Expr := do
-  parse <| getTermRaw graph.obj graph.slotted req.enode
+  parse <| getTermRaw graph.obj graph.slotted graph.guf req.enode

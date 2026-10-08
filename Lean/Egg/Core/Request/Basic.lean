@@ -23,6 +23,7 @@ protected structure Config where
   shapes         : Bool
   unionSemantics : Bool
   subgoals       : Bool
+  guf            : Bool
 
 instance : Coe Config Request.Config where
   coe cfg := {
@@ -39,6 +40,7 @@ instance : Coe Config Request.Config where
     shapes         := cfg.shapes
     unionSemantics := cfg.unionSemantics
     subgoals       := cfg.subgoals
+    guf            := cfg.guf
   }
 
 -- IMPORTANT: The C interface to egg depends on the order of these fields.
@@ -140,6 +142,6 @@ def run
   let explLength := raw.expl.lineCount
   unless explLength <= explLengthLimit do throwError ← onFail raw.report (.explLength explLength)
   let some obj := raw.egraph? | throwError "egg: internal error: e-graph is absent"
-  let egraph := { obj, slotted := req.cfg.slotted }
+  let egraph := { obj, slotted := req.cfg.slotted, guf := req.cfg.guf }
   let expl ← Explanation.Raw.parse { kind, str := raw.expl, slotted := req.cfg.slotted }
   return { expl, egraph, report := raw.report }

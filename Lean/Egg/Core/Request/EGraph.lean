@@ -9,3 +9,4 @@ instance : Nonempty EGraph.Obj := EGraph.Pointed.property
 structure EGraph where
   obj     : EGraph.Obj
   slotted : Bool
+  guf     : Bool

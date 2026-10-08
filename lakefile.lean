@@ -62,6 +62,22 @@ extern_lib slotted_for_lean pkg := do
       IO.FS.writeBinFile tgtPath (← IO.FS.readBinFile srcPath)
     return pure tgtPath
 
+extern_lib guf_for_lean pkg := do
+  pkg.afterBuildCacheAsync do
+    let name := nameToStaticLib "guf_for_lean"
+    let srcPath := pkg.dir / "Rust" / "GUF" / "target" / "release" / name
+    let tgtPath := pkg.sharedLibDir / name
+    let traceFile := pkg.buildDir / "rust" / "guf.trace"
+    let _ ← buildUnlessUpToDate? traceFile (← getTrace) traceFile do
+      proc {
+        cmd := "cargo",
+        args := #["rustc", "--release", "--", "-C", "relocation-model=pic"],
+        cwd := pkg.dir / "Rust" / "GUF"
+      }
+      IO.FS.createDirAll pkg.sharedLibDir
+      IO.FS.writeBinFile tgtPath (← IO.FS.readBinFile srcPath)
+    return pure tgtPath
+
 @[test_driver]
 lean_exe TestDriver where
   srcDir := "Egg/Tests"

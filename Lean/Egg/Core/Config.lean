@@ -40,6 +40,8 @@ structure DefEq where
   levels    := true
 
 structure Backend where
+  -- Use the backend based on GUF (generalized union-find) instead of egg.
+  guf            := false
   unionSemantics := true
   optimizeExpl   := true
   timeLimit      := 3

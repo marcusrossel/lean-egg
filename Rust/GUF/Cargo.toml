@@ -1,0 +1,15 @@
+[package]
+name = "guf-for-lean"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+rs2 = { git = "https://github.com/memoryleak47/semigroup-unionfind", rev = "5a1a96a22e26a88c484d55c10c412ce5337ac9fd" }
+symbolic_expressions = "5.0.3"
+libc = "0.2"
+
+[build-dependencies]
+cc = "1.0"

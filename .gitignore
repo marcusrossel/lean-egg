@@ -9,3 +9,5 @@
 /Rust/Slotted/target
 /.lake
 .DS_Store
+/Rust/GUF/Cargo.lock
+/Rust/GUF/target

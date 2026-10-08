@@ -85,6 +85,7 @@ typedef struct config {
 
 typedef struct lean_config {
     _Bool  slotted;
+    _Bool  guf;
     config rust_config;
 } lean_config;
 
@@ -103,12 +104,14 @@ structure Config where
   shapes         : Bool
   unionSemantics : Bool
   subgoals       : Bool
+  guf            : Bool
 */
 lean_config config_from_lean_obj(lean_obj_arg cfg) {
     unsigned scalar_base_offset = lean_ctor_num_objs(cfg) * sizeof(void*);
     unsigned bool_offset = sizeof(uint8_t);
     return (lean_config) { 
         .slotted = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 0),
+        .guf     = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 10),
         .rust_config = (config) {
             .optimize_expl   = lean_ctor_get_uint8(cfg, scalar_base_offset + bool_offset * 1),
             .time_limit      = nat_from_lean_obj(lean_ctor_get(cfg, 0)),
@@ -167,9 +170,11 @@ lean_obj_res report_to_lean(report rep) {
 
 typedef void* egg_egraph;
 typedef void* slotted_egraph;
+typedef void* guf_egraph;
 
 extern void egg_free_egraph(egg_egraph);
 extern void slotted_free_egraph(slotted_egraph);
+extern void guf_free_egraph(guf_egraph);
 
 void egg_egraph_finalize(egg_egraph obj) {
     egg_free_egraph(obj);
@@ -177,6 +182,10 @@ void egg_egraph_finalize(egg_egraph obj) {
 
 void slotted_egraph_finalize(slotted_egraph obj) {
     slotted_free_egraph(obj);
+}
+
+void guf_egraph_finalize(guf_egraph obj) {
+    guf_free_egraph(obj);
 }
 
 void egg_egraph_foreach(egg_egraph _x, b_lean_obj_arg _y) {
@@ -187,8 +196,13 @@ void slotted_egraph_foreach(slotted_egraph _x, b_lean_obj_arg _y) {
     // do nothing since `slotted_egraph` does not contain nested Lean objects
 }
 
+void guf_egraph_foreach(guf_egraph _x, b_lean_obj_arg _y) {
+    // do nothing since `guf_egraph` does not contain nested Lean objects
+}
+
 static lean_external_class* egg_egraph_class = NULL;
 static lean_external_class* slotted_egraph_class = NULL;
+static lean_external_class* guf_egraph_class = NULL;
 
 lean_object* egg_egraph_to_lean(egg_egraph e) {
     if (egg_egraph_class == NULL) {
@@ -204,12 +218,23 @@ lean_object* slotted_egraph_to_lean(slotted_egraph e) {
     return lean_alloc_external(slotted_egraph_class, e);
 }
 
+lean_object* guf_egraph_to_lean(guf_egraph e) {
+    if (guf_egraph_class == NULL) {
+        guf_egraph_class = lean_register_external_class(guf_egraph_finalize, guf_egraph_foreach);
+    }
+    return lean_alloc_external(guf_egraph_class, e);
+}
+
 egg_egraph to_egg_egraph(b_lean_obj_arg e) {
     return (egg_egraph)(lean_get_external_data(e));
 }
 
 slotted_egraph to_slotted_egraph(b_lean_obj_arg e) {
     return (slotted_egraph)(lean_get_external_data(e));
+}
+
+guf_egraph to_guf_egraph(b_lean_obj_arg e) {
+    return (guf_egraph)(lean_get_external_data(e));
 }
 
 typedef struct egg_result {
@@ -225,14 +250,24 @@ typedef struct slotted_result {
     report rep;
 } slotted_result;
 
+typedef struct guf_result {
+    uint8_t kind;
+    char* expl;
+    guf_egraph graph;
+    report rep;
+} guf_result;
+
 typedef union egraph {
     egg_egraph egg;
     slotted_egraph slotted;
+    guf_egraph guf;
 } egraph;
 
-lean_object* egraph_to_lean(egraph e, _Bool slotted) {
+lean_object* egraph_to_lean(egraph e, _Bool slotted, _Bool guf) {
     if (slotted) {
         return slotted_egraph_to_lean(e.slotted);
+    } else if (guf) {
+        return guf_egraph_to_lean(e.guf);
     } else {
         return egg_egraph_to_lean(e.egg);
     }
@@ -240,6 +275,7 @@ lean_object* egraph_to_lean(egraph e, _Bool slotted) {
 
 typedef struct eqsat_result {
     _Bool slotted;
+    _Bool guf;
     uint8_t kind;
     const char* expl;
     egraph graph;
@@ -264,6 +300,17 @@ extern slotted_result slotted_explain_congr(
     str_array guides, 
     config cfg,
     const char* viz_path
+);
+
+extern guf_result guf_explain_congr(
+    const char* init, 
+    const char* goal, 
+    rws_array rws, 
+    str_array guides, 
+    str_array blocks, 
+    config cfg,
+    const char* viz_path,
+    void* e
 );
 
 /*
@@ -295,6 +342,15 @@ eqsat_result run_eqsat_request_core(lean_obj_arg req, env* e) {
             .graph   = { .slotted = res.graph },
             .rep     = res.rep,
         };
+    } else if (cfg.guf) {
+        guf_result res = guf_explain_congr(lhs, rhs, rws, guides, blocks, cfg.rust_config, viz_path, e);
+        result = (eqsat_result) {
+            .guf   = true,
+            .kind  = res.kind,
+            .expl  = res.expl,
+            .graph = { .guf = res.graph },
+            .rep   = res.rep,
+        };
     } else {
         egg_result res = egg_explain_congr(lhs, rhs, rws, guides, blocks, cfg.rust_config, viz_path, e);
         result = (eqsat_result) {
@@ -322,7 +378,7 @@ structure Result.Raw where
 */
 lean_obj_res eqsat_result_to_lean(eqsat_result result) {
     lean_object* expl  = lean_mk_string(result.expl);
-    lean_object* graph = egraph_to_lean(result.graph, result.slotted);
+    lean_object* graph = egraph_to_lean(result.graph, result.slotted, result.guf);
     lean_object* rep   = report_to_lean(result.rep);
 
     lean_object* lean_result = lean_alloc_ctor(0, 3, sizeof(uint8_t));
@@ -367,7 +423,13 @@ extern const char* slotted_query_equiv(
     const char* goal
 );
 
-lean_obj_res explain_equiv(b_lean_obj_arg graph, uint8_t slotted, lean_obj_arg init, lean_obj_arg goal) {
+extern guf_result guf_query_equiv(
+    guf_egraph graph,
+    const char* init, 
+    const char* goal
+);
+
+lean_obj_res explain_equiv(b_lean_obj_arg graph, uint8_t slotted, uint8_t guf, lean_obj_arg init, lean_obj_arg goal) {
     const char* init_c = lean_string_cstr(init);
     const char* goal_c = lean_string_cstr(goal);
     
@@ -376,6 +438,17 @@ lean_obj_res explain_equiv(b_lean_obj_arg graph, uint8_t slotted, lean_obj_arg i
         const char* expl = slotted_query_equiv(graph_c, init_c, goal_c);
         eqsat_result res = (eqsat_result) { .slotted = true, .kind = 1, .expl = expl, .graph = NULL, .rep = 0 };
         return eqsat_result_to_lean(res);
+    } else if (guf != 0) {
+        guf_egraph graph_c = to_guf_egraph(graph);
+        guf_result res = guf_query_equiv(graph_c, init_c, goal_c);
+        eqsat_result result = (eqsat_result) {
+            .guf   = true,
+            .kind  = res.kind,
+            .expl  = res.expl,
+            .graph = { .guf = res.graph },
+            .rep   = res.rep,
+        };
+        return eqsat_result_to_lean(result);
     } else {
         egg_egraph graph_c = to_egg_egraph(graph);
         egg_result res = egg_query_equiv(graph_c, init_c, goal_c);
@@ -391,10 +464,16 @@ lean_obj_res explain_equiv(b_lean_obj_arg graph, uint8_t slotted, lean_obj_arg i
 }
 
 extern const char* egg_get_term(egg_egraph graph, size_t enode);
+extern const char* guf_get_term(guf_egraph graph, size_t enode);
 
-lean_obj_res get_term(b_lean_obj_arg graph, uint8_t slotted, lean_obj_arg node) {
+lean_obj_res get_term(b_lean_obj_arg graph, uint8_t slotted, uint8_t guf, lean_obj_arg node) {
     if (slotted != 0) {
         exit(1);
+    } else if (guf != 0) {
+        guf_egraph graph_c = to_guf_egraph(graph);
+        size_t node_c = nat_from_lean_obj(node);
+        const char* term = guf_get_term(graph_c, node_c);
+        return lean_mk_string(term);
     } else {
         egg_egraph graph_c = to_egg_egraph(graph);
         size_t node_c = nat_from_lean_obj(node);
