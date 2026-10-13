@@ -65,7 +65,7 @@ pub fn class_nodes(x: Id, egraph: &LeanEGraph) -> Vec<LeanExpr> {
 // Note: We don't use `EGraph::union`, as it rebuilds the e-graph after every union. Instead (as in
 //       egg), the e-graph is rebuilt once per iteration of equality saturation.
 pub fn union_justified(egraph: &mut LeanEGraph, from: PId, to: PId, rule: &str) -> bool {
-    let justification = Proof::rule(rule, from.clone(), to.clone());
+    let justification = Proof::rule(rule);
     // `justification⁻¹ * to` represents the same term as `from`.
     let (proof, id) = to;
     egraph.uf.union(from, (Proof::compose(&justification.inverse(), &proof), id))

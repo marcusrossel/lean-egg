@@ -7,14 +7,16 @@ use rs2::*;
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub enum ProofObj {
     Refl,
-    Sym(Proof),
+    Sym(Proof), // maps q to q⁻¹
+
     // `Trans(p, q)` first applies `q`, then `p` (cf. `Group::compose`).
     Trans(Proof, Proof),
+
     // Applies proofs to the children of a term (in the order of `LeanExpr::children`).
     Congr(Box<[Proof]>),
+
     // An application of the rewrite rule with the given name, which rewrites the term represented
-    // by `lhs` to the term represented by `rhs`.
-    Rule { name: Rc<str>, lhs: PId, rhs: PId },
+    Rule(Rc<str>),
 }
 
 // Note: This needs to be a new type, as Rust's orphan rule forbids implementing `Group` for `Rc`.
@@ -25,7 +27,6 @@ pub struct Proof(pub Rc<ProofObj>);
 pub type PId = (Proof, Id);
 
 impl Proof {
-
     pub fn is_refl(&self) -> bool {
         matches!(*self.0, ProofObj::Refl)
     }
@@ -38,13 +39,12 @@ impl Proof {
         }
     }
 
-    pub fn rule(name: &str, lhs: PId, rhs: PId) -> Proof {
-        Proof(Rc::new(ProofObj::Rule { name: name.into(), lhs, rhs }))
+    pub fn rule(rule: &str) -> Proof {
+        Proof(Rc::new(ProofObj::Rule(rule.into())))
     }
 }
 
 impl Group for Proof {
-
     fn identity() -> Self {
         Proof(Rc::new(ProofObj::Refl))
     }
