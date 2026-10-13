@@ -1,6 +1,9 @@
 use crate::analysis::*;
 use crate::proof::*;
 use crate::util::*;
+use crate::LeanExpr;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 #[derive(Clone, Copy)]
 pub enum ExplanationKind {
@@ -58,4 +61,63 @@ fn explain_equivalence(egraph: &LeanEGraph, lhs: &LeanTerm, rhs: &LeanTerm) -> R
     let _proof = egraph.get_g_between(lhs_id, rhs_id).unwrap();
     // TODO: Convert the proof to egg's flat explanation format, once GUF provides this conversion.
     Err("GUF backend: equality saturation proved the goal, but GUF cannot produce explanations yet".to_string())
+}
+
+struct Expl {
+    vec: Vec<(ExplTerm, ExplStep)>,
+    last: ExplTerm,
+}
+
+impl Expl {
+    pub fn first(&self) -> &ExplTerm {
+        self.vec.first().map(|(x, _)| x).unwrap_or_else(|| &self.last)
+    }
+}
+
+type MVar = usize;
+
+// ExplTerm are terms with mvars.
+#[derive(Clone)]
+enum ExplTerm {
+    Node(LeanExpr, Box<[ExplTerm]>), // all Proofs in that LeanExpr are going to be refl.
+    MVar(MVar),
+}
+
+type ExplStep = (/*rule id*/ Rc<str>, /*pos*/ Vec<usize>); // last index in vector is innermost index.
+
+type UnifyMap = HashMap<MVar, ExplTerm>;
+
+// will panic if it can't unify.
+fn unify(l: &ExplTerm, r: &ExplTerm, umap: &mut UnifyMap) {
+    todo!()
+}
+
+fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap) -> Expl {
+    match &*p.0 {
+        ProofObj::Refl => Expl {
+            vec: Vec::new(),
+            last: ExplTerm::MVar(fresh_mvar(mvar_counter)),
+        },
+        ProofObj::Sym(p) => {
+            let e = eval(p, mvar_counter, umap);
+            todo!("flip")
+        },
+        ProofObj::Trans(p2, p1) => {
+            let e1 = eval(p1, mvar_counter, umap);
+            let e2 = eval(p2, mvar_counter, umap);
+            unify(&e1.last, e2.first(), umap);
+            Expl {
+                vec: e1.vec.iter().cloned().chain(e2.vec.iter().cloned()).collect(),
+                last: e2.last.clone(),
+            }
+        },
+        ProofObj::Congr(sid, children) => todo!(),
+        ProofObj::Rule(rule_name) => todo!(),
+    }
+}
+
+fn fresh_mvar(mvar_counter: &mut usize) -> MVar {
+    let x = *mvar_counter;
+    *mvar_counter += 1;
+    x
 }
