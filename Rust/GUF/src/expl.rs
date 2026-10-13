@@ -58,9 +58,17 @@ fn explain_equivalence(egraph: &LeanEGraph, lhs: &LeanTerm, rhs: &LeanTerm) -> R
     let lhs_id = egraph.lookup_term(lhs).unwrap();
     let rhs_id = egraph.lookup_term(rhs).unwrap();
     // The proof `p` with `p * lhs_id = rhs_id`, that is, a proof of `lhs = rhs`.
-    let _proof = egraph.get_g_between(lhs_id, rhs_id).unwrap();
-    // TODO: Convert the proof to egg's flat explanation format, once GUF provides this conversion.
-    Err("GUF backend: equality saturation proved the goal, but GUF cannot produce explanations yet".to_string())
+    let proof = egraph.get_g_between(lhs_id, rhs_id).unwrap();
+
+    let mut mvar_counter = 0;
+    let mut umap = UnifyMap::default();
+
+    let e = eval(&proof, &mut mvar_counter, &mut umap);
+    unify(e.first(), &explify(lhs), &mut umap);
+    unify(&e.last, &explify(rhs), &mut umap);
+    let e = guess_mvars(e);
+
+    Ok(stringify(&e))
 }
 
 struct Expl {
@@ -120,4 +128,17 @@ fn fresh_mvar(mvar_counter: &mut usize) -> MVar {
     let x = *mvar_counter;
     *mvar_counter += 1;
     x
+}
+
+// remove all remaining mvars by instantiating them with some guessed value.
+fn guess_mvars(expl: Expl) -> Expl {
+    todo!()
+}
+
+fn explify(l: &LeanTerm) -> ExplTerm {
+    todo!()
+}
+
+fn stringify(expl: &Expl) -> String {
+    todo!()
 }
