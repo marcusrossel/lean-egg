@@ -80,7 +80,8 @@ impl Analysis for LeanAnalysis {
             proofs.push(proof);
             *child = (Proof::identity(), id);
         }
-        (Proof::congr(proofs), Either::L(enode))
+        let sid = SymbolId::from_enode(&enode);
+        (Proof::congr(sid, proofs), Either::L(enode))
     }
 
     fn mk(enode: &LeanExpr, id: Id, uf: &Unionfind<LeanAnalysisData>) -> LeanAnalysisData {
