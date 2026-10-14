@@ -108,7 +108,15 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap) -> Expl {
         },
         ProofObj::Sym(p) => {
             let e = eval(p, mvar_counter, umap);
-            todo!("flip")
+            let n = e.vec.len();
+            Expl {
+                vec: (0..n).rev().map(|i| {
+                    let node = if i == 0 { &e.last } else { &e.vec[i-1].0 }.clone();
+                    let edge = e.vec[i].1.clone();
+                    (node, edge)
+                }).collect(),
+                last: e.first().clone(),
+            }
         },
         ProofObj::Trans(p2, p1) => {
             let e1 = eval(p1, mvar_counter, umap);
