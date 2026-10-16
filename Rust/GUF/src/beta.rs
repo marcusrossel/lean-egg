@@ -1,7 +1,6 @@
 use rs2::PVar;
 use crate::analysis::*;
 use crate::egraph::*;
-use crate::proof::*;
 use crate::rewrite::*;
 use crate::util::*;
 
@@ -16,7 +15,7 @@ struct Beta {
 
 impl Applier for Beta {
 
-    fn apply_one(&self, graph: &mut LeanEGraph, from: PId, subst: &LeanSubst, rule: &str) {
+    fn apply_one(&self, graph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str) {
         let arg_bvars = &graph.data(&subst[&self.arg]).loose_bvars;
         let body_bvars = &graph.data(&subst[&self.body]).loose_bvars;
 
@@ -34,6 +33,6 @@ impl Applier for Beta {
             sub
         };
 
-        union_instantiation(graph, from, &pat(&beta), subst, rule);
+        union_instantiations(graph, searcher, &pat(&beta), subst, rule);
     }
 }

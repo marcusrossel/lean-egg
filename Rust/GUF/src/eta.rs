@@ -1,7 +1,6 @@
 use rs2::PVar;
 use crate::analysis::*;
 use crate::egraph::*;
-use crate::proof::*;
 use crate::rewrite::*;
 use crate::util::*;
 
@@ -19,7 +18,7 @@ struct Eta {
 
 impl Applier for Eta {
 
-    fn apply_one(&self, graph: &mut LeanEGraph, from: PId, subst: &LeanSubst, rule: &str) {
+    fn apply_one(&self, graph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str) {
         let fun_bvars = &graph.data(&subst[&self.fun]).loose_bvars;
         if fun_bvars.contains(&0) { return }
 
@@ -29,7 +28,7 @@ impl Applier for Eta {
             format!("(↑ - 1 0 {})", self.fun)
         };
 
-        union_instantiation(graph, from, &pat(&new_fun), subst, rule);
+        union_instantiations(graph, searcher, &pat(&new_fun), subst, rule);
     }
 }
 
@@ -39,7 +38,7 @@ struct EtaExpand {
 
 impl Applier for EtaExpand {
 
-    fn apply_one(&self, graph: &mut LeanEGraph, from: PId, subst: &LeanSubst, rule: &str) {
+    fn apply_one(&self, graph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str) {
         // TODO: This does not respect primitive constructors.
 
         let term_bvars = &graph.data(&subst[&self.term]).loose_bvars;
@@ -52,6 +51,6 @@ impl Applier for EtaExpand {
 
         let expanded = format!("(λ _ (app {} (bvar 0)))", new_term);
 
-        union_instantiation(graph, from, &pat(&expanded), subst, rule);
+        union_instantiations(graph, searcher, &pat(&expanded), subst, rule);
     }
 }

@@ -1,28 +1,72 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
+use std::collections::HashMap;
+use std::rc::Rc;
 use rs2::*;
 use crate::analysis::*;
 use crate::lean_expr::*;
 use crate::proof::*;
 
 // An e-graph together with the e-node with which each of its e-classes was created (indexed by
-// e-class id). This is the e-graph object handed to Lean.
+// e-class id), and the rewrite rules which justify its unions. This is the e-graph object handed
+// to Lean.
 pub struct LeanEGraphObj {
     pub egraph: LeanEGraph,
     pub enodes: Vec<LeanExpr>,
+    pub rules:  RuleTable,
+}
+
+// A rewrite rule as it is used to justify a union: the union's e-classes are instances of `lhs` and
+// `rhs` (for the same substitution), and `name` is the name by which Lean identifies the rule.
+//
+// Note: The same name can appear with different patterns, as custom appliers construct the `rhs`
+//       depending on the e-graph (e.g. `≡β`, `↑bvar` or `≡+`).
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub struct RuleEntry {
+    pub name: Rc<str>,
+    pub lhs:  LeanPattern,
+    pub rhs:  LeanPattern,
+}
+
+// The rewrite rules justifying the unions of an e-graph, indexed by the ids used in `ProofObj::Rule`.
+#[derive(Default)]
+pub struct RuleTable {
+    pub entries: Vec<RuleEntry>,
+    ids:         HashMap<RuleEntry, RuleId>,
+}
+
+impl RuleTable {
+
+    // Returns the id of the given entry, adding the entry to the table if it is not present yet.
+    pub fn id_of(&mut self, entry: RuleEntry) -> RuleId {
+        if let Some(id) = self.ids.get(&entry) { return *id }
+        let id = self.entries.len();
+        self.entries.push(entry.clone());
+        self.ids.insert(entry, id);
+        id
+    }
+
+    pub fn get(&self, id: RuleId) -> &RuleEntry {
+        &self.entries[id]
+    }
 }
 
 thread_local! {
     // The e-node with which each e-class of the e-graph under construction was created. As GUF
     // does not track this information, we record it in `LeanAnalysis::mk`.
     static ENODES: RefCell<Vec<LeanExpr>> = RefCell::new(vec![]);
+
+    // The rewrite rules justifying the unions of the e-graph under construction. We record them in
+    // `union_instantiations`.
+    static RULES: RefCell<RuleTable> = RefCell::new(Default::default());
 }
 
-pub fn start_recording_enodes() {
+pub fn start_recording() {
     ENODES.take();
+    RULES.take();
 }
 
-pub fn finish_recording_enodes() -> Vec<LeanExpr> {
-    ENODES.take()
+pub fn finish_recording(egraph: LeanEGraph) -> LeanEGraphObj {
+    LeanEGraphObj { egraph, enodes: ENODES.take(), rules: RULES.take() }
 }
 
 // GUF calls `Analysis::mk` with a fresh id exactly when it creates a new e-class.
@@ -59,27 +103,55 @@ pub fn class_nodes(x: Id, egraph: &LeanEGraph) -> Vec<LeanExpr> {
         .collect()
 }
 
-// Unions the e-classes of `from` and `to`, justified by an application of the given rule, which
-// rewrites the term represented by `from` to the term represented by `to`.
+// Returns the id of the rule with the given name and patterns in the rule table of the e-graph under
+// construction, adding the rule to the table if it is not present yet.
+pub fn rule_id(rule: &str, lhs: &LeanPattern, rhs: &LeanPattern) -> RuleId {
+    let entry = RuleEntry { name: rule.into(), lhs: lhs.clone(), rhs: rhs.clone() };
+    RULES.with_borrow_mut(|rules| rules.id_of(entry))
+}
+
+// The id of a rule whose name and patterns are the same for all of its applications, which is
+// obtained (via `rule_id`) on first use. This avoids constructing and hashing the rule's entry for
+// each application.
+//
+// Note: As the rule table is reset by `start_recording`, a `RuleIdCache` must not outlive the
+//       e-graph for which it was first used.
+#[derive(Default)]
+pub struct RuleIdCache(Cell<Option<RuleId>>);
+
+impl RuleIdCache {
+
+    pub fn get(&self, rule: &str, lhs: &LeanPattern, rhs: &LeanPattern) -> RuleId {
+        if let Some(id) = self.0.get() {
+            debug_assert!(RULES.with_borrow(|rules| rules.entries.get(id).is_some_and(|entry|
+                &*entry.name == rule && entry.lhs == *lhs && entry.rhs == *rhs
+            )));
+            return id
+        }
+        let id = rule_id(rule, lhs, rhs);
+        self.0.set(Some(id));
+        id
+    }
+}
+
+// Analogous to `union_instantiations` in egg: instantiates `from` and `to` with `subst` and unions
+// the resulting e-classes. The union is justified by an application of the given rule, which
+// rewrites the term represented by the instance of `from` to the term represented by the instance
+// of `to`. The rule is recorded in the rule table together with `from` and `to`.
+pub fn union_instantiations(egraph: &mut LeanEGraph, from: &LeanPattern, to: &LeanPattern, subst: &LeanSubst, rule: &str) -> bool {
+    let id = rule_id(rule, from, to);
+    union_instantiations_by_id(egraph, from, to, subst, id)
+}
+
+// Like `union_instantiations`, but for a rule whose id was already obtained. The rule's entry in the
+// rule table must have the patterns `from` and `to`.
 //
 // Note: We don't use `EGraph::union`, as it rebuilds the e-graph after every union. Instead (as in
 //       egg), the e-graph is rebuilt once per iteration of equality saturation.
-pub fn union_justified(egraph: &mut LeanEGraph, from: PId, to: PId, rule: &str) -> bool {
+pub fn union_instantiations_by_id(egraph: &mut LeanEGraph, from: &LeanPattern, to: &LeanPattern, subst: &LeanSubst, rule: RuleId) -> bool {
     let justification = Proof::rule(rule);
+    let from = instantiate(from, egraph, subst);
+    let (proof, id) = instantiate(to, egraph, subst);
     // `justification⁻¹ * to` represents the same term as `from`.
-    let (proof, id) = to;
     egraph.uf.union(from, (Proof::compose(&justification.inverse(), &proof), id))
-}
-
-// Analogous to `union_instantiations` in egg, except that the left-hand side is already given as
-// an (instantiated) e-class.
-pub fn union_instantiation(egraph: &mut LeanEGraph, from: PId, to: &LeanPattern, subst: &LeanSubst, rule: &str) -> bool {
-    let to = instantiate(to, egraph, subst);
-    union_justified(egraph, from, to, rule)
-}
-
-// Analogous to `union_instantiations` in egg with an empty substitution.
-pub fn union_terms(egraph: &mut LeanEGraph, from: &LeanTerm, to: &LeanTerm, rule: &str) -> bool {
-    let from = add_expr(from, egraph);
-    union_instantiation(egraph, from, to, &LeanSubst::new(), rule)
 }

@@ -1,7 +1,6 @@
 use rs2::PVar;
 use crate::analysis::*;
 use crate::egraph::*;
-use crate::proof::*;
 use crate::rewrite::*;
 use crate::util::*;
 
@@ -13,7 +12,7 @@ struct BVarSubst {
 
 impl Applier for BVarSubst {
 
-    fn apply_one(&self, egraph: &mut LeanEGraph, from: PId, subst: &LeanSubst, rule: &str) {
+    fn apply_one(&self, egraph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str) {
         let from_idx = egraph.data(&subst[&self.from_idx]).nat_val.unwrap();
         let bvar_idx = egraph.data(&subst[&self.bvar_idx]).nat_val.unwrap();
 
@@ -23,7 +22,7 @@ impl Applier for BVarSubst {
             format!("(bvar {})", bvar_idx)
         };
 
-        union_instantiation(egraph, from, &pat(&new), subst, rule);
+        union_instantiations(egraph, searcher, &pat(&new), subst, rule);
     }
 }
 
@@ -37,7 +36,7 @@ struct BasicSubst {
 
 impl Applier for BasicSubst {
 
-    fn apply_one(&self, egraph: &mut LeanEGraph, from: PId, subst: &LeanSubst, rule: &str) {
+    fn apply_one(&self, egraph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str) {
         let from_idx    = egraph.data(&subst[&self.from_idx]).nat_val.unwrap();
         let left_bvars  = &egraph.data(&subst[&self.left]).loose_bvars;
         let right_bvars = &egraph.data(&subst[&self.right]).loose_bvars;
@@ -55,7 +54,7 @@ impl Applier for BasicSubst {
         };
 
         let new_expr = format!("({} {} {})", self.ctor, new_left, new_right);
-        union_instantiation(egraph, from, &pat(&new_expr), subst, rule);
+        union_instantiations(egraph, searcher, &pat(&new_expr), subst, rule);
     }
 }
 
@@ -69,7 +68,7 @@ struct BinderSubst {
 
 impl Applier for BinderSubst {
 
-    fn apply_one(&self, egraph: &mut LeanEGraph, from: PId, subst: &LeanSubst, rule: &str) {
+    fn apply_one(&self, egraph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str) {
         let from_idx     = egraph.data(&subst[&self.from_idx]).nat_val.unwrap();
         let to_bvars     = &egraph.data(&subst[&self.to]).loose_bvars;
         let domain_bvars = &egraph.data(&subst[&self.domain]).loose_bvars;
@@ -93,7 +92,7 @@ impl Applier for BinderSubst {
         };
 
         let new_binder = format!("({} {} {})", self.binder, new_domain, new_body);
-        union_instantiation(egraph, from, &pat(&new_binder), subst, rule);
+        union_instantiations(egraph, searcher, &pat(&new_binder), subst, rule);
     }
 }
 

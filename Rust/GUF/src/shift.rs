@@ -1,7 +1,6 @@
 use rs2::PVar;
 use crate::analysis::*;
 use crate::egraph::*;
-use crate::proof::*;
 use crate::rewrite::*;
 use crate::util::*;
 
@@ -14,7 +13,7 @@ struct BVarShift {
 
 impl Applier for BVarShift {
 
-    fn apply_one(&self, egraph: &mut LeanEGraph, from: PId, subst: &LeanSubst, rule: &str) {
+    fn apply_one(&self, egraph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str) {
         let dir_is_up = egraph.data(&subst[&self.dir]).dir_val.unwrap();
         let offset    = egraph.data(&subst[&self.offset]).nat_val.unwrap();
         let cutoff    = egraph.data(&subst[&self.cutoff]).nat_val.unwrap();
@@ -32,7 +31,7 @@ impl Applier for BVarShift {
         };
         let new = format!("(bvar {})", new_idx);
 
-        union_instantiation(egraph, from, &pat(&new), subst, rule);
+        union_instantiations(egraph, searcher, &pat(&new), subst, rule);
     }
 }
 
@@ -47,7 +46,7 @@ struct BasicShift {
 
 impl Applier for BasicShift {
 
-    fn apply_one(&self, egraph: &mut LeanEGraph, from: PId, subst: &LeanSubst, rule: &str) {
+    fn apply_one(&self, egraph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str) {
         let left_bvars  = &egraph.data(&subst[&self.left]).loose_bvars;
         let right_bvars = &egraph.data(&subst[&self.right]).loose_bvars;
         let cutoff      = &egraph.data(&subst[&self.cutoff]).nat_val.unwrap();
@@ -65,7 +64,7 @@ impl Applier for BasicShift {
         };
 
         let shifted_app = format!("({} {} {})", self.ctor, shifted_left, shifted_right);
-        union_instantiation(egraph, from, &pat(&shifted_app), subst, rule);
+        union_instantiations(egraph, searcher, &pat(&shifted_app), subst, rule);
     }
 }
 
@@ -80,7 +79,7 @@ struct BinderShift {
 
 impl Applier for BinderShift {
 
-    fn apply_one(&self, egraph: &mut LeanEGraph, from: PId, subst: &LeanSubst, rule: &str) {
+    fn apply_one(&self, egraph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str) {
         let domain_bvars = &egraph.data(&subst[&self.domain]).loose_bvars;
         let body_bvars   = &egraph.data(&subst[&self.body]).loose_bvars;
         let cutoff       = &egraph.data(&subst[&self.cutoff]).nat_val.unwrap();
@@ -98,7 +97,7 @@ impl Applier for BinderShift {
         };
 
         let shifted_binder = format!("({} {} {})", self.binder, shifted_domain, shifted_body);
-        union_instantiation(egraph, from, &pat(&shifted_binder), subst, rule);
+        union_instantiations(egraph, searcher, &pat(&shifted_binder), subst, rule);
     }
 }
 

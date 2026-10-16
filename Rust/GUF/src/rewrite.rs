@@ -14,25 +14,43 @@ use crate::valid_match::*;
 use crate::is_synthable;
 use crate::util::*;
 
-// Analogous to egg's `Applier` trait. The `from` e-class is the instantiation of the rewrite's
-// searcher pattern.
+// Analogous to egg's `Applier` trait. The `searcher` is the pattern of the rewrite, whose
+// instantiation with `subst` was matched (cf. the `ast` in egg's `Applier::apply_one`).
 pub trait Applier {
-    fn apply_one(&self, graph: &mut LeanEGraph, from: PId, subst: &LeanSubst, rule: &str);
+    fn apply_one(&self, graph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str);
 }
 
-// Plain patterns are appliers which union their instantiation with the matched e-class.
-impl Applier for LeanPattern {
+// The applier of rewrites whose right-hand side is a plain pattern. It unions the instantiation of
+// that pattern with the matched e-class.
+pub struct PatternApplier {
+    rhs:     LeanPattern,
+    // The name and patterns of the rewrite are the same for all of its applications.
+    rule_id: RuleIdCache
+}
 
-    fn apply_one(&self, graph: &mut LeanEGraph, from: PId, subst: &LeanSubst, rule: &str) {
-        union_instantiation(graph, from, self, subst, rule);
+impl PatternApplier {
+
+    pub fn new(rhs: LeanPattern) -> Self {
+        Self { rhs, rule_id: Default::default() }
+    }
+}
+
+impl Applier for PatternApplier {
+
+    fn apply_one(&self, graph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str) {
+        let id = self.rule_id.get(rule, searcher, &self.rhs);
+        union_instantiations_by_id(graph, searcher, &self.rhs, subst, id);
     }
 }
 
 // Analogous to `Rewrite::new` in egg.
 pub fn mk_rewrite(name: impl ToString, searcher: LeanPattern, applier: impl Applier + 'static) -> LeanRewrite {
     let name = name.to_string();
-    (searcher, Box::new(move |from: PId, subst: LeanSubst, graph: &mut LeanEGraph| {
-        applier.apply_one(graph, from, &subst, &name)
+    let pattern = searcher.clone();
+    // Note: We don't use the matched e-class passed by GUF, but instead re-instantiate the searcher
+    //       (as egg does), so that `union_instantiations` can record the rule's patterns.
+    (searcher, Box::new(move |_: PId, subst: LeanSubst, graph: &mut LeanEGraph| {
+        applier.apply_one(graph, &pattern, &subst, &name)
     }))
 }
 
@@ -50,7 +68,7 @@ macro_rules! rewrite {
 }
 
 macro_rules! applier {
-    ($rhs:literal)          => { $crate::util::pat($rhs) };
+    ($rhs:literal)          => { $crate::rewrite::PatternApplier::new($crate::util::pat($rhs)) };
     ({ $($rhs:tt)* })       => { $($rhs)* };
 }
 
@@ -114,7 +132,7 @@ impl RewriteTemplate {
 
         let applier = LeanApplier {
             lhs: self.lhs, rhs: self.rhs, tc_conds: self.tc_conds, prop_conds: self.prop_conds,
-            weak_vars: self.weak_vars, blocks: self.blocks, cfg
+            weak_vars: self.weak_vars, blocks: self.blocks, cfg, rule_id: Default::default()
         };
         Ok(Either::L(mk_rewrite(self.name, lhs, applier)))
     }
@@ -128,11 +146,14 @@ struct LeanApplier {
     pub weak_vars:  Vec<PVar>,
     pub blocks:     Vec<LeanTerm>, // TODO: This could be extended to cover patterns, if needed.
     pub cfg:        RewriteConfig,
+    // The id of the rule for applications which require neither shifting nor weak var assignments,
+    // as these all share the rule's name and patterns.
+    pub rule_id:    RuleIdCache,
 }
 
 impl Applier for LeanApplier {
 
-    fn apply_one(&self, graph: &mut LeanEGraph, _: PId, subst: &LeanSubst, rule: &str) {
+    fn apply_one(&self, graph: &mut LeanEGraph, _: &LeanPattern, subst: &LeanSubst, rule: &str) {
         if is_primitive_pattern_subst(&self.lhs, graph, subst) { return }
 
         let mut var_depths: Option<HashMap<PVar, u64>> = None;
@@ -168,17 +189,20 @@ impl Applier for LeanApplier {
             }
         }
 
-        // The searcher of this rewrite may differ from `self.lhs` (cf. `to_rewrite`), so we
-        // instantiate `self.lhs` instead of using the matched e-class.
-        let from = instantiate(&self.lhs, graph, subst);
+        // Note: The searcher of this rewrite may differ from `self.lhs` (cf. `to_rewrite`), so we
+        //       union from `self.lhs` instead of from the searcher (as in egg).
 
         // A substitution needs no shifting if it does not map any variables to e-classes containing
         // loose bvars. This is the case exactly when `var_depths` is empty.
         if self.cfg.binders_are_active && !var_depths.clone().unwrap().is_empty() {
             let shifted_rhs = correct_bvar_indices(&self.rhs, var_depths.unwrap());
-            union_instantiation(graph, from, &shifted_rhs, subst, &rule);
+            union_instantiations(graph, &self.lhs, &shifted_rhs, subst, &rule);
+        } else if self.cfg.subgoals || self.weak_vars.is_empty() {
+            // In this case, `rule` does not contain weak var assignments.
+            let id = self.rule_id.get(&rule, &self.lhs, &self.rhs);
+            union_instantiations_by_id(graph, &self.lhs, &self.rhs, subst, id);
         } else {
-            union_instantiation(graph, from, &self.rhs, subst, &rule);
+            union_instantiations(graph, &self.lhs, &self.rhs, subst, &rule);
         }
     }
 }

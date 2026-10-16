@@ -1,7 +1,6 @@
 use rs2::PVar;
 use crate::analysis::*;
 use crate::egraph::*;
-use crate::proof::*;
 use crate::rewrite::*;
 use crate::util::*;
 use std::ops::*;
@@ -20,7 +19,7 @@ impl ToSucc {
 
 impl Applier for ToSucc {
 
-    fn apply_one(&self, egraph: &mut LeanEGraph, from: PId, subst: &LeanSubst, rule: &str) {
+    fn apply_one(&self, egraph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str) {
         // This applier matches against "lit ?n", which means that `?n` might be a string.
         if let Some(nat_val) = egraph.data(&subst[&self.nat_val]).nat_val {
             if !(nat_val > 0) { return }
@@ -29,7 +28,7 @@ impl Applier for ToSucc {
                 if self.shapes { format!("(app (◇ (→ * *) (const Nat.succ)) (◇ * (lit {})))", nat_val - 1) }
                 else           { format!("(app (const Nat.succ) (lit {}))",                   nat_val - 1) };
 
-            union_instantiation(egraph, from, &pat(&res), subst, rule);
+            union_instantiations(egraph, searcher, &pat(&res), subst, rule);
         }
     }
 }
@@ -48,11 +47,11 @@ impl OfSucc {
 
 impl Applier for OfSucc {
 
-    fn apply_one(&self, egraph: &mut LeanEGraph, from: PId, subst: &LeanSubst, rule: &str) {
+    fn apply_one(&self, egraph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str) {
         // This applier is only used in a context where we know that `nat_val` is a `LeanExpr::Nat` and thus has a `nat_val`.
         let nat_val = egraph.data(&subst[&self.nat_val]).nat_val.unwrap();
         let res = format!("(lit {})", nat_val + 1);
-        union_instantiation(egraph, from, &pat(&res), subst, rule);
+        union_instantiations(egraph, searcher, &pat(&res), subst, rule);
     }
 }
 
@@ -76,14 +75,14 @@ impl Op {
 
 impl Applier for Op {
 
-    fn apply_one(&self, egraph: &mut LeanEGraph, from: PId, subst: &LeanSubst, rule: &str) {
+    fn apply_one(&self, egraph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str) {
         // This applier is only used in a context where we know that `nat_val` is a `LeanExpr::Nat` and thus has a `nat_val`.
         let lhs = egraph.data(&subst[&self.lhs_nat_val]).nat_val.unwrap();
         let rhs = egraph.data(&subst[&self.rhs_nat_val]).nat_val.unwrap();
 
         let val = (self.op)(lhs, rhs);
         let res = format!("(lit {})", val);
-        union_instantiation(egraph, from, &pat(&res), subst, rule);
+        union_instantiations(egraph, searcher, &pat(&res), subst, rule);
     }
 }
 

@@ -16,9 +16,13 @@ pub enum ProofObj {
     // Applies proofs to the children of a term (in the order of `LeanExpr::children`).
     Congr(SymbolId, Box<[Proof]>),
 
-    // An application of the rewrite rule with the given name, which rewrites the term represented
-    Rule(Rc<str>),
+    // An application of the rewrite rule with the given id in the e-graph's `RuleTable`. The proof
+    // rewrites an instance of the rule's `lhs` to the corresponding instance of its `rhs`.
+    Rule(RuleId),
 }
+
+// An index into a `RuleTable`.
+pub type RuleId = usize;
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub struct SymbolId(u8);
@@ -109,8 +113,8 @@ impl Proof {
         }
     }
 
-    pub fn rule(rule: &str) -> Proof {
-        Proof(Rc::new(ProofObj::Rule(rule.into())))
+    pub fn rule(rule: RuleId) -> Proof {
+        Proof(Rc::new(ProofObj::Rule(rule)))
     }
 }
 

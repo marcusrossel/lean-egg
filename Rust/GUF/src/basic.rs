@@ -59,7 +59,7 @@ pub fn explain_congr(
     guides: Vec<String>, cfg: Config, _viz_path: Option<String>, env: *const c_void
 ) -> Result<ExplainedCongr, Error> {
     LeanAnalysis::set_union_semantics(cfg.union_semantics);
-    start_recording_enodes();
+    start_recording();
 
     let init = mk_initial_egraph(init, goal, guides)?;
     let activations = get_activations(&init, &rw_templates);
@@ -68,7 +68,7 @@ pub fn explain_congr(
 
     // Adds ground equalities to the e-graph.
     for eq in eqs {
-        union_terms(&mut egraph, &eq.lhs, &eq.rhs, &eq.name);
+        union_instantiations(&mut egraph, &eq.lhs, &eq.rhs, &LeanSubst::default(), &eq.name);
     }
 
     let iterations = Rc::new(Cell::new(0));
@@ -87,8 +87,8 @@ pub fn explain_congr(
         egraph_classes: egraph.classes().len(),
         total_time:     total_time.as_secs_f64()
     };
-    let egraph = LeanEGraphObj { egraph, enodes: finish_recording_enodes() };
-    let (kind, expl) = mk_explanation(&egraph.egraph, init_expr, goal_expr, init_id, goal_id);
+    let egraph = finish_recording(egraph);
+    let (kind, expl) = mk_explanation(&egraph.egraph, &egraph.rules, init_expr, goal_expr, init_id, goal_id);
     Ok(ExplainedCongr { kind, expl, egraph, report, activations })
 }
 
@@ -127,7 +127,7 @@ fn mk_initial_egraph(init: String, goal: String, guides: Vec<String>) -> Result<
     // Marks `p ∧ q` as a fact for any given facts `p` and `q`.
     // NOTE: We could also add this as a regular theorem sent from Lean.
     let and_true_expr = term("(app (app (const \"And\") (const \"True\")) (const \"True\"))");
-    union_terms(&mut egraph, &true_expr, &and_true_expr, "∧");
+    union_instantiations(&mut egraph, &true_expr, &and_true_expr, &LeanSubst::default(), "∧");
 
     Ok(Initialized { egraph, init_id, init_expr, goal_id, goal_expr, guide_exprs })
 }
@@ -190,7 +190,9 @@ fn mk_rewrites(
 
 fn mk_hooks(egraph: &LeanEGraph, init_id: PId, goal_id: PId, iterations: Rc<Cell<usize>>) -> Box<[Hook<LeanAnalysis>]> {
     let true_id = egraph.lookup_term(&term("(const \"True\")")).unwrap();
-    let goal_true_id = true_id.clone();
+    let refl_eq = pat("(= ?x ?x)");
+    let true_expr = term("(const \"True\")");
+    let refl_eq_rule_id = RuleIdCache::default();
 
     let hooks: Vec<Hook<LeanAnalysis>> = vec![
         // GUF's `eqsat` does not report the number of iterations, so we count them here.
@@ -201,7 +203,7 @@ fn mk_hooks(egraph: &LeanEGraph, init_id: PId, goal_id: PId, iterations: Rc<Cell
         Box::new(move |egraph: &mut LeanEGraph| {
             // Note: `lookup` canonicalizes the children of the given e-node.
             let goal_eq = LeanExpr::Eq([init_id.clone(), goal_id.clone()]);
-            if egraph.lookup(&goal_eq).map(|x| egraph.find(x).1) == Some(egraph.find(goal_true_id.clone()).1) {
+            if egraph.lookup(&goal_eq).map(|x| egraph.find(x).1) == Some(egraph.find(true_id.clone()).1) {
                 Err(StopReason::Other("Proved goal!".to_string()))
             } else {
                 Ok(())
@@ -216,9 +218,9 @@ fn mk_hooks(egraph: &LeanEGraph, init_id: PId, goal_id: PId, iterations: Rc<Cell
                 .collect();
 
             for x in classes {
-                let rep = (Proof::identity(), x);
-                let eq = egraph.add(&LeanExpr::Eq([rep.clone(), rep]));
-                union_justified(egraph, eq, true_id.clone(), "=");
+                let subst = LeanSubst::from([(PVar::from("?x"), (Proof::identity(), x))]);
+                let id = refl_eq_rule_id.get("=", &refl_eq, &true_expr);
+                union_instantiations_by_id(egraph, &refl_eq, &true_expr, &subst, id);
             }
             egraph.rebuild();
             Ok(())

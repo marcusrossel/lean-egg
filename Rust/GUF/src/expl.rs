@@ -1,4 +1,5 @@
 use crate::analysis::*;
+use crate::egraph::RuleTable;
 use crate::proof::*;
 use crate::util::*;
 use crate::LeanExpr;
@@ -42,11 +43,11 @@ impl ExplanationKind {
 }
 
 pub fn mk_explanation(
-    egraph: &LeanEGraph, init_expr: LeanTerm, goal_expr: LeanTerm, init_id: PId, goal_id: PId
+    egraph: &LeanEGraph, rules: &RuleTable, init_expr: LeanTerm, goal_expr: LeanTerm, init_id: PId, goal_id: PId
 ) -> (ExplanationKind, String) {
     match ExplanationKind::for_goal(egraph, init_expr, goal_expr, init_id, goal_id) {
         None => (ExplanationKind::None, "".to_string()),
-        Some((kind, lhs, rhs)) => match explain_equivalence(egraph, &lhs, &rhs) {
+        Some((kind, lhs, rhs)) => match explain_equivalence(egraph, rules, &lhs, &rhs) {
             Ok(expl) => (kind, expl),
             Err(msg) => (ExplanationKind::None, msg)
         }
@@ -54,7 +55,8 @@ pub fn mk_explanation(
 }
 
 // Analogous to `explain_equivalence(lhs, rhs).get_flat_string()` in egg.
-fn explain_equivalence(egraph: &LeanEGraph, lhs: &LeanTerm, rhs: &LeanTerm) -> Result<String, String> {
+// The `rules` map the ids in `ProofObj::Rule` to the corresponding rule names and patterns.
+fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, rhs: &LeanTerm) -> Result<String, String> {
     let lhs_id = egraph.lookup_term(lhs).unwrap();
     let rhs_id = egraph.lookup_term(rhs).unwrap();
     // The proof `p` with `p * lhs_id = rhs_id`, that is, a proof of `lhs = rhs`.
@@ -128,7 +130,7 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap) -> Expl {
             }
         },
         ProofObj::Congr(sid, children) => todo!(),
-        ProofObj::Rule(rule_name) => todo!(),
+        ProofObj::Rule(rule_id) => todo!(),
     }
 }
 

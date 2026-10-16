@@ -240,14 +240,15 @@ pub unsafe extern "C" fn guf_query_equiv(
     init_str_ptr: *const c_char,
     goal_str_ptr: *const c_char
 ) -> EqsatResult {
-    let egraph    = &egraph.as_mut().unwrap().egraph;
+    let obj       = egraph.as_mut().unwrap();
+    let egraph    = &obj.egraph;
     let init_expr = term(&c_str_to_string(init_str_ptr));
     let goal_expr = term(&c_str_to_string(goal_str_ptr));
     let kind: ExplanationKind;
     let expl: String;
 
     if let (Some(init_id), Some(goal_id)) = (egraph.lookup_term(&init_expr), egraph.lookup_term(&goal_expr)) {
-        (kind, expl) = mk_explanation(egraph, init_expr, goal_expr, init_id, goal_id);
+        (kind, expl) = mk_explanation(egraph, &obj.rules, init_expr, goal_expr, init_id, goal_id);
     } else {
         (kind, expl) = (ExplanationKind::None, "".to_string());
     }
