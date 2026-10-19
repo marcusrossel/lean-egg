@@ -4,7 +4,7 @@ use crate::egraph::RuleTable;
 use crate::proof::*;
 use crate::util::*;
 use crate::LeanExpr;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use rs2::Analysis;
 
@@ -68,7 +68,14 @@ fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, r
     let mut mvar_counter = 0;
     let mut umap = UnifyMap::default();
 
+    note("pre-psize!");
+
+    let psize = psize_fast(&proof, &mut Default::default());
+    if psize > 1000 { return Err("proof too big".to_string()) }
+
     note("pre-eval!");
+
+    note(&format!("eval({})", psize));
     let mut e = eval(&proof, &mut mvar_counter, &mut umap, rules);
     note("post-eval!");
     unify(e.first(), &explify(lhs), &mut umap);
@@ -80,7 +87,10 @@ fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, r
     let e = guess_mvars(e);
 
     note("pre-stringify!");
-    Ok(stringify(&e))
+    let stringified = stringify(&e);
+    note(&format!("stringified:\n{stringified}\n"));
+
+    Ok(stringified)
 }
 
 struct Expl {
@@ -158,21 +168,23 @@ fn eval_trans(e2: Expl, e1: Expl, umap: &mut UnifyMap) -> Expl {
     }
 }
 
-fn psize(p: &Proof) -> usize {
-    match &*p.0 {
+fn psize_fast(p: &Proof, things: &mut HashMap<*const ProofObj, usize>) -> usize {
+    let pp = &*p.0 as *const ProofObj;
+
+    if let Some(x) = things.get(&pp) { return *x }
+
+    let v = match &*p.0 {
         ProofObj::Refl => 1,
-        ProofObj::Sym(p) => psize(p) + 1,
-        ProofObj::Trans(p1, p2) => psize(p1) + psize(p2) + 1,
-        ProofObj::Congr(_, children) => children.iter().map(psize).sum::<usize>() + 1,
+        ProofObj::Sym(p) => psize_fast(p, things) + 1,
+        ProofObj::Trans(p1, p2) => psize_fast(p1, things) + psize_fast(p2, things) + 1,
+        ProofObj::Congr(_, children) => children.iter().map(|ii| psize_fast(ii, things)).sum::<usize>() + 1,
         ProofObj::Rule(_) => 1,
-    }
+    };
+    things.insert(pp, v);
+    v
 }
 
 fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTable) -> Expl {
-    note("pre-psize compute");
-    let psize = psize(p);
-    note(&format!("eval({})", psize));
-
     match &*p.0 {
         ProofObj::Refl => Expl {
             vec: Vec::new(),
