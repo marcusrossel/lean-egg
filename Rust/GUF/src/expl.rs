@@ -155,7 +155,7 @@ fn unify(l: &LeanPattern, r: &LeanPattern, umap: &mut UnifyMap) {
             *umap = umap.iter().map(|(k, v)| (*k, umap_canon(v, umap))).collect();
         },
         (LeanPattern::Node(n1, cs1), LeanPattern::Node(n2, cs2)) => {
-            assert!(LeanAnalysis::matches(&n1, &n2));
+            assert!(LeanAnalysis::matches(&n1, &n2), "{n1:?} ~!~ {n2:?}");
             for (c1, c2) in cs1.iter().zip(cs2.iter()) {
                 unify(c1, c2, umap);
             }
@@ -165,7 +165,13 @@ fn unify(l: &LeanPattern, r: &LeanPattern, umap: &mut UnifyMap) {
 }
 
 fn eval_trans(e2: Expl, e1: Expl, umap: &mut UnifyMap) -> Expl {
-    unify(&e1.last, e2.first(), umap);
+    let ll = umap_canon(&e1.last, umap);
+    let rr = umap_canon(e2.first(), umap);
+
+    note(&format!("trans unify: {ll:?} ~ {rr:?}"));
+    unify(&ll, &rr, umap);
+    note("trans unify success!");
+
     Expl {
         vec: e1.vec.iter().cloned().chain(e2.vec.iter().cloned()).collect(),
         last: e2.last.clone(),
