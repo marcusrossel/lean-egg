@@ -158,7 +158,21 @@ fn eval_trans(e2: Expl, e1: Expl, umap: &mut UnifyMap) -> Expl {
     }
 }
 
+fn psize(p: &Proof) -> usize {
+    match &*p.0 {
+        ProofObj::Refl => 1,
+        ProofObj::Sym(p) => psize(p) + 1,
+        ProofObj::Trans(p1, p2) => psize(p1) + psize(p2) + 1,
+        ProofObj::Congr(_, children) => children.iter().map(psize).sum::<usize>() + 1,
+        ProofObj::Rule(_) => 1,
+    }
+}
+
 fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTable) -> Expl {
+    note("pre-psize compute");
+    let psize = psize(p);
+    note(&format!("eval({})", psize));
+
     match &*p.0 {
         ProofObj::Refl => Expl {
             vec: Vec::new(),
