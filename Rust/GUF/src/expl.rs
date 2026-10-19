@@ -190,6 +190,7 @@ fn fresh_mvar(mvar_counter: &mut usize) -> Symbol {
 
 // remove all remaining mvars by instantiating them with some guessed value.
 fn guess_mvars(expl: Expl) -> Expl {
+    // TODO actually do that
     expl
 }
 
@@ -199,23 +200,43 @@ fn explify(l: &LeanTerm) -> LeanPattern {
 
 fn stringify(e: &Expl) -> String {
     let mut out = String::new();
-    todo!()
-    // out
+
+    out.push_str(&stringify_term(e.first(), None));
+    out.push('\n');
+
+    for i in 0..e.vec.len() {
+        let s = e.vec[i].1.clone();
+        let t = if i == e.vec.len()-1 { &e.last } else { &e.vec[i+1].0 };
+        out.push_str(&stringify_term(t, Some(s)));
+        out.push('\n');
+    }
+
+    out
 }
 
 fn stringify_term(t: &LeanPattern, step: Option<ExplStep>) -> String {
     if let Some(step_) = &step {
         if step_.pos.is_empty() {
-            // TODO
-            return stringify_term(t, None)
+            let subterm = stringify_term(t, None);
+            let dir = if step_.forward { "=>" } else { "<=" };
+            let name = &step_.rule;
+            return format!("(Rewrite{dir} {name} {subterm})")
         }
     }
 
     match t {
         LeanPattern::Node(n, children) => {
             let op = symbolic_expressions::encode_string(&n.op());
-            // TODO fix step
-            let child_strings: Vec<String> = children.iter().map(|x| stringify_term(x, step.clone())).collect();
+            let child_strings: Vec<String> = children.iter().enumerate().map(|(j, x)| {
+                if let Some(step_) = &step {
+                    if Some(j) == step_.pos.last().copied() {
+                        let mut step2 = step_.clone();
+                        step2.pos.pop();
+                        return stringify_term(x, Some(step2))
+                    }
+                }
+                return stringify_term(x, None)
+            }).collect();
             if n.is_leaf() {
                 op
             } else {
