@@ -133,7 +133,13 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTa
                 last: e2.last.clone(),
             }
         },
-        ProofObj::Congr(sid, children) => todo!(),
+        ProofObj::Congr(sid, children) => {
+            let mut cs = Vec::new();
+            for c in children {
+                cs.push(eval(c, mvar_counter, umap, rules));
+            }
+            todo!()
+        },
         ProofObj::Rule(rule_id) => {
             let entry = rules.get(*rule_id).clone();
             Expl {
@@ -156,7 +162,7 @@ fn guess_mvars(expl: Expl) -> Expl {
 }
 
 fn explify(l: &LeanTerm) -> LeanPattern {
-    todo!()
+    l.clone()
 }
 
 fn stringify(expl: &Expl) -> String {
