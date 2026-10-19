@@ -126,7 +126,7 @@ fn unify(l: &LeanPattern, r: &LeanPattern, umap: &mut UnifyMap) {
     }
 }
 
-fn eval_trans(e2: Expl, e1: Expl, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTable) -> Expl {
+fn eval_trans(e2: Expl, e1: Expl, umap: &mut UnifyMap) -> Expl {
     unify(&e1.last, e2.first(), umap);
     Expl {
         vec: e1.vec.iter().cloned().chain(e2.vec.iter().cloned()).collect(),
@@ -156,7 +156,7 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTa
         ProofObj::Trans(p2, p1) => {
             let e1 = eval(p1, mvar_counter, umap, rules);
             let e2 = eval(p2, mvar_counter, umap, rules);
-            eval_trans(e2, e1, mvar_counter, umap, rules)
+            eval_trans(e2, e1, umap)
         },
         ProofObj::Congr(sid, children) => {
             let mut cs = Vec::new();
@@ -168,7 +168,7 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTa
             let mut total = cs.pop().unwrap();
             // TODO: is the order of eval correct here?
             for x in cs.into_iter().rev() {
-                total = eval_trans(total, x, mvar_counter, umap, rules);
+                total = eval_trans(total, x, umap);
             }
             total
         },
