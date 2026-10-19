@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["staticlib"]
 
 [dependencies]
-rs2 = { git = "https://github.com/memoryleak47/semigroup-unionfind", rev = "5a1a96a22e26a88c484d55c10c412ce5337ac9fd" }
+rs2 = { git = "https://github.com/memoryleak47/semigroup-unionfind", rev = "fc1919a" }
 symbolic_expressions = "5.0.3"
 libc = "0.2"
 

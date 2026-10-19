@@ -1,4 +1,5 @@
 use crate::analysis::*;
+use crate::Symbol;
 use crate::egraph::RuleTable;
 use crate::proof::*;
 use crate::util::*;
@@ -65,7 +66,7 @@ fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, r
     let mut mvar_counter = 0;
     let mut umap = UnifyMap::default();
 
-    let e = eval(&proof, &mut mvar_counter, &mut umap);
+    let e = eval(&proof, &mut mvar_counter, &mut umap, rules);
     unify(e.first(), &explify(lhs), &mut umap);
     unify(&e.last, &explify(rhs), &mut umap);
     let e = guess_mvars(e);
@@ -74,42 +75,35 @@ fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, r
 }
 
 struct Expl {
-    vec: Vec<(ExplTerm, ExplStep)>,
-    last: ExplTerm,
+    vec: Vec<(LeanPattern, ExplStep)>,
+    last: LeanPattern,
 }
 
 impl Expl {
-    pub fn first(&self) -> &ExplTerm {
+    pub fn first(&self) -> &LeanPattern {
         self.vec.first().map(|(x, _)| x).unwrap_or_else(|| &self.last)
     }
 }
 
 type MVar = usize;
 
-// ExplTerm are terms with mvars.
-#[derive(Clone)]
-enum ExplTerm {
-    Node(LeanExpr, Box<[ExplTerm]>), // all Proofs in that LeanExpr are going to be refl.
-    MVar(MVar),
-}
-
 type ExplStep = (/*rule id*/ Rc<str>, /*pos*/ Vec<usize>); // last index in vector is innermost index.
 
-type UnifyMap = HashMap<MVar, ExplTerm>;
+type UnifyMap = HashMap<MVar, LeanPattern>;
 
 // will panic if it can't unify.
-fn unify(l: &ExplTerm, r: &ExplTerm, umap: &mut UnifyMap) {
+fn unify(l: &LeanPattern, r: &LeanPattern, umap: &mut UnifyMap) {
     todo!()
 }
 
-fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap) -> Expl {
+fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTable) -> Expl {
     match &*p.0 {
         ProofObj::Refl => Expl {
             vec: Vec::new(),
-            last: ExplTerm::MVar(fresh_mvar(mvar_counter)),
+            last: LeanPattern::PVar(fresh_mvar(mvar_counter)),
         },
         ProofObj::Sym(p) => {
-            let e = eval(p, mvar_counter, umap);
+            let e = eval(p, mvar_counter, umap, rules);
             let n = e.vec.len();
             Expl {
                 vec: (0..n).rev().map(|i| {
@@ -121,8 +115,8 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap) -> Expl {
             }
         },
         ProofObj::Trans(p2, p1) => {
-            let e1 = eval(p1, mvar_counter, umap);
-            let e2 = eval(p2, mvar_counter, umap);
+            let e1 = eval(p1, mvar_counter, umap, rules);
+            let e2 = eval(p2, mvar_counter, umap, rules);
             unify(&e1.last, e2.first(), umap);
             Expl {
                 vec: e1.vec.iter().cloned().chain(e2.vec.iter().cloned()).collect(),
@@ -130,14 +124,20 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap) -> Expl {
             }
         },
         ProofObj::Congr(sid, children) => todo!(),
-        ProofObj::Rule(rule_id) => todo!(),
+        ProofObj::Rule(rule_id) => {
+            let entry = rules.get(*rule_id).clone();
+            Expl {
+                vec: vec![(entry.lhs, (entry.name, Vec::new()))],
+                last: entry.rhs,
+            }
+        },
     }
 }
 
-fn fresh_mvar(mvar_counter: &mut usize) -> MVar {
+fn fresh_mvar(mvar_counter: &mut usize) -> Symbol {
     let x = *mvar_counter;
     *mvar_counter += 1;
-    x
+    Symbol::from(format!("fresh{x}"))
 }
 
 // remove all remaining mvars by instantiating them with some guessed value.
@@ -145,7 +145,7 @@ fn guess_mvars(expl: Expl) -> Expl {
     todo!()
 }
 
-fn explify(l: &LeanTerm) -> ExplTerm {
+fn explify(l: &LeanTerm) -> LeanPattern {
     todo!()
 }
 
