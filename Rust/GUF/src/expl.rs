@@ -95,11 +95,26 @@ struct ExplStep {
 
 type UnifyMap = HashMap<Symbol, LeanPattern>;
 
+fn umap_canon(t: &LeanPattern, umap: &UnifyMap) -> LeanPattern {
+    match t {
+        LeanPattern::PVar(p) => umap_canon(&umap[p], umap),
+        LeanPattern::Node(n, children) => {
+            LeanPattern::Node(n.clone(),
+                children.iter().map(|x| umap_canon(x, umap)).collect()
+            )
+        },
+        LeanPattern::G(..) => unreachable!(),
+    }
+}
+
 // will panic if it can't unify.
 fn unify(l: &LeanPattern, r: &LeanPattern, umap: &mut UnifyMap) {
+    let l = umap_canon(l, umap);
+    let r = umap_canon(r, umap);
     match (l, r) {
         (LeanPattern::PVar(p), t)|(t, LeanPattern::PVar(p)) => {
-            umap.insert(*p, t.clone());
+            umap.insert(p, t.clone());
+            *umap = umap.iter().map(|(k, v)| (*k, umap_canon(v, umap))).collect();
         },
         (LeanPattern::Node(n1, cs1), LeanPattern::Node(n2, cs2)) => {
             assert!(LeanAnalysis::matches(&n1, &n2));
