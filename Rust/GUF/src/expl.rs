@@ -105,7 +105,10 @@ type UnifyMap = HashMap<Symbol, LeanPattern>;
 
 fn umap_canon(t: &LeanPattern, umap: &UnifyMap) -> LeanPattern {
     match t {
-        LeanPattern::PVar(p) => umap_canon(&umap[p], umap),
+        LeanPattern::PVar(p) => match umap.get(p) {
+            Some(t) => umap_canon(t, umap),
+            None => LeanPattern::PVar(*p),
+        }
         LeanPattern::Node(n, children) => {
             LeanPattern::Node(n.clone(),
                 children.iter().map(|x| umap_canon(x, umap)).collect()
