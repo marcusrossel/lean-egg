@@ -67,9 +67,13 @@ fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, r
     let mut mvar_counter = 0;
     let mut umap = UnifyMap::default();
 
-    let e = eval(&proof, &mut mvar_counter, &mut umap, rules);
+    let mut e = eval(&proof, &mut mvar_counter, &mut umap, rules);
     unify(e.first(), &explify(lhs), &mut umap);
     unify(&e.last, &explify(rhs), &mut umap);
+    for t in e.all_terms() {
+        *t = umap_canon(t, &umap);
+    }
+
     let e = guess_mvars(e);
 
     Ok(stringify(&e))
@@ -83,6 +87,10 @@ struct Expl {
 impl Expl {
     pub fn first(&self) -> &LeanPattern {
         self.vec.first().map(|(x, _)| x).unwrap_or_else(|| &self.last)
+    }
+
+    pub fn all_terms(&mut self) -> impl Iterator<Item=&mut LeanPattern> {
+        self.vec.iter_mut().map(|(x, _)| x).chain(std::iter::once(&mut self.last))
     }
 }
 
@@ -188,7 +196,7 @@ fn wrap(mut e: Expl, mvar_counter: &mut usize, i: usize, arity: usize, si: Symbo
     for p in e.vec.iter_mut().map(|(_, step)| &mut step.pos) {
         p.push(i);
     }
-    for t in e.vec.iter_mut().map(|(x, _)| x).chain(std::iter::once(&mut e.last)) {
+    for t in e.all_terms() {
         let node = si.build(vec![nil(); arity].into());
         let mut children = l.clone();
         children[i] = t.clone();
