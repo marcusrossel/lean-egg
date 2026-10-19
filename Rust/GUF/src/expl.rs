@@ -220,18 +220,24 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTa
                 cs.push(wrapped);
             }
             let mut total = cs.pop().unwrap();
-            // TODO: is the order of eval correct here?
             for x in cs.into_iter().rev() {
-                total = eval_trans(total, x, umap);
+                total = eval_trans(x, total, umap);
             }
             total
         },
         ProofObj::Rule(rule_id) => {
             let entry = rules.get(*rule_id).clone();
             let step = ExplStep { rule: entry.name, forward: true, pos: Vec::new() };
+
+            let mut lhs = entry.lhs;
+            let mut rhs = entry.rhs;
+            let mut map = HashMap::new();
+            refresh_mvars(&mut lhs, mvar_counter, &mut map);
+            refresh_mvars(&mut rhs, mvar_counter, &mut map);
+
             Expl {
-                vec: vec![(entry.lhs, step)],
-                last: entry.rhs,
+                vec: vec![(lhs, step)],
+                last: rhs,
             }
         },
     }
@@ -255,6 +261,25 @@ fn fresh_mvar(mvar_counter: &mut usize) -> Symbol {
     let x = *mvar_counter;
     *mvar_counter += 1;
     Symbol::from(format!("fresh{x}"))
+}
+
+fn refresh_mvars(t: &mut LeanPattern, mvar_counter: &mut usize, map: &mut HashMap<Symbol, Symbol>) {
+    match t {
+        LeanPattern::PVar(v) => {
+            let vv = if let Some(vv) = map.get(v) { *vv } else {
+                let vv = fresh_mvar(mvar_counter);
+                map.insert(*v, vv);
+                vv
+            };
+            *t = LeanPattern::PVar(vv);
+        },
+        LeanPattern::Node(n, children) => {
+            for c in children {
+                refresh_mvars(c, mvar_counter, map);
+            }
+        },
+        LeanPattern::G(..) => unreachable!(),
+    }
 }
 
 // remove all remaining mvars by instantiating them with some guessed value.
