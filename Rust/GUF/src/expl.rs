@@ -6,6 +6,7 @@ use crate::util::*;
 use crate::LeanExpr;
 use std::collections::HashMap;
 use std::rc::Rc;
+use rs2::Analysis;
 
 #[derive(Clone, Copy)]
 pub enum ExplanationKind {
@@ -85,15 +86,24 @@ impl Expl {
     }
 }
 
-type MVar = usize;
-
 type ExplStep = (/*rule id*/ Rc<str>, /*pos*/ Vec<usize>); // last index in vector is innermost index.
 
-type UnifyMap = HashMap<MVar, LeanPattern>;
+type UnifyMap = HashMap<Symbol, LeanPattern>;
 
 // will panic if it can't unify.
 fn unify(l: &LeanPattern, r: &LeanPattern, umap: &mut UnifyMap) {
-    todo!()
+    match (l, r) {
+        (LeanPattern::PVar(p), t)|(t, LeanPattern::PVar(p)) => {
+            umap.insert(*p, t.clone());
+        },
+        (LeanPattern::Node(n1, cs1), LeanPattern::Node(n2, cs2)) => {
+            assert!(LeanAnalysis::matches(&n1, &n2));
+            for (c1, c2) in cs1.iter().zip(cs2.iter()) {
+                unify(c1, c2, umap);
+            }
+        },
+        (LeanPattern::G(..),_)|(_,LeanPattern::G(..)) => unreachable!(),
+    }
 }
 
 fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTable) -> Expl {
