@@ -86,7 +86,12 @@ impl Expl {
     }
 }
 
-type ExplStep = (/*rule id*/ Rc<str>, /*pos*/ Vec<usize>); // last index in vector is innermost index.
+#[derive(Clone)]
+struct ExplStep {
+    rule: Rc<str>,
+    forward: bool,
+    pos: Vec<usize>,
+}
 
 type UnifyMap = HashMap<Symbol, LeanPattern>;
 
@@ -126,7 +131,8 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTa
             Expl {
                 vec: (0..n).rev().map(|i| {
                     let node = if i == 0 { &e.last } else { &e.vec[i-1].0 }.clone();
-                    let edge = e.vec[i].1.clone();
+                    let mut edge = e.vec[i].1.clone();
+                    edge.forward = !edge.forward;
                     (node, edge)
                 }).collect(),
                 last: e.first().clone(),
@@ -153,8 +159,9 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTa
         },
         ProofObj::Rule(rule_id) => {
             let entry = rules.get(*rule_id).clone();
+            let step = ExplStep { rule: entry.name, forward: true, pos: Vec::new() };
             Expl {
-                vec: vec![(entry.lhs, (entry.name, Vec::new()))],
+                vec: vec![(entry.lhs, step)],
                 last: entry.rhs,
             }
         },
@@ -163,7 +170,7 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTa
 
 fn wrap(mut e: Expl, mvar_counter: &mut usize, i: usize, arity: usize, si: SymbolId) -> Expl {
     let l: Box<[LeanPattern]> = (0..arity).map(|_| LeanPattern::PVar(fresh_mvar(mvar_counter))).collect();
-    for p in e.vec.iter_mut().map(|(_, (_, p))| p) {
+    for p in e.vec.iter_mut().map(|(_, step)| &mut step.pos) {
         p.push(i);
     }
     for t in e.vec.iter_mut().map(|(x, _)| x).chain(std::iter::once(&mut e.last)) {
@@ -183,13 +190,39 @@ fn fresh_mvar(mvar_counter: &mut usize) -> Symbol {
 
 // remove all remaining mvars by instantiating them with some guessed value.
 fn guess_mvars(expl: Expl) -> Expl {
-    todo!()
+    expl
 }
 
 fn explify(l: &LeanTerm) -> LeanPattern {
     l.clone()
 }
 
-fn stringify(expl: &Expl) -> String {
+fn stringify(e: &Expl) -> String {
+    let mut out = String::new();
     todo!()
+    // out
+}
+
+fn stringify_term(t: &LeanPattern, step: Option<ExplStep>) -> String {
+    if let Some(step_) = &step {
+        if step_.pos.is_empty() {
+            // TODO
+            return stringify_term(t, None)
+        }
+    }
+
+    match t {
+        LeanPattern::Node(n, children) => {
+            let op = symbolic_expressions::encode_string(&n.op());
+            // TODO fix step
+            let child_strings: Vec<String> = children.iter().map(|x| stringify_term(x, step.clone())).collect();
+            if n.is_leaf() {
+                op
+            } else {
+                format!("({} {})", op, child_strings.join(" "))
+            }
+        },
+        LeanPattern::PVar(v) => format!("?{v}"),
+        LeanPattern::G(..) => unreachable!(),
+    }
 }
