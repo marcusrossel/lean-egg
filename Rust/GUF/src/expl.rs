@@ -59,6 +59,7 @@ pub fn mk_explanation(
 // Analogous to `explain_equivalence(lhs, rhs).get_flat_string()` in egg.
 // The `rules` map the ids in `ProofObj::Rule` to the corresponding rule names and patterns.
 fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, rhs: &LeanTerm) -> Result<String, String> {
+    note("explain_equiv!");
     let lhs_id = egraph.lookup_term(lhs).unwrap();
     let rhs_id = egraph.lookup_term(rhs).unwrap();
     // The proof `p` with `p * lhs_id = rhs_id`, that is, a proof of `lhs = rhs`.
@@ -67,7 +68,9 @@ fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, r
     let mut mvar_counter = 0;
     let mut umap = UnifyMap::default();
 
+    note("pre-eval!");
     let mut e = eval(&proof, &mut mvar_counter, &mut umap, rules);
+    note("post-eval!");
     unify(e.first(), &explify(lhs), &mut umap);
     unify(&e.last, &explify(rhs), &mut umap);
     for t in e.all_terms() {
@@ -76,6 +79,7 @@ fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, r
 
     let e = guess_mvars(e);
 
+    note("pre-stringify!");
     Ok(stringify(&e))
 }
 
@@ -118,12 +122,21 @@ fn umap_canon(t: &LeanPattern, umap: &UnifyMap) -> LeanPattern {
     }
 }
 
+fn contains_var(p: &LeanPattern, v: Symbol) -> bool {
+    match p {
+        LeanPattern::PVar(v2) => v == *v2,
+        LeanPattern::Node(_, children) => children.iter().any(|c| contains_var(c, v)),
+        LeanPattern::G(..) => unreachable!(),
+    }
+}
+
 // will panic if it can't unify.
 fn unify(l: &LeanPattern, r: &LeanPattern, umap: &mut UnifyMap) {
     let l = umap_canon(l, umap);
     let r = umap_canon(r, umap);
     match (l, r) {
         (LeanPattern::PVar(p), t)|(t, LeanPattern::PVar(p)) => {
+            assert!(!contains_var(&t, p));
             umap.insert(p, t.clone());
             *umap = umap.iter().map(|(k, v)| (*k, umap_canon(v, umap))).collect();
         },
@@ -272,4 +285,24 @@ fn stringify_term(t: &LeanPattern, step: Option<ExplStep>) -> String {
         LeanPattern::PVar(v) => format!("?{v}"),
         LeanPattern::G(..) => unreachable!(),
     }
+}
+
+
+
+use std::fs::OpenOptions;
+use std::io::{self, Write};
+use std::path::PathBuf;
+
+fn note(text: &str) -> io::Result<()> {
+    let mut path = PathBuf::from(std::env::var("HOME").map_err(|_| {
+        io::Error::new(io::ErrorKind::NotFound, "HOME environment variable not set")
+    })?);
+    path.push("log");
+
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)?;
+
+    writeln!(file, "{}", text)
 }
