@@ -24,7 +24,7 @@ pub enum ProofObj {
 // An index into a `RuleTable`.
 pub type RuleId = usize;
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub struct SymbolId(u8);
 
 impl SymbolId {

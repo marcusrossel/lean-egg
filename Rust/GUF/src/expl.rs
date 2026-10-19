@@ -106,6 +106,14 @@ fn unify(l: &LeanPattern, r: &LeanPattern, umap: &mut UnifyMap) {
     }
 }
 
+fn eval_trans(e2: Expl, e1: Expl, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTable) -> Expl {
+    unify(&e1.last, e2.first(), umap);
+    Expl {
+        vec: e1.vec.iter().cloned().chain(e2.vec.iter().cloned()).collect(),
+        last: e2.last.clone(),
+    }
+}
+
 fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTable) -> Expl {
     match &*p.0 {
         ProofObj::Refl => Expl {
@@ -127,18 +135,21 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTa
         ProofObj::Trans(p2, p1) => {
             let e1 = eval(p1, mvar_counter, umap, rules);
             let e2 = eval(p2, mvar_counter, umap, rules);
-            unify(&e1.last, e2.first(), umap);
-            Expl {
-                vec: e1.vec.iter().cloned().chain(e2.vec.iter().cloned()).collect(),
-                last: e2.last.clone(),
-            }
+            eval_trans(e2, e1, mvar_counter, umap, rules)
         },
         ProofObj::Congr(sid, children) => {
             let mut cs = Vec::new();
-            for c in children {
-                cs.push(eval(c, mvar_counter, umap, rules));
+            for (i, c) in children.iter().enumerate() {
+                let inner = eval(c, mvar_counter, umap, rules);
+                let wrapped = wrap(inner, mvar_counter, i, children.len(), *sid);
+                cs.push(wrapped);
             }
-            todo!()
+            let mut total = cs.pop().unwrap();
+            // TODO: is the order of eval correct here?
+            for x in cs.into_iter().rev() {
+                total = eval_trans(total, x, mvar_counter, umap, rules);
+            }
+            total
         },
         ProofObj::Rule(rule_id) => {
             let entry = rules.get(*rule_id).clone();
@@ -148,6 +159,20 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTa
             }
         },
     }
+}
+
+fn wrap(mut e: Expl, mvar_counter: &mut usize, i: usize, arity: usize, si: SymbolId) -> Expl {
+    let l: Box<[LeanPattern]> = (0..arity).map(|_| LeanPattern::PVar(fresh_mvar(mvar_counter))).collect();
+    for p in e.vec.iter_mut().map(|(_, (_, p))| p) {
+        p.push(i);
+    }
+    for t in e.vec.iter_mut().map(|(x, _)| x).chain(std::iter::once(&mut e.last)) {
+        let node = si.build(vec![nil(); arity].into());
+        let mut children = l.clone();
+        children[i] = t.clone();
+        *t = LeanTerm::Node(node, children);
+    }
+    e
 }
 
 fn fresh_mvar(mvar_counter: &mut usize) -> Symbol {
