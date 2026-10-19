@@ -348,16 +348,17 @@ use std::fs::OpenOptions;
 use std::io::{self, Write};
 use std::path::PathBuf;
 
-fn note(text: &str) -> io::Result<()> {
+fn note(text: &str) {
     let mut path = PathBuf::from(std::env::var("HOME").map_err(|_| {
         io::Error::new(io::ErrorKind::NotFound, "HOME environment variable not set")
-    })?);
+    }).unwrap());
     path.push("log");
 
     let mut file = OpenOptions::new()
         .create(true)
         .append(true)
-        .open(path)?;
+        .open(path)
+        .unwrap();
 
-    writeln!(file, "{}", text)
+    writeln!(file, "{}", text).unwrap();
 }
