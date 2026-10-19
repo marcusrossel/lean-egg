@@ -77,13 +77,17 @@ fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, r
 
     note(&format!("eval({})", psize));
     let mut e = eval(&proof, &mut mvar_counter, &mut umap, rules);
-    note("post-eval!");
+
+    note("pre-unify!");
     unify(e.first(), &explify(lhs), &mut umap);
     unify(&e.last, &explify(rhs), &mut umap);
+
+    note("pre-canon!");
     for t in e.all_terms() {
         *t = umap_canon(t, &umap);
     }
 
+    note("pre-guess!");
     let e = guess_mvars(e);
 
     note("pre-stringify!");
