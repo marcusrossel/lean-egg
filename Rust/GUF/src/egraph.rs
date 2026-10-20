@@ -169,6 +169,16 @@ pub fn union_instantiations(egraph: &mut LeanEGraph, from: &LeanPattern, to: &Le
 // Note: We don't use `EGraph::union`, as it rebuilds the e-graph after every union. Instead (as in
 //       egg), the e-graph is rebuilt once per iteration of equality saturation.
 pub fn union_instantiations_by_id(egraph: &mut LeanEGraph, from: &LeanPattern, to: &LeanPattern, subst: &LeanSubst, entry: EntryId) -> bool {
+    let from = instantiate(from, egraph, subst);
+    let from = egraph.find(from);
+    let to = instantiate(to, egraph, subst);
+    let to = egraph.find(to);
+
+    // If both instances are already equivalent, the union would not change the e-graph (as we don't
+    // track self-edges, cf. `LeanAnalysisData::contains_self_edge`). Thus, we don't need to record
+    // the rule application.
+    if from.1 == to.1 { return false }
+
     // We only record variables whose e-class is not proof-annotated (which is all of them, as GUF's
     // e-matching produces such substitutions), as these represent exactly the e-class's term.
     let recorded = subst.iter().filter(|(_, (g, _))| g.is_refl()).map(|(var, (_, id))| (*var, *id)).collect();
@@ -176,20 +186,14 @@ pub fn union_instantiations_by_id(egraph: &mut LeanEGraph, from: &LeanPattern, t
         rules.applications.push(RuleApplication { entry, subst: recorded });
         rules.applications.len() - 1
     });
-    let justification = Proof::rule(application);
-    let from = instantiate(from, egraph, subst);
-    let (proof, id) = instantiate(to, egraph, subst);
     // `justification⁻¹ * to` represents the same term as `from`.
-    let to = (Proof::compose(&justification.inverse(), &proof), id);
+    let justification = Proof::rule(application);
+    let to = (Proof::compose(&justification.inverse(), &to.0), to.1);
+
     // GUF's `union` makes the root of its first argument the root of the merged e-class. We keep the
     // older root, as proofs are composed along the paths to the root and, for example, the e-class
     // of `True` would otherwise be re-rooted under every new `(= x x)` (cf. `mk_hooks`).
-    let changed = if egraph.find(to.clone()).1 < egraph.find(from.clone()).1 {
-        egraph.uf.union(to, from)
-    } else {
-        egraph.uf.union(from, to)
-    };
-    // If the union did not change the e-graph, its justification is not used anywhere.
-    if !changed { RULES.with_borrow_mut(|rules| rules.applications.pop()); }
-    changed
+    //
+    // Note: As `from` and `to` are roots, `union` does not need to traverse any paths.
+    if to.1 < from.1 { egraph.uf.union(to, from) } else { egraph.uf.union(from, to) }
 }
