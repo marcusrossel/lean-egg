@@ -36,6 +36,10 @@ pub struct Config {
     pub subgoals:    bool
 }
 
+// GUF's `eqsat` does not detect saturation, so we do so in a hook which stops equality saturation
+// with this message (cf. `u8_from_stop_reason`).
+pub const SATURATED: &str = "saturated";
+
 // Analogous to egg's `Report`.
 pub struct Report {
     pub iterations:     usize,
@@ -193,6 +197,7 @@ fn mk_hooks(egraph: &LeanEGraph, init_id: PId, goal_id: PId, iterations: Rc<Cell
     let refl_eq = pat("(= ?x ?x)");
     let true_expr = term("(const \"True\")");
     let refl_eq_rule_id = RuleIdCache::default();
+    let mut last_state: Option<(Id, usize)> = None;
 
     let hooks: Vec<Hook<LeanAnalysis>> = vec![
         // GUF's `eqsat` does not report the number of iterations, so we count them here.
@@ -205,6 +210,17 @@ fn mk_hooks(egraph: &LeanEGraph, init_id: PId, goal_id: PId, iterations: Rc<Cell
             let goal_eq = LeanExpr::Eq([init_id.clone(), goal_id.clone()]);
             if egraph.lookup(&goal_eq).map(|x| egraph.find(x).1) == Some(egraph.find(true_id.clone()).1) {
                 Err(StopReason::Other("Proved goal!".to_string()))
+            } else {
+                Ok(())
+            }
+        }),
+        // The e-graph is saturated if an iteration neither created new e-classes nor merged any.
+        // As e-class ids are never reused and only merges reduce the number of e-classes, it
+        // suffices to compare the number of created ids and e-classes between iterations.
+        Box::new(move |egraph: &mut LeanEGraph| {
+            let state = (egraph.uf.next_id(), egraph.classes().len());
+            if last_state.replace(state) == Some(state) {
+                Err(StopReason::Other(SATURATED.to_string()))
             } else {
                 Ok(())
             }

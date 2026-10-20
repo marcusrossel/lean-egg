@@ -5,6 +5,7 @@ use crate::proof::*;
 use crate::util::*;
 use crate::LeanExpr;
 use std::collections::{HashMap, HashSet};
+use std::panic::AssertUnwindSafe;
 use std::rc::Rc;
 use rs2::Analysis;
 
@@ -49,11 +50,20 @@ pub fn mk_explanation(
 ) -> (ExplanationKind, String) {
     match ExplanationKind::for_goal(egraph, init_expr, goal_expr, init_id, goal_id) {
         None => (ExplanationKind::None, "".to_string()),
-        Some((kind, lhs, rhs)) => match explain_equivalence(egraph, rules, &lhs, &rhs) {
-            Ok(expl) => (kind, expl),
-            Err(msg) => (ExplanationKind::None, msg)
+        // Note: We catch panics, as they would otherwise abort the Lean process (panics cannot
+        //       unwind across the FFI boundary).
+        Some((kind, lhs, rhs)) => match std::panic::catch_unwind(AssertUnwindSafe(|| explain_equivalence(egraph, rules, &lhs, &rhs))) {
+            Ok(Ok(expl)) => (kind, expl),
+            Ok(Err(msg)) => (ExplanationKind::None, msg),
+            Err(panic)   => (ExplanationKind::None, format!("GUF explanation failed: {}", panic_msg(&panic)))
         }
     }
+}
+
+fn panic_msg(panic: &Box<dyn std::any::Any + Send>) -> String {
+    if let Some(msg) = panic.downcast_ref::<&str>() { msg.to_string() }
+    else if let Some(msg) = panic.downcast_ref::<String>() { msg.clone() }
+    else { "unknown panic".to_string() }
 }
 
 // Analogous to `explain_equivalence(lhs, rhs).get_flat_string()` in egg.
@@ -149,6 +159,7 @@ fn unify(l: &LeanPattern, r: &LeanPattern, umap: &mut UnifyMap) {
     let l = umap_canon(l, umap);
     let r = umap_canon(r, umap);
     match (l, r) {
+        (LeanPattern::PVar(p1), LeanPattern::PVar(p2)) if p1 == p2 => {},
         (LeanPattern::PVar(p), t)|(t, LeanPattern::PVar(p)) => {
             assert!(!contains_var(&t, p));
             umap.insert(p, t.clone());
@@ -319,7 +330,7 @@ fn stringify_term(t: &LeanPattern, step: Option<ExplStep>) -> String {
         if step_.pos.is_empty() {
             let subterm = stringify_term(t, None);
             let dir = if step_.forward { "=>" } else { "<=" };
-            let name = &step_.rule;
+            let name = symbolic_expressions::encode_string(&step_.rule);
             return format!("(Rewrite{dir} {name} {subterm})")
         }
     }

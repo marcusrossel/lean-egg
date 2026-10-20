@@ -124,9 +124,10 @@ impl CRewritesArray {
     }
 }
 
-// Note: GUF does not report saturation, so we never return code `0`.
+// Note: GUF does not report saturation, so we detect it ourselves (cf. `basic::SATURATED`).
 pub fn u8_from_stop_reason(r: StopReason) -> (u8, String) {
     match r {
+        StopReason::Other(msg) if msg == SATURATED => (0, "".to_string()),
         StopReason::TimeLimit  => (1, "".to_string()),
         StopReason::IterLimit  => (2, "".to_string()),
         StopReason::NodeLimit  => (3, "".to_string()),
