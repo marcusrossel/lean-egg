@@ -90,30 +90,18 @@ fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, enodes: &[LeanExp
     // The proof `p` with `p * lhs_id = rhs_id`, that is, a proof of `lhs = rhs`.
     let proof = egraph.get_g_between(lhs_id, rhs_id).unwrap();
 
-    let mut mvar_counter = 0;
-    let mut umap = UnifyMap::default();
-
-    note("pre-psize!");
-
-    let psize = psize_fast(&proof, &mut Default::default());
-    if psize > 1000 { return Err("proof too big".to_string()) }
-
-    note("pre-eval!");
-
-    note(&format!("eval({})", psize));
     let mut terms = Terms { enodes, cache: HashMap::new() };
-    let mut e = eval(&proof, &mut mvar_counter, &mut umap, rules, &mut terms);
 
-    note("pre-unify!");
-    unify(e.first(), &explify(lhs), &mut umap);
-    unify(&e.last, &explify(rhs), &mut umap);
-
-    note("pre-canon!");
-    for t in e.all_terms() {
-        *t = umap_canon(t, &umap);
-    }
-
-    let e = remove_cycles(e);
+    // As rule steps are ground (cf. `RuleApplication`), we can evaluate the proof forwards from
+    // `lhs`. We only fall back to the unification-based evaluation if that fails, which would happen
+    // if a rule application lacked the terms of some of its variables.
+    let e = match eval_forward(&proof, lhs, rhs, rules, &mut terms) {
+        Ok(e) => e,
+        Err(msg) => {
+            note(&format!("forward evaluation failed: {msg}"));
+            eval_by_unification(&proof, lhs, rhs, rules, &mut terms)
+        }
+    };
 
     note("pre-guess!");
     let e = guess_mvars(e);
@@ -125,32 +113,192 @@ fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, enodes: &[LeanExp
     Ok(stringified)
 }
 
+fn eval_by_unification(proof: &Proof, lhs: &LeanTerm, rhs: &LeanTerm, rules: &RuleTable, terms: &mut Terms) -> Expl {
+    let mut mvar_counter = 0;
+    let mut umap = UnifyMap::default();
+
+    note("pre-eval!");
+    let mut e = eval(proof, &mut mvar_counter, &mut umap, rules, terms);
+
+    note("pre-unify!");
+    unify(e.first(), &explify(lhs), &mut umap);
+    unify(&e.last, &explify(rhs), &mut umap);
+
+    note("pre-canon!");
+    for t in e.all_terms() {
+        *t = umap_canon(t, &umap);
+    }
+
+    remove_cycles(e)
+}
+
+// Evaluates the given proof of `lhs = rhs` by applying its steps to `lhs`. This requires all rule
+// steps to be ground. The resulting explanation contains no detours (cf. `ExplBuilder`).
+fn eval_forward(proof: &Proof, lhs: &LeanTerm, rhs: &LeanTerm, rules: &RuleTable, terms: &mut Terms) -> Result<Expl, String> {
+    let mut fwd = Forward { rules, terms, ground: HashMap::new(), path: Vec::new(), steps: Vec::new() };
+    let end = fwd.eval(proof, lhs.clone(), true)?;
+    if end != *rhs { return Err(format!("the proof ends in {end:?} instead of {rhs:?}")) }
+
+    // Replays the steps on `lhs` to obtain the entire term after each step.
+    let mut cur = lhs.clone();
+    let mut expl = ExplBuilder::new(cur.clone());
+    for (path, step, result) in fwd.steps {
+        *subterm_mut(&mut cur, &path) = result;
+        expl.push(step, cur.clone());
+    }
+    Ok(expl.finish())
+}
+
+// The state of `eval_forward`.
+struct Forward<'a, 'b> {
+    rules:  &'a RuleTable,
+    terms:  &'a mut Terms<'b>,
+    // The instantiated `lhs` and `rhs` of each rule application encountered so far.
+    ground: HashMap<RuleId, (LeanTerm, LeanTerm)>,
+    // The position of the subterm currently being evaluated (outermost index first).
+    path:   Vec<usize>,
+    // The steps performed so far, each with the position it applies to and the resulting subterm.
+    steps:  Vec<(Vec<usize>, ExplStep, LeanTerm)>,
+}
+
+impl Forward<'_, '_> {
+
+    // Applies `p` (or `p⁻¹` if `!fwd`) to the term `t` at position `self.path`, and returns the
+    // resulting term.
+    fn eval(&mut self, p: &Proof, t: LeanTerm, fwd: bool) -> Result<LeanTerm, String> {
+        match &*p.0 {
+            ProofObj::Refl => Ok(t),
+            ProofObj::Sym(q) => self.eval(q, t, !fwd),
+            // `Trans(p2, p1)` first applies `p1`, then `p2`.
+            ProofObj::Trans(p2, p1) => if fwd {
+                let t = self.eval(p1, t, true)?;
+                self.eval(p2, t, true)
+            } else {
+                let t = self.eval(p2, t, false)?;
+                self.eval(p1, t, false)
+            },
+            ProofObj::Congr(sid, children) => {
+                let LeanPattern::Node(node, args) = t else { return Err(format!("congruence on {t:?}")) };
+                if SymbolId::from_enode(&node) != *sid || args.len() != children.len() {
+                    return Err(format!("congruence proof does not apply to {node:?}"))
+                }
+                let mut new_args = Vec::with_capacity(args.len());
+                for (i, (arg, child)) in args.into_vec().into_iter().zip(children.iter()).enumerate() {
+                    self.path.push(i);
+                    new_args.push(self.eval(child, arg, fwd)?);
+                    self.path.pop();
+                }
+                Ok(LeanPattern::Node(node, new_args.into()))
+            },
+            ProofObj::Rule(id) => {
+                let (lhs, rhs) = self.ground(*id);
+                let (from, to) = if fwd { (lhs, rhs) } else { (rhs, lhs) };
+                let rule = self.rules.get(*id).name.clone();
+                // The rule's patterns are ground, unless a variable's term was not recorded.
+                let mut bindings = UnifyMap::default();
+                if !match_pattern(&from, &t, &mut bindings) {
+                    return Err(format!("rule {rule} does not apply to {t:?}"))
+                }
+                let result = umap_canon(&to, &bindings);
+                if !is_ground(&result) { return Err(format!("rule {rule} yields non-ground {result:?}")) }
+                let pos = self.path.iter().rev().copied().collect();
+                self.steps.push((self.path.clone(), ExplStep { rule, forward: fwd, pos }, result.clone()));
+                Ok(result)
+            },
+        }
+    }
+
+    // The `lhs` and `rhs` of the given rule application, instantiated with its substitution.
+    fn ground(&mut self, id: RuleId) -> (LeanTerm, LeanTerm) {
+        if let Some(sides) = self.ground.get(&id) { return sides.clone() }
+        let entry = self.rules.get(id);
+        let subst: UnifyMap = self.rules.subst(id).iter().map(|(var, x)| (*var, self.terms.get(*x))).collect();
+        let sides = (umap_canon(&entry.lhs, &subst), umap_canon(&entry.rhs, &subst));
+        self.ground.insert(id, sides.clone());
+        sides
+    }
+}
+
+// Matches `pat` against `t`, extending `bindings` with the pattern's variables.
+fn match_pattern(pat: &LeanPattern, t: &LeanTerm, bindings: &mut UnifyMap) -> bool {
+    match (pat, t) {
+        (LeanPattern::PVar(var), _) => match bindings.get(var) {
+            Some(bound) => bound == t,
+            None        => { bindings.insert(*var, t.clone()); true }
+        },
+        (LeanPattern::Node(n1, ps), LeanPattern::Node(n2, ts)) =>
+            LeanAnalysis::matches(n1, n2) && ps.len() == ts.len() &&
+            ps.iter().zip(ts.iter()).all(|(p, t)| match_pattern(p, t, bindings)),
+        _ => false,
+    }
+}
+
+fn is_ground(t: &LeanPattern) -> bool {
+    match t {
+        LeanPattern::PVar(_)           => false,
+        LeanPattern::Node(_, children) => children.iter().all(is_ground),
+        LeanPattern::G(..)             => unreachable!(),
+    }
+}
+
+fn subterm_mut<'a>(t: &'a mut LeanPattern, path: &[usize]) -> &'a mut LeanPattern {
+    match (path.split_first(), t) {
+        (None, t) => t,
+        (Some((i, rest)), LeanPattern::Node(_, children)) => subterm_mut(&mut children[*i], rest),
+        _ => unreachable!("invalid position"),
+    }
+}
+
 struct Expl {
     vec: Vec<(LeanPattern, ExplStep)>,
     last: LeanPattern,
 }
 
-// Removes detours from the given explanation: if a term occurs more than once, we drop all steps
-// between its first and last occurrence.
-fn remove_cycles(e: Expl) -> Expl {
-    // Each term of the explanation together with the step from it to the next term.
-    let mut terms: Vec<(LeanPattern, Option<ExplStep>)> = e.vec.into_iter().map(|(t, s)| (t, Some(s))).collect();
-    terms.push((e.last, None));
+// Builds an explanation step by step while removing detours: if a term occurs again, we drop all
+// steps since its previous occurrence.
+struct ExplBuilder {
+    // Each term of the explanation together with the step from it to the next term (if any).
+    terms: Vec<(LeanPattern, Option<ExplStep>)>,
+    idx:   HashMap<LeanPattern, usize>,
+}
 
-    let mut out: Vec<(LeanPattern, Option<ExplStep>)> = Vec::new();
-    let mut idx: HashMap<LeanPattern, usize> = HashMap::new();
-    for (t, step) in terms {
-        if let Some(&i) = idx.get(&t) {
-            for (dropped, _) in out.drain(i + 1..) { idx.remove(&dropped); }
-            out[i].1 = step;
+impl ExplBuilder {
+
+    fn new(first: LeanPattern) -> Self {
+        let idx = HashMap::from([(first.clone(), 0)]);
+        ExplBuilder { terms: vec![(first, None)], idx }
+    }
+
+    // Adds the given step, which leads from the last term of the explanation to `term`.
+    fn push(&mut self, step: ExplStep, term: LeanPattern) {
+        if let Some(&i) = self.idx.get(&term) {
+            for (dropped, _) in self.terms.drain(i + 1..) { self.idx.remove(&dropped); }
+            self.terms[i].1 = None;
         } else {
-            idx.insert(t.clone(), out.len());
-            out.push((t, step));
+            self.terms.last_mut().unwrap().1 = Some(step);
+            self.idx.insert(term.clone(), self.terms.len());
+            self.terms.push((term, None));
         }
     }
 
-    let (last, _) = out.pop().unwrap();
-    Expl { vec: out.into_iter().map(|(t, step)| (t, step.unwrap())).collect(), last }
+    fn finish(mut self) -> Expl {
+        let (last, _) = self.terms.pop().unwrap();
+        Expl { vec: self.terms.into_iter().map(|(t, step)| (t, step.unwrap())).collect(), last }
+    }
+}
+
+// Removes detours from the given explanation (cf. `ExplBuilder`).
+fn remove_cycles(e: Expl) -> Expl {
+    let Expl { vec, last } = e;
+    let mut steps = vec.into_iter();
+    let Some((first, mut step)) = steps.next() else { return Expl { vec: Vec::new(), last } };
+    let mut expl = ExplBuilder::new(first);
+    for (term, next) in steps {
+        expl.push(step, term);
+        step = next;
+    }
+    expl.push(step, last);
+    expl.finish()
 }
 
 // The terms of e-classes (cf. `id_to_expr`), which are computed on demand.
@@ -216,8 +364,8 @@ fn unify(l: &LeanPattern, r: &LeanPattern, umap: &mut UnifyMap) {
         (LeanPattern::PVar(p1), LeanPattern::PVar(p2)) if p1 == p2 => {},
         (LeanPattern::PVar(p), t)|(t, LeanPattern::PVar(p)) => {
             assert!(!contains_var(&t, p));
+            // Note: We don't need to resolve the other bindings, as `umap_canon` follows bindings.
             umap.insert(p, t.clone());
-            *umap = umap.iter().map(|(k, v)| (*k, umap_canon(v, umap))).collect();
         },
         (LeanPattern::Node(n1, cs1), LeanPattern::Node(n2, cs2)) => {
             assert!(LeanAnalysis::matches(&n1, &n2), "{n1:?} ~!~ {n2:?}");
@@ -241,22 +389,6 @@ fn eval_trans(e2: Expl, e1: Expl, umap: &mut UnifyMap) -> Expl {
         vec: e1.vec.iter().cloned().chain(e2.vec.iter().cloned()).collect(),
         last: e2.last.clone(),
     }
-}
-
-fn psize_fast(p: &Proof, things: &mut HashMap<*const ProofObj, usize>) -> usize {
-    let pp = &*p.0 as *const ProofObj;
-
-    if let Some(x) = things.get(&pp) { return *x }
-
-    let v = match &*p.0 {
-        ProofObj::Refl => 0,
-        ProofObj::Sym(p) => psize_fast(p, things),
-        ProofObj::Trans(p1, p2) => psize_fast(p1, things) + psize_fast(p2, things),
-        ProofObj::Congr(_, children) => children.iter().map(|ii| psize_fast(ii, things)).sum::<usize>(),
-        ProofObj::Rule(_) => 1,
-    };
-    things.insert(pp, v);
-    v
 }
 
 fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTable, terms: &mut Terms) -> Expl {
