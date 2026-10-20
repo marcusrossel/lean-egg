@@ -205,7 +205,7 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTa
             let n = e.vec.len();
             Expl {
                 vec: (0..n).rev().map(|i| {
-                    let node = if i == 0 { &e.last } else { &e.vec[i-1].0 }.clone();
+                    let node = if i == n-1 { &e.last } else { &e.vec[i+1].0 }.clone();
                     let mut edge = e.vec[i].1.clone();
                     edge.forward = !edge.forward;
                     (node, edge)
