@@ -25,20 +25,20 @@ pub trait Applier {
 pub struct PatternApplier {
     rhs:     LeanPattern,
     // The name and patterns of the rewrite are the same for all of its applications.
-    rule_id: RuleIdCache
+    entry_id: EntryIdCache
 }
 
 impl PatternApplier {
 
     pub fn new(rhs: LeanPattern) -> Self {
-        Self { rhs, rule_id: Default::default() }
+        Self { rhs, entry_id: Default::default() }
     }
 }
 
 impl Applier for PatternApplier {
 
     fn apply_one(&self, graph: &mut LeanEGraph, searcher: &LeanPattern, subst: &LeanSubst, rule: &str) {
-        let id = self.rule_id.get(rule, searcher, &self.rhs);
+        let id = self.entry_id.get(rule, searcher, &self.rhs);
         union_instantiations_by_id(graph, searcher, &self.rhs, subst, id);
     }
 }
@@ -132,7 +132,7 @@ impl RewriteTemplate {
 
         let applier = LeanApplier {
             lhs: self.lhs, rhs: self.rhs, tc_conds: self.tc_conds, prop_conds: self.prop_conds,
-            weak_vars: self.weak_vars, blocks: self.blocks, cfg, rule_id: Default::default()
+            weak_vars: self.weak_vars, blocks: self.blocks, cfg, entry_id: Default::default()
         };
         Ok(Either::L(mk_rewrite(self.name, lhs, applier)))
     }
@@ -148,7 +148,7 @@ struct LeanApplier {
     pub cfg:        RewriteConfig,
     // The id of the rule for applications which require neither shifting nor weak var assignments,
     // as these all share the rule's name and patterns.
-    pub rule_id:    RuleIdCache,
+    pub entry_id:   EntryIdCache,
 }
 
 impl Applier for LeanApplier {
@@ -199,7 +199,7 @@ impl Applier for LeanApplier {
             union_instantiations(graph, &self.lhs, &shifted_rhs, subst, &rule);
         } else if self.cfg.subgoals || self.weak_vars.is_empty() {
             // In this case, `rule` does not contain weak var assignments.
-            let id = self.rule_id.get(&rule, &self.lhs, &self.rhs);
+            let id = self.entry_id.get(&rule, &self.lhs, &self.rhs);
             union_instantiations_by_id(graph, &self.lhs, &self.rhs, subst, id);
         } else {
             union_instantiations(graph, &self.lhs, &self.rhs, subst, &rule);

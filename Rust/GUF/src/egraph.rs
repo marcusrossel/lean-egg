@@ -27,17 +27,31 @@ pub struct RuleEntry {
     pub rhs:  LeanPattern,
 }
 
-// The rewrite rules justifying the unions of an e-graph, indexed by the ids used in `ProofObj::Rule`.
+// An index into the entries of a `RuleTable`.
+pub type EntryId = usize;
+
+// An application of a rewrite rule which justifies a union: the union's e-classes are the instances
+// of the rule's `lhs` and `rhs` for the given substitution. The substitution maps each variable to
+// the e-class whose term (cf. `id_to_expr`) it was instantiated with.
+#[derive(Clone, Debug)]
+pub struct RuleApplication {
+    pub entry: EntryId,
+    pub subst: Box<[(PVar, Id)]>,
+}
+
+// The rewrite rules justifying the unions of an e-graph. The ids used in `ProofObj::Rule` index the
+// rule applications.
 #[derive(Default)]
 pub struct RuleTable {
-    pub entries: Vec<RuleEntry>,
-    ids:         HashMap<RuleEntry, RuleId>,
+    pub entries:      Vec<RuleEntry>,
+    ids:              HashMap<RuleEntry, EntryId>,
+    pub applications: Vec<RuleApplication>,
 }
 
 impl RuleTable {
 
     // Returns the id of the given entry, adding the entry to the table if it is not present yet.
-    pub fn id_of(&mut self, entry: RuleEntry) -> RuleId {
+    pub fn entry_id(&mut self, entry: RuleEntry) -> EntryId {
         if let Some(id) = self.ids.get(&entry) { return *id }
         let id = self.entries.len();
         self.entries.push(entry.clone());
@@ -45,8 +59,14 @@ impl RuleTable {
         id
     }
 
+    // The rule applied in the given rule application.
     pub fn get(&self, id: RuleId) -> &RuleEntry {
-        &self.entries[id]
+        &self.entries[self.applications[id].entry]
+    }
+
+    // The substitution of the given rule application.
+    pub fn subst(&self, id: RuleId) -> &[(PVar, Id)] {
+        &self.applications[id].subst
     }
 }
 
@@ -105,30 +125,30 @@ pub fn class_nodes(x: Id, egraph: &LeanEGraph) -> Vec<LeanExpr> {
 
 // Returns the id of the rule with the given name and patterns in the rule table of the e-graph under
 // construction, adding the rule to the table if it is not present yet.
-pub fn rule_id(rule: &str, lhs: &LeanPattern, rhs: &LeanPattern) -> RuleId {
+pub fn entry_id(rule: &str, lhs: &LeanPattern, rhs: &LeanPattern) -> EntryId {
     let entry = RuleEntry { name: rule.into(), lhs: lhs.clone(), rhs: rhs.clone() };
-    RULES.with_borrow_mut(|rules| rules.id_of(entry))
+    RULES.with_borrow_mut(|rules| rules.entry_id(entry))
 }
 
-// The id of a rule whose name and patterns are the same for all of its applications, which is
-// obtained (via `rule_id`) on first use. This avoids constructing and hashing the rule's entry for
+// The entry id of a rule whose name and patterns are the same for all of its applications, which is
+// obtained (via `entry_id`) on first use. This avoids constructing and hashing the rule's entry for
 // each application.
 //
-// Note: As the rule table is reset by `start_recording`, a `RuleIdCache` must not outlive the
+// Note: As the rule table is reset by `start_recording`, an `EntryIdCache` must not outlive the
 //       e-graph for which it was first used.
 #[derive(Default)]
-pub struct RuleIdCache(Cell<Option<RuleId>>);
+pub struct EntryIdCache(Cell<Option<EntryId>>);
 
-impl RuleIdCache {
+impl EntryIdCache {
 
-    pub fn get(&self, rule: &str, lhs: &LeanPattern, rhs: &LeanPattern) -> RuleId {
+    pub fn get(&self, rule: &str, lhs: &LeanPattern, rhs: &LeanPattern) -> EntryId {
         if let Some(id) = self.0.get() {
             debug_assert!(RULES.with_borrow(|rules| rules.entries.get(id).is_some_and(|entry|
                 &*entry.name == rule && entry.lhs == *lhs && entry.rhs == *rhs
             )));
             return id
         }
-        let id = rule_id(rule, lhs, rhs);
+        let id = entry_id(rule, lhs, rhs);
         self.0.set(Some(id));
         id
     }
@@ -137,19 +157,26 @@ impl RuleIdCache {
 // Analogous to `union_instantiations` in egg: instantiates `from` and `to` with `subst` and unions
 // the resulting e-classes. The union is justified by an application of the given rule, which
 // rewrites the term represented by the instance of `from` to the term represented by the instance
-// of `to`. The rule is recorded in the rule table together with `from` and `to`.
+// of `to`. The rule is recorded in the rule table together with `from`, `to` and `subst`.
 pub fn union_instantiations(egraph: &mut LeanEGraph, from: &LeanPattern, to: &LeanPattern, subst: &LeanSubst, rule: &str) -> bool {
-    let id = rule_id(rule, from, to);
+    let id = entry_id(rule, from, to);
     union_instantiations_by_id(egraph, from, to, subst, id)
 }
 
-// Like `union_instantiations`, but for a rule whose id was already obtained. The rule's entry in the
-// rule table must have the patterns `from` and `to`.
+// Like `union_instantiations`, but for a rule whose entry id was already obtained. The rule's entry
+// in the rule table must have the patterns `from` and `to`.
 //
 // Note: We don't use `EGraph::union`, as it rebuilds the e-graph after every union. Instead (as in
 //       egg), the e-graph is rebuilt once per iteration of equality saturation.
-pub fn union_instantiations_by_id(egraph: &mut LeanEGraph, from: &LeanPattern, to: &LeanPattern, subst: &LeanSubst, rule: RuleId) -> bool {
-    let justification = Proof::rule(rule);
+pub fn union_instantiations_by_id(egraph: &mut LeanEGraph, from: &LeanPattern, to: &LeanPattern, subst: &LeanSubst, entry: EntryId) -> bool {
+    // We only record variables whose e-class is not proof-annotated (which is all of them, as GUF's
+    // e-matching produces such substitutions), as these represent exactly the e-class's term.
+    let recorded = subst.iter().filter(|(_, (g, _))| g.is_refl()).map(|(var, (_, id))| (*var, *id)).collect();
+    let application = RULES.with_borrow_mut(|rules| {
+        rules.applications.push(RuleApplication { entry, subst: recorded });
+        rules.applications.len() - 1
+    });
+    let justification = Proof::rule(application);
     let from = instantiate(from, egraph, subst);
     let (proof, id) = instantiate(to, egraph, subst);
     // `justification⁻¹ * to` represents the same term as `from`.
@@ -157,9 +184,12 @@ pub fn union_instantiations_by_id(egraph: &mut LeanEGraph, from: &LeanPattern, t
     // GUF's `union` makes the root of its first argument the root of the merged e-class. We keep the
     // older root, as proofs are composed along the paths to the root and, for example, the e-class
     // of `True` would otherwise be re-rooted under every new `(= x x)` (cf. `mk_hooks`).
-    if egraph.find(to.clone()).1 < egraph.find(from.clone()).1 {
+    let changed = if egraph.find(to.clone()).1 < egraph.find(from.clone()).1 {
         egraph.uf.union(to, from)
     } else {
         egraph.uf.union(from, to)
-    }
+    };
+    // If the union did not change the e-graph, its justification is not used anywhere.
+    if !changed { RULES.with_borrow_mut(|rules| rules.applications.pop()); }
+    changed
 }

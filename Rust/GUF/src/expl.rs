@@ -1,13 +1,13 @@
 use crate::analysis::*;
 use crate::Symbol;
-use crate::egraph::RuleTable;
+use crate::egraph::{id_to_expr, RuleTable};
 use crate::proof::*;
 use crate::util::*;
 use crate::LeanExpr;
 use std::collections::{HashMap, HashSet};
 use std::panic::AssertUnwindSafe;
 use std::rc::Rc;
-use rs2::Analysis;
+use rs2::{Analysis, Id};
 
 #[derive(Clone, Copy)]
 pub enum ExplanationKind {
@@ -46,7 +46,8 @@ impl ExplanationKind {
 }
 
 pub fn mk_explanation(
-    egraph: &LeanEGraph, rules: &RuleTable, init_expr: LeanTerm, goal_expr: LeanTerm, init_id: PId, goal_id: PId
+    egraph: &LeanEGraph, rules: &RuleTable, enodes: &[LeanExpr], init_expr: LeanTerm, goal_expr: LeanTerm,
+    init_id: PId, goal_id: PId
 ) -> (ExplanationKind, String) {
     let (init, goal) = (init_id.clone(), goal_id.clone());
     match ExplanationKind::for_goal(egraph, init_expr, goal_expr, init_id, goal_id) {
@@ -61,7 +62,7 @@ pub fn mk_explanation(
                 ExplanationKind::EqTrue     => egraph.lookup(&LeanExpr::Eq([init, goal])).zip(egraph.lookup_term(&rhs)),
                 ExplanationKind::None       => None,
             };
-            explain_equivalence(egraph, rules, &lhs, &rhs, ids)
+            explain_equivalence(egraph, rules, enodes, &lhs, &rhs, ids)
         })) {
             Ok(Ok(expl)) => (kind, expl),
             Ok(Err(msg)) => (ExplanationKind::None, msg),
@@ -77,9 +78,10 @@ fn panic_msg(panic: &Box<dyn std::any::Any + Send>) -> String {
 }
 
 // Analogous to `explain_equivalence(lhs, rhs).get_flat_string()` in egg.
-// The `rules` map the ids in `ProofObj::Rule` to the corresponding rule names and patterns. If
-// given, `ids` are proof-annotated e-class ids representing exactly `lhs` and `rhs`.
-fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, rhs: &LeanTerm, ids: Option<(PId, PId)>) -> Result<String, String> {
+// The `rules` map the ids in `ProofObj::Rule` to the corresponding rule applications, and `enodes`
+// are the e-nodes with which the e-graph's e-classes were created (cf. `id_to_expr`). If given,
+// `ids` are proof-annotated e-class ids representing exactly `lhs` and `rhs`.
+fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, enodes: &[LeanExpr], lhs: &LeanTerm, rhs: &LeanTerm, ids: Option<(PId, PId)>) -> Result<String, String> {
     // Like egg, we explain syntactically equal terms without any steps.
     if lhs == rhs { return Ok(format!("{}\n", stringify_term(lhs, None))) }
 
@@ -99,7 +101,8 @@ fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, r
     note("pre-eval!");
 
     note(&format!("eval({})", psize));
-    let mut e = eval(&proof, &mut mvar_counter, &mut umap, rules);
+    let mut terms = Terms { enodes, cache: HashMap::new() };
+    let mut e = eval(&proof, &mut mvar_counter, &mut umap, rules, &mut terms);
 
     note("pre-unify!");
     unify(e.first(), &explify(lhs), &mut umap);
@@ -109,6 +112,8 @@ fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, r
     for t in e.all_terms() {
         *t = umap_canon(t, &umap);
     }
+
+    let e = remove_cycles(e);
 
     note("pre-guess!");
     let e = guess_mvars(e);
@@ -123,6 +128,42 @@ fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, r
 struct Expl {
     vec: Vec<(LeanPattern, ExplStep)>,
     last: LeanPattern,
+}
+
+// Removes detours from the given explanation: if a term occurs more than once, we drop all steps
+// between its first and last occurrence.
+fn remove_cycles(e: Expl) -> Expl {
+    // Each term of the explanation together with the step from it to the next term.
+    let mut terms: Vec<(LeanPattern, Option<ExplStep>)> = e.vec.into_iter().map(|(t, s)| (t, Some(s))).collect();
+    terms.push((e.last, None));
+
+    let mut out: Vec<(LeanPattern, Option<ExplStep>)> = Vec::new();
+    let mut idx: HashMap<LeanPattern, usize> = HashMap::new();
+    for (t, step) in terms {
+        if let Some(&i) = idx.get(&t) {
+            for (dropped, _) in out.drain(i + 1..) { idx.remove(&dropped); }
+            out[i].1 = step;
+        } else {
+            idx.insert(t.clone(), out.len());
+            out.push((t, step));
+        }
+    }
+
+    let (last, _) = out.pop().unwrap();
+    Expl { vec: out.into_iter().map(|(t, step)| (t, step.unwrap())).collect(), last }
+}
+
+// The terms of e-classes (cf. `id_to_expr`), which are computed on demand.
+struct Terms<'a> {
+    enodes: &'a [LeanExpr],
+    cache:  HashMap<Id, LeanTerm>,
+}
+
+impl Terms<'_> {
+    fn get(&mut self, id: Id) -> LeanTerm {
+        let enodes = self.enodes;
+        self.cache.entry(id).or_insert_with(|| id_to_expr(enodes, id)).clone()
+    }
 }
 
 impl Expl {
@@ -218,14 +259,14 @@ fn psize_fast(p: &Proof, things: &mut HashMap<*const ProofObj, usize>) -> usize 
     v
 }
 
-fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTable) -> Expl {
+fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTable, terms: &mut Terms) -> Expl {
     match &*p.0 {
         ProofObj::Refl => Expl {
             vec: Vec::new(),
             last: LeanPattern::PVar(fresh_mvar(mvar_counter)),
         },
         ProofObj::Sym(p) => {
-            let e = eval(p, mvar_counter, umap, rules);
+            let e = eval(p, mvar_counter, umap, rules, terms);
             let n = e.vec.len();
             Expl {
                 vec: (0..n).rev().map(|i| {
@@ -238,14 +279,14 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTa
             }
         },
         ProofObj::Trans(p2, p1) => {
-            let e1 = eval(p1, mvar_counter, umap, rules);
-            let e2 = eval(p2, mvar_counter, umap, rules);
+            let e1 = eval(p1, mvar_counter, umap, rules, terms);
+            let e2 = eval(p2, mvar_counter, umap, rules, terms);
             eval_trans(e2, e1, umap)
         },
         ProofObj::Congr(sid, children) => {
             let mut cs = Vec::new();
             for (i, c) in children.iter().enumerate() {
-                let inner = eval(c, mvar_counter, umap, rules);
+                let inner = eval(c, mvar_counter, umap, rules, terms);
                 let wrapped = wrap(inner, mvar_counter, i, children.len(), *sid);
                 cs.push(wrapped);
             }
@@ -259,8 +300,11 @@ fn eval(p: &Proof, mvar_counter: &mut usize, umap: &mut UnifyMap, rules: &RuleTa
             let entry = rules.get(*rule_id).clone();
             let step = ExplStep { rule: entry.name, forward: true, pos: Vec::new() };
 
-            let mut lhs = entry.lhs;
-            let mut rhs = entry.rhs;
+            // We instantiate the rule's variables with the terms they were instantiated with when
+            // the rule was applied. Thus, only unrecorded variables (if any) become mvars.
+            let subst: UnifyMap = rules.subst(*rule_id).iter().map(|(var, id)| (*var, terms.get(*id))).collect();
+            let mut lhs = umap_canon(&entry.lhs, &subst);
+            let mut rhs = umap_canon(&entry.rhs, &subst);
             let mut map = HashMap::new();
             refresh_mvars(&mut lhs, mvar_counter, &mut map);
             refresh_mvars(&mut rhs, mvar_counter, &mut map);

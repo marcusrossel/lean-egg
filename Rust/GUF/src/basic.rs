@@ -92,7 +92,7 @@ pub fn explain_congr(
         total_time:     total_time.as_secs_f64()
     };
     let egraph = finish_recording(egraph);
-    let (kind, expl) = mk_explanation(&egraph.egraph, &egraph.rules, init_expr, goal_expr, init_id, goal_id);
+    let (kind, expl) = mk_explanation(&egraph.egraph, &egraph.rules, &egraph.enodes, init_expr, goal_expr, init_id, goal_id);
     Ok(ExplainedCongr { kind, expl, egraph, report, activations })
 }
 
@@ -196,7 +196,7 @@ fn mk_hooks(egraph: &LeanEGraph, init_id: PId, goal_id: PId, iterations: Rc<Cell
     let true_id = egraph.lookup_term(&term("(const \"True\")")).unwrap();
     let refl_eq = pat("(= ?x ?x)");
     let true_expr = term("(const \"True\")");
-    let refl_eq_rule_id = RuleIdCache::default();
+    let refl_eq_entry_id = EntryIdCache::default();
     let mut last_state: Option<(Id, usize)> = None;
 
     let hooks: Vec<Hook<LeanAnalysis>> = vec![
@@ -235,7 +235,7 @@ fn mk_hooks(egraph: &LeanEGraph, init_id: PId, goal_id: PId, iterations: Rc<Cell
 
             for x in classes {
                 let subst = LeanSubst::from([(PVar::from("?x"), (Proof::identity(), x))]);
-                let id = refl_eq_rule_id.get("=", &refl_eq, &true_expr);
+                let id = refl_eq_entry_id.get("=", &refl_eq, &true_expr);
                 union_instantiations_by_id(egraph, &refl_eq, &true_expr, &subst, id);
             }
             egraph.rebuild();

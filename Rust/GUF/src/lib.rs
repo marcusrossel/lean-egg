@@ -249,7 +249,7 @@ pub unsafe extern "C" fn guf_query_equiv(
     let expl: String;
 
     if let (Some(init_id), Some(goal_id)) = (egraph.lookup_term(&init_expr), egraph.lookup_term(&goal_expr)) {
-        (kind, expl) = mk_explanation(egraph, &obj.rules, init_expr, goal_expr, init_id, goal_id);
+        (kind, expl) = mk_explanation(egraph, &obj.rules, &obj.enodes, init_expr, goal_expr, init_id, goal_id);
     } else {
         (kind, expl) = (ExplanationKind::None, "".to_string());
     }
