@@ -48,11 +48,21 @@ impl ExplanationKind {
 pub fn mk_explanation(
     egraph: &LeanEGraph, rules: &RuleTable, init_expr: LeanTerm, goal_expr: LeanTerm, init_id: PId, goal_id: PId
 ) -> (ExplanationKind, String) {
+    let (init, goal) = (init_id.clone(), goal_id.clone());
     match ExplanationKind::for_goal(egraph, init_expr, goal_expr, init_id, goal_id) {
         None => (ExplanationKind::None, "".to_string()),
         // Note: We catch panics, as they would otherwise abort the Lean process (panics cannot
         //       unwind across the FFI boundary).
-        Some((kind, lhs, rhs)) => match std::panic::catch_unwind(AssertUnwindSafe(|| explain_equivalence(egraph, rules, &lhs, &rhs))) {
+        Some((kind, lhs, rhs)) => match std::panic::catch_unwind(AssertUnwindSafe(|| {
+            // The ids with which the goal's terms were created represent them exactly, so we use
+            // them instead of looking up the terms again (which can introduce detours).
+            let ids = match kind {
+                ExplanationKind::SameEClass => Some((init, goal)),
+                ExplanationKind::EqTrue     => egraph.lookup(&LeanExpr::Eq([init, goal])).zip(egraph.lookup_term(&rhs)),
+                ExplanationKind::None       => None,
+            };
+            explain_equivalence(egraph, rules, &lhs, &rhs, ids)
+        })) {
             Ok(Ok(expl)) => (kind, expl),
             Ok(Err(msg)) => (ExplanationKind::None, msg),
             Err(panic)   => (ExplanationKind::None, format!("GUF explanation failed: {}", panic_msg(&panic)))
@@ -67,11 +77,14 @@ fn panic_msg(panic: &Box<dyn std::any::Any + Send>) -> String {
 }
 
 // Analogous to `explain_equivalence(lhs, rhs).get_flat_string()` in egg.
-// The `rules` map the ids in `ProofObj::Rule` to the corresponding rule names and patterns.
-fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, rhs: &LeanTerm) -> Result<String, String> {
+// The `rules` map the ids in `ProofObj::Rule` to the corresponding rule names and patterns. If
+// given, `ids` are proof-annotated e-class ids representing exactly `lhs` and `rhs`.
+fn explain_equivalence(egraph: &LeanEGraph, rules: &RuleTable, lhs: &LeanTerm, rhs: &LeanTerm, ids: Option<(PId, PId)>) -> Result<String, String> {
+    // Like egg, we explain syntactically equal terms without any steps.
+    if lhs == rhs { return Ok(format!("{}\n", stringify_term(lhs, None))) }
+
     note("explain_equiv!");
-    let lhs_id = egraph.lookup_term(lhs).unwrap();
-    let rhs_id = egraph.lookup_term(rhs).unwrap();
+    let (lhs_id, rhs_id) = ids.unwrap_or_else(|| (egraph.lookup_term(lhs).unwrap(), egraph.lookup_term(rhs).unwrap()));
     // The proof `p` with `p * lhs_id = rhs_id`, that is, a proof of `lhs = rhs`.
     let proof = egraph.get_g_between(lhs_id, rhs_id).unwrap();
 

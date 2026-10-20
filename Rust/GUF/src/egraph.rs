@@ -153,5 +153,13 @@ pub fn union_instantiations_by_id(egraph: &mut LeanEGraph, from: &LeanPattern, t
     let from = instantiate(from, egraph, subst);
     let (proof, id) = instantiate(to, egraph, subst);
     // `justification⁻¹ * to` represents the same term as `from`.
-    egraph.uf.union(from, (Proof::compose(&justification.inverse(), &proof), id))
+    let to = (Proof::compose(&justification.inverse(), &proof), id);
+    // GUF's `union` makes the root of its first argument the root of the merged e-class. We keep the
+    // older root, as proofs are composed along the paths to the root and, for example, the e-class
+    // of `True` would otherwise be re-rooted under every new `(= x x)` (cf. `mk_hooks`).
+    if egraph.find(to.clone()).1 < egraph.find(from.clone()).1 {
+        egraph.uf.union(to, from)
+    } else {
+        egraph.uf.union(from, to)
+    }
 }
