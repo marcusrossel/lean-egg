@@ -195,10 +195,10 @@ fn psize_fast(p: &Proof, things: &mut HashMap<*const ProofObj, usize>) -> usize 
     if let Some(x) = things.get(&pp) { return *x }
 
     let v = match &*p.0 {
-        ProofObj::Refl => 1,
-        ProofObj::Sym(p) => psize_fast(p, things) + 1,
-        ProofObj::Trans(p1, p2) => psize_fast(p1, things) + psize_fast(p2, things) + 1,
-        ProofObj::Congr(_, children) => children.iter().map(|ii| psize_fast(ii, things)).sum::<usize>() + 1,
+        ProofObj::Refl => 0,
+        ProofObj::Sym(p) => psize_fast(p, things),
+        ProofObj::Trans(p1, p2) => psize_fast(p1, things) + psize_fast(p2, things),
+        ProofObj::Congr(_, children) => children.iter().map(|ii| psize_fast(ii, things)).sum::<usize>(),
         ProofObj::Rule(_) => 1,
     };
     things.insert(pp, v);
